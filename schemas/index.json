@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "artifactFormatVersion": 1,
+  "collectorProtocol": {
+    "major": 1,
+    "minor": 5
+  },
+  "files": [
+    "artifact-export-request.schema.json",
+    "artifact-export-result.schema.json",
+    "artifact-manifest.schema.json",
+    "artifact-variant-verification.schema.json",
+    "batch-request.schema.json",
+    "batch-result.schema.json",
+    "binding-contracts.json",
+    "browser-doctor-report.schema.json",
+    "browser-operation-result.schema.json",
+    "capture-event.schema.json",
+    "capture-policy.schema.json",
+    "capture-request.schema.json",
+    "capture-result.schema.json",
+    "cli-json-contracts.json",
+    "collector-message.schema.json",
+    "crawl-request.schema.json",
+    "crawl-result.schema.json",
+    "error-codes.json",
+    "error.schema.json",
+    "page-observation.schema.json",
+    "resume-manifest.schema.json",
+    "verification-result.schema.json"
+  ]
+}

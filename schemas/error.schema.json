@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PageKnotError",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "details": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "diagnosticsPath": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "message": {
+      "type": "string"
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "source": {
+      "anyOf": [
+        {
+          "$ref": "#"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stage": {
+      "$ref": "#/$defs/ErrorStage"
+    }
+  },
+  "required": [
+    "code",
+    "message",
+    "stage",
+    "retryable"
+  ],
+  "$defs": {
+    "ErrorStage": {
+      "type": "string",
+      "enum": [
+        "validation",
+        "browser",
+        "navigation",
+        "readiness",
+        "collection",
+        "resource",
+        "transform",
+        "encoding",
+        "verification",
+        "commit",
+        "shutdown",
+        "internal"
+      ]
+    }
+  }
+}

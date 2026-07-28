@@ -1,0 +1,16 @@
+{
+  "name": "@pageknot/node-linux-x64-gnu",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
+  "main": "pageknot-native.linux-x64-gnu.node",
+  "files": ["LICENSE", "pageknot-native.linux-x64-gnu.node"],
+  "scripts": {
+    "prepack": "node ../../scripts/package-license.mjs sync",
+    "postpack": "node ../../scripts/package-license.mjs clean"
+  },
+  "os": ["linux"],
+  "cpu": ["x64"],
+  "libc": ["glibc"],
+  "engines": { "node": ">=22" },
+  "publishConfig": { "access": "public" }
+}

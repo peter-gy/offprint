@@ -1,0 +1,13 @@
+{
+  "files": [
+    "artifact-manifest.json",
+    "browser-doctor-report.json",
+    "browser-operation-result.json",
+    "capture-event.json",
+    "capture-request.json",
+    "capture-result.json",
+    "error.json",
+    "verification-result.json"
+  ],
+  "schemaVersion": 1
+}

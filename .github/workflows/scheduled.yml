@@ -1,0 +1,415 @@
+name: Scheduled assurance
+
+on:
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: "1"
+  XDG_CACHE_HOME: ${{ github.workspace }}/.cache
+
+jobs:
+  fuzz:
+    name: Fuzz smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: nightly
+
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just,cargo-fuzz
+
+      - name: Run fuzz targets
+        run: just fuzz-smoke 30
+
+      - name: Upload fuzz failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-fuzz-failure
+          path: |
+            fuzz/artifacts
+            fuzz/corpus
+          if-no-files-found: ignore
+          retention-days: 14
+
+  long-fuzz:
+    name: Long fuzz ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - collector_protocol
+          - css_url_rewriting
+          - data_url
+          - filename
+          - html_arena
+          - manifest
+          - mime
+          - resource_graph
+          - srcset
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: nightly
+
+      - name: Install tools
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just,cargo-fuzz
+
+      - name: Run sustained fuzz target
+        run: just fuzz-target "${{ matrix.target }}" 300
+
+      - name: Upload fuzz failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-fuzz-failure-${{ matrix.target }}
+          path: |
+            fuzz/artifacts/${{ matrix.target }}
+            fuzz/corpus/${{ matrix.target }}
+          if-no-files-found: ignore
+          retention-days: 14
+
+  miri:
+    name: Miri
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: nightly
+          components: miri
+
+      - name: Install just
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just
+
+      - name: Run Miri
+        run: just miri
+
+  minimum-rust:
+    name: Minimum Rust
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install minimum Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Check workspace
+        run: cargo check --workspace --all-targets --all-features --locked
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Install dependency tools
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just,cargo-deny,cargo-machete
+
+      - name: Audit dependencies
+        run: just dependency-check
+
+  repeated-capture:
+    name: Repeated capture and lifecycle
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
+
+      - name: Cache managed browser
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+        with:
+          path: ${{ env.XDG_CACHE_HOME }}
+          key: pageknot-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
+
+      - name: Install just
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just
+
+      - name: Install pinned managed Chromium
+        run: cargo run --locked -p pageknot-cli -- browser install
+
+      - name: Run repeated capture suite
+        run: cargo test --release --locked -p pageknot repeated_capture -- --ignored --test-threads=1
+
+      - name: Audit browser process cleanup
+        if: always()
+        run: |
+          if pgrep -af '[c]hrome.*--remote-debugging-port'; then
+            echo "PageKnot Chromium process survived repeated capture"
+            exit 1
+          fi
+
+      - name: Upload repeated-capture report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: scheduled-repeated-capture
+          path: target/benchmark-evidence/repeated-capture.json
+          if-no-files-found: error
+          retention-days: 30
+
+  differential:
+    name: SingleFile differential
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout PageKnot
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Checkout pinned SingleFile CLI
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          repository: gildas-lormeau/single-file-cli
+          ref: d1cdaa7b2006782415637ac79aeae136812826aa
+          path: .differential/single-file-cli
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Install Deno
+        uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282
+        with:
+          deno-version: v2.9.2
+
+      - name: Cache managed browser
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+        with:
+          path: ${{ env.XDG_CACHE_HOME }}
+          key: pageknot-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
+
+      - name: Install just
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just
+
+      - name: Install pinned managed Chromium
+        run: cargo run --locked -p pageknot-cli -- browser install
+
+      - name: Run differential fixture
+        run: just differential "$GITHUB_WORKSPACE/.differential/single-file-cli/single-file"
+
+      - name: Upload differential evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: singlefile-differential
+          path: target/benchmark-evidence/singlefile-differential.json
+          if-no-files-found: error
+
+  datawrapper:
+    name: Datawrapper exploratory corpus
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
+
+      - name: Cache managed browser
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+        with:
+          path: ${{ env.XDG_CACHE_HOME }}
+          key: pageknot-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
+
+      - name: Install just
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just
+
+      - name: Install pinned managed Chromium
+        run: cargo run --locked -p pageknot-cli -- browser install
+
+      - name: Capture exploratory corpus
+        run: just exploratory-corpus
+
+      - name: Upload corpus evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: datawrapper-corpus
+          path: target/benchmark-evidence/datawrapper-corpus.json
+          if-no-files-found: error
+
+  chromium-canary:
+    name: Latest Chromium canary
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
+
+      - name: Install just
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just
+
+      - name: Download latest Chrome for Testing canary
+        shell: bash
+        run: |
+          set -euo pipefail
+          metadata="$RUNNER_TEMP/chrome-for-testing.json"
+          archive="$RUNNER_TEMP/chrome-canary.zip"
+          destination="$RUNNER_TEMP/chrome-canary"
+          curl --fail --location --retry 3 --max-filesize 524288000 \
+            --output "$metadata" \
+            https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json
+          download_url="$(jq -er '.channels.Canary.downloads.chrome[] | select(.platform == "linux64") | .url' "$metadata")"
+          version="$(jq -er '.channels.Canary.version' "$metadata")"
+          curl --fail --location --retry 3 --max-filesize 524288000 \
+            --output "$archive" "$download_url"
+          mkdir "$destination"
+          unzip -q "$archive" -d "$destination"
+          browser="$destination/chrome-linux64/chrome"
+          test -x "$browser"
+          echo "PAGEKNOT_CANARY_PATH=$browser" >> "$GITHUB_ENV"
+          echo "PAGEKNOT_CANARY_VERSION=$version" >> "$GITHUB_ENV"
+
+      - name: Run browser benchmark corpus on canary
+        run: |
+          just benchmark-browser \
+            target/benchmark-evidence/chromium-canary.json \
+            "$PAGEKNOT_CANARY_PATH"
+          test "$(jq -r '.environment.browserVersion' target/benchmark-evidence/chromium-canary.json)" = "$PAGEKNOT_CANARY_VERSION"
+
+      - name: Upload canary evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: chromium-canary
+          path: target/benchmark-evidence/chromium-canary.json
+          if-no-files-found: error
+
+  performance:
+    name: Performance baseline comparison
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
+
+      - name: Cache managed browser
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
+        with:
+          path: ${{ env.XDG_CACHE_HOME }}
+          key: pageknot-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
+
+      - name: Install just
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just
+
+      - name: Install pinned managed Chromium
+        run: cargo run --locked -p pageknot-cli -- browser install
+
+      - name: Compare benchmark corpus
+        run: |
+          just benchmark-compare \
+            benches/baseline.json \
+            target/benchmark-evidence/performance.json \
+            true
+
+      - name: Upload performance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: performance-comparison
+          path: target/benchmark-evidence/performance.json
+          if-no-files-found: error

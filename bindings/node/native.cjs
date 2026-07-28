@@ -1,0 +1,59 @@
+"use strict";
+
+const fs = require("node:fs");
+const path = require("node:path");
+
+function isGlibc() {
+  const report = process.report?.getReport?.();
+  if (typeof report?.header?.glibcVersionRuntime === "string") {
+    return true;
+  }
+  return ![
+    "/lib/ld-musl-aarch64.so.1",
+    "/lib/ld-musl-x86_64.so.1",
+    "/lib64/ld-musl-x86_64.so.1",
+  ].some((candidate) => fs.existsSync(candidate));
+}
+
+function targetSuffix() {
+  const { arch, platform } = process;
+  if (platform === "darwin" && (arch === "arm64" || arch === "x64")) {
+    return `darwin-${arch}`;
+  }
+  if (platform === "win32" && arch === "x64") {
+    return "win32-x64-msvc";
+  }
+  if (platform === "linux" && arch === "x64" && isGlibc()) {
+    return "linux-x64-gnu";
+  }
+  throw new Error(
+    `PageKnot has no native package for ${platform}-${arch}`,
+  );
+}
+
+function loadNative() {
+  const suffix = targetSuffix();
+  const filename = `pageknot-native.${suffix}.node`;
+  const local = path.join(__dirname, filename);
+  const failures = [];
+
+  try {
+    return require(local);
+  } catch (error) {
+    failures.push(`${filename}: ${error.message}`);
+  }
+
+  const packageName = `@pageknot/node-${suffix}`;
+  try {
+    return require(packageName);
+  } catch (error) {
+    failures.push(`${packageName}: ${error.message}`);
+  }
+
+  const details = failures.map((failure) => `  ${failure}`).join("\n");
+  throw new Error(
+    `Failed to load the PageKnot native addon for ${suffix}.\n${details}`,
+  );
+}
+
+module.exports = loadNative();

@@ -1,0 +1,75 @@
+{
+  "name": "@pageknot/node",
+  "version": "0.1.0",
+  "description": "Capture rendered web pages as verified self-contained artifacts",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peter-gy/pageknot.git",
+    "directory": "bindings/node"
+  },
+  "bugs": {
+    "url": "https://github.com/peter-gy/pageknot/issues"
+  },
+  "type": "module",
+  "main": "./index.cjs",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.cjs"
+    }
+  },
+  "files": [
+    "api.cjs",
+    "contracts.generated.d.ts",
+    "index.cjs",
+    "index.d.ts",
+    "index.js",
+    "LICENSE",
+    "native.cjs",
+    "native.d.ts",
+    "README.md"
+  ],
+  "optionalDependencies": {
+    "@pageknot/node-darwin-arm64": "0.1.0",
+    "@pageknot/node-darwin-x64": "0.1.0",
+    "@pageknot/node-linux-x64-gnu": "0.1.0",
+    "@pageknot/node-win32-x64-msvc": "0.1.0"
+  },
+  "napi": {
+    "packageName": "@pageknot/node",
+    "binaryName": "pageknot-native",
+    "targets": [
+      "x86_64-unknown-linux-gnu",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-pc-windows-msvc"
+    ]
+  },
+  "scripts": {
+    "build": "napi build --platform --release --no-js --dts native.d.ts",
+    "build:debug": "napi build --platform --no-js --dts native.d.ts",
+    "build:test": "napi build --platform --no-js --dts ../../target/pageknot-node-test.d.ts --features binding-test-hooks",
+    "artifacts": "napi artifacts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit",
+    "prepack": "node scripts/package-license.mjs sync",
+    "postpack": "node scripts/package-license.mjs clean",
+    "prepublishOnly": "node scripts/publish-packages.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "3.7.4",
+    "@types/node": "24.10.3",
+    "typescript": "5.9.3"
+  },
+  "packageManager": "bun@1.3.14"
+}

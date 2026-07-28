@@ -1,0 +1,6336 @@
+{
+  "schemaVersion": 1,
+  "contracts": [
+    {
+      "name": "ArtifactExportRequest",
+      "schema": "artifact-export-request.schema.json",
+      "sha256": "f6c9aa132bb13bd0fe354fa3543137f67044baa878c3f1c9433753d0aab59118",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/0/properties/options",
+          "name": "options",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/1/properties/options",
+          "name": "options",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/2/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/3/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/4/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/MarkdownOptions/properties/frontMatter",
+          "name": "frontMatter",
+          "required": false,
+          "nullable": false,
+          "default": true
+        },
+        {
+          "path": "#/$defs/PdfOptions/properties/landscape",
+          "name": "landscape",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/PdfOptions/properties/preferCssPageSize",
+          "name": "preferCssPageSize",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/properties/baseName",
+          "name": "baseName",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/conflict",
+          "name": "conflict",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/outputDirectory",
+          "name": "outputDirectory",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/variants",
+          "name": "variants",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/0/properties/kind",
+          "values": [
+            "pdf"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/1/properties/kind",
+          "values": [
+            "markdown"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/2/properties/kind",
+          "values": [
+            "zip"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/3/properties/kind",
+          "values": [
+            "self-extracting"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactVariant/oneOf/4/properties/kind",
+          "values": [
+            "mhtml"
+          ]
+        },
+        {
+          "path": "#/$defs/ConflictPolicy",
+          "values": [
+            "fail",
+            "replace",
+            "uniquify"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ArtifactExportResult",
+      "schema": "artifact-export-result.schema.json",
+      "sha256": "0ab768549aeb37c80eb4bbab3de06cacaa317505f0ae4c6ec2784e50f96df64a",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactVariantVerification/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariantVerification/properties/contentValid",
+          "name": "contentValid",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariantVerification/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariantVerification/properties/passed",
+          "name": "passed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariantVerification/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactVariantVerification/properties/structureValid",
+          "name": "structureValid",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ExportedArtifact/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ExportedArtifact/properties/entrypoint",
+          "name": "entrypoint",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ExportedArtifact/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ExportedArtifact/properties/path",
+          "name": "path",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ExportedArtifact/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ExportedArtifact/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/discovered",
+          "name": "discovered",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embedded",
+          "name": "embedded",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embeddedBytes",
+          "name": "embeddedBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/external",
+          "name": "external",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/failed",
+          "name": "failed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/omitted",
+          "name": "omitted",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/policySha256",
+          "name": "policySha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/sourceArtifactSha256",
+          "name": "sourceArtifactSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/variants",
+          "name": "variants",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactVariantKind",
+          "values": [
+            "pdf",
+            "markdown",
+            "zip",
+            "self-extracting",
+            "mhtml"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ArtifactManifest",
+      "schema": "artifact-manifest.schema.json",
+      "sha256": "90321de6e702535215d6d8c22fdba4cd66cf4c6bf2b56d146967fc266c28ca9b",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactFormat/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactFormat/properties/version",
+          "name": "version",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/colorScheme",
+          "name": "colorScheme",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/locale",
+          "name": "locale",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/reducedMotion",
+          "name": "reducedMotion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/timezone",
+          "name": "timezone",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/userAgent",
+          "name": "userAgent",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/viewport",
+          "name": "viewport",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/endpoint",
+          "name": "endpoint",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/executablePath",
+          "name": "executablePath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/product",
+          "name": "product",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/protocolVersion",
+          "name": "protocolVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/revision",
+          "name": "revision",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/version",
+          "name": "version",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestGenerator/properties/name",
+          "name": "name",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestGenerator/properties/version",
+          "name": "version",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestSource/properties/finalUrl",
+          "name": "finalUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestSource/properties/finalUrlSha256",
+          "name": "finalUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestSource/properties/requestedUrl",
+          "name": "requestedUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestSource/properties/requestedUrlSha256",
+          "name": "requestedUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestVerification/properties/level",
+          "name": "level",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestVerification/properties/networkRequests",
+          "name": "networkRequests",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManifestVerification/properties/passed",
+          "name": "passed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceError/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceError/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceError/properties/retryable",
+          "name": "retryable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/0/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/0/properties/digest",
+          "name": "digest",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/0/properties/mediaType",
+          "name": "mediaType",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/1/properties/reason",
+          "name": "reason",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/1/properties/url",
+          "name": "url",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/1/properties/urlSha256",
+          "name": "urlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/2/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/2/properties/reason",
+          "name": "reason",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/3/properties/error",
+          "name": "error",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/3/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceProvenance/properties/finalUrl",
+          "name": "finalUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceProvenance/properties/finalUrlSha256",
+          "name": "finalUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceProvenance/properties/receivedBytes",
+          "name": "receivedBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceProvenance/properties/redirects",
+          "name": "redirects",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/ResourceProvenance/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceProvenance/properties/status",
+          "name": "status",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResourceRecord/properties/frameId",
+          "name": "frameId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceRecord/properties/id",
+          "name": "id",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceRecord/properties/outcome",
+          "name": "outcome",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceRecord/properties/provenance",
+          "name": "provenance",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResourceRecord/properties/requestedUrl",
+          "name": "requestedUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceRecord/properties/requestedUrlSha256",
+          "name": "requestedUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/discovered",
+          "name": "discovered",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embedded",
+          "name": "embedded",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embeddedBytes",
+          "name": "embeddedBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/external",
+          "name": "external",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/failed",
+          "name": "failed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/omitted",
+          "name": "omitted",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/StructuralRepair/properties/applied",
+          "name": "applied",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/StructuralRepair/properties/scriptSha256",
+          "name": "scriptSha256",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewState/properties/scrollX",
+          "name": "scrollX",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewState/properties/scrollY",
+          "name": "scrollY",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/height",
+          "name": "height",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/scale",
+          "name": "scale",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/width",
+          "name": "width",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/capturedAt",
+          "name": "capturedAt",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/environment",
+          "name": "environment",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/format",
+          "name": "format",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/frames",
+          "name": "frames",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/generator",
+          "name": "generator",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/policySha256",
+          "name": "policySha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/resourceRecords",
+          "name": "resourceRecords",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/structuralRepair",
+          "name": "structuralRepair",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/viewState",
+          "name": "viewState",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/warningCodes",
+          "name": "warningCodes",
+          "required": false,
+          "nullable": false,
+          "default": []
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactKind",
+          "values": [
+            "html"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserProduct",
+          "values": [
+            "chrome",
+            "chromium",
+            "edge"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSource",
+          "values": [
+            "managed",
+            "system",
+            "explicit",
+            "remote"
+          ]
+        },
+        {
+          "path": "#/$defs/ColorScheme",
+          "values": [
+            "light",
+            "dark"
+          ]
+        },
+        {
+          "path": "#/$defs/ExternalReason",
+          "values": [
+            "policy",
+            "unsupported-scheme",
+            "explicitly-preserved"
+          ]
+        },
+        {
+          "path": "#/$defs/OmissionReason",
+          "values": [
+            "non-rendering",
+            "sanitized",
+            "sensitive",
+            "limit"
+          ]
+        },
+        {
+          "path": "#/$defs/ReducedMotion",
+          "values": [
+            "reduce",
+            "no-preference"
+          ]
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/0/properties/kind",
+          "values": [
+            "embedded"
+          ]
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/1/properties/kind",
+          "values": [
+            "external"
+          ]
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/2/properties/kind",
+          "values": [
+            "omitted"
+          ]
+        },
+        {
+          "path": "#/$defs/ResourceOutcome/oneOf/3/properties/kind",
+          "values": [
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/ResourceRetrievalSource",
+          "values": [
+            "inline-data",
+            "observed-response",
+            "browser-context-fetch",
+            "owning-frame-read",
+            "local-file-read"
+          ]
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/0/properties/kind",
+          "values": [
+            "browser-default"
+          ]
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/kind",
+          "values": [
+            "override"
+          ]
+        },
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ArtifactVariantVerification",
+      "schema": "artifact-variant-verification.schema.json",
+      "sha256": "560bd499de52722a83025c2c058ef83f72f1e9ee319eb039c113247306e6a085",
+      "fields": [
+        {
+          "path": "#/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/contentValid",
+          "name": "contentValid",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/passed",
+          "name": "passed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/structureValid",
+          "name": "structureValid",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactVariantKind",
+          "values": [
+            "pdf",
+            "markdown",
+            "zip",
+            "self-extracting",
+            "mhtml"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BatchRequest",
+      "schema": "batch-request.schema.json",
+      "sha256": "681a79bc098889051b066f1bc81001aa098b65b8ae92c592287f88b4d768845f",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/options",
+          "name": "options",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/value/properties/maxBytes",
+          "name": "maxBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BatchJob/properties/id",
+          "name": "id",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BatchJob/properties/request",
+          "name": "request",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/domain",
+          "name": "domain",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/expires",
+          "name": "expires",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/httpOnly",
+          "name": "httpOnly",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/name",
+          "name": "name",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/path",
+          "name": "path",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/sameSite",
+          "name": "sameSite",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/secure",
+          "name": "secure",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/url",
+          "name": "url",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/colorScheme",
+          "name": "colorScheme",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/locale",
+          "name": "locale",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/reducedMotion",
+          "name": "reducedMotion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/timezone",
+          "name": "timezone",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/userAgent",
+          "name": "userAgent",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/viewport",
+          "name": "viewport",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/2/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/2/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureCredentials/properties/cookies",
+          "name": "cookies",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureCredentials/properties/headers",
+          "name": "headers",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/artifactBytes",
+          "name": "artifactBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/collectorChunkBytes",
+          "name": "collectorChunkBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/concurrentResources",
+          "name": "concurrentResources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/cssImportDepth",
+          "name": "cssImportDepth",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/duration",
+          "name": "duration",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/frameDepth",
+          "name": "frameDepth",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/frames",
+          "name": "frames",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/nodes",
+          "name": "nodes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/redirects",
+          "name": "redirects",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resourceBytes",
+          "name": "resourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/totalResourceBytes",
+          "name": "totalResourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/allowedFileRoots",
+          "name": "allowedFileRoots",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/missingResources",
+          "name": "missingResources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/optimizations",
+          "name": "optimizations",
+          "required": false,
+          "nullable": false,
+          "default": {
+            "removeHiddenElements": false,
+            "removeUnusedCss": false,
+            "removeUnusedFonts": false
+          }
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/preservePasswordValues",
+          "name": "preservePasswordValues",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/scope",
+          "name": "scope",
+          "required": false,
+          "nullable": false,
+          "default": "page"
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/selector",
+          "name": "selector",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/artifact",
+          "name": "artifact",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/capture",
+          "name": "capture",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/credentials",
+          "name": "credentials",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/diagnostics",
+          "name": "diagnostics",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/environment",
+          "name": "environment",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/headed",
+          "name": "headed",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/limits",
+          "name": "limits",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/network",
+          "name": "network",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/readiness",
+          "name": "readiness",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/url",
+          "name": "url",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureRequest/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/DiagnosticsPolicy/properties/directory",
+          "name": "directory",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/DiagnosticsPolicy/properties/screenshots",
+          "name": "screenshots",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/HtmlArtifactSpec/properties/conflict",
+          "name": "conflict",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/HtmlArtifactSpec/properties/target",
+          "name": "target",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/options",
+          "name": "options",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/2/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/rules",
+          "name": "rules",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowLinkLocal",
+          "name": "allowLinkLocal",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowLoopback",
+          "name": "allowLoopback",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowPrivate",
+          "name": "allowPrivate",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowedCidrs",
+          "name": "allowedCidrs",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowedHosts",
+          "name": "allowedHosts",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeHiddenElements",
+          "name": "removeHiddenElements",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeUnusedCss",
+          "name": "removeUnusedCss",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeUnusedFonts",
+          "name": "removeUnusedFonts",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/delay",
+          "name": "delay",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/lazyLoad",
+          "name": "lazyLoad",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/mode",
+          "name": "mode",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/mutationQuiet",
+          "name": "mutationQuiet",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/networkQuiet",
+          "name": "networkQuiet",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RequestHeader/properties/name",
+          "name": "name",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RequestHeader/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeOptions/properties/manifest",
+          "name": "manifest",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeOptions/properties/retryFailed",
+          "name": "retryFailed",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/height",
+          "name": "height",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/scale",
+          "name": "scale",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/width",
+          "name": "width",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/maxSteps",
+          "name": "maxSteps",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/settle",
+          "name": "settle",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/stepPixels",
+          "name": "stepPixels",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/concurrency",
+          "name": "concurrency",
+          "required": false,
+          "nullable": false,
+          "default": 4
+        },
+        {
+          "path": "#/properties/jobs",
+          "name": "jobs",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/resume",
+          "name": "resume",
+          "required": false,
+          "nullable": true
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/kind",
+          "values": [
+            "html"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/kind",
+          "values": [
+            "file"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/kind",
+          "values": [
+            "bytes"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/0/properties/kind",
+          "values": [
+            "auto"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/1/properties/kind",
+          "values": [
+            "executable"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/2/properties/kind",
+          "values": [
+            "remote"
+          ]
+        },
+        {
+          "path": "#/$defs/CaptureScope",
+          "values": [
+            "page",
+            "selection"
+          ]
+        },
+        {
+          "path": "#/$defs/ColorScheme",
+          "values": [
+            "light",
+            "dark"
+          ]
+        },
+        {
+          "path": "#/$defs/ConflictPolicy",
+          "values": [
+            "fail",
+            "replace",
+            "uniquify"
+          ]
+        },
+        {
+          "path": "#/$defs/CookieSameSite",
+          "values": [
+            "strict",
+            "lax",
+            "none"
+          ]
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
+          "values": [
+            "disabled"
+          ]
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/kind",
+          "values": [
+            "viewport-sweep"
+          ]
+        },
+        {
+          "path": "#/$defs/MissingResourcePolicy",
+          "values": [
+            "warn",
+            "fail"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/0/properties/kind",
+          "values": [
+            "standard"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/1/properties/kind",
+          "values": [
+            "server"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/2/properties/kind",
+          "values": [
+            "unrestricted"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/kind",
+          "values": [
+            "custom"
+          ]
+        },
+        {
+          "path": "#/$defs/ReadinessMode",
+          "values": [
+            "render-idle",
+            "network-idle",
+            "load",
+            "dom-content-loaded"
+          ]
+        },
+        {
+          "path": "#/$defs/ReducedMotion",
+          "values": [
+            "reduce",
+            "no-preference"
+          ]
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/0/properties/kind",
+          "values": [
+            "browser-default"
+          ]
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/kind",
+          "values": [
+            "override"
+          ]
+        },
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BatchResult",
+      "schema": "batch-result.schema.json",
+      "sha256": "6e68402fee4b5207f6caa697b9a7334fc7c2bbd42d0a9b12d25ca050d07de10f",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/path",
+          "name": "path",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/content",
+          "name": "content",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/artifact",
+          "name": "artifact",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/timings",
+          "name": "timings",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/warnings",
+          "name": "warnings",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/collection",
+          "name": "collection",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/commit",
+          "name": "commit",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/encoding",
+          "name": "encoding",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/navigation",
+          "name": "navigation",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/settle",
+          "name": "settle",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/total",
+          "name": "total",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/transform",
+          "name": "transform",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/validation",
+          "name": "validation",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/frameId",
+          "name": "frameId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/resourceId",
+          "name": "resourceId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/details",
+          "name": "details",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/diagnosticsPath",
+          "name": "diagnosticsPath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/retryable",
+          "name": "retryable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/source",
+          "name": "source",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/stage",
+          "name": "stage",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/discovered",
+          "name": "discovered",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embedded",
+          "name": "embedded",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embeddedBytes",
+          "name": "embeddedBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/external",
+          "name": "external",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/failed",
+          "name": "failed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/omitted",
+          "name": "omitted",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/artifactPath",
+          "name": "artifactPath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/artifactSha256",
+          "name": "artifactSha256",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/captureId",
+          "name": "captureId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/depth",
+          "name": "depth",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/error",
+          "name": "error",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/ordinal",
+          "name": "ordinal",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/requestSha256",
+          "name": "requestSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/url",
+          "name": "url",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/id",
+          "name": "id",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/requestSha256",
+          "name": "requestSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/result",
+          "name": "result",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/error",
+          "name": "error",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/id",
+          "name": "id",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/requestSha256",
+          "name": "requestSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/2/properties/id",
+          "name": "id",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/2/properties/record",
+          "name": "record",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/2/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/finalUrl",
+          "name": "finalUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/finalUrlSha256",
+          "name": "finalUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/requestedUrl",
+          "name": "requestedUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/requestedUrlSha256",
+          "name": "requestedUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/artifactSha256",
+          "name": "artifactSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/attemptedUrls",
+          "name": "attemptedUrls",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/frameFailures",
+          "name": "frameFailures",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/level",
+          "name": "level",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/networkRequests",
+          "name": "networkRequests",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/pageErrors",
+          "name": "pageErrors",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/passed",
+          "name": "passed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/stable",
+          "name": "stable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/failed",
+          "name": "failed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/outcomes",
+          "name": "outcomes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/planSha256",
+          "name": "planSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/resumed",
+          "name": "resumed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/succeeded",
+          "name": "succeeded",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/kind",
+          "values": [
+            "file"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/kind",
+          "values": [
+            "bytes"
+          ]
+        },
+        {
+          "path": "#/$defs/CaptureTerminalStatus",
+          "values": [
+            "succeeded",
+            "cancelled",
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/ErrorStage",
+          "values": [
+            "validation",
+            "browser",
+            "navigation",
+            "readiness",
+            "collection",
+            "resource",
+            "transform",
+            "encoding",
+            "verification",
+            "commit",
+            "shutdown",
+            "internal"
+          ]
+        },
+        {
+          "path": "#/$defs/ResumeJobStatus",
+          "values": [
+            "succeeded",
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/status",
+          "values": [
+            "succeeded"
+          ]
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/status",
+          "values": [
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/2/properties/status",
+          "values": [
+            "resumed"
+          ]
+        },
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BrowserDoctorReport",
+      "schema": "browser-doctor-report.schema.json",
+      "sha256": "1eab4b94f894e2a082c45c27928e70f5ba50f854c3895b5af8962bd7452305b4",
+      "fields": [
+        {
+          "path": "#/$defs/BrowserCandidate/properties/activeLeases",
+          "name": "activeLeases",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCandidate/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCandidate/properties/priority",
+          "name": "priority",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCandidate/properties/reasonCode",
+          "name": "reasonCode",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCandidate/properties/state",
+          "name": "state",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/endpoint",
+          "name": "endpoint",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/executablePath",
+          "name": "executablePath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/product",
+          "name": "product",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/protocolVersion",
+          "name": "protocolVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/revision",
+          "name": "revision",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/version",
+          "name": "version",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapabilityCheck/properties/capabilities",
+          "name": "capabilities",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/CapabilityCheck/properties/compatible",
+          "name": "compatible",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapabilityCheck/properties/hostVersion",
+          "name": "hostVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapabilityCheck/properties/missingCapabilities",
+          "name": "missingCapabilities",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/CapabilityCheck/properties/peerVersion",
+          "name": "peerVersion",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/EffectiveConfigValue/properties/field",
+          "name": "field",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/EffectiveConfigValue/properties/provenance",
+          "name": "provenance",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/EffectiveConfigValue/properties/redacted",
+          "name": "redacted",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/EffectiveConfigValue/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManagedBrowserState/properties/cacheDir",
+          "name": "cacheDir",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManagedBrowserState/properties/catalogVersion",
+          "name": "catalogVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ManagedBrowserState/properties/installedRevisions",
+          "name": "installedRevisions",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/ManagedBrowserState/properties/selectedRevision",
+          "name": "selectedRevision",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/NetworkPolicySummary/properties/permitsLoopbackInitialOrigin",
+          "name": "permitsLoopbackInitialOrigin",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicySummary/properties/permitsPrivateAddresses",
+          "name": "permitsPrivateAddresses",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicySummary/properties/profile",
+          "name": "profile",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicySummary/properties/revalidatesRedirects",
+          "name": "revalidatesRedirects",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/OutputCapability/properties/atomicCreate",
+          "name": "atomicCreate",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/OutputCapability/properties/atomicReplace",
+          "name": "atomicReplace",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/OutputCapability/properties/directory",
+          "name": "directory",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/OutputCapability/properties/reasonCode",
+          "name": "reasonCode",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/OutputCapability/properties/writable",
+          "name": "writable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RecoveryAction/properties/arguments",
+          "name": "arguments",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/RecoveryAction/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RecoveryAction/properties/command",
+          "name": "command",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RecoveryAction/properties/description",
+          "name": "description",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/candidates",
+          "name": "candidates",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/collector",
+          "name": "collector",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/configuration",
+          "name": "configuration",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/managedCache",
+          "name": "managedCache",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/network",
+          "name": "network",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/output",
+          "name": "output",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/ready",
+          "name": "ready",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/recovery",
+          "name": "recovery",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/selected",
+          "name": "selected",
+          "required": false,
+          "nullable": true
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/BrowserCandidateState",
+          "values": [
+            "selected",
+            "compatible",
+            "incompatible",
+            "shadowed"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserProduct",
+          "values": [
+            "chrome",
+            "chromium",
+            "edge"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSource",
+          "values": [
+            "managed",
+            "system",
+            "explicit",
+            "remote"
+          ]
+        },
+        {
+          "path": "#/$defs/ConfigProvenance",
+          "values": [
+            "flag",
+            "environment",
+            "explicit-config",
+            "profile",
+            "user-config",
+            "default"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BrowserOperationResult",
+      "schema": "browser-operation-result.schema.json",
+      "sha256": "a59fce3dc26e1f4502e44736a333cd0d24a9d9fc0546d7685254cdd3c67a8c49",
+      "fields": [
+        {
+          "path": "#/$defs/BrowserCandidate/properties/activeLeases",
+          "name": "activeLeases",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCandidate/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCandidate/properties/priority",
+          "name": "priority",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCandidate/properties/reasonCode",
+          "name": "reasonCode",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCandidate/properties/state",
+          "name": "state",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/endpoint",
+          "name": "endpoint",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/executablePath",
+          "name": "executablePath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/product",
+          "name": "product",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/protocolVersion",
+          "name": "protocolVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/revision",
+          "name": "revision",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/version",
+          "name": "version",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/action",
+          "name": "action",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/browser",
+          "name": "browser",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/properties/cacheDir",
+          "name": "cacheDir",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/candidates",
+          "name": "candidates",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/revision",
+          "name": "revision",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/BrowserAction",
+          "values": [
+            "install",
+            "list",
+            "remove"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserCandidateState",
+          "values": [
+            "selected",
+            "compatible",
+            "incompatible",
+            "shadowed"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserProduct",
+          "values": [
+            "chrome",
+            "chromium",
+            "edge"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSource",
+          "values": [
+            "managed",
+            "system",
+            "explicit",
+            "remote"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CaptureEvent",
+      "schema": "capture-event.schema.json",
+      "sha256": "8ca95d6321c960db870a281901741987c68ac746afada192afbd36545523770e",
+      "fields": [
+        {
+          "path": "#/$defs/BrowserInfo/properties/endpoint",
+          "name": "endpoint",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/executablePath",
+          "name": "executablePath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/product",
+          "name": "product",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/protocolVersion",
+          "name": "protocolVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/revision",
+          "name": "revision",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserInfo/properties/version",
+          "name": "version",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/frameId",
+          "name": "frameId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/resourceId",
+          "name": "resourceId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/details",
+          "name": "details",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/diagnosticsPath",
+          "name": "diagnosticsPath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/retryable",
+          "name": "retryable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/source",
+          "name": "source",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/stage",
+          "name": "stage",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/artifactSha256",
+          "name": "artifactSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/attemptedUrls",
+          "name": "attemptedUrls",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/frameFailures",
+          "name": "frameFailures",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/level",
+          "name": "level",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/networkRequests",
+          "name": "networkRequests",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/pageErrors",
+          "name": "pageErrors",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/passed",
+          "name": "passed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/stable",
+          "name": "stable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/0/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/0/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/1/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/1/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/1/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/10/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/10/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/11/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/11/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/11/properties/warning",
+          "name": "warning",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/12/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/12/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/12/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/13/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/13/properties/error",
+          "name": "error",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/13/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/14/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/14/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/2/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/2/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/2/properties/url",
+          "name": "url",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/3/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/3/properties/from",
+          "name": "from",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/3/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/3/properties/to",
+          "name": "to",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/3/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/4/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/4/properties/elapsed",
+          "name": "elapsed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/4/properties/milestone",
+          "name": "milestone",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/4/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/5/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/5/properties/frameId",
+          "name": "frameId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/5/properties/nodes",
+          "name": "nodes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/5/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/6/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/6/properties/resourceId",
+          "name": "resourceId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/6/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/7/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/7/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/7/properties/completed",
+          "name": "completed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/7/properties/discovered",
+          "name": "discovered",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/7/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/8/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/8/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/9/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/9/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/oneOf/9/properties/type",
+          "name": "type",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/BrowserProduct",
+          "values": [
+            "chrome",
+            "chromium",
+            "edge"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSource",
+          "values": [
+            "managed",
+            "system",
+            "explicit",
+            "remote"
+          ]
+        },
+        {
+          "path": "#/$defs/ErrorStage",
+          "values": [
+            "validation",
+            "browser",
+            "navigation",
+            "readiness",
+            "collection",
+            "resource",
+            "transform",
+            "encoding",
+            "verification",
+            "commit",
+            "shutdown",
+            "internal"
+          ]
+        },
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        },
+        {
+          "path": "#/oneOf/0/properties/type",
+          "values": [
+            "capture.started"
+          ]
+        },
+        {
+          "path": "#/oneOf/1/properties/type",
+          "values": [
+            "browser.ready"
+          ]
+        },
+        {
+          "path": "#/oneOf/10/properties/type",
+          "values": [
+            "verification.started"
+          ]
+        },
+        {
+          "path": "#/oneOf/11/properties/type",
+          "values": [
+            "warning"
+          ]
+        },
+        {
+          "path": "#/oneOf/12/properties/type",
+          "values": [
+            "capture.succeeded"
+          ]
+        },
+        {
+          "path": "#/oneOf/13/properties/type",
+          "values": [
+            "capture.failed"
+          ]
+        },
+        {
+          "path": "#/oneOf/14/properties/type",
+          "values": [
+            "capture.cancelled"
+          ]
+        },
+        {
+          "path": "#/oneOf/2/properties/type",
+          "values": [
+            "navigation.started"
+          ]
+        },
+        {
+          "path": "#/oneOf/3/properties/type",
+          "values": [
+            "navigation.redirected"
+          ]
+        },
+        {
+          "path": "#/oneOf/4/properties/type",
+          "values": [
+            "readiness.changed"
+          ]
+        },
+        {
+          "path": "#/oneOf/5/properties/type",
+          "values": [
+            "frame.collected"
+          ]
+        },
+        {
+          "path": "#/oneOf/6/properties/type",
+          "values": [
+            "resource.discovered"
+          ]
+        },
+        {
+          "path": "#/oneOf/7/properties/type",
+          "values": [
+            "resource.progress"
+          ]
+        },
+        {
+          "path": "#/oneOf/8/properties/type",
+          "values": [
+            "transform.started"
+          ]
+        },
+        {
+          "path": "#/oneOf/9/properties/type",
+          "values": [
+            "artifact.encoding"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CapturePolicy",
+      "schema": "capture-policy.schema.json",
+      "sha256": "54c5a5ec6d1e27faf59c8ab37b89825b210fc69a764e64c00e7def12fb38e06f",
+      "fields": [
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeHiddenElements",
+          "name": "removeHiddenElements",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeUnusedCss",
+          "name": "removeUnusedCss",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeUnusedFonts",
+          "name": "removeUnusedFonts",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/properties/allowedFileRoots",
+          "name": "allowedFileRoots",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/missingResources",
+          "name": "missingResources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/optimizations",
+          "name": "optimizations",
+          "required": false,
+          "nullable": false,
+          "default": {
+            "removeHiddenElements": false,
+            "removeUnusedCss": false,
+            "removeUnusedFonts": false
+          }
+        },
+        {
+          "path": "#/properties/preservePasswordValues",
+          "name": "preservePasswordValues",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/scope",
+          "name": "scope",
+          "required": false,
+          "nullable": false,
+          "default": "page"
+        },
+        {
+          "path": "#/properties/selector",
+          "name": "selector",
+          "required": false,
+          "nullable": true
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/CaptureScope",
+          "values": [
+            "page",
+            "selection"
+          ]
+        },
+        {
+          "path": "#/$defs/MissingResourcePolicy",
+          "values": [
+            "warn",
+            "fail"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CaptureRequest",
+      "schema": "capture-request.schema.json",
+      "sha256": "28a166de5b0f40b89793d0f15f44aead11bed92f9a9b0bdf6578170be78f28fe",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/options",
+          "name": "options",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/value/properties/maxBytes",
+          "name": "maxBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/domain",
+          "name": "domain",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/expires",
+          "name": "expires",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/httpOnly",
+          "name": "httpOnly",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/name",
+          "name": "name",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/path",
+          "name": "path",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/sameSite",
+          "name": "sameSite",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/secure",
+          "name": "secure",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/url",
+          "name": "url",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/colorScheme",
+          "name": "colorScheme",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/locale",
+          "name": "locale",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/reducedMotion",
+          "name": "reducedMotion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/timezone",
+          "name": "timezone",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/userAgent",
+          "name": "userAgent",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/viewport",
+          "name": "viewport",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/2/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/2/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureCredentials/properties/cookies",
+          "name": "cookies",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureCredentials/properties/headers",
+          "name": "headers",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/artifactBytes",
+          "name": "artifactBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/collectorChunkBytes",
+          "name": "collectorChunkBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/concurrentResources",
+          "name": "concurrentResources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/cssImportDepth",
+          "name": "cssImportDepth",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/duration",
+          "name": "duration",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/frameDepth",
+          "name": "frameDepth",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/frames",
+          "name": "frames",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/nodes",
+          "name": "nodes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/redirects",
+          "name": "redirects",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resourceBytes",
+          "name": "resourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/totalResourceBytes",
+          "name": "totalResourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/allowedFileRoots",
+          "name": "allowedFileRoots",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/missingResources",
+          "name": "missingResources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/optimizations",
+          "name": "optimizations",
+          "required": false,
+          "nullable": false,
+          "default": {
+            "removeHiddenElements": false,
+            "removeUnusedCss": false,
+            "removeUnusedFonts": false
+          }
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/preservePasswordValues",
+          "name": "preservePasswordValues",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/scope",
+          "name": "scope",
+          "required": false,
+          "nullable": false,
+          "default": "page"
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/selector",
+          "name": "selector",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/DiagnosticsPolicy/properties/directory",
+          "name": "directory",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/DiagnosticsPolicy/properties/screenshots",
+          "name": "screenshots",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/HtmlArtifactSpec/properties/conflict",
+          "name": "conflict",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/HtmlArtifactSpec/properties/target",
+          "name": "target",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/options",
+          "name": "options",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/2/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/rules",
+          "name": "rules",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowLinkLocal",
+          "name": "allowLinkLocal",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowLoopback",
+          "name": "allowLoopback",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowPrivate",
+          "name": "allowPrivate",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowedCidrs",
+          "name": "allowedCidrs",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowedHosts",
+          "name": "allowedHosts",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeHiddenElements",
+          "name": "removeHiddenElements",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeUnusedCss",
+          "name": "removeUnusedCss",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeUnusedFonts",
+          "name": "removeUnusedFonts",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/delay",
+          "name": "delay",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/lazyLoad",
+          "name": "lazyLoad",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/mode",
+          "name": "mode",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/mutationQuiet",
+          "name": "mutationQuiet",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/networkQuiet",
+          "name": "networkQuiet",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RequestHeader/properties/name",
+          "name": "name",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RequestHeader/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/height",
+          "name": "height",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/scale",
+          "name": "scale",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/width",
+          "name": "width",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/maxSteps",
+          "name": "maxSteps",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/settle",
+          "name": "settle",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/stepPixels",
+          "name": "stepPixels",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/artifact",
+          "name": "artifact",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/capture",
+          "name": "capture",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/credentials",
+          "name": "credentials",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/diagnostics",
+          "name": "diagnostics",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/environment",
+          "name": "environment",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/headed",
+          "name": "headed",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/properties/limits",
+          "name": "limits",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/network",
+          "name": "network",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/readiness",
+          "name": "readiness",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/url",
+          "name": "url",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/kind",
+          "values": [
+            "html"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/kind",
+          "values": [
+            "file"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/kind",
+          "values": [
+            "bytes"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/0/properties/kind",
+          "values": [
+            "auto"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/1/properties/kind",
+          "values": [
+            "executable"
+          ]
+        },
+        {
+          "path": "#/$defs/BrowserSpec/oneOf/2/properties/kind",
+          "values": [
+            "remote"
+          ]
+        },
+        {
+          "path": "#/$defs/CaptureScope",
+          "values": [
+            "page",
+            "selection"
+          ]
+        },
+        {
+          "path": "#/$defs/ColorScheme",
+          "values": [
+            "light",
+            "dark"
+          ]
+        },
+        {
+          "path": "#/$defs/ConflictPolicy",
+          "values": [
+            "fail",
+            "replace",
+            "uniquify"
+          ]
+        },
+        {
+          "path": "#/$defs/CookieSameSite",
+          "values": [
+            "strict",
+            "lax",
+            "none"
+          ]
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
+          "values": [
+            "disabled"
+          ]
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/kind",
+          "values": [
+            "viewport-sweep"
+          ]
+        },
+        {
+          "path": "#/$defs/MissingResourcePolicy",
+          "values": [
+            "warn",
+            "fail"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/0/properties/kind",
+          "values": [
+            "standard"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/1/properties/kind",
+          "values": [
+            "server"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/2/properties/kind",
+          "values": [
+            "unrestricted"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/kind",
+          "values": [
+            "custom"
+          ]
+        },
+        {
+          "path": "#/$defs/ReadinessMode",
+          "values": [
+            "render-idle",
+            "network-idle",
+            "load",
+            "dom-content-loaded"
+          ]
+        },
+        {
+          "path": "#/$defs/ReducedMotion",
+          "values": [
+            "reduce",
+            "no-preference"
+          ]
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/0/properties/kind",
+          "values": [
+            "browser-default"
+          ]
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/kind",
+          "values": [
+            "override"
+          ]
+        },
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CaptureResult",
+      "schema": "capture-result.schema.json",
+      "sha256": "c6b263705aaeedfff640638f8dee77b4b4c68d3e2fc54eeff19d70bffee0dfbd",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/path",
+          "name": "path",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/content",
+          "name": "content",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/collection",
+          "name": "collection",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/commit",
+          "name": "commit",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/encoding",
+          "name": "encoding",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/navigation",
+          "name": "navigation",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/settle",
+          "name": "settle",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/total",
+          "name": "total",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/transform",
+          "name": "transform",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/validation",
+          "name": "validation",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/frameId",
+          "name": "frameId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/resourceId",
+          "name": "resourceId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/discovered",
+          "name": "discovered",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embedded",
+          "name": "embedded",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embeddedBytes",
+          "name": "embeddedBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/external",
+          "name": "external",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/failed",
+          "name": "failed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/omitted",
+          "name": "omitted",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/finalUrl",
+          "name": "finalUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/finalUrlSha256",
+          "name": "finalUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/requestedUrl",
+          "name": "requestedUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/requestedUrlSha256",
+          "name": "requestedUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/artifactSha256",
+          "name": "artifactSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/attemptedUrls",
+          "name": "attemptedUrls",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/frameFailures",
+          "name": "frameFailures",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/level",
+          "name": "level",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/networkRequests",
+          "name": "networkRequests",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/pageErrors",
+          "name": "pageErrors",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/passed",
+          "name": "passed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/stable",
+          "name": "stable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/artifact",
+          "name": "artifact",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/timings",
+          "name": "timings",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/warnings",
+          "name": "warnings",
+          "required": false,
+          "nullable": false,
+          "default": []
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/kind",
+          "values": [
+            "file"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/kind",
+          "values": [
+            "bytes"
+          ]
+        },
+        {
+          "path": "#/$defs/CaptureTerminalStatus",
+          "values": [
+            "succeeded",
+            "cancelled",
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CrawlRequest",
+      "schema": "crawl-request.schema.json",
+      "sha256": "fd1af8e87400f7d85014b69a72f8af9df32c0660fc14301200454913ed696231",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/options",
+          "name": "options",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/value/properties/maxBytes",
+          "name": "maxBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/domain",
+          "name": "domain",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/expires",
+          "name": "expires",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/httpOnly",
+          "name": "httpOnly",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/name",
+          "name": "name",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/path",
+          "name": "path",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/sameSite",
+          "name": "sameSite",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/secure",
+          "name": "secure",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/url",
+          "name": "url",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/BrowserCookie/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/colorScheme",
+          "name": "colorScheme",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/locale",
+          "name": "locale",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/reducedMotion",
+          "name": "reducedMotion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/timezone",
+          "name": "timezone",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/userAgent",
+          "name": "userAgent",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/BrowserEnvironment/properties/viewport",
+          "name": "viewport",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureCredentials/properties/cookies",
+          "name": "cookies",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureCredentials/properties/headers",
+          "name": "headers",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/artifactBytes",
+          "name": "artifactBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/collectorChunkBytes",
+          "name": "collectorChunkBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/concurrentResources",
+          "name": "concurrentResources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/cssImportDepth",
+          "name": "cssImportDepth",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/duration",
+          "name": "duration",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/frameDepth",
+          "name": "frameDepth",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/frames",
+          "name": "frames",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/nodes",
+          "name": "nodes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/redirects",
+          "name": "redirects",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resourceBytes",
+          "name": "resourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/totalResourceBytes",
+          "name": "totalResourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/allowedFileRoots",
+          "name": "allowedFileRoots",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/missingResources",
+          "name": "missingResources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/optimizations",
+          "name": "optimizations",
+          "required": false,
+          "nullable": false,
+          "default": {
+            "removeHiddenElements": false,
+            "removeUnusedCss": false,
+            "removeUnusedFonts": false
+          }
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/preservePasswordValues",
+          "name": "preservePasswordValues",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/scope",
+          "name": "scope",
+          "required": false,
+          "nullable": false,
+          "default": "page"
+        },
+        {
+          "path": "#/$defs/CapturePolicy/properties/selector",
+          "name": "selector",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/DiagnosticsPolicy/properties/directory",
+          "name": "directory",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/DiagnosticsPolicy/properties/screenshots",
+          "name": "screenshots",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/HtmlArtifactSpec/properties/conflict",
+          "name": "conflict",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/HtmlArtifactSpec/properties/target",
+          "name": "target",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/options",
+          "name": "options",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalBrowserSpec/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalBrowserSpec/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalBrowserSpec/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/artifact",
+          "name": "artifact",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/capture",
+          "name": "capture",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/credentials",
+          "name": "credentials",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/diagnostics",
+          "name": "diagnostics",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/environment",
+          "name": "environment",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/headed",
+          "name": "headed",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/limits",
+          "name": "limits",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/network",
+          "name": "network",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/readiness",
+          "name": "readiness",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/url",
+          "name": "url",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/LocalCaptureRequest/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/2/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/rules",
+          "name": "rules",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowLinkLocal",
+          "name": "allowLinkLocal",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowLoopback",
+          "name": "allowLoopback",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowPrivate",
+          "name": "allowPrivate",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowedCidrs",
+          "name": "allowedCidrs",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/NetworkRules/properties/allowedHosts",
+          "name": "allowedHosts",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeHiddenElements",
+          "name": "removeHiddenElements",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeUnusedCss",
+          "name": "removeUnusedCss",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/OptimizationPolicy/properties/removeUnusedFonts",
+          "name": "removeUnusedFonts",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/delay",
+          "name": "delay",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/lazyLoad",
+          "name": "lazyLoad",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/mode",
+          "name": "mode",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/mutationQuiet",
+          "name": "mutationQuiet",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ReadinessPolicy/properties/networkQuiet",
+          "name": "networkQuiet",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RequestHeader/properties/name",
+          "name": "name",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/RequestHeader/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeOptions/properties/manifest",
+          "name": "manifest",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeOptions/properties/retryFailed",
+          "name": "retryFailed",
+          "required": false,
+          "nullable": false,
+          "default": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/value",
+          "name": "value",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/height",
+          "name": "height",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/scale",
+          "name": "scale",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/Viewport/properties/width",
+          "name": "width",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/maxSteps",
+          "name": "maxSteps",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/settle",
+          "name": "settle",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ViewportSweepPolicy/properties/stepPixels",
+          "name": "stepPixels",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/concurrency",
+          "name": "concurrency",
+          "required": false,
+          "nullable": false,
+          "default": 4
+        },
+        {
+          "path": "#/properties/maximumDepth",
+          "name": "maximumDepth",
+          "required": false,
+          "nullable": false,
+          "default": 3
+        },
+        {
+          "path": "#/properties/maximumPages",
+          "name": "maximumPages",
+          "required": false,
+          "nullable": false,
+          "default": 100
+        },
+        {
+          "path": "#/properties/outputDirectory",
+          "name": "outputDirectory",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/resume",
+          "name": "resume",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/properties/sameOrigin",
+          "name": "sameOrigin",
+          "required": false,
+          "nullable": false,
+          "default": true
+        },
+        {
+          "path": "#/properties/seed",
+          "name": "seed",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactSpec/oneOf/0/properties/kind",
+          "values": [
+            "html"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/0/properties/kind",
+          "values": [
+            "file"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactTarget/oneOf/1/properties/kind",
+          "values": [
+            "bytes"
+          ]
+        },
+        {
+          "path": "#/$defs/CaptureScope",
+          "values": [
+            "page",
+            "selection"
+          ]
+        },
+        {
+          "path": "#/$defs/ColorScheme",
+          "values": [
+            "light",
+            "dark"
+          ]
+        },
+        {
+          "path": "#/$defs/ConflictPolicy",
+          "values": [
+            "fail",
+            "replace",
+            "uniquify"
+          ]
+        },
+        {
+          "path": "#/$defs/CookieSameSite",
+          "values": [
+            "strict",
+            "lax",
+            "none"
+          ]
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
+          "values": [
+            "disabled"
+          ]
+        },
+        {
+          "path": "#/$defs/LazyLoadPolicy/oneOf/1/properties/kind",
+          "values": [
+            "viewport-sweep"
+          ]
+        },
+        {
+          "path": "#/$defs/LocalBrowserSpec/oneOf/0/properties/kind",
+          "values": [
+            "auto"
+          ]
+        },
+        {
+          "path": "#/$defs/LocalBrowserSpec/oneOf/1/properties/kind",
+          "values": [
+            "executable"
+          ]
+        },
+        {
+          "path": "#/$defs/MissingResourcePolicy",
+          "values": [
+            "warn",
+            "fail"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/0/properties/kind",
+          "values": [
+            "standard"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/1/properties/kind",
+          "values": [
+            "server"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/2/properties/kind",
+          "values": [
+            "unrestricted"
+          ]
+        },
+        {
+          "path": "#/$defs/NetworkPolicy/oneOf/3/properties/kind",
+          "values": [
+            "custom"
+          ]
+        },
+        {
+          "path": "#/$defs/ReadinessMode",
+          "values": [
+            "render-idle",
+            "network-idle",
+            "load",
+            "dom-content-loaded"
+          ]
+        },
+        {
+          "path": "#/$defs/ReducedMotion",
+          "values": [
+            "reduce",
+            "no-preference"
+          ]
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/0/properties/kind",
+          "values": [
+            "browser-default"
+          ]
+        },
+        {
+          "path": "#/$defs/UserAgentPolicy/oneOf/1/properties/kind",
+          "values": [
+            "override"
+          ]
+        },
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "CrawlResult",
+      "schema": "crawl-result.schema.json",
+      "sha256": "130a659240849cb22aef30961755083a24ea50b76e34b9121c45705eb1b23025",
+      "fields": [
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/path",
+          "name": "path",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/content",
+          "name": "content",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/sha256",
+          "name": "sha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/artifact",
+          "name": "artifact",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/captureId",
+          "name": "captureId",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/source",
+          "name": "source",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/timings",
+          "name": "timings",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureResult/properties/warnings",
+          "name": "warnings",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/browser",
+          "name": "browser",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/collection",
+          "name": "collection",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/commit",
+          "name": "commit",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/encoding",
+          "name": "encoding",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/navigation",
+          "name": "navigation",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/resources",
+          "name": "resources",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/settle",
+          "name": "settle",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/total",
+          "name": "total",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/transform",
+          "name": "transform",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/validation",
+          "name": "validation",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureTimings/properties/verification",
+          "name": "verification",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/frameId",
+          "name": "frameId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureWarning/properties/resourceId",
+          "name": "resourceId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/CrawlPageOutcome/properties/capture",
+          "name": "capture",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CrawlPageOutcome/properties/depth",
+          "name": "depth",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CrawlPageOutcome/properties/ordinal",
+          "name": "ordinal",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CrawlPageOutcome/properties/url",
+          "name": "url",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/details",
+          "name": "details",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/diagnosticsPath",
+          "name": "diagnosticsPath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/retryable",
+          "name": "retryable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/source",
+          "name": "source",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/stage",
+          "name": "stage",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/discovered",
+          "name": "discovered",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embedded",
+          "name": "embedded",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/embeddedBytes",
+          "name": "embeddedBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/external",
+          "name": "external",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/failed",
+          "name": "failed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResourceSummary/properties/omitted",
+          "name": "omitted",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/artifactPath",
+          "name": "artifactPath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/artifactSha256",
+          "name": "artifactSha256",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/captureId",
+          "name": "captureId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/depth",
+          "name": "depth",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/error",
+          "name": "error",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/ordinal",
+          "name": "ordinal",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/requestSha256",
+          "name": "requestSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/url",
+          "name": "url",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/id",
+          "name": "id",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/requestSha256",
+          "name": "requestSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/result",
+          "name": "result",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/error",
+          "name": "error",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/id",
+          "name": "id",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/requestSha256",
+          "name": "requestSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/2/properties/id",
+          "name": "id",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/2/properties/record",
+          "name": "record",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/2/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/finalUrl",
+          "name": "finalUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/finalUrlSha256",
+          "name": "finalUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/requestedUrl",
+          "name": "requestedUrl",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/SourceSummary/properties/requestedUrlSha256",
+          "name": "requestedUrlSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/artifactSha256",
+          "name": "artifactSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/attemptedUrls",
+          "name": "attemptedUrls",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/frameFailures",
+          "name": "frameFailures",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/level",
+          "name": "level",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/networkRequests",
+          "name": "networkRequests",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/pageErrors",
+          "name": "pageErrors",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/passed",
+          "name": "passed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/VerificationResult/properties/stable",
+          "name": "stable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/failed",
+          "name": "failed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/outcomes",
+          "name": "outcomes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/planSha256",
+          "name": "planSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/resumed",
+          "name": "resumed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/succeeded",
+          "name": "succeeded",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/0/properties/kind",
+          "values": [
+            "file"
+          ]
+        },
+        {
+          "path": "#/$defs/ArtifactResult/oneOf/1/properties/kind",
+          "values": [
+            "bytes"
+          ]
+        },
+        {
+          "path": "#/$defs/CaptureTerminalStatus",
+          "values": [
+            "succeeded",
+            "cancelled",
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/ErrorStage",
+          "values": [
+            "validation",
+            "browser",
+            "navigation",
+            "readiness",
+            "collection",
+            "resource",
+            "transform",
+            "encoding",
+            "verification",
+            "commit",
+            "shutdown",
+            "internal"
+          ]
+        },
+        {
+          "path": "#/$defs/ResumeJobStatus",
+          "values": [
+            "succeeded",
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/0/properties/status",
+          "values": [
+            "succeeded"
+          ]
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/1/properties/status",
+          "values": [
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/ScheduledCaptureOutcome/oneOf/2/properties/status",
+          "values": [
+            "resumed"
+          ]
+        },
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "PageKnotErrorRecord",
+      "schema": "error.schema.json",
+      "sha256": "4eb64aeb5e08a540511a3d1e3547be5ebab1f3a803e41c83c1f0070110cebf34",
+      "fields": [
+        {
+          "path": "#/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/details",
+          "name": "details",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/diagnosticsPath",
+          "name": "diagnosticsPath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/retryable",
+          "name": "retryable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/source",
+          "name": "source",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/properties/stage",
+          "name": "stage",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ErrorStage",
+          "values": [
+            "validation",
+            "browser",
+            "navigation",
+            "readiness",
+            "collection",
+            "resource",
+            "transform",
+            "encoding",
+            "verification",
+            "commit",
+            "shutdown",
+            "internal"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ResumeManifest",
+      "schema": "resume-manifest.schema.json",
+      "sha256": "9f56627796ee181ee6be155dce08a8f5783a2ff500b80890f01d380fcd548a3f",
+      "fields": [
+        {
+          "path": "#/$defs/CrawlFrontierItem/properties/depth",
+          "name": "depth",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CrawlFrontierItem/properties/ordinal",
+          "name": "ordinal",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CrawlFrontierItem/properties/url",
+          "name": "url",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/code",
+          "name": "code",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/details",
+          "name": "details",
+          "required": false,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/diagnosticsPath",
+          "name": "diagnosticsPath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/message",
+          "name": "message",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/retryable",
+          "name": "retryable",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/source",
+          "name": "source",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/PageKnotError/properties/stage",
+          "name": "stage",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/artifactPath",
+          "name": "artifactPath",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/artifactSha256",
+          "name": "artifactSha256",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/captureId",
+          "name": "captureId",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/depth",
+          "name": "depth",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/error",
+          "name": "error",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/ordinal",
+          "name": "ordinal",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/requestSha256",
+          "name": "requestSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/status",
+          "name": "status",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/ResumeJobRecord/properties/url",
+          "name": "url",
+          "required": false,
+          "nullable": true
+        },
+        {
+          "path": "#/properties/frontier",
+          "name": "frontier",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/jobs",
+          "name": "jobs",
+          "required": false,
+          "nullable": false,
+          "default": {}
+        },
+        {
+          "path": "#/properties/kind",
+          "name": "kind",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/pending",
+          "name": "pending",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/planSha256",
+          "name": "planSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/ErrorStage",
+          "values": [
+            "validation",
+            "browser",
+            "navigation",
+            "readiness",
+            "collection",
+            "resource",
+            "transform",
+            "encoding",
+            "verification",
+            "commit",
+            "shutdown",
+            "internal"
+          ]
+        },
+        {
+          "path": "#/$defs/ResumeJobStatus",
+          "values": [
+            "succeeded",
+            "failed"
+          ]
+        },
+        {
+          "path": "#/$defs/ScheduleKind",
+          "values": [
+            "batch",
+            "crawl"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "VerificationResult",
+      "schema": "verification-result.schema.json",
+      "sha256": "6a5483016b7f34e047e28b9d40854af8e66ac63c31e8b2ae5e94761dec665834",
+      "fields": [
+        {
+          "path": "#/properties/artifactSha256",
+          "name": "artifactSha256",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/attemptedUrls",
+          "name": "attemptedUrls",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/bytes",
+          "name": "bytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/frameFailures",
+          "name": "frameFailures",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/level",
+          "name": "level",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/networkRequests",
+          "name": "networkRequests",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/pageErrors",
+          "name": "pageErrors",
+          "required": false,
+          "nullable": false,
+          "default": []
+        },
+        {
+          "path": "#/properties/passed",
+          "name": "passed",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/schemaVersion",
+          "name": "schemaVersion",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/properties/stable",
+          "name": "stable",
+          "required": true,
+          "nullable": false
+        }
+      ],
+      "enums": [
+        {
+          "path": "#/$defs/VerificationPolicy",
+          "values": [
+            "static",
+            "offline"
+          ]
+        }
+      ]
+    }
+  ]
+}

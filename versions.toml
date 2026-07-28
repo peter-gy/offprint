@@ -1,0 +1,25 @@
+product = "0.1.0"
+artifact_format = 1
+public_schema = 1
+collector_protocol = "1.5"
+collector_bundle = 1
+
+[rust]
+toolchain = "1.97.0"
+edition = "2024"
+
+[chromium]
+cdp_revision = "58bb3629dd105e4aae45f3e308cfd1564bdde91b"
+cdp_chromium_revision = "1591961"
+browser_protocol_sha256 = "bb10379f95d76f9c423f68039df3bc996b8ae26563434a4d66e1bb0ae90300c8"
+js_protocol_sha256 = "5a54a335617a0ff088c22f8d7a39ee7616ebdba3eb982ebf4e6b1869239e60f5"
+managed_catalog = "2026-07-27"
+managed_revision = "1654411"
+managed_version = "151.0.7922.47"
+
+[chromium.managed_sha256]
+linux64 = "14ac03a67e154e3f8bbc57e03ef03315fda8fedff8e045eee8b31500283a33f4"
+mac_arm64 = "9529990b6afd9867a862c7a5bff2a4a8eef84614d910acac22e4c5fa5c24daee"
+mac_x64 = "90f49258b8929867640ca59cf138191d25b4b34759e1509687e59a66be9ac99b"
+win32 = "ce6a808b65afc47c4ed2b4fbbd17409832636fe864a359a26157cb4cb828f6b5"
+win64 = "fc77bb98b550b7da23b14edfa282b59a022e7fdb075ac7625d2a5152ceb22396"

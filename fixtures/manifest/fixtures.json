@@ -1,0 +1,997 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "id": "static-article",
+      "group": "resources",
+      "summary": "Captures an article with a stylesheet, font, and responsive image.",
+      "required": true,
+      "capabilities": [
+        "static-article",
+        "font-loading",
+        "responsive-images"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "static_article_with_font_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "script-rendered-document",
+      "group": "browser-state",
+      "summary": "Preserves nodes and text created by page scripts before collection.",
+      "required": true,
+      "capabilities": [
+        "script-rendered-document"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "dom-mutation-settling",
+      "group": "browser-state",
+      "summary": "Waits for a bounded sequence of DOM mutations to become quiet.",
+      "required": true,
+      "capabilities": [
+        "dom-mutation-settling"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "lazy-images",
+      "group": "resources",
+      "summary": "Loads images reached by the configured viewport sweep.",
+      "required": true,
+      "capabilities": [
+        "lazy-images"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "responsive-images",
+      "group": "resources",
+      "summary": "Embeds the image selected by Chromium for the capture viewport.",
+      "required": true,
+      "capabilities": [
+        "responsive-images"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "open-shadow-root",
+      "group": "browser-state",
+      "summary": "Materializes an observed open shadow root into the artifact.",
+      "required": true,
+      "capabilities": [
+        "open-shadow-root"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "closed-shadow-root",
+      "group": "browser-state",
+      "summary": "Materializes a closed shadow root observed by the document-start hook.",
+      "required": true,
+      "capabilities": [
+        "closed-shadow-root"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "adopted-stylesheet",
+      "group": "browser-state",
+      "summary": "Preserves rules from a constructable stylesheet adopted by a shadow root.",
+      "required": true,
+      "capabilities": [
+        "adopted-stylesheet"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "same-origin-iframe",
+      "group": "frames",
+      "summary": "Embeds a same-origin frame with its rendered state and resources.",
+      "required": true,
+      "capabilities": [
+        "same-origin-frame"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "frame_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "cross-origin-oopif",
+      "group": "frames",
+      "summary": "Embeds an out-of-process frame through its attached CDP session.",
+      "required": true,
+      "capabilities": [
+        "cross-origin-frame"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "frame_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "srcdoc-frame",
+      "group": "frames",
+      "summary": "Embeds a srcdoc frame and resolves its resource base against the parent.",
+      "required": true,
+      "capabilities": [
+        "srcdoc-frame"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "frame_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "sandboxed-iframe",
+      "group": "frames",
+      "summary": "Preserves rendered sandboxed-frame content under an opaque origin.",
+      "required": true,
+      "capabilities": [
+        "sandboxed-frame"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "frame_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "canvas-2d",
+      "group": "browser-state",
+      "summary": "Preserves the visible pixels of a two-dimensional canvas.",
+      "required": true,
+      "capabilities": [
+        "canvas"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "tainted-canvas",
+      "group": "browser-state",
+      "summary": "Uses a clipped browser screenshot when canvas pixels cannot be read.",
+      "required": true,
+      "capabilities": [
+        "tainted-canvas"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "capture_regressions",
+        "filter": "tainted_canvas_uses_a_clipped_browser_fallback",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "webgl-canvas",
+      "group": "browser-state",
+      "summary": "Preserves pixels rendered by a WebGL context.",
+      "required": true,
+      "capabilities": [
+        "web-gl-canvas"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "form-state",
+      "group": "browser-state",
+      "summary": "Preserves current input, selection, option, and disclosure state.",
+      "required": true,
+      "capabilities": [
+        "form-state"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "rendered-view-state",
+      "group": "browser-state",
+      "summary": "Reopens scroll positions and paused animation state across light and shadow trees.",
+      "required": true,
+      "capabilities": [
+        "rendered-view-state",
+        "open-shadow-root",
+        "closed-shadow-root"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "rendered_state_reopens_across_light_and_shadow_trees",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "selection-optimization",
+      "group": "artifact",
+      "summary": "Preserves visible output while selection scope and output optimizations reshape the artifact.",
+      "required": true,
+      "capabilities": [
+        "selection-scope",
+        "optimization-policy"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "visible-output-preserved",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "selection_and_optimizers_preserve_visible_output",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "css-imports",
+      "group": "resources",
+      "summary": "Resolves nested CSS imports and their render-affecting resources.",
+      "required": true,
+      "capabilities": [
+        "css-imports"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "resource_graph_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "css-import-cycle",
+      "group": "resources",
+      "summary": "Terminates a cyclic CSS import graph with one outcome per reference.",
+      "required": true,
+      "capabilities": [
+        "css-import-cycle"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "resource_graph_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "font-loading",
+      "group": "resources",
+      "summary": "Waits for the document font set and embeds the selected font bytes.",
+      "required": true,
+      "capabilities": [
+        "font-loading"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "static_article_with_font_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "blob-resource",
+      "group": "resources",
+      "summary": "Preserves a render-affecting resource addressed by a blob URL.",
+      "required": true,
+      "capabilities": [
+        "blob-resource"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "data-resource",
+      "group": "resources",
+      "summary": "Preserves an inline data URL without a network request.",
+      "required": true,
+      "capabilities": [
+        "data-resource"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "svg-resource-graph",
+      "group": "resources",
+      "summary": "Embeds resources referenced from an SVG document.",
+      "required": true,
+      "capabilities": [
+        "svg-resource-graph"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "resource_graph_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "video-poster",
+      "group": "browser-state",
+      "summary": "Preserves a video poster and the selected media presentation state.",
+      "required": true,
+      "capabilities": [
+        "video-poster"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "malformed-dom-nesting",
+      "group": "artifact",
+      "summary": "Repairs browser-owned DOM nesting that changes during HTML parsing.",
+      "required": true,
+      "capabilities": [
+        "malformed-dom-nesting"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "capture_regressions",
+        "filter": "malformed_browser_dom_reopens_with_the_observed_tree",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "permanent-network-activity",
+      "group": "network",
+      "summary": "Settles while WebSocket and EventSource connections remain open.",
+      "required": true,
+      "capabilities": [
+        "permanent-network-activity",
+        "web-socket",
+        "event-source"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "permanent_connections_do_not_block_render_idle",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "navigation-timeout",
+      "group": "lifecycle",
+      "summary": "Returns a typed timeout when navigation exceeds its deadline.",
+      "required": true,
+      "capabilities": [
+        "navigation-timeout",
+        "slow-response"
+      ],
+      "expectations": [
+        "typed-failure"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "navigation_deadline_returns_a_typed_timeout",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "browser-crash",
+      "group": "lifecycle",
+      "summary": "Returns a typed crash and starts the next capture in a healthy browser.",
+      "required": true,
+      "capabilities": [
+        "browser-crash"
+      ],
+      "expectations": [
+        "typed-failure",
+        "process-recovers"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "filter": "runtime::tests::local_browser_restarts_after_its_process_tree_crashes",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "browser-job-recycling",
+      "group": "lifecycle",
+      "summary": "Replaces the managed browser after the configured completed-job threshold.",
+      "required": true,
+      "capabilities": [
+        "browser-job-recycling"
+      ],
+      "expectations": [
+        "process-recycles"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "filter": "runtime::tests::local_browser_recycles_after_the_configured_job_threshold",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "frame-detachment",
+      "group": "frames",
+      "summary": "Records a frame that detaches after attachment and before collection.",
+      "required": true,
+      "capabilities": [
+        "frame-detachment"
+      ],
+      "expectations": [
+        "typed-failure"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "capture_regressions",
+        "filter": "detached_oopif_returns_a_typed_frame_outcome",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "cancellation-every-stage",
+      "group": "lifecycle",
+      "summary": "Cancels each pipeline stage and releases every owned resource.",
+      "required": true,
+      "capabilities": [
+        "stage-cancellation"
+      ],
+      "expectations": [
+        "typed-failure",
+        "destination-unchanged"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "cancellation_rolls_back_every_pipeline_stage",
+        "ignored": true,
+        "serial": true
+      },
+      "variants": [
+        "validating",
+        "waiting-for-browser",
+        "navigating",
+        "settling",
+        "collecting",
+        "resolving-resources",
+        "transforming",
+        "encoding",
+        "verifying",
+        "committing"
+      ]
+    },
+    {
+      "id": "explicit-output-conflict",
+      "group": "artifact",
+      "summary": "Leaves an existing destination unchanged when conflict policy is fail.",
+      "required": true,
+      "capabilities": [
+        "explicit-output-conflict"
+      ],
+      "expectations": [
+        "typed-failure",
+        "destination-unchanged"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "explicit_output_conflict_preserves_the_destination",
+        "ignored": false,
+        "serial": true
+      }
+    },
+    {
+      "id": "atomic-replacement",
+      "group": "artifact",
+      "summary": "Commits a verified staging artifact as one destination replacement.",
+      "required": true,
+      "capabilities": [
+        "atomic-replace"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "atomic_replacement_commits_the_verified_artifact",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "cli-committed-path",
+      "group": "artifact",
+      "summary": "Writes the committed artifact path to command standard output.",
+      "required": true,
+      "capabilities": [
+        "cli-capture-output",
+        "atomic-replace"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "committed-path-reported"
+      ],
+      "runner": {
+        "package": "pageknot-cli",
+        "filter": "runner::tests::capture_writes_the_committed_path_to_stdout",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "cli-interrupted-capture",
+      "group": "lifecycle",
+      "summary": "Cancels an interrupted command, preserves its destination, and redacts progress diagnostics.",
+      "required": true,
+      "capabilities": [
+        "cli-interrupt",
+        "diagnostic-redaction",
+        "stage-cancellation"
+      ],
+      "expectations": [
+        "typed-failure",
+        "destination-unchanged",
+        "secrets-redacted"
+      ],
+      "runner": {
+        "package": "pageknot-cli",
+        "filter": "runner::tests::interrupted_capture_preserves_the_existing_destination_and_redacts_progress",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "network-denied-reopen",
+      "group": "artifact",
+      "summary": "Reopens the saved artifact in a browser with network access denied.",
+      "required": true,
+      "capabilities": [
+        "offline-reopen",
+        "content-security-policy"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "browser_state_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "redirect-chain",
+      "group": "network",
+      "summary": "Validates each redirect destination and records the final response provenance.",
+      "required": true,
+      "capabilities": [
+        "redirects"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "request_policy_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "request-credentials",
+      "group": "network",
+      "summary": "Applies scoped cookies and headers before the first navigation request.",
+      "required": true,
+      "capabilities": [
+        "cookies",
+        "header-validation",
+        "authentication"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "request_policy_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "referrer-sensitive-response",
+      "group": "network",
+      "summary": "Captures the response variant selected by the browser referrer.",
+      "required": true,
+      "capabilities": [
+        "referrer-sensitive-response"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "request_policy_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "service-worker-resource",
+      "group": "network",
+      "summary": "Captures a render-affecting response supplied by a service worker.",
+      "required": true,
+      "capabilities": [
+        "service-worker"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "service_worker_response_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "partial-response",
+      "group": "network",
+      "summary": "Records a resource response that closes before its declared length.",
+      "required": true,
+      "capabilities": [
+        "partial-response"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "partial_resource_has_a_typed_outcome",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "compressed-response",
+      "group": "network",
+      "summary": "Captures a gzip-compressed resource through Chromium response handling.",
+      "required": true,
+      "capabilities": [
+        "compression"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "request_policy_fixture_round_trips",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "oversized-payload",
+      "group": "lifecycle",
+      "summary": "Stops before a payload exceeds the configured resource byte limit.",
+      "required": true,
+      "capabilities": [
+        "oversized-payload"
+      ],
+      "expectations": [
+        "typed-failure"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "oversized_resource_fails_before_artifact_commit",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "cache-variation",
+      "group": "network",
+      "summary": "Keeps response variants distinct when request metadata changes their bytes.",
+      "required": true,
+      "capabilities": [
+        "cache-variation"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "capture_regressions",
+        "filter": "request_variants_keep_distinct_resource_bytes",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "dns-address-policy",
+      "group": "network",
+      "summary": "Applies address policy to resolved hosts and redirect destinations.",
+      "required": true,
+      "capabilities": [
+        "dns-address-policy",
+        "multiple-origins"
+      ],
+      "expectations": [
+        "typed-failure"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "capture_regressions",
+        "filter": "redirect_address_policy_rejects_a_disallowed_host",
+        "ignored": true,
+        "serial": true
+      }
+    }
+  ]
+}

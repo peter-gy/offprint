@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "name": "Datawrapper article corpus",
+  "source": "gildas-lormeau/SingleFile datawrapper-posts",
+  "sourceRevision": "7d556e71fa3a700d833116f77d31a8b9c3669643",
+  "entries": [
+    {
+      "id": "fewer-colors",
+      "url": "https://www.datawrapper.de/blog/10-ways-to-use-fewer-colors-in-your-data-visualizations"
+    },
+    {
+      "id": "area-charts",
+      "url": "https://www.datawrapper.de/blog/area-charts"
+    },
+    {
+      "id": "better-charts",
+      "url": "https://www.datawrapper.de/blog/better-charts"
+    },
+    {
+      "id": "chart-types-guide",
+      "url": "https://www.datawrapper.de/blog/chart-types-guide"
+    },
+    {
+      "id": "choropleth-maps",
+      "url": "https://www.datawrapper.de/blog/choroplethmaps"
+    },
+    {
+      "id": "classed-color-scales",
+      "url": "https://www.datawrapper.de/blog/classed-vs-unclassed-color-scales"
+    },
+    {
+      "id": "color-keys",
+      "url": "https://www.datawrapper.de/blog/color-keys-for-data-visualizations"
+    },
+    {
+      "id": "colorblindness",
+      "url": "https://www.datawrapper.de/blog/colorblindness-part2"
+    },
+    {
+      "id": "color-guide",
+      "url": "https://www.datawrapper.de/blog/colorguide"
+    },
+    {
+      "id": "colors",
+      "url": "https://www.datawrapper.de/blog/colors"
+    },
+    {
+      "id": "race-ethnicity-colors",
+      "url": "https://www.datawrapper.de/blog/colors-for-race-ethnicity-world-regions"
+    },
+    {
+      "id": "color-palettes",
+      "url": "https://www.datawrapper.de/blog/create-good-color-palettes"
+    },
+    {
+      "id": "german-election",
+      "url": "https://www.datawrapper.de/blog/data-visualizations-german-election-2021-with-datawrapper"
+    },
+    {
+      "id": "diverging-color-scales",
+      "url": "https://www.datawrapper.de/blog/diverging-vs-sequential-color-scales"
+    },
+    {
+      "id": "dual-axis-charts",
+      "url": "https://www.datawrapper.de/blog/dual-axis-charts-guide"
+    },
+    {
+      "id": "emphasize-with-color",
+      "url": "https://www.datawrapper.de/blog/emphasize-with-color-in-data-visualizations"
+    },
+    {
+      "id": "visualization-fonts",
+      "url": "https://www.datawrapper.de/blog/fonts-for-data-visualization"
+    },
+    {
+      "id": "gender-colors",
+      "url": "https://www.datawrapper.de/blog/gendercolor"
+    },
+    {
+      "id": "table-guide",
+      "url": "https://www.datawrapper.de/blog/guide-what-to-consider-when-creating-tables"
+    },
+    {
+      "id": "color-interpolation",
+      "url": "https://www.datawrapper.de/blog/interpolation-for-color-scales-and-maps"
+    },
+    {
+      "id": "line-charts",
+      "url": "https://www.datawrapper.de/blog/line-charts"
+    },
+    {
+      "id": "party-colors",
+      "url": "https://www.datawrapper.de/blog/partycolors"
+    },
+    {
+      "id": "pie-charts",
+      "url": "https://www.datawrapper.de/blog/pie-charts"
+    },
+    {
+      "id": "qualitative-color-scales",
+      "url": "https://www.datawrapper.de/blog/quantitative-vs-qualitative-color-scales"
+    },
+    {
+      "id": "reader-time",
+      "url": "https://www.datawrapper.de/blog/readers-time"
+    },
+    {
+      "id": "remind-readers-of-colors",
+      "url": "https://www.datawrapper.de/blog/remind-readers-of-colors-in-data-vis"
+    },
+    {
+      "id": "stacked-column-charts",
+      "url": "https://www.datawrapper.de/blog/stacked-column-charts"
+    },
+    {
+      "id": "visualization-text",
+      "url": "https://www.datawrapper.de/blog/text-in-data-visualizations"
+    },
+    {
+      "id": "election-polls",
+      "url": "https://www.datawrapper.de/blog/visualizing-election-polls"
+    },
+    {
+      "id": "waterfall-charts",
+      "url": "https://www.datawrapper.de/blog/waterfall-charts-guide"
+    },
+    {
+      "id": "small-multiple-lines",
+      "url": "https://www.datawrapper.de/blog/what-to-consider-when-creating-small-multiple-line-charts"
+    },
+    {
+      "id": "choose-color-scale",
+      "url": "https://www.datawrapper.de/blog/which-color-scale-to-use-in-data-vis"
+    }
+  ]
+}

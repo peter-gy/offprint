@@ -1,0 +1,555 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CaptureEvent",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "capture.started"
+        }
+      },
+      "required": [
+        "type",
+        "captureId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "browser": {
+          "$ref": "#/$defs/BrowserInfo"
+        },
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "browser.ready"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "browser"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "navigation.started"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "url"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "status": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "to": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "navigation.redirected"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "from",
+        "to",
+        "status"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "elapsed": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "milestone": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "readiness.changed"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "milestone",
+        "elapsed"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "frameId": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "nodes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string",
+          "const": "frame.collected"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "frameId",
+        "nodes"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "resourceId": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string",
+          "const": "resource.discovered"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "resourceId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "bytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "captureId": {
+          "type": "string"
+        },
+        "completed": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "discovered": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "type": {
+          "type": "string",
+          "const": "resource.progress"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "completed",
+        "discovered",
+        "bytes"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "transform.started"
+        }
+      },
+      "required": [
+        "type",
+        "captureId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "bytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "artifact.encoding"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "bytes"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "verification.started"
+        }
+      },
+      "required": [
+        "type",
+        "captureId"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "warning"
+        },
+        "warning": {
+          "$ref": "#/$defs/CaptureWarning"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "warning"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "capture.succeeded"
+        },
+        "verification": {
+          "$ref": "#/$defs/VerificationResult"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "verification"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "error": {
+          "$ref": "#/$defs/PageKnotError"
+        },
+        "type": {
+          "type": "string",
+          "const": "capture.failed"
+        }
+      },
+      "required": [
+        "type",
+        "captureId",
+        "error"
+      ]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "const": "capture.cancelled"
+        }
+      },
+      "required": [
+        "type",
+        "captureId"
+      ]
+    }
+  ],
+  "$defs": {
+    "BrowserInfo": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executablePath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "product": {
+          "$ref": "#/$defs/BrowserProduct"
+        },
+        "protocolVersion": {
+          "type": "string"
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/BrowserSource"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product",
+        "version",
+        "source",
+        "protocolVersion"
+      ]
+    },
+    "BrowserProduct": {
+      "type": "string",
+      "enum": [
+        "chrome",
+        "chromium",
+        "edge"
+      ]
+    },
+    "BrowserSource": {
+      "type": "string",
+      "enum": [
+        "managed",
+        "system",
+        "explicit",
+        "remote"
+      ]
+    },
+    "CaptureWarning": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "frameId": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "message": {
+          "type": "string"
+        },
+        "resourceId": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "ErrorStage": {
+      "type": "string",
+      "enum": [
+        "validation",
+        "browser",
+        "navigation",
+        "readiness",
+        "collection",
+        "resource",
+        "transform",
+        "encoding",
+        "verification",
+        "commit",
+        "shutdown",
+        "internal"
+      ]
+    },
+    "PageKnotError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "diagnosticsPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageKnotError"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stage": {
+          "$ref": "#/$defs/ErrorStage"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "stage",
+        "retryable"
+      ]
+    },
+    "VerificationPolicy": {
+      "type": "string",
+      "enum": [
+        "static",
+        "offline"
+      ]
+    },
+    "VerificationResult": {
+      "type": "object",
+      "properties": {
+        "artifactSha256": {
+          "type": "string"
+        },
+        "attemptedUrls": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "bytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "frameFailures": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          }
+        },
+        "level": {
+          "$ref": "#/$defs/VerificationPolicy"
+        },
+        "networkRequests": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "pageErrors": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "stable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "level",
+        "passed",
+        "artifactSha256",
+        "bytes",
+        "networkRequests",
+        "stable"
+      ]
+    }
+  }
+}

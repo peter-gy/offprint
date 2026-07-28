@@ -1,0 +1,76 @@
+{
+  "artifact": {
+    "kind": "html",
+    "options": {
+      "conflict": "replace",
+      "target": {
+        "kind": "file",
+        "value": "example.html"
+      }
+    }
+  },
+  "browser": {
+    "kind": "auto"
+  },
+  "capture": {
+    "allowedFileRoots": [],
+    "missingResources": "warn",
+    "optimizations": {
+      "removeHiddenElements": false,
+      "removeUnusedCss": false,
+      "removeUnusedFonts": false
+    },
+    "preservePasswordValues": false,
+    "scope": "page"
+  },
+  "diagnostics": {
+    "screenshots": false
+  },
+  "environment": {
+    "colorScheme": "light",
+    "locale": "en-US",
+    "reducedMotion": "reduce",
+    "timezone": "UTC",
+    "userAgent": {
+      "kind": "browser-default"
+    },
+    "viewport": {
+      "height": 900,
+      "scale": 1,
+      "width": 1440
+    }
+  },
+  "limits": {
+    "artifactBytes": 67108864,
+    "collectorChunkBytes": 1048576,
+    "concurrentResources": 8,
+    "cssImportDepth": 64,
+    "duration": 120000,
+    "frameDepth": 64,
+    "frames": 256,
+    "nodes": 1000000,
+    "redirects": 20,
+    "resourceBytes": 67108864,
+    "resources": 10000,
+    "totalResourceBytes": 536870912
+  },
+  "network": {
+    "kind": "standard"
+  },
+  "readiness": {
+    "delay": 0,
+    "lazyLoad": {
+      "kind": "viewport-sweep",
+      "options": {
+        "maxSteps": 100,
+        "settle": 100,
+        "stepPixels": 720
+      }
+    },
+    "mode": "render-idle",
+    "mutationQuiet": 300,
+    "networkQuiet": 500
+  },
+  "url": "https://example.com/",
+  "verification": "offline"
+}

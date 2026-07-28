@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FixtureManifest",
+  "type": "object",
+  "properties": {
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FixtureDefinition"
+      }
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "fixtures"
+  ],
+  "$defs": {
+    "FixtureCapability": {
+      "type": "string",
+      "enum": [
+        "adopted-stylesheet",
+        "atomic-replace",
+        "authentication",
+        "blob-resource",
+        "browser-crash",
+        "browser-job-recycling",
+        "cache-variation",
+        "canvas",
+        "closed-shadow-root",
+        "cli-capture-output",
+        "cli-interrupt",
+        "compression",
+        "content-security-policy",
+        "cookies",
+        "cross-origin-frame",
+        "css-import-cycle",
+        "css-imports",
+        "data-resource",
+        "diagnostic-redaction",
+        "dns-address-policy",
+        "dom-mutation-settling",
+        "event-source",
+        "explicit-output-conflict",
+        "font-loading",
+        "form-state",
+        "frame-detachment",
+        "header-validation",
+        "lazy-images",
+        "malformed-dom-nesting",
+        "multiple-origins",
+        "navigation-timeout",
+        "offline-reopen",
+        "open-shadow-root",
+        "optimization-policy",
+        "oversized-payload",
+        "partial-response",
+        "permanent-network-activity",
+        "redirects",
+        "referrer-sensitive-response",
+        "rendered-view-state",
+        "responsive-images",
+        "same-origin-frame",
+        "sandboxed-frame",
+        "script-rendered-document",
+        "service-worker",
+        "selection-scope",
+        "slow-response",
+        "srcdoc-frame",
+        "stage-cancellation",
+        "static-article",
+        "svg-resource-graph",
+        "tainted-canvas",
+        "video-poster",
+        "web-gl-canvas",
+        "web-socket"
+      ]
+    },
+    "FixtureDefinition": {
+      "type": "object",
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FixtureCapability"
+          }
+        },
+        "expectations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/FixtureExpectation"
+          }
+        },
+        "group": {
+          "$ref": "#/$defs/FixtureGroup"
+        },
+        "id": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "runner": {
+          "$ref": "#/$defs/FixtureRunner"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "group",
+        "summary",
+        "required",
+        "capabilities",
+        "expectations",
+        "runner"
+      ]
+    },
+    "FixtureExpectation": {
+      "type": "string",
+      "enum": [
+        "artifact-state-round-trips",
+        "capture-succeeds",
+        "committed-path-reported",
+        "destination-unchanged",
+        "every-resource-has-outcome",
+        "process-recovers",
+        "process-recycles",
+        "secrets-redacted",
+        "typed-failure",
+        "visible-output-preserved",
+        "zero-external-requests"
+      ]
+    },
+    "FixtureGroup": {
+      "type": "string",
+      "enum": [
+        "artifact",
+        "browser-state",
+        "frames",
+        "lifecycle",
+        "network",
+        "resources"
+      ]
+    },
+    "FixtureRunner": {
+      "type": "object",
+      "properties": {
+        "filter": {
+          "type": "string"
+        },
+        "ignored": {
+          "type": "boolean"
+        },
+        "package": {
+          "type": "string"
+        },
+        "serial": {
+          "type": "boolean"
+        },
+        "testTarget": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "package",
+        "filter",
+        "ignored",
+        "serial"
+      ]
+    }
+  }
+}

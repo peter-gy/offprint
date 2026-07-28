@@ -1,0 +1,28 @@
+[package]
+name = "pageknot-export"
+description = "Verified PageKnot artifact variant encoders"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[dependencies]
+base64.workspace = true
+data-url.workspace = true
+flate2.workspace = true
+html5ever.workspace = true
+lopdf.workspace = true
+pageknot-document.workspace = true
+pageknot-html.workspace = true
+pageknot-model.workspace = true
+pulldown-cmark.workspace = true
+serde_json.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

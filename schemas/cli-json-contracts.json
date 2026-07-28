@@ -1,0 +1,49 @@
+{
+  "commands": [
+    {
+      "command": "capture",
+      "errorSchema": "error.schema.json",
+      "successSchema": "capture-result.schema.json"
+    },
+    {
+      "command": "batch",
+      "errorSchema": "error.schema.json",
+      "successSchema": "batch-result.schema.json"
+    },
+    {
+      "command": "crawl",
+      "errorSchema": "error.schema.json",
+      "successSchema": "crawl-result.schema.json"
+    },
+    {
+      "command": "export",
+      "errorSchema": "error.schema.json",
+      "successSchema": "artifact-export-result.schema.json"
+    },
+    {
+      "command": "verify",
+      "errorSchema": "error.schema.json",
+      "successSchema": "verification-result.schema.json"
+    },
+    {
+      "command": "inspect",
+      "errorSchema": "error.schema.json",
+      "successSchema": "artifact-manifest.schema.json"
+    },
+    {
+      "command": "doctor",
+      "errorSchema": "error.schema.json",
+      "successSchema": "browser-doctor-report.schema.json"
+    },
+    {
+      "command": "browser",
+      "errorSchema": "error.schema.json",
+      "successSchema": "browser-operation-result.schema.json"
+    }
+  ],
+  "schemaVersion": 1,
+  "streams": {
+    "stderr": "diagnostics",
+    "stdout": "result"
+  }
+}

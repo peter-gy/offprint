@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CaptureResult",
+  "type": "object",
+  "properties": {
+    "artifact": {
+      "$ref": "#/$defs/ArtifactResult"
+    },
+    "captureId": {
+      "type": "string"
+    },
+    "resources": {
+      "$ref": "#/$defs/ResourceSummary"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "source": {
+      "$ref": "#/$defs/SourceSummary"
+    },
+    "status": {
+      "$ref": "#/$defs/CaptureTerminalStatus"
+    },
+    "timings": {
+      "$ref": "#/$defs/CaptureTimings"
+    },
+    "verification": {
+      "$ref": "#/$defs/VerificationResult"
+    },
+    "warnings": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CaptureWarning"
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "captureId",
+    "status",
+    "source",
+    "artifact",
+    "verification",
+    "resources",
+    "timings"
+  ],
+  "$defs": {
+    "ArtifactResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "bytes": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            },
+            "kind": {
+              "type": "string",
+              "const": "file"
+            },
+            "path": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path",
+            "bytes",
+            "sha256"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "bytes": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            },
+            "content": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "uint8",
+                "maximum": 255,
+                "minimum": 0
+              }
+            },
+            "kind": {
+              "type": "string",
+              "const": "bytes"
+            },
+            "sha256": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "bytes",
+            "sha256",
+            "content"
+          ]
+        }
+      ]
+    },
+    "CaptureTerminalStatus": {
+      "type": "string",
+      "enum": [
+        "succeeded",
+        "cancelled",
+        "failed"
+      ]
+    },
+    "CaptureTimings": {
+      "type": "object",
+      "properties": {
+        "browser": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "collection": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "commit": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "encoding": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "navigation": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "resources": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "settle": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "transform": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "validation": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "verification": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "total",
+        "validation",
+        "browser",
+        "navigation",
+        "settle",
+        "collection",
+        "resources",
+        "transform",
+        "encoding",
+        "verification",
+        "commit"
+      ]
+    },
+    "CaptureWarning": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "frameId": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0
+        },
+        "message": {
+          "type": "string"
+        },
+        "resourceId": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "ResourceSummary": {
+      "type": "object",
+      "properties": {
+        "discovered": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "embedded": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "embeddedBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "external": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "omitted": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "discovered",
+        "embedded",
+        "external",
+        "omitted",
+        "failed",
+        "embeddedBytes"
+      ]
+    },
+    "SourceSummary": {
+      "type": "object",
+      "properties": {
+        "finalUrl": {
+          "type": "string"
+        },
+        "finalUrlSha256": {
+          "type": "string"
+        },
+        "requestedUrl": {
+          "type": "string"
+        },
+        "requestedUrlSha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "requestedUrl",
+        "requestedUrlSha256",
+        "finalUrl",
+        "finalUrlSha256"
+      ]
+    },
+    "VerificationPolicy": {
+      "type": "string",
+      "enum": [
+        "static",
+        "offline"
+      ]
+    },
+    "VerificationResult": {
+      "type": "object",
+      "properties": {
+        "artifactSha256": {
+          "type": "string"
+        },
+        "attemptedUrls": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "bytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "frameFailures": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          }
+        },
+        "level": {
+          "$ref": "#/$defs/VerificationPolicy"
+        },
+        "networkRequests": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "pageErrors": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "schemaVersion": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "stable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "level",
+        "passed",
+        "artifactSha256",
+        "bytes",
+        "networkRequests",
+        "stable"
+      ]
+    }
+  }
+}

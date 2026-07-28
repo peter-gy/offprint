@@ -1,0 +1,15 @@
+{
+  "name": "@pageknot/node-win32-x64-msvc",
+  "version": "0.1.0",
+  "license": "AGPL-3.0-or-later",
+  "main": "pageknot-native.win32-x64-msvc.node",
+  "files": ["LICENSE", "pageknot-native.win32-x64-msvc.node"],
+  "scripts": {
+    "prepack": "node ../../scripts/package-license.mjs sync",
+    "postpack": "node ../../scripts/package-license.mjs clean"
+  },
+  "os": ["win32"],
+  "cpu": ["x64"],
+  "engines": { "node": ">=22" },
+  "publishConfig": { "access": "public" }
+}

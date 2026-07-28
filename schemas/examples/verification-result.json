@@ -1,0 +1,12 @@
+{
+  "artifactSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "attemptedUrls": [],
+  "bytes": 1234,
+  "frameFailures": [],
+  "level": "offline",
+  "networkRequests": 0,
+  "pageErrors": [],
+  "passed": true,
+  "schemaVersion": 1,
+  "stable": true
+}

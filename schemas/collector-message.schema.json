@@ -1,0 +1,259 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CollectorMessage",
+  "anyOf": [
+    {
+      "$ref": "#/$defs/CollectorHandshake"
+    },
+    {
+      "$ref": "#/$defs/ObservationDescriptor"
+    },
+    {
+      "$ref": "#/$defs/ChunkEnvelope"
+    },
+    {
+      "$ref": "#/$defs/CollectorRelease"
+    },
+    {
+      "type": "boolean"
+    },
+    {
+      "$ref": "#/$defs/CollectorErrorResponse"
+    }
+  ],
+  "$defs": {
+    "ChunkEnvelope": {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "frameId": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "payload": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0
+          }
+        },
+        "payloadCrc32": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "payloadLength": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "sequence": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "total": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "captureId",
+        "frameId",
+        "sequence",
+        "total",
+        "payloadLength",
+        "payloadCrc32",
+        "payload"
+      ]
+    },
+    "CollectorCapability": {
+      "type": "string",
+      "enum": [
+        "adopted-stylesheets",
+        "canvas-pixels",
+        "closed-shadow-roots",
+        "cssom",
+        "form-state",
+        "frame-owner-mapping",
+        "media-state",
+        "open-shadow-roots",
+        "responsive-images",
+        "selection-capture",
+        "selector-capture",
+        "unused-css-removal",
+        "unused-font-removal",
+        "hidden-element-removal"
+      ]
+    },
+    "CollectorErrorPayload": {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0
+          }
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "captureId",
+        "code",
+        "message"
+      ]
+    },
+    "CollectorErrorResponse": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "payload": {
+              "$ref": "#/$defs/CollectorErrorPayload"
+            },
+            "type": {
+              "type": "string",
+              "const": "error"
+            }
+          },
+          "required": [
+            "type",
+            "payload"
+          ]
+        }
+      ]
+    },
+    "CollectorHandshake": {
+      "type": "object",
+      "properties": {
+        "availableCapabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CollectorCapability"
+          },
+          "uniqueItems": true
+        },
+        "captureId": {
+          "type": "string"
+        },
+        "collectorBuildSha256": {
+          "type": "string"
+        },
+        "hostBuildSha256": {
+          "type": "string"
+        },
+        "maximumChunkBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "protocol": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "requestedCapabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/CollectorCapability"
+          },
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "protocol",
+        "captureId",
+        "hostBuildSha256",
+        "collectorBuildSha256",
+        "requestedCapabilities",
+        "availableCapabilities",
+        "maximumChunkBytes"
+      ]
+    },
+    "CollectorRelease": {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "frameId": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "captureId",
+        "frameId"
+      ]
+    },
+    "ObservationDescriptor": {
+      "type": "object",
+      "properties": {
+        "captureId": {
+          "type": "string"
+        },
+        "chunks": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "encodedBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "frameId": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "payloadSha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "captureId",
+        "frameId",
+        "chunks",
+        "encodedBytes",
+        "payloadSha256"
+      ]
+    },
+    "ProtocolVersion": {
+      "type": "object",
+      "properties": {
+        "major": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "minor": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "required": [
+        "major",
+        "minor"
+      ]
+    }
+  }
+}

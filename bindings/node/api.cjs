@@ -1,0 +1,256 @@
+"use strict";
+
+const native = require("./native.cjs");
+
+const ERROR_MARKER = "__PAGEKNOT_ERROR__";
+
+class PageKnotError extends Error {
+  constructor(record) {
+    super(record.message);
+    this.name = "PageKnotError";
+    this.code = record.code;
+    this.stage = record.stage;
+    this.retryable = Boolean(record.retryable);
+    this.details = record.details ?? {};
+    this.diagnosticsPath = record.diagnosticsPath;
+    this.source = record.source
+      ? PageKnotError.fromRecord(record.source)
+      : undefined;
+  }
+
+  static fromRecord(record) {
+    return new PageKnotError(record);
+  }
+}
+
+function translateError(error) {
+  if (error instanceof PageKnotError) {
+    return error;
+  }
+  const message =
+    error && typeof error.message === "string"
+      ? error.message
+      : String(error);
+  const marker = message.indexOf(ERROR_MARKER);
+  if (marker >= 0) {
+    try {
+      return PageKnotError.fromRecord(
+        JSON.parse(message.slice(marker + ERROR_MARKER.length)),
+      );
+    } catch {
+      return error;
+    }
+  }
+  return error;
+}
+
+async function invoke(operation) {
+  try {
+    return await operation();
+  } catch (error) {
+    throw translateError(error);
+  }
+}
+
+let nextServiceToken = 0;
+const liveNativeServices = new Map();
+
+function closeLiveNativeServices() {
+  for (const [serviceToken, nativePageKnot] of liveNativeServices) {
+    try {
+      nativePageKnot.closeBlocking();
+    } catch {
+    } finally {
+      liveNativeServices.delete(serviceToken);
+    }
+  }
+}
+
+process.once("exit", closeLiveNativeServices);
+
+const finalizer = new FinalizationRegistry(
+  ({ nativePageKnot, serviceToken }) => {
+    Promise.resolve(nativePageKnot.close())
+      .catch(() => {})
+      .finally(() => liveNativeServices.delete(serviceToken));
+  },
+);
+
+class CaptureEvents {
+  #native;
+  #owner;
+
+  constructor(nativeEvents, owner) {
+    this.#native = nativeEvents;
+    this.#owner = owner;
+  }
+
+  [Symbol.asyncIterator]() {
+    return this;
+  }
+
+  async next() {
+    const value = await invoke(() => this.#native.next());
+    return value === null || value === undefined
+      ? { done: true, value: undefined }
+      : { done: false, value };
+  }
+}
+
+class CaptureJob {
+  #native;
+  #owner;
+
+  constructor(nativeJob, owner) {
+    this.#native = nativeJob;
+    this.#owner = owner;
+  }
+
+  get id() {
+    return this.#native.id;
+  }
+
+  get status() {
+    return this.#native.status;
+  }
+
+  events() {
+    return new CaptureEvents(this.#native.events(), this.#owner);
+  }
+
+  cancel() {
+    this.#native.cancel();
+  }
+
+  result() {
+    return invoke(() => this.#native.result());
+  }
+}
+
+class CaptureService {
+  #native;
+  #owner;
+
+  constructor(nativePageKnot, owner) {
+    this.#native = nativePageKnot;
+    this.#owner = owner;
+  }
+
+  async start(request) {
+    const job = await invoke(() => this.#native.start(request));
+    return new CaptureJob(job, this.#owner);
+  }
+
+  batch(request) {
+    return invoke(() => this.#native.batch(request));
+  }
+
+  crawl(request) {
+    return invoke(() => this.#native.crawl(request));
+  }
+}
+
+class ArtifactService {
+  #native;
+  #owner;
+
+  constructor(nativePageKnot, owner) {
+    this.#native = nativePageKnot;
+    this.#owner = owner;
+  }
+
+  inspect(path) {
+    return invoke(() => this.#native.inspect(path));
+  }
+
+  verify(path, options) {
+    return invoke(() => this.#native.verify(path, options));
+  }
+
+  export(path, request) {
+    return invoke(() => this.#native.exportArtifacts(path, request));
+  }
+
+  verifyVariant(path, kind) {
+    return invoke(() => this.#native.verifyVariant(path, kind));
+  }
+}
+
+class BrowserService {
+  #native;
+  #owner;
+
+  constructor(nativePageKnot, owner) {
+    this.#native = nativePageKnot;
+    this.#owner = owner;
+  }
+
+  ensure() {
+    return invoke(() => this.#native.ensureBrowser());
+  }
+}
+
+class PageKnot {
+  #native;
+  #closed = false;
+  #serviceToken;
+
+  constructor(options) {
+    try {
+      this.#native = native.NativePageKnot.create(options);
+      if (this.#native.initializationError) {
+        throw PageKnotError.fromRecord(
+          this.#native.initializationError,
+        );
+      }
+    } catch (error) {
+      throw translateError(error);
+    }
+    this.captures = new CaptureService(this.#native, this);
+    this.artifacts = new ArtifactService(this.#native, this);
+    this.browsers = new BrowserService(this.#native, this);
+    if (typeof this.#native.testPanic === "function") {
+      const testPanic = this.#native.testPanic.bind(this.#native);
+      Object.defineProperty(this, "_testPanic", {
+        configurable: false,
+        enumerable: false,
+        value: () => invoke(testPanic),
+        writable: false,
+      });
+    }
+    this.#serviceToken = nextServiceToken;
+    nextServiceToken += 1;
+    liveNativeServices.set(this.#serviceToken, this.#native);
+    finalizer.register(
+      this,
+      {
+        nativePageKnot: this.#native,
+        serviceToken: this.#serviceToken,
+      },
+      this,
+    );
+  }
+
+  capture(url, options) {
+    return invoke(() => this.#native.capture(url, options));
+  }
+
+  async close() {
+    if (this.#closed) {
+      return;
+    }
+    await invoke(() => this.#native.close());
+    this.#closed = true;
+    finalizer.unregister(this);
+    liveNativeServices.delete(this.#serviceToken);
+  }
+}
+
+module.exports = {
+  ArtifactService,
+  BrowserService,
+  CaptureJob,
+  CaptureService,
+  PageKnot,
+  PageKnotError,
+};

@@ -1,0 +1,9 @@
+{
+  "code": "pageknot.browser.unavailable",
+  "details": {
+    "recoveryCommand": "pageknot browser install"
+  },
+  "message": "no compatible browser is available",
+  "retryable": false,
+  "stage": "browser"
+}

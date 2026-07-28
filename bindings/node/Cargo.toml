@@ -1,0 +1,29 @@
+[package]
+name = "pageknot-node"
+description = "Node.js native binding for PageKnot"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+binding-test-hooks = []
+napi-noop-in-unit-test = ["napi-derive/noop"]
+
+[dependencies]
+futures-util.workspace = true
+napi.workspace = true
+napi-derive.workspace = true
+pageknot.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+url.workspace = true
+
+[build-dependencies]
+napi-build.workspace = true

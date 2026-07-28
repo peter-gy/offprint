@@ -1,0 +1,821 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CrawlRequest",
+  "description": "A deterministic breadth-first crawl rooted at one capture request.",
+  "type": "object",
+  "properties": {
+    "concurrency": {
+      "type": "integer",
+      "format": "uint16",
+      "default": 4,
+      "maximum": 65535,
+      "minimum": 0
+    },
+    "maximumDepth": {
+      "type": "integer",
+      "format": "uint16",
+      "default": 3,
+      "maximum": 65535,
+      "minimum": 0
+    },
+    "maximumPages": {
+      "type": "integer",
+      "format": "uint32",
+      "default": 100,
+      "minimum": 0
+    },
+    "outputDirectory": {
+      "type": "string"
+    },
+    "resume": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ResumeOptions"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sameOrigin": {
+      "type": "boolean",
+      "default": true
+    },
+    "seed": {
+      "description": "Capture policy and seed URL. The scheduler derives one file target per\ncrawled URL inside `output_directory`.",
+      "$ref": "#/$defs/LocalCaptureRequest"
+    }
+  },
+  "required": [
+    "seed",
+    "outputDirectory"
+  ],
+  "$defs": {
+    "ArtifactSpec": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "html"
+            },
+            "options": {
+              "$ref": "#/$defs/HtmlArtifactSpec"
+            }
+          },
+          "required": [
+            "kind",
+            "options"
+          ]
+        }
+      ]
+    },
+    "ArtifactTarget": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "file"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "bytes"
+            },
+            "value": {
+              "type": "object",
+              "properties": {
+                "maxBytes": {
+                  "type": "integer",
+                  "format": "uint64",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "maxBytes"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        }
+      ]
+    },
+    "BrowserCookie": {
+      "type": "object",
+      "properties": {
+        "domain": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "expires": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "int64"
+        },
+        "httpOnly": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sameSite": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CookieSameSite"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "secure": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    },
+    "BrowserEnvironment": {
+      "type": "object",
+      "properties": {
+        "colorScheme": {
+          "$ref": "#/$defs/ColorScheme"
+        },
+        "locale": {
+          "type": "string"
+        },
+        "reducedMotion": {
+          "$ref": "#/$defs/ReducedMotion"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "userAgent": {
+          "$ref": "#/$defs/UserAgentPolicy"
+        },
+        "viewport": {
+          "$ref": "#/$defs/Viewport"
+        }
+      },
+      "required": [
+        "viewport",
+        "locale",
+        "timezone",
+        "colorScheme",
+        "reducedMotion",
+        "userAgent"
+      ]
+    },
+    "CaptureCredentials": {
+      "type": "object",
+      "properties": {
+        "cookies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/BrowserCookie"
+          }
+        },
+        "headers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RequestHeader"
+          }
+        }
+      }
+    },
+    "CaptureLimits": {
+      "type": "object",
+      "properties": {
+        "artifactBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "collectorChunkBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "concurrentResources": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "cssImportDepth": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "duration": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "frameDepth": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "frames": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "nodes": {
+          "type": "integer",
+          "format": "uint64",
+          "maximum": 1000000,
+          "minimum": 1
+        },
+        "redirects": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "resourceBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "resources": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "totalResourceBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "duration",
+        "redirects",
+        "frames",
+        "nodes",
+        "resources",
+        "resourceBytes",
+        "totalResourceBytes",
+        "collectorChunkBytes",
+        "concurrentResources",
+        "artifactBytes",
+        "cssImportDepth",
+        "frameDepth"
+      ]
+    },
+    "CapturePolicy": {
+      "type": "object",
+      "properties": {
+        "allowedFileRoots": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "missingResources": {
+          "$ref": "#/$defs/MissingResourcePolicy"
+        },
+        "optimizations": {
+          "$ref": "#/$defs/OptimizationPolicy",
+          "default": {
+            "removeHiddenElements": false,
+            "removeUnusedCss": false,
+            "removeUnusedFonts": false
+          }
+        },
+        "preservePasswordValues": {
+          "type": "boolean"
+        },
+        "scope": {
+          "$ref": "#/$defs/CaptureScope",
+          "default": "page"
+        },
+        "selector": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "missingResources",
+        "preservePasswordValues"
+      ]
+    },
+    "CaptureScope": {
+      "type": "string",
+      "enum": [
+        "page",
+        "selection"
+      ]
+    },
+    "ColorScheme": {
+      "type": "string",
+      "enum": [
+        "light",
+        "dark"
+      ]
+    },
+    "ConflictPolicy": {
+      "type": "string",
+      "enum": [
+        "fail",
+        "replace",
+        "uniquify"
+      ]
+    },
+    "CookieSameSite": {
+      "type": "string",
+      "enum": [
+        "strict",
+        "lax",
+        "none"
+      ]
+    },
+    "DiagnosticsPolicy": {
+      "type": "object",
+      "properties": {
+        "directory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "screenshots": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "HtmlArtifactSpec": {
+      "type": "object",
+      "properties": {
+        "conflict": {
+          "$ref": "#/$defs/ConflictPolicy"
+        },
+        "target": {
+          "$ref": "#/$defs/ArtifactTarget"
+        }
+      },
+      "required": [
+        "target",
+        "conflict"
+      ]
+    },
+    "LazyLoadPolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "disabled"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "viewport-sweep"
+            },
+            "options": {
+              "$ref": "#/$defs/ViewportSweepPolicy"
+            }
+          },
+          "required": [
+            "kind",
+            "options"
+          ]
+        }
+      ]
+    },
+    "LocalBrowserSpec": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "auto"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "executable"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        }
+      ]
+    },
+    "LocalCaptureRequest": {
+      "type": "object",
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/ArtifactSpec"
+        },
+        "browser": {
+          "$ref": "#/$defs/LocalBrowserSpec"
+        },
+        "capture": {
+          "$ref": "#/$defs/CapturePolicy"
+        },
+        "credentials": {
+          "$ref": "#/$defs/CaptureCredentials"
+        },
+        "diagnostics": {
+          "$ref": "#/$defs/DiagnosticsPolicy"
+        },
+        "environment": {
+          "$ref": "#/$defs/BrowserEnvironment"
+        },
+        "headed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "limits": {
+          "$ref": "#/$defs/CaptureLimits"
+        },
+        "network": {
+          "$ref": "#/$defs/NetworkPolicy"
+        },
+        "readiness": {
+          "$ref": "#/$defs/ReadinessPolicy"
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "verification": {
+          "$ref": "#/$defs/VerificationPolicy"
+        }
+      },
+      "required": [
+        "url",
+        "artifact",
+        "browser",
+        "environment",
+        "readiness",
+        "capture",
+        "network",
+        "limits",
+        "verification",
+        "diagnostics"
+      ]
+    },
+    "MissingResourcePolicy": {
+      "type": "string",
+      "enum": [
+        "warn",
+        "fail"
+      ]
+    },
+    "NetworkPolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "standard"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "server"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "unrestricted"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "custom"
+            },
+            "rules": {
+              "$ref": "#/$defs/NetworkRules"
+            }
+          },
+          "required": [
+            "kind",
+            "rules"
+          ]
+        }
+      ]
+    },
+    "NetworkRules": {
+      "type": "object",
+      "properties": {
+        "allowLinkLocal": {
+          "type": "boolean",
+          "default": false
+        },
+        "allowLoopback": {
+          "type": "boolean",
+          "default": false
+        },
+        "allowPrivate": {
+          "type": "boolean",
+          "default": false
+        },
+        "allowedCidrs": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "allowedHosts": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "OptimizationPolicy": {
+      "type": "object",
+      "properties": {
+        "removeHiddenElements": {
+          "type": "boolean",
+          "default": false
+        },
+        "removeUnusedCss": {
+          "type": "boolean",
+          "default": false
+        },
+        "removeUnusedFonts": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "ReadinessMode": {
+      "type": "string",
+      "enum": [
+        "render-idle",
+        "network-idle",
+        "load",
+        "dom-content-loaded"
+      ]
+    },
+    "ReadinessPolicy": {
+      "type": "object",
+      "properties": {
+        "delay": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "lazyLoad": {
+          "$ref": "#/$defs/LazyLoadPolicy"
+        },
+        "mode": {
+          "$ref": "#/$defs/ReadinessMode"
+        },
+        "mutationQuiet": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "networkQuiet": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "mode",
+        "networkQuiet",
+        "mutationQuiet",
+        "delay",
+        "lazyLoad"
+      ]
+    },
+    "ReducedMotion": {
+      "type": "string",
+      "enum": [
+        "reduce",
+        "no-preference"
+      ]
+    },
+    "RequestHeader": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ]
+    },
+    "ResumeOptions": {
+      "description": "Persistence options for a batch or crawl.",
+      "type": "object",
+      "properties": {
+        "manifest": {
+          "description": "JSON manifest updated after each terminal job.",
+          "type": "string"
+        },
+        "retryFailed": {
+          "description": "Schedules jobs whose previous terminal result was a failure.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "manifest"
+      ]
+    },
+    "UserAgentPolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "browser-default"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "override"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        }
+      ]
+    },
+    "VerificationPolicy": {
+      "type": "string",
+      "enum": [
+        "static",
+        "offline"
+      ]
+    },
+    "Viewport": {
+      "type": "object",
+      "properties": {
+        "height": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "scale": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "width": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "scale"
+      ]
+    },
+    "ViewportSweepPolicy": {
+      "type": "object",
+      "properties": {
+        "maxSteps": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "settle": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "stepPixels": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "stepPixels",
+        "settle",
+        "maxSteps"
+      ]
+    }
+  }
+}

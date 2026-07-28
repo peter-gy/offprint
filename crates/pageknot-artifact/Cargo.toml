@@ -1,0 +1,21 @@
+[package]
+name = "pageknot-artifact"
+description = "Bounded PageKnot artifact writers and transactional filesystem commit"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+[dependencies]
+camino.workspace = true
+pageknot-model.workspace = true
+sha2.workspace = true
+tempfile.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

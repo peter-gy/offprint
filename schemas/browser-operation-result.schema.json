@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BrowserOperationResult",
+  "type": "object",
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/BrowserAction"
+    },
+    "browser": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BrowserInfo"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "cacheDir": {
+      "type": "string"
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/BrowserCandidate"
+      }
+    },
+    "revision": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "action",
+    "cacheDir"
+  ],
+  "$defs": {
+    "BrowserAction": {
+      "type": "string",
+      "enum": [
+        "install",
+        "list",
+        "remove"
+      ]
+    },
+    "BrowserCandidate": {
+      "type": "object",
+      "properties": {
+        "activeLeases": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "browser": {
+          "$ref": "#/$defs/BrowserInfo"
+        },
+        "priority": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/BrowserCandidateState"
+        }
+      },
+      "required": [
+        "browser",
+        "state",
+        "reasonCode",
+        "priority",
+        "activeLeases"
+      ]
+    },
+    "BrowserCandidateState": {
+      "type": "string",
+      "enum": [
+        "selected",
+        "compatible",
+        "incompatible",
+        "shadowed"
+      ]
+    },
+    "BrowserInfo": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executablePath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "product": {
+          "$ref": "#/$defs/BrowserProduct"
+        },
+        "protocolVersion": {
+          "type": "string"
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/BrowserSource"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product",
+        "version",
+        "source",
+        "protocolVersion"
+      ]
+    },
+    "BrowserProduct": {
+      "type": "string",
+      "enum": [
+        "chrome",
+        "chromium",
+        "edge"
+      ]
+    },
+    "BrowserSource": {
+      "type": "string",
+      "enum": [
+        "managed",
+        "system",
+        "explicit",
+        "remote"
+      ]
+    }
+  }
+}

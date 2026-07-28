@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ResumeManifest",
+  "description": "Versioned scheduler checkpoint written through an atomic file transaction.",
+  "type": "object",
+  "properties": {
+    "frontier": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CrawlFrontierItem"
+      }
+    },
+    "jobs": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/ResumeJobRecord"
+      },
+      "default": {}
+    },
+    "kind": {
+      "$ref": "#/$defs/ScheduleKind"
+    },
+    "pending": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    },
+    "planSha256": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "kind",
+    "planSha256"
+  ],
+  "$defs": {
+    "CrawlFrontierItem": {
+      "description": "One pending crawl page in deterministic breadth-first order.",
+      "type": "object",
+      "properties": {
+        "depth": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "ordinal": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "url",
+        "depth",
+        "ordinal"
+      ]
+    },
+    "ErrorStage": {
+      "type": "string",
+      "enum": [
+        "validation",
+        "browser",
+        "navigation",
+        "readiness",
+        "collection",
+        "resource",
+        "transform",
+        "encoding",
+        "verification",
+        "commit",
+        "shutdown",
+        "internal"
+      ]
+    },
+    "PageKnotError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "diagnosticsPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageKnotError"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stage": {
+          "$ref": "#/$defs/ErrorStage"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "stage",
+        "retryable"
+      ]
+    },
+    "ResumeJobRecord": {
+      "description": "Compact terminal state persisted by a resumable scheduler.",
+      "type": "object",
+      "properties": {
+        "artifactPath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "artifactSha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "captureId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "depth": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "error": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageKnotError"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ordinal": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "requestSha256": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ResumeJobStatus"
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "uri"
+        }
+      },
+      "required": [
+        "requestSha256",
+        "status"
+      ]
+    },
+    "ResumeJobStatus": {
+      "type": "string",
+      "enum": [
+        "succeeded",
+        "failed"
+      ]
+    },
+    "ScheduleKind": {
+      "type": "string",
+      "enum": [
+        "batch",
+        "crawl"
+      ]
+    }
+  }
+}

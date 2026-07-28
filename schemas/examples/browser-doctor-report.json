@@ -1,0 +1,57 @@
+{
+  "candidates": [],
+  "collector": {
+    "capabilities": [
+      "adopted-stylesheets",
+      "canvas-pixels",
+      "closed-shadow-roots",
+      "cssom",
+      "form-state",
+      "frame-owner-mapping",
+      "media-state",
+      "open-shadow-roots",
+      "responsive-images",
+      "selection-capture",
+      "selector-capture",
+      "unused-css-removal",
+      "unused-font-removal",
+      "hidden-element-removal"
+    ],
+    "compatible": true,
+    "hostVersion": "1.5",
+    "missingCapabilities": [],
+    "peerVersion": "1.5"
+  },
+  "configuration": [],
+  "managedCache": {
+    "cacheDir": "/var/cache/pageknot",
+    "catalogVersion": "2026-07-27",
+    "installedRevisions": [
+      "1654411"
+    ],
+    "selectedRevision": "1654411"
+  },
+  "network": {
+    "permitsLoopbackInitialOrigin": true,
+    "permitsPrivateAddresses": false,
+    "profile": "standard",
+    "revalidatesRedirects": true
+  },
+  "output": {
+    "atomicCreate": true,
+    "atomicReplace": true,
+    "directory": ".",
+    "writable": true
+  },
+  "ready": true,
+  "recovery": [],
+  "schemaVersion": 1,
+  "selected": {
+    "executablePath": "/opt/pageknot/chrome",
+    "product": "chrome",
+    "protocolVersion": "1.3",
+    "revision": "1654411",
+    "source": "managed",
+    "version": "151.0.7922.47"
+  }
+}

@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BrowserDoctorReport",
+  "type": "object",
+  "properties": {
+    "candidates": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/BrowserCandidate"
+      }
+    },
+    "collector": {
+      "$ref": "#/$defs/CapabilityCheck"
+    },
+    "configuration": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EffectiveConfigValue"
+      }
+    },
+    "managedCache": {
+      "$ref": "#/$defs/ManagedBrowserState"
+    },
+    "network": {
+      "$ref": "#/$defs/NetworkPolicySummary"
+    },
+    "output": {
+      "$ref": "#/$defs/OutputCapability"
+    },
+    "ready": {
+      "type": "boolean"
+    },
+    "recovery": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/RecoveryAction"
+      }
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "selected": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/BrowserInfo"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "ready",
+    "managedCache",
+    "collector",
+    "output",
+    "network"
+  ],
+  "$defs": {
+    "BrowserCandidate": {
+      "type": "object",
+      "properties": {
+        "activeLeases": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "browser": {
+          "$ref": "#/$defs/BrowserInfo"
+        },
+        "priority": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "reasonCode": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/$defs/BrowserCandidateState"
+        }
+      },
+      "required": [
+        "browser",
+        "state",
+        "reasonCode",
+        "priority",
+        "activeLeases"
+      ]
+    },
+    "BrowserCandidateState": {
+      "type": "string",
+      "enum": [
+        "selected",
+        "compatible",
+        "incompatible",
+        "shadowed"
+      ]
+    },
+    "BrowserInfo": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executablePath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "product": {
+          "$ref": "#/$defs/BrowserProduct"
+        },
+        "protocolVersion": {
+          "type": "string"
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/BrowserSource"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product",
+        "version",
+        "source",
+        "protocolVersion"
+      ]
+    },
+    "BrowserProduct": {
+      "type": "string",
+      "enum": [
+        "chrome",
+        "chromium",
+        "edge"
+      ]
+    },
+    "BrowserSource": {
+      "type": "string",
+      "enum": [
+        "managed",
+        "system",
+        "explicit",
+        "remote"
+      ]
+    },
+    "CapabilityCheck": {
+      "type": "object",
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "compatible": {
+          "type": "boolean"
+        },
+        "hostVersion": {
+          "type": "string"
+        },
+        "missingCapabilities": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "peerVersion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "compatible",
+        "hostVersion"
+      ]
+    },
+    "ConfigProvenance": {
+      "type": "string",
+      "enum": [
+        "flag",
+        "environment",
+        "explicit-config",
+        "profile",
+        "user-config",
+        "default"
+      ]
+    },
+    "EffectiveConfigValue": {
+      "type": "object",
+      "properties": {
+        "field": {
+          "type": "string"
+        },
+        "provenance": {
+          "$ref": "#/$defs/ConfigProvenance"
+        },
+        "redacted": {
+          "type": "boolean"
+        },
+        "value": true
+      },
+      "required": [
+        "field",
+        "value",
+        "provenance",
+        "redacted"
+      ]
+    },
+    "ManagedBrowserState": {
+      "type": "object",
+      "properties": {
+        "cacheDir": {
+          "type": "string"
+        },
+        "catalogVersion": {
+          "type": "string"
+        },
+        "installedRevisions": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "selectedRevision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "cacheDir",
+        "catalogVersion"
+      ]
+    },
+    "NetworkPolicySummary": {
+      "type": "object",
+      "properties": {
+        "permitsLoopbackInitialOrigin": {
+          "type": "boolean"
+        },
+        "permitsPrivateAddresses": {
+          "type": "boolean"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "revalidatesRedirects": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "profile",
+        "permitsLoopbackInitialOrigin",
+        "permitsPrivateAddresses",
+        "revalidatesRedirects"
+      ]
+    },
+    "OutputCapability": {
+      "type": "object",
+      "properties": {
+        "atomicCreate": {
+          "type": "boolean"
+        },
+        "atomicReplace": {
+          "type": "boolean"
+        },
+        "directory": {
+          "type": "string"
+        },
+        "reasonCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "writable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "directory",
+        "writable",
+        "atomicCreate",
+        "atomicReplace"
+      ]
+    },
+    "RecoveryAction": {
+      "type": "object",
+      "properties": {
+        "arguments": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "code": {
+          "type": "string"
+        },
+        "command": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "description",
+        "command"
+      ]
+    }
+  }
+}

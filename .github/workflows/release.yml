@@ -1,0 +1,855 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  SOURCE_DATE_EPOCH: "0"
+  BUN_VERSION: "1.3.14"
+  XDG_CACHE_HOME: ${{ github.workspace }}/.cache
+
+jobs:
+  validate:
+    name: Validate release candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+          components: clippy,rustfmt
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+
+      - name: Install repository tools
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just,taplo-cli,cargo-deny,cargo-machete,cargo-semver-checks,actionlint
+
+      - name: Install dependencies
+        run: |
+          bun install --cwd collector --frozen-lockfile
+          bun install --cwd bindings/node --frozen-lockfile
+          uv sync --directory bindings/python --frozen
+
+      - name: Verify signed release tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag_object="$(git rev-parse "$GITHUB_REF_NAME^{tag}")"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object" \
+            --jq '.verification.verified')" = "true"
+          test "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object" \
+            --jq '.object.sha')" = "$GITHUB_SHA"
+
+      - name: Verify release version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: just repo-check
+
+      - name: Run release gate
+        run: just release-check
+
+  browser-fixtures:
+    name: Release fixtures ${{ matrix.group }}
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        group:
+          - artifact
+          - browser-state
+          - frames
+          - lifecycle
+          - network
+          - resources
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Install Chromium runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Install pinned managed Chromium
+        run: cargo run --locked -p pageknot-cli -- browser install
+
+      - name: Run fixture group
+        run: cargo run --locked -p xtask -- e2e "${{ matrix.group }}"
+
+      - name: Audit browser process cleanup
+        if: always()
+        run: |
+          if pgrep -af '[c]hrome.*--remote-debugging-port'; then
+            echo "PageKnot Chromium process survived the fixture group"
+            exit 1
+          fi
+
+      - name: Upload fixture failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-fixture-failure-${{ matrix.group }}
+          path: |
+            target/benchmark-evidence
+            target/diagnostics
+          if-no-files-found: ignore
+          retention-days: 14
+
+  browser-integrations:
+    name: Release browser integrations
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Install Chromium runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Install pinned managed Chromium
+        run: cargo run --locked -p pageknot-cli -- browser install
+
+      - name: Run ignored browser integration suites
+        run: |
+          cargo test --locked -p pageknot \
+            --test artifact_exports \
+            --test diagnostics \
+            --test capture_regressions \
+            --test remote_browser \
+            -- --ignored --test-threads=1
+
+      - name: Audit browser process cleanup
+        if: always()
+        run: |
+          if pgrep -af '[c]hrome.*--remote-debugging-port'; then
+            echo "PageKnot Chromium process survived the integration suites"
+            exit 1
+          fi
+
+      - name: Upload integration failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-browser-integration-failure
+          path: |
+            target/benchmark-evidence
+            target/diagnostics
+          if-no-files-found: ignore
+          retention-days: 14
+
+  repeated-capture:
+    name: Release repeated capture
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Install Chromium runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Install pinned managed Chromium
+        run: cargo run --locked -p pageknot-cli -- browser install
+
+      - name: Run repeated capture suite
+        run: cargo test --release --locked -p pageknot repeated_capture -- --ignored --test-threads=1
+
+      - name: Audit browser process cleanup
+        if: always()
+        run: |
+          if pgrep -af '[c]hrome.*--remote-debugging-port'; then
+            echo "PageKnot Chromium process survived repeated capture"
+            exit 1
+          fi
+
+      - name: Upload repeated-capture report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: repeated-capture
+          path: target/benchmark-evidence/repeated-capture.json
+          if-no-files-found: error
+          retention-days: 30
+
+  fuzz:
+    name: Release fuzz smoke
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: nightly
+
+      - name: Install fuzz tools
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just,cargo-fuzz
+
+      - name: Run fuzz targets
+        run: just fuzz-smoke 30
+
+      - name: Upload fuzz failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-fuzz-failure
+          path: |
+            fuzz/artifacts
+            fuzz/corpus
+          if-no-files-found: ignore
+          retention-days: 14
+
+  miri:
+    name: Release Miri
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: nightly
+          components: miri
+
+      - name: Install just
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: just
+
+      - name: Run Miri
+        run: just miri
+
+  sanitizer:
+    name: Release address sanitizer
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      ASAN_OPTIONS: detect_leaks=1
+      RUSTDOCFLAGS: -Zsanitizer=address
+      RUSTFLAGS: -Zsanitizer=address
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install nightly Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: nightly
+          components: rust-src
+
+      - name: Install Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.10"
+
+      - name: Test process ownership under AddressSanitizer
+        run: |
+          cargo test -Zbuild-std --locked \
+            --target x86_64-unknown-linux-gnu \
+            -p pageknot-chromium --lib
+
+      - name: Test native bindings under AddressSanitizer
+        run: |
+          cargo test -Zbuild-std --locked \
+            --target x86_64-unknown-linux-gnu \
+            -p pageknot-node --lib --features napi-noop-in-unit-test
+          cargo test -Zbuild-std --locked \
+            --target x86_64-unknown-linux-gnu \
+            -p pageknot-python --lib
+
+  native:
+    name: Native ${{ matrix.target }}
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            executable: pageknot
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            executable: pageknot
+          - os: macos-15
+            target: aarch64-apple-darwin
+            executable: pageknot
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+            executable: pageknot.exe
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+          targets: ${{ matrix.target }}
+
+      - name: Install Chromium runtime libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Build natively
+        run: cargo build --release --locked -p pageknot-cli --target ${{ matrix.target }}
+
+      - name: Package archive
+        shell: bash
+        run: |
+          cargo run --locked -p xtask -- package \
+            --target "${{ matrix.target }}" \
+            --binary "target/${{ matrix.target }}/release/${{ matrix.executable }}" \
+            --output dist
+
+      - name: Extract release archive
+        shell: bash
+        run: |
+          mkdir release-smoke
+          case "${{ matrix.target }}" in
+            *windows*) unzip -q dist/*.zip -d release-smoke ;;
+            *) tar -xzf dist/*.tar.gz -C release-smoke ;;
+          esac
+
+      - name: Verify release metadata
+        shell: bash
+        run: |
+          metadata="$(find release-smoke -type f -name build-metadata.json -print -quit)"
+          test -n "$metadata"
+          cargo run --locked -p xtask -- verify-package-metadata \
+            --metadata "$metadata" \
+            --target "${{ matrix.target }}" \
+            --source-revision "$GITHUB_SHA"
+
+      - name: Capture through release archive
+        shell: bash
+        env:
+          PAGEKNOT_BROWSER_CHANNEL: managed
+          PAGEKNOT_CACHE_DIR: ${{ runner.temp }}/pageknot-release-managed-cache
+        run: |
+          binary="$(find release-smoke -type f -name '${{ matrix.executable }}' -print -quit)"
+          PAGEKNOT_RELEASE_BINARY="$binary" \
+            cargo test --locked -p pageknot-cli --test release_archive_smoke \
+              -- --ignored --test-threads=1
+
+      - name: Upload native archive
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  node:
+    name: Node addon ${{ matrix.target }}
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            package: linux-x64-gnu
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            package: darwin-x64
+          - os: macos-15
+            target: aarch64-apple-darwin
+            package: darwin-arm64
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+            package: win32-x64-msvc
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+          targets: ${{ matrix.target }}
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Install Chromium runtime libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Install addon dependencies
+        working-directory: bindings/node
+        run: bun install --frozen-lockfile
+
+      - name: Build native addon
+        working-directory: bindings/node
+        run: bunx napi build --platform --release --target ${{ matrix.target }} --no-js --dts native.d.ts
+
+      - name: Assemble platform package
+        working-directory: bindings/node
+        run: bunx napi artifacts --output-dir .
+
+      - name: Capture through root and platform packages
+        shell: bash
+        working-directory: bindings/node
+        run: |
+          package_dir="$RUNNER_TEMP/pageknot-node-package"
+          install_dir="$RUNNER_TEMP/pageknot-node-install"
+          mkdir "$package_dir" "$install_dir"
+          node scripts/package-license.mjs sync
+          trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
+          npm pack --ignore-scripts "npm/${{ matrix.package }}" \
+            --pack-destination "$package_dir"
+          npm pack --ignore-scripts --pack-destination "$package_dir"
+          root_package="$(find "$package_dir" -maxdepth 1 -name 'pageknot-node-[0-9]*.tgz' -print -quit)"
+          platform_package="$(find "$package_dir" -maxdepth 1 -name 'pageknot-node-${{ matrix.package }}-*.tgz' -print -quit)"
+          test -n "$root_package"
+          test -n "$platform_package"
+          node test/package-contents.mjs \
+            "$root_package" "$platform_package" "$GITHUB_WORKSPACE/LICENSE"
+          cd "$install_dir"
+          npm init --yes >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund "$root_package" "$platform_package"
+          cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
+          node smoke.mjs
+          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-child.mjs" lifecycle-child.mjs
+          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-processes.mjs" lifecycle-processes.mjs
+          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-runner.mjs" lifecycle-runner.mjs
+          cp "$GITHUB_WORKSPACE/bindings/node/test/package-lifecycle.mjs" package-lifecycle.mjs
+          cp "$GITHUB_WORKSPACE/schemas/examples/capture-request.json" capture-request.json
+          node package-lifecycle.mjs
+
+      - name: Upload addon
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: node-${{ matrix.target }}
+          path: bindings/node/npm/${{ matrix.package }}/*.node
+          if-no-files-found: error
+
+  python:
+    name: Python wheels ${{ matrix.target }}
+    needs: validate
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            manylinux: "2014"
+            interpreter: python3.10
+            sdist: true
+          - os: macos-15-intel
+            target: x86_64-apple-darwin
+            manylinux: "off"
+            interpreter: python
+            sdist: false
+          - os: macos-15
+            target: aarch64-apple-darwin
+            manylinux: "off"
+            interpreter: python
+            sdist: false
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+            manylinux: "off"
+            interpreter: python
+            sdist: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Python 3.10
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.10"
+
+      - name: Build wheels
+        uses: PyO3/maturin-action@86b9d133d34bc1b40018696f782949dac11bd380
+        with:
+          target: ${{ matrix.target }}
+          args: --release --locked --compatibility pypi -i ${{ matrix.interpreter }} --out dist --manifest-path bindings/python/Cargo.toml ${{ matrix.sdist && '--sdist' || '' }}
+          manylinux: ${{ matrix.manylinux }}
+          maturin-version: v1.14.1
+          rust-toolchain: 1.97.0
+
+      - name: Verify Python distribution contents
+        shell: bash
+        run: |
+          python bindings/python/tests/package_contents.py \
+            "$GITHUB_WORKSPACE/LICENSE" dist/*
+
+      - name: Install Python 3.14
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.14"
+
+      - name: Install Chromium runtime libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Install wheel in a clean environment
+        shell: bash
+        run: |
+          python -m venv wheel-test
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            python_bin="wheel-test/Scripts/python.exe"
+          else
+            python_bin="wheel-test/bin/python"
+          fi
+          "$python_bin" -m pip install --disable-pip-version-check dist/*.whl
+          "$python_bin" -c "import pageknot; assert pageknot.PageKnot"
+          "$python_bin" bindings/python/tests/wheel_smoke.py
+          "$python_bin" bindings/python/tests/package_lifecycle.py
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-${{ matrix.target }}
+          path: dist/*.whl
+          if-no-files-found: error
+
+      - name: Upload source distribution
+        if: matrix.sdist
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: python-sdist
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+  supply-chain:
+    name: Supply chain artifacts
+    needs:
+      - browser-fixtures
+      - browser-integrations
+      - fuzz
+      - miri
+      - native
+      - node
+      - python
+      - repeated-capture
+      - sanitizer
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Install license report tool
+        uses: taiki-e/install-action@41049aa56687c35e0afa74eed4f09cec4f9afabf
+        with:
+          tool: cargo-deny
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: Generate dependency license report
+        run: |
+          license_report="$(mktemp)"
+          cargo deny list --format json --layout crate > "$license_report"
+          test -s "$license_report"
+          mv "$license_report" release/dependency-licenses.json
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
+        with:
+          path: release
+          format: spdx-json
+          output-file: release/pageknot.spdx.json
+
+      - name: Generate release checksums
+        working-directory: release
+        run: |
+          checksum_tmp="$(mktemp)"
+          find . -maxdepth 1 -type f ! -name SHA256SUMS -print0 \
+            | sort -z \
+            | xargs -0 sha256sum > "$checksum_tmp"
+          mv "$checksum_tmp" SHA256SUMS
+
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be
+        with:
+          subject-path: release/*
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" release/* --verify-tag --generate-notes
+
+  publish-crates:
+    name: Publish Rust crates
+    needs: supply-chain
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    environment: release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
+        with:
+          toolchain: 1.97.0
+
+      - name: Publish workspace crates
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --workspace --locked
+
+  publish-node:
+    name: Publish Node.js packages
+    needs: supply-chain
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Download native addons
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: node-*
+          path: bindings/node/artifacts
+          merge-multiple: true
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Configure npm
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+
+      - name: Install Chromium runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Assemble platform packages
+        working-directory: bindings/node
+        run: |
+          bun install --frozen-lockfile
+          bunx napi artifacts
+          test "$(find npm -name '*.node' -type f | wc -l | tr -d ' ')" = "4"
+
+      - name: Capture through assembled root and platform packages
+        working-directory: bindings/node
+        run: |
+          package_dir="$RUNNER_TEMP/pageknot-node-package"
+          install_dir="$RUNNER_TEMP/pageknot-node-install"
+          mkdir "$package_dir" "$install_dir"
+          node scripts/package-license.mjs sync
+          trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
+          npm pack --ignore-scripts npm/linux-x64-gnu \
+            --pack-destination "$package_dir"
+          npm pack --ignore-scripts --pack-destination "$package_dir"
+          root_package="$(find "$package_dir" -maxdepth 1 -name 'pageknot-node-[0-9]*.tgz' -print -quit)"
+          platform_package="$(find "$package_dir" -maxdepth 1 -name 'pageknot-node-linux-x64-gnu-*.tgz' -print -quit)"
+          test -n "$root_package"
+          test -n "$platform_package"
+          node test/package-contents.mjs \
+            "$root_package" "$platform_package" "$GITHUB_WORKSPACE/LICENSE"
+          cd "$install_dir"
+          npm init --yes >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund "$root_package" "$platform_package"
+          cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
+          node smoke.mjs
+
+      - name: Publish platform packages and root package
+        working-directory: bindings/node
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_IGNORE_SCRIPTS: "false"
+          NPM_CONFIG_PROVENANCE: "true"
+        run: |
+          npm publish --access public --provenance
+
+  publish-python:
+    name: Publish Python distributions
+    needs: supply-chain
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download Python distributions
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: python-*
+          path: dist
+          merge-multiple: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+
+      - name: Check distribution set
+        run: |
+          test "$(find dist -name '*.whl' -type f | wc -l | tr -d ' ')" = "4"
+          test "$(find dist -name '*.tar.gz' -type f | wc -l | tr -d ' ')" = "1"
+
+      - name: Publish with PyPI trusted publishing
+        run: uv publish --trusted-publishing always dist/*

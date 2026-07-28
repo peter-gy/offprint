@@ -1,0 +1,621 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ArtifactManifest",
+  "type": "object",
+  "properties": {
+    "browser": {
+      "$ref": "#/$defs/BrowserInfo"
+    },
+    "capturedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "environment": {
+      "$ref": "#/$defs/BrowserEnvironment"
+    },
+    "format": {
+      "$ref": "#/$defs/ArtifactFormat"
+    },
+    "frames": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "generator": {
+      "$ref": "#/$defs/ManifestGenerator"
+    },
+    "policySha256": {
+      "type": "string"
+    },
+    "resourceRecords": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ResourceRecord"
+      }
+    },
+    "resources": {
+      "$ref": "#/$defs/ResourceSummary"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "source": {
+      "$ref": "#/$defs/ManifestSource"
+    },
+    "structuralRepair": {
+      "$ref": "#/$defs/StructuralRepair"
+    },
+    "verification": {
+      "$ref": "#/$defs/ManifestVerification"
+    },
+    "viewState": {
+      "$ref": "#/$defs/ViewState"
+    },
+    "warningCodes": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "format",
+    "generator",
+    "source",
+    "capturedAt",
+    "browser",
+    "environment",
+    "viewState",
+    "policySha256",
+    "frames",
+    "resources",
+    "structuralRepair",
+    "verification"
+  ],
+  "$defs": {
+    "ArtifactFormat": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/ArtifactKind"
+        },
+        "version": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "kind",
+        "version"
+      ]
+    },
+    "ArtifactKind": {
+      "type": "string",
+      "enum": [
+        "html"
+      ]
+    },
+    "BrowserEnvironment": {
+      "type": "object",
+      "properties": {
+        "colorScheme": {
+          "$ref": "#/$defs/ColorScheme"
+        },
+        "locale": {
+          "type": "string"
+        },
+        "reducedMotion": {
+          "$ref": "#/$defs/ReducedMotion"
+        },
+        "timezone": {
+          "type": "string"
+        },
+        "userAgent": {
+          "$ref": "#/$defs/UserAgentPolicy"
+        },
+        "viewport": {
+          "$ref": "#/$defs/Viewport"
+        }
+      },
+      "required": [
+        "viewport",
+        "locale",
+        "timezone",
+        "colorScheme",
+        "reducedMotion",
+        "userAgent"
+      ]
+    },
+    "BrowserInfo": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "executablePath": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "product": {
+          "$ref": "#/$defs/BrowserProduct"
+        },
+        "protocolVersion": {
+          "type": "string"
+        },
+        "revision": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/BrowserSource"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product",
+        "version",
+        "source",
+        "protocolVersion"
+      ]
+    },
+    "BrowserProduct": {
+      "type": "string",
+      "enum": [
+        "chrome",
+        "chromium",
+        "edge"
+      ]
+    },
+    "BrowserSource": {
+      "type": "string",
+      "enum": [
+        "managed",
+        "system",
+        "explicit",
+        "remote"
+      ]
+    },
+    "ColorScheme": {
+      "type": "string",
+      "enum": [
+        "light",
+        "dark"
+      ]
+    },
+    "ExternalReason": {
+      "type": "string",
+      "enum": [
+        "policy",
+        "unsupported-scheme",
+        "explicitly-preserved"
+      ]
+    },
+    "ManifestGenerator": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ]
+    },
+    "ManifestSource": {
+      "type": "object",
+      "properties": {
+        "finalUrl": {
+          "type": "string"
+        },
+        "finalUrlSha256": {
+          "type": "string"
+        },
+        "requestedUrl": {
+          "type": "string"
+        },
+        "requestedUrlSha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "requestedUrl",
+        "requestedUrlSha256",
+        "finalUrl",
+        "finalUrlSha256"
+      ]
+    },
+    "ManifestVerification": {
+      "type": "object",
+      "properties": {
+        "level": {
+          "$ref": "#/$defs/VerificationPolicy"
+        },
+        "networkRequests": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "level",
+        "passed",
+        "networkRequests"
+      ]
+    },
+    "OmissionReason": {
+      "type": "string",
+      "enum": [
+        "non-rendering",
+        "sanitized",
+        "sensitive",
+        "limit"
+      ]
+    },
+    "ReducedMotion": {
+      "type": "string",
+      "enum": [
+        "reduce",
+        "no-preference"
+      ]
+    },
+    "ResourceError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ]
+    },
+    "ResourceOutcome": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "bytes": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            },
+            "digest": {
+              "type": "string"
+            },
+            "kind": {
+              "type": "string",
+              "const": "embedded"
+            },
+            "mediaType": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "digest",
+            "mediaType",
+            "bytes"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "external"
+            },
+            "reason": {
+              "$ref": "#/$defs/ExternalReason"
+            },
+            "url": {
+              "type": "string"
+            },
+            "urlSha256": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "url",
+            "urlSha256",
+            "reason"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "omitted"
+            },
+            "reason": {
+              "$ref": "#/$defs/OmissionReason"
+            }
+          },
+          "required": [
+            "kind",
+            "reason"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "error": {
+              "$ref": "#/$defs/ResourceError"
+            },
+            "kind": {
+              "type": "string",
+              "const": "failed"
+            }
+          },
+          "required": [
+            "kind",
+            "error"
+          ]
+        }
+      ]
+    },
+    "ResourceProvenance": {
+      "type": "object",
+      "properties": {
+        "finalUrl": {
+          "type": "string"
+        },
+        "finalUrlSha256": {
+          "type": "string"
+        },
+        "receivedBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "redirects": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          }
+        },
+        "source": {
+          "$ref": "#/$defs/ResourceRetrievalSource"
+        },
+        "status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "required": [
+        "source",
+        "finalUrl",
+        "finalUrlSha256",
+        "receivedBytes"
+      ]
+    },
+    "ResourceRecord": {
+      "type": "object",
+      "properties": {
+        "frameId": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "id": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "outcome": {
+          "$ref": "#/$defs/ResourceOutcome"
+        },
+        "provenance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ResourceProvenance"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "requestedUrl": {
+          "type": "string"
+        },
+        "requestedUrlSha256": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "frameId",
+        "requestedUrl",
+        "requestedUrlSha256",
+        "outcome"
+      ]
+    },
+    "ResourceRetrievalSource": {
+      "type": "string",
+      "enum": [
+        "inline-data",
+        "observed-response",
+        "browser-context-fetch",
+        "owning-frame-read",
+        "local-file-read"
+      ]
+    },
+    "ResourceSummary": {
+      "type": "object",
+      "properties": {
+        "discovered": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "embedded": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "embeddedBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "external": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "omitted": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "discovered",
+        "embedded",
+        "external",
+        "omitted",
+        "failed",
+        "embeddedBytes"
+      ]
+    },
+    "StructuralRepair": {
+      "type": "object",
+      "properties": {
+        "applied": {
+          "type": "boolean"
+        },
+        "scriptSha256": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "applied"
+      ]
+    },
+    "UserAgentPolicy": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "browser-default"
+            }
+          },
+          "required": [
+            "kind"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "override"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ]
+        }
+      ]
+    },
+    "VerificationPolicy": {
+      "type": "string",
+      "enum": [
+        "static",
+        "offline"
+      ]
+    },
+    "ViewState": {
+      "type": "object",
+      "properties": {
+        "scrollX": {
+          "type": "string"
+        },
+        "scrollY": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "scrollX",
+        "scrollY"
+      ]
+    },
+    "Viewport": {
+      "type": "object",
+      "properties": {
+        "height": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "scale": {
+          "type": "integer",
+          "format": "uint8",
+          "maximum": 255,
+          "minimum": 0
+        },
+        "width": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "scale"
+      ]
+    }
+  }
+}

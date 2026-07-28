@@ -1,0 +1,20 @@
+[package]
+name = "pageknot-transform"
+description = "Shared safe-static PageKnot document transformation"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[dependencies]
+pageknot-document.workspace = true
+pageknot-html.workspace = true
+pageknot-model.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

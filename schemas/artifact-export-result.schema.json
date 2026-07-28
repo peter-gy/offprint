@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ArtifactExportResult",
+  "type": "object",
+  "properties": {
+    "policySha256": {
+      "type": "string"
+    },
+    "resources": {
+      "$ref": "#/$defs/ResourceSummary"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "sourceArtifactSha256": {
+      "type": "string"
+    },
+    "variants": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ExportedArtifact"
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "sourceArtifactSha256",
+    "policySha256",
+    "resources",
+    "variants"
+  ],
+  "$defs": {
+    "ArtifactVariantKind": {
+      "type": "string",
+      "enum": [
+        "pdf",
+        "markdown",
+        "zip",
+        "self-extracting",
+        "mhtml"
+      ]
+    },
+    "ArtifactVariantVerification": {
+      "type": "object",
+      "properties": {
+        "bytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "contentValid": {
+          "type": "boolean"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactVariantKind"
+        },
+        "passed": {
+          "type": "boolean"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "structureValid": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "passed",
+        "bytes",
+        "sha256",
+        "structureValid",
+        "contentValid"
+      ]
+    },
+    "ExportedArtifact": {
+      "type": "object",
+      "properties": {
+        "bytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "entrypoint": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ArtifactVariantKind"
+        },
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "verification": {
+          "$ref": "#/$defs/ArtifactVariantVerification"
+        }
+      },
+      "required": [
+        "kind",
+        "path",
+        "entrypoint",
+        "bytes",
+        "sha256",
+        "verification"
+      ]
+    },
+    "ResourceSummary": {
+      "type": "object",
+      "properties": {
+        "discovered": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "embedded": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "embeddedBytes": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "external": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "omitted": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "discovered",
+        "embedded",
+        "external",
+        "omitted",
+        "failed",
+        "embeddedBytes"
+      ]
+    }
+  }
+}

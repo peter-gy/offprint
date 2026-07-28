@@ -1,0 +1,178 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-07-27T16:48:14.496638Z",
+  "gitRevision": null,
+  "environment": {
+    "os": "macos",
+    "architecture": "aarch64",
+    "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
+    "logicalCpus": 14,
+    "browserVersion": "151.0.7922.47",
+    "browserRevision": "1654411"
+  },
+  "configuration": {
+    "suite": "all",
+    "warmupIterations": 2,
+    "microIterations": 12,
+    "browserIterations": 3
+  },
+  "calibrationMedianNanoseconds": 2163666,
+  "cases": [
+    {
+      "name": "sha256-4-mib",
+      "category": "calibration",
+      "inputBytes": 4194304,
+      "iterations": 12,
+      "minimumNanoseconds": 1693208,
+      "medianNanoseconds": 2163666,
+      "p95Nanoseconds": 2523458,
+      "maximumNanoseconds": 2523458,
+      "throughputBytesPerSecond": 1938517312,
+      "normalizedMedian": 1.0
+    },
+    {
+      "name": "html-parse-serialize",
+      "category": "document",
+      "inputBytes": 248769,
+      "iterations": 12,
+      "minimumNanoseconds": 4812292,
+      "medianNanoseconds": 4968333,
+      "p95Nanoseconds": 5284166,
+      "maximumNanoseconds": 5284166,
+      "throughputBytesPerSecond": 50070919,
+      "normalizedMedian": 2.2962569084137754
+    },
+    {
+      "name": "css-parse-url-rewrite",
+      "category": "document",
+      "inputBytes": 76444,
+      "iterations": 12,
+      "minimumNanoseconds": 3016042,
+      "medianNanoseconds": 3166750,
+      "p95Nanoseconds": 3258625,
+      "maximumNanoseconds": 3258625,
+      "throughputBytesPerSecond": 24139575,
+      "normalizedMedian": 1.4636039018961338
+    },
+    {
+      "name": "srcset-parse",
+      "category": "document",
+      "inputBytes": 31004,
+      "iterations": 12,
+      "minimumNanoseconds": 476917,
+      "medianNanoseconds": 481000,
+      "p95Nanoseconds": 499292,
+      "maximumNanoseconds": 499292,
+      "throughputBytesPerSecond": 64457380,
+      "normalizedMedian": 0.22230787931224136
+    },
+    {
+      "name": "data-url-encode-decode",
+      "category": "resource",
+      "inputBytes": 1048576,
+      "iterations": 12,
+      "minimumNanoseconds": 1783042,
+      "medianNanoseconds": 1797125,
+      "p95Nanoseconds": 1825875,
+      "maximumNanoseconds": 1825875,
+      "throughputBytesPerSecond": 583474160,
+      "normalizedMedian": 0.8305926145717499
+    },
+    {
+      "name": "resource-graph-create-resolve",
+      "category": "resource",
+      "inputBytes": 240000,
+      "iterations": 12,
+      "minimumNanoseconds": 1220708,
+      "medianNanoseconds": 1246458,
+      "p95Nanoseconds": 1275500,
+      "maximumNanoseconds": 1275500,
+      "throughputBytesPerSecond": 192545597,
+      "normalizedMedian": 0.5760861426856085
+    },
+    {
+      "name": "content-store-hash",
+      "category": "resource",
+      "inputBytes": 4194304,
+      "iterations": 6,
+      "minimumNanoseconds": 9127708,
+      "medianNanoseconds": 9786375,
+      "p95Nanoseconds": 13084500,
+      "maximumNanoseconds": 13084500,
+      "throughputBytesPerSecond": 428586069,
+      "normalizedMedian": 4.523052541381156
+    },
+    {
+      "name": "frame-embedding",
+      "category": "document",
+      "inputBytes": 3454,
+      "iterations": 12,
+      "minimumNanoseconds": 112958,
+      "medianNanoseconds": 119334,
+      "p95Nanoseconds": 129041,
+      "maximumNanoseconds": 129041,
+      "throughputBytesPerSecond": 28943972,
+      "normalizedMedian": 0.05515361428242622
+    },
+    {
+      "name": "manifest-serialization",
+      "category": "artifact",
+      "inputBytes": 1077,
+      "iterations": 12,
+      "minimumNanoseconds": 1250,
+      "medianNanoseconds": 1292,
+      "p95Nanoseconds": 1458,
+      "maximumNanoseconds": 1458,
+      "throughputBytesPerSecond": 833591331,
+      "normalizedMedian": 0.0005971346779031514
+    },
+    {
+      "name": "end-to-end-static-article",
+      "category": "browser",
+      "inputBytes": 15162,
+      "iterations": 3,
+      "minimumNanoseconds": 3255397167,
+      "medianNanoseconds": 3288583708,
+      "p95Nanoseconds": 3321235709,
+      "maximumNanoseconds": 3321235709,
+      "throughputBytesPerSecond": 4610,
+      "normalizedMedian": 1519.912827580597
+    },
+    {
+      "name": "end-to-end-frame-heavy",
+      "category": "browser",
+      "inputBytes": 3743,
+      "iterations": 3,
+      "minimumNanoseconds": 2965287625,
+      "medianNanoseconds": 3084543042,
+      "p95Nanoseconds": 3148295125,
+      "maximumNanoseconds": 3148295125,
+      "throughputBytesPerSecond": 1213,
+      "normalizedMedian": 1425.609609801143
+    },
+    {
+      "name": "end-to-end-image-heavy",
+      "category": "browser",
+      "inputBytes": 9906,
+      "iterations": 3,
+      "minimumNanoseconds": 4743306542,
+      "medianNanoseconds": 4820028167,
+      "p95Nanoseconds": 4880506542,
+      "maximumNanoseconds": 4880506542,
+      "throughputBytesPerSecond": 2055,
+      "normalizedMedian": 2227.7135967381287
+    },
+    {
+      "name": "repeated-service-capture",
+      "category": "lifecycle",
+      "inputBytes": 15162,
+      "iterations": 6,
+      "minimumNanoseconds": 3222416500,
+      "medianNanoseconds": 3243517625,
+      "p95Nanoseconds": 3256275291,
+      "maximumNanoseconds": 3256275291,
+      "throughputBytesPerSecond": 4674,
+      "normalizedMedian": 1499.084250988831
+    }
+  ]
+}

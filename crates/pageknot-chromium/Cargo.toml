@@ -1,0 +1,38 @@
+[package]
+name = "pageknot-chromium"
+description = "Chromium discovery, process lifecycle, and CDP backend for PageKnot"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+[dependencies]
+async-trait.workspace = true
+base64.workspace = true
+bytes.workspace = true
+camino.workspace = true
+futures-util.workspace = true
+fs2.workspace = true
+hex.workspace = true
+pageknot-browser.workspace = true
+pageknot-model.workspace = true
+pageknot-protocol.workspace = true
+processkit.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+tokio-tungstenite.workspace = true
+tokio-util.workspace = true
+url.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+pageknot-test-support = { path = "../pageknot-test-support" }
+
+[lints]
+workspace = true
