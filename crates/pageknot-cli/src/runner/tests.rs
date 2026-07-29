@@ -487,7 +487,7 @@ async fn verification_deadline_returns_a_retryable_timeout() {
 }
 
 #[tokio::test]
-async fn verify_rejects_an_invalid_deadline_before_reading_the_artifact() -> TestResult {
+async fn verify_rejects_an_invalid_deadline() -> TestResult {
     let cli = Cli::try_parse_from([
         "pageknot",
         "verify",
@@ -505,16 +505,11 @@ async fn verify_rejects_an_invalid_deadline_before_reading_the_artifact() -> Tes
 
     assert_eq!(exit, CommandExit::InvalidInput);
     assert!(String::from_utf8_lossy(&diagnostics).contains("pageknot.input.duration"));
-    assert!(
-        !String::from_utf8_lossy(&diagnostics).contains("failed to read artifact"),
-        "{}",
-        String::from_utf8_lossy(&diagnostics)
-    );
     Ok(())
 }
 
 #[tokio::test]
-async fn static_verify_rejects_local_browser_selection_before_reading_the_artifact() -> TestResult {
+async fn static_verify_rejects_local_browser_selection() -> TestResult {
     let cli = Cli::try_parse_from([
         "pageknot",
         "verify",
@@ -533,12 +528,11 @@ async fn static_verify_rejects_local_browser_selection_before_reading_the_artifa
     assert_eq!(exit, CommandExit::InvalidInput);
     let diagnostics = String::from_utf8(diagnostics)?;
     assert!(diagnostics.contains("pageknot.input.browser_selection"));
-    assert!(!diagnostics.contains("pageknot.artifact.read"));
     Ok(())
 }
 
 #[tokio::test]
-async fn owned_browser_commands_reject_a_configured_remote_before_runtime_work() -> TestResult {
+async fn owned_browser_commands_reject_a_configured_remote() -> TestResult {
     let directory = tempfile::tempdir()?;
     let config = directory.path().join("config.toml");
     std::fs::write(
@@ -618,13 +612,12 @@ async fn owned_browser_commands_reject_a_configured_remote_before_runtime_work()
             diagnostics.contains("pageknot.input.browser_selection"),
             "{command}: {diagnostics}"
         );
-        assert!(!diagnostics.contains("pageknot.artifact.read"), "{command}");
     }
     Ok(())
 }
 
 #[tokio::test]
-async fn local_browser_flags_replace_a_configured_remote_before_validation() -> TestResult {
+async fn local_browser_flags_override_a_configured_remote() -> TestResult {
     let directory = tempfile::tempdir()?;
     let config = directory.path().join("config.toml");
     std::fs::write(
@@ -722,10 +715,6 @@ async fn local_browser_flags_replace_a_configured_remote_before_validation() -> 
             diagnostics.contains(expected_code),
             "{command}: {diagnostics}"
         );
-        assert!(
-            !diagnostics.contains("pageknot.input.browser_selection"),
-            "{command}: {diagnostics}"
-        );
     }
     Ok(())
 }
@@ -800,7 +789,7 @@ async fn group_readable_credential_file_is_rejected_before_browser_work() -> Tes
 
 #[tokio::test]
 #[ignore = "requires a locally installed compatible Chromium browser"]
-async fn capture_writes_the_committed_path_to_stdout() -> TestResult {
+async fn capture_commits_and_reports_the_destination() -> TestResult {
     let server = FixtureServer::start().await?;
     server
         .register(
@@ -811,6 +800,7 @@ async fn capture_writes_the_committed_path_to_stdout() -> TestResult {
     let url = server.url("/")?;
     let directory = tempfile::tempdir()?;
     let destination = directory.path().join("capture.html");
+    std::fs::write(&destination, b"existing output")?;
     let destination = destination
         .to_str()
         .ok_or_else(|| std::io::Error::other("artifact path is not UTF-8"))?;

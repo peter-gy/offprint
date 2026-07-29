@@ -2131,7 +2131,7 @@ async fn offline_verification_ignores_rendering_diagnostics() -> TestResult {
 
 #[tokio::test]
 #[ignore = "requires a locally installed compatible Chromium browser"]
-async fn offline_verification_blocks_page_and_nested_worker_transports() -> TestResult {
+async fn offline_verification_contains_page_and_nested_worker_transports() -> TestResult {
     let server = FixtureServer::start().await?;
     let fetch_url = server.url("/worker-fetch")?.to_string();
     let mut socket_url = server.url("/worker-socket")?;
@@ -2158,6 +2158,24 @@ async fn offline_verification_blocks_page_and_nested_worker_transports() -> Test
         serde_json::to_string(socket_url.as_str())?,
         serde_json::to_string(&nested_source)?,
     );
+    let transport_probe = format!(
+        r#"const outcomes = {{}};
+        const probe = (name, open) => {{
+            try {{
+                const transport = open();
+                transport.close?.();
+                outcomes[name] = "allowed";
+            }} catch (error) {{
+                outcomes[name] = error?.name ?? "error";
+            }}
+        }};
+        probe("webSocket", () => new WebSocket({}));
+        probe("eventSource", () => new EventSource({}));
+        probe("rtc", () => new RTCPeerConnection());
+        document.querySelector("main").dataset.transports = JSON.stringify(outcomes);"#,
+        serde_json::to_string(socket_url.as_str())?,
+        serde_json::to_string(&server.url("/event-source")?.to_string())?,
+    );
     let mut artifact = tempfile::Builder::new().suffix(".html").tempfile()?;
     artifact.write_all(
         format!(
@@ -2182,11 +2200,10 @@ async fn offline_verification_blocks_page_and_nested_worker_transports() -> Test
                     `${{error.name}}:${{error.message}}`;
             }}
             fetch({}).catch(() => {{}});
-            try {{ new WebSocket({}); }} catch (_) {{}}
+            {transport_probe}
             </script>"#,
             serde_json::to_string(&outer_source)?,
             serde_json::to_string(&fetch_url)?,
-            serde_json::to_string(socket_url.as_str())?,
         )
         .as_bytes(),
     )?;
@@ -2216,6 +2233,17 @@ async fn offline_verification_blocks_page_and_nested_worker_transports() -> Test
     })
     .await??;
     assert_eq!(worker_state.as_str(), Some("nested-started,outer-started"));
+    let transports = page
+        .evaluate("JSON.parse(document.querySelector('main')?.dataset.transports || '{}')")
+        .await?;
+    assert_eq!(
+        transports,
+        serde_json::json!({
+            "webSocket": "allowed",
+            "eventSource": "allowed",
+            "rtc": "SecurityError"
+        })
+    );
     assert!(server.requests().await.is_empty());
     page.close().await?;
     process.close().await?;

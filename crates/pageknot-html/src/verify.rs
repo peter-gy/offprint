@@ -172,7 +172,7 @@ mod tests {
     };
     use url::Url;
 
-    use crate::encode_html;
+    use crate::{STATE_RESTORATION_SCRIPT, encode_html};
 
     use super::{test_manifest, validate_embedded_resource, verify_static};
 
@@ -446,24 +446,21 @@ mod tests {
     }
 
     #[test]
-    fn verifier_rejects_a_modified_state_restoration_program() {
+    fn verifier_rejects_a_modified_state_restoration_program() -> pageknot_model::Result<()> {
         let document = Document::parse(b"<html><head><title>x</title></head><body></body></html>");
-        let encoded = encode_html(&document, &test_manifest()).map(|bytes| {
-            String::from_utf8_lossy(&bytes)
-                .replace("const limit = 1000000000;", "const limit = 1;")
-                .into_bytes()
-        });
-        let verified = encoded.as_deref().map(verify_static);
+        let encoded = encode_html(&document, &test_manifest())?;
+        let original = String::from_utf8_lossy(&encoded);
+        let modified = original.replacen(STATE_RESTORATION_SCRIPT, "invalid", 1);
+        assert_ne!(modified, original);
+        let verified = verify_static(modified.as_bytes());
 
         assert_eq!(
-            verified
-                .ok()
-                .and_then(std::result::Result::err)
-                .map(|error| error.code),
+            verified.err().map(|error| error.code),
             Some(pageknot_model::ErrorCode::from_static(
                 "pageknot.verification.active_content"
             ))
         );
+        Ok(())
     }
 
     #[test]

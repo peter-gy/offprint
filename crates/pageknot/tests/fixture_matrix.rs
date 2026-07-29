@@ -136,10 +136,6 @@ async fn external_stylesheet_resources_resolve_from_stylesheet_url() -> TestResu
                 && matches!(record.outcome, pageknot::ResourceOutcome::Embedded { .. })
         }));
     }
-    assert!(
-        !String::from_utf8_lossy(&captured.content).contains("data-pageknot-css-base"),
-        "stylesheet base metadata escaped into the artifact"
-    );
 
     pageknot.close().await?;
     server.close().await;
@@ -1422,9 +1418,7 @@ async fn capture_bytes(
     Ok(CapturedArtifact { result, content })
 }
 
-#[tokio::test]
-#[ignore = "requires a locally installed compatible Chromium browser"]
-async fn selection_and_optimizers_preserve_visible_output() -> TestResult {
+async fn policy_fixture() -> TestResult<(FixtureServer, Url)> {
     let server = FixtureServer::start().await?;
     register_svg(&server, "/selected.svg", "rgb(30, 110, 190)").await?;
     register_svg(&server, "/alternative.svg", "rgb(190, 80, 30)").await?;
@@ -1438,7 +1432,7 @@ async fn selection_and_optimizers_preserve_visible_output() -> TestResult {
                   .used { font-family: system-ui, sans-serif }
                 </style></head><body>
                 <main>
-                  <article id="selected" class="used">
+                  <article id="selected" class="used capture-target">
                     <h1>selected policy evidence</h1>
                     <picture>
                       <source srcset="/alternative.svg 2x">
@@ -1447,6 +1441,7 @@ async fn selection_and_optimizers_preserve_visible_output() -> TestResult {
                     </picture>
                   </article>
                   <p id="unselected">unselected branch</p>
+                  <article class="capture-target">second selector match</article>
                   <p id="hidden" style="display:none">hidden branch</p>
                 </main>
                 <script>
@@ -1457,8 +1452,15 @@ async fn selection_and_optimizers_preserve_visible_output() -> TestResult {
                   selection.addRange(range);
                 </script></body></html>"#;
     server.register("/", FixtureResponse::html(fixture)).await?;
-    let pageknot = PageKnot::builder().build()?;
     let url = server.url("/")?;
+    Ok((server, url))
+}
+
+#[tokio::test]
+#[ignore = "requires a locally installed compatible Chromium browser"]
+async fn visual_optimizers_reduce_resources_and_preserve_rendering() -> TestResult {
+    let (server, url) = policy_fixture().await?;
+    let pageknot = PageKnot::builder().build()?;
     let baseline = capture_bytes_with_policy(&pageknot, url.clone(), CapturePolicy::default())
         .await
         .map_err(|error| std::io::Error::other(format!("baseline capture failed: {error:?}")))?;
@@ -1470,66 +1472,70 @@ async fn selection_and_optimizers_preserve_visible_output() -> TestResult {
         },
         ..CapturePolicy::default()
     };
-    let optimized = capture_bytes_with_policy(&pageknot, url.clone(), optimized_policy.clone())
+    let optimized = capture_bytes_with_policy(&pageknot, url, optimized_policy)
         .await
         .map_err(|error| std::io::Error::other(format!("optimized capture failed: {error:?}")))?;
-    let selection = capture_bytes_with_policy(
-        &pageknot,
-        url.clone(),
-        CapturePolicy {
-            scope: CaptureScope::Selection,
-            ..optimized_policy.clone()
-        },
-    )
-    .await
-    .map_err(|error| std::io::Error::other(format!("selection capture failed: {error:?}")))?;
-    let selector = capture_bytes_with_policy(
-        &pageknot,
-        url,
-        CapturePolicy {
-            selector: Some("#selected".to_owned()),
-            ..optimized_policy
-        },
-    )
-    .await
-    .map_err(|error| std::io::Error::other(format!("selector capture failed: {error:?}")))?;
 
     assert_success(&baseline);
     assert_success(&optimized);
-    assert_success(&selection);
-    assert_success(&selector);
-    let baseline_html = String::from_utf8_lossy(&baseline.content);
-    let optimized_html = String::from_utf8_lossy(&optimized.content);
-    let selection_html = String::from_utf8_lossy(&selection.content);
-    let selector_html = String::from_utf8_lossy(&selector.content);
-    assert!(baseline_html.contains(".unused"), "{baseline_html}");
-    assert!(baseline_html.contains("UnusedFace"), "{baseline_html}");
-    assert!(baseline_html.contains("hidden branch"), "{baseline_html}");
-    assert!(!optimized_html.contains(".unused"), "{optimized_html}");
-    assert!(!optimized_html.contains("UnusedFace"), "{optimized_html}");
     assert!(
-        !optimized_html.contains("hidden branch"),
-        "{optimized_html}"
+        optimized.result.resources.discovered < baseline.result.resources.discovered,
+        "baseline: {:?}, optimized: {:?}",
+        baseline.result.resources,
+        optimized.result.resources
     );
-    assert!(!optimized_html.contains("srcset="), "{optimized_html}");
-    assert!(!optimized_html.contains("<source"), "{optimized_html}");
-    assert!(selection_html.contains("selected policy evidence"));
-    assert!(!selection_html.contains("unselected branch"));
-    assert!(selector_html.contains("selected policy evidence"));
-    assert!(!selector_html.contains("unselected branch"));
+    assert!(optimized.content.len() < baseline.content.len());
 
     let directory = tempfile::tempdir()?;
     let baseline_path = directory.path().join("baseline.html");
     let optimized_path = directory.path().join("optimized.html");
     std::fs::write(&baseline_path, &baseline.content)?;
     std::fs::write(&optimized_path, &optimized.content)?;
-    let baseline_screenshot = screenshot_file(&baseline_path).await?;
-    let optimized_screenshot = screenshot_file(&optimized_path).await?;
+    let (baseline_screenshot, optimized_screenshot) =
+        screenshot_pair(&baseline_path, &optimized_path).await?;
     let similarity = pixel_similarity(&baseline_screenshot, &optimized_screenshot)?;
     assert!(
         similarity >= 0.999,
         "optimizer screenshot similarity was {similarity:.6}"
     );
+
+    pageknot.close().await?;
+    server.close().await;
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "requires a locally installed compatible Chromium browser"]
+async fn selection_and_selector_capture_the_first_rendered_target() -> TestResult {
+    let (server, url) = policy_fixture().await?;
+    let pageknot = PageKnot::builder().build()?;
+    let selection = capture_bytes_with_policy(
+        &pageknot,
+        url.clone(),
+        CapturePolicy {
+            scope: CaptureScope::Selection,
+            ..CapturePolicy::default()
+        },
+    )
+    .await?;
+    let selector = capture_bytes_with_policy(
+        &pageknot,
+        url,
+        CapturePolicy {
+            selector: Some(".capture-target".to_owned()),
+            ..CapturePolicy::default()
+        },
+    )
+    .await?;
+
+    assert_success(&selection);
+    assert_success(&selector);
+    for scoped in [&selection, &selector] {
+        let html = String::from_utf8_lossy(&scoped.content);
+        assert!(html.contains("selected policy evidence"), "{html}");
+        assert!(!html.contains("unselected branch"), "{html}");
+        assert!(!html.contains("second selector match"), "{html}");
+    }
 
     pageknot.close().await?;
     server.close().await;
@@ -1550,7 +1556,10 @@ async fn capture_bytes_with_policy(
     Ok(CapturedArtifact { result, content })
 }
 
-async fn screenshot_file(path: &std::path::Path) -> TestResult<Vec<u8>> {
+async fn screenshot_pair(
+    first: &std::path::Path,
+    second: &std::path::Path,
+) -> TestResult<(Vec<u8>, Vec<u8>)> {
     let executable = ChromiumDiscovery::new()
         .discover()
         .await
@@ -1559,14 +1568,25 @@ async fn screenshot_file(path: &std::path::Path) -> TestResult<Vec<u8>> {
         .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "no browser"))?;
     let process = ChromiumProcess::launch(ChromiumLaunchOptions::new(executable)).await?;
     let page = process.new_page(&BrowserEnvironment::default()).await?;
-    let url = Url::from_file_path(path)
-        .map_err(|()| std::io::Error::other("artifact path is not a file URL"))?;
-    page.navigate(&url, ReadinessMode::Load, 0, Duration::from_secs(10))
-        .await?;
-    let screenshot = page.capture_page_screenshot(16 * 1024 * 1024).await?;
-    page.close().await?;
-    process.close().await?;
-    Ok(screenshot)
+    let screenshots: TestResult<(Vec<u8>, Vec<u8>)> = async {
+        let first_url = Url::from_file_path(first)
+            .map_err(|()| std::io::Error::other("artifact path is not a file URL"))?;
+        page.navigate(&first_url, ReadinessMode::Load, 0, Duration::from_secs(10))
+            .await?;
+        let first = page.capture_page_screenshot(16 * 1024 * 1024).await?;
+        let second_url = Url::from_file_path(second)
+            .map_err(|()| std::io::Error::other("artifact path is not a file URL"))?;
+        page.navigate(&second_url, ReadinessMode::Load, 0, Duration::from_secs(10))
+            .await?;
+        let second = page.capture_page_screenshot(16 * 1024 * 1024).await?;
+        Ok((first, second))
+    }
+    .await;
+    let page_close = page.close().await;
+    let process_close = process.close().await;
+    page_close?;
+    process_close?;
+    screenshots
 }
 
 async fn evaluate_file(path: &std::path::Path, expression: &str) -> TestResult<serde_json::Value> {

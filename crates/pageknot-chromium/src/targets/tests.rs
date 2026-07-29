@@ -362,17 +362,6 @@ fn response_filters_capture_rendered_resource_types() {
     );
 }
 
-#[test]
-fn remote_containment_blocks_direct_socket_constructors() {
-    let local = containment_script(false);
-    let remote = containment_script(true);
-
-    assert!(local.contains("RTCPeerConnection"));
-    assert!(!local.contains("block(\"WebSocket\")"));
-    assert!(remote.contains("block(\"WebSocket\")"));
-    assert!(remote.contains("block(\"EventSource\")"));
-}
-
 #[tokio::test]
 async fn dedicated_workers_skip_unsupported_fetch_interception_before_resume() -> AsyncTestResult {
     let server = RecordingCdpServer::start().await?;

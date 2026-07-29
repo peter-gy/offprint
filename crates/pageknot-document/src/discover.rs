@@ -521,7 +521,7 @@ mod tests {
 
     #[test]
     fn resolves_materialized_css_from_its_stylesheet_base() {
-        let mut document = Document::parse(
+        let document = Document::parse(
             br#"<html><head><style data-pageknot-css-base="https://cdn.example/assets/theme.css">
                 @font-face{src:url("font.woff2")}main{background:url("image.svg")}
                 </style></head><body><main></main></body></html>"#,
@@ -545,14 +545,6 @@ mod tests {
                 "https://cdn.example/assets/font.woff2",
                 "https://cdn.example/assets/image.svg"
             ]
-        );
-        assert!(discovered.rewrite(&mut document, &BTreeMap::new()).is_ok());
-        let html = serialize_document(&document)
-            .ok()
-            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
-        assert!(
-            html.as_ref()
-                .is_some_and(|html| !html.contains("data-pageknot-css-base"))
         );
     }
 

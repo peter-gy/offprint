@@ -76,12 +76,53 @@ async fn local_doctor_probes_launch_cdp_and_collector_readiness() -> Result<()> 
 async fn remote_doctor_reports_constraints_and_static_capture_keeps_process_ownership() -> Result<()>
 {
     let server = FixtureServer::start().await?;
+    let event_url = server.url("/events")?;
+    let mut socket_url = server.url("/socket")?;
+    socket_url.set_scheme("ws").map_err(|()| {
+        PageKnotError::new(
+            "pageknot.internal.fixture",
+            ErrorStage::Internal,
+            "fixture URL cannot use the WebSocket scheme",
+        )
+    })?;
     server
         .register(
             "/",
-            FixtureResponse::html(
-                "<title>Remote capture</title><main id=\"result\">attached</main>",
-            ),
+            FixtureResponse::html(format!(
+                r#"<title>Remote capture</title><main id="result">starting</main>
+                <script>
+                const outcomes = {{}};
+                const probe = (name, open) => {{
+                    try {{
+                        const transport = open();
+                        transport.close?.();
+                        outcomes[name] = "allowed";
+                    }} catch (error) {{
+                        outcomes[name] = error?.name ?? "error";
+                    }}
+                }};
+                probe("webSocket", () => new WebSocket({}));
+                probe("eventSource", () => new EventSource({}));
+                probe("rtc", () => new RTCPeerConnection());
+                document.getElementById("result").textContent =
+                    `eventSource=${{outcomes.eventSource}};` +
+                    `rtc=${{outcomes.rtc}};webSocket=${{outcomes.webSocket}}`;
+                </script>"#,
+                serde_json::to_string(socket_url.as_str()).map_err(|error| {
+                    PageKnotError::new(
+                        "pageknot.internal.fixture",
+                        ErrorStage::Internal,
+                        format!("failed to encode the WebSocket fixture URL: {error}"),
+                    )
+                })?,
+                serde_json::to_string(event_url.as_str()).map_err(|error| {
+                    PageKnotError::new(
+                        "pageknot.internal.fixture",
+                        ErrorStage::Internal,
+                        format!("failed to encode the event stream fixture URL: {error}"),
+                    )
+                })?,
+            )),
         )
         .await?;
     let fixture_url = server.url("/")?;
@@ -134,7 +175,10 @@ async fn remote_doctor_reports_constraints_and_static_capture_keeps_process_owne
             "remote capture did not return the requested byte artifact",
         ));
     };
-    assert!(String::from_utf8_lossy(&content).contains("attached"));
+    assert!(
+        String::from_utf8_lossy(&content)
+            .contains("eventSource=SecurityError;rtc=SecurityError;webSocket=SecurityError")
+    );
 
     pageknot.close().await?;
     assert!(process.is_healthy().await);

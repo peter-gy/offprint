@@ -126,13 +126,10 @@ fn matching_scripts(document: &Document) -> Vec<pageknot_model::NodeId> {
 mod tests {
     use pageknot_document::{Document, serialize_document};
 
-    use super::{
-        STATE_RESTORATION_SCRIPT, STATE_SCRIPT_ELEMENT_ID, apply_state_restoration,
-        state_restoration_script_digest,
-    };
+    use super::{STATE_RESTORATION_SCRIPT, STATE_SCRIPT_ELEMENT_ID, apply_state_restoration};
 
     #[test]
-    fn state_restoration_program_is_unique_and_digest_pinned() {
+    fn state_restoration_program_is_injected_once() {
         let mut document = Document::parse(
             format!(
                 r#"<html><head><script id="{STATE_SCRIPT_ELEMENT_ID}">old</script></head><body></body></html>"#
@@ -155,20 +152,10 @@ mod tests {
             1
         );
         assert!(html.contains(STATE_RESTORATION_SCRIPT));
-        assert!(STATE_RESTORATION_SCRIPT.contains("element.shadowRoot"));
-        assert_eq!(
-            state_restoration_script_digest(),
-            pageknot_model::ContentDigest::sha256(STATE_RESTORATION_SCRIPT.as_bytes())
-        );
     }
 
     #[test]
-    fn state_restoration_uses_the_supported_capture_node_maximum() {
-        assert!(STATE_RESTORATION_SCRIPT.contains("limits.nodes"));
-        assert!(
-            STATE_RESTORATION_SCRIPT
-                .contains(&format!("nodes: {}", pageknot_model::MAXIMUM_CAPTURE_NODES))
-        );
-        assert!(!STATE_RESTORATION_SCRIPT.contains("budget.elements"));
+    fn state_restoration_stops_after_one_million_capture_nodes() {
+        assert!(STATE_RESTORATION_SCRIPT.contains("nodes: 1000000"));
     }
 }

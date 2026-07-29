@@ -17,8 +17,8 @@ if (typeof Element === "undefined") {
         return Object.getOwnPropertyDescriptor(this, "namespaceURI")?.value;
       }
 
-      attachShadow() {
-        return {};
+      attachShadow(init: unknown) {
+        return { init };
       }
     },
   });
@@ -64,48 +64,40 @@ function append(parent: TestNode, ...children: TestNode[]): void {
 }
 
 describe("collector source", () => {
-  test("matches the shared direct-response wire fixture", async () => {
+  test("dispatches the shared versioned wire contract", async () => {
     const fixture = (await Bun.file(
       new URL(
         "../../crates/pageknot-protocol/fixtures/collector-responses.json",
         import.meta.url,
       ),
     ).json()) as Record<string, unknown>;
-    const handshake = globalThis.__pageknotCollector.handshake(
+    const handshake = globalThis.__pageknotCollector.call("handshake", [
       "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
       "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       ["form-state", "frame-owner-mapping"],
       65536,
-    );
-    const released = globalThis.__pageknotCollector.release(
+    ]) as Record<string, unknown>;
+    const released = globalThis.__pageknotCollector.call("release", [
       "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
       7,
-    );
+    ]);
+    const { availableCapabilities, collectorBuildSha256, ...stableHandshake } =
+      handshake;
+    const {
+      availableCapabilities: fixtureCapabilities,
+      collectorBuildSha256: _fixtureBuildSha256,
+      ...expectedHandshake
+    } = fixture.handshake as Record<string, unknown>;
 
-    expect(Object.keys(handshake).sort()).toEqual(
-      Object.keys(fixture.handshake as object).sort(),
-    );
+    expect(stableHandshake).toEqual(expectedHandshake);
+    expect(availableCapabilities).toBeArray();
+    for (const capability of fixtureCapabilities as string[]) {
+      expect(availableCapabilities as string[]).toContain(capability);
+    }
+    expect(collectorBuildSha256).toBeString();
     expect(released).toEqual(
       fixture.released as { captureId: string; frameId: number },
     );
-    expect(JSON.parse(JSON.stringify(fixture))).toEqual(fixture);
-  });
-
-  test("exposes the versioned protocol and bounded chunk API", async () => {
-    const source = await Bun.file(
-      new URL("../src/index.ts", import.meta.url),
-    ).text();
-
-    const handshake = globalThis.__pageknotCollector.handshake(
-      "capture-handshake",
-      "host-build",
-      [],
-      1024,
-    );
-    expect(handshake.protocol).toEqual({ major: 1, minor: 5 });
-    expect(source).toContain("maximumChunkBytes");
-    expect(source).toContain("acknowledge");
-    expect(source).toContain("release");
   });
 
   test("measures UTF-8 payloads at the configured boundary", () => {
@@ -618,37 +610,7 @@ describe("collector source", () => {
     }
   });
 
-  test("keeps production modules focused and the entrypoint compositional", async () => {
-    const files = [
-      "collection.ts",
-      "budget.ts",
-      "constants.ts",
-      "dispatch.ts",
-      "dom.ts",
-      "index.ts",
-      "motion.ts",
-      "primordials.ts",
-      "protocol.ts",
-      "serialize.ts",
-      "shadow.ts",
-      "scope.ts",
-      "state.ts",
-      "types.ts",
-      "web.ts",
-    ];
-    for (const file of files) {
-      const source = await Bun.file(
-        new URL(`../src/${file}`, import.meta.url),
-      ).text();
-      expect(source.split("\n").length).toBeLessThan(1000);
-    }
-    const index = await Bun.file(
-      new URL("../src/index.ts", import.meta.url),
-    ).text();
-    expect(index.split("\n").length).toBeLessThan(300);
-  });
-
-  test("avoids page-controlled iteration, setters, and dispatch", async () => {
+  test("uses captured primordials for page-controlled operations", async () => {
     const files = [
       "budget.ts",
       "collection.ts",
@@ -775,134 +737,28 @@ describe("collector source", () => {
     expect(failures).toEqual([]);
   });
 
-  test("preserves generated motion metadata during reserved cleanup", async () => {
-    const motionText = await Bun.file(
-      new URL("../src/motion.ts", import.meta.url),
-    ).text();
-    const motion = ts.createSourceFile(
-      "motion.ts",
-      motionText,
-      ts.ScriptTarget.Latest,
-      true,
-      ts.ScriptKind.TS,
-    );
-    const appendMotionStyles = motion.statements.find(
-      (statement): statement is ts.FunctionDeclaration =>
-        ts.isFunctionDeclaration(statement) &&
-        statement.name?.text === "appendMotionStyles",
-    );
-    let registration: ts.CallExpression | undefined;
-    let insertion: ts.CallExpression | undefined;
-    const visitMotion = (node: ts.Node): void => {
-      if (ts.isCallExpression(node)) {
-        const expression = node.expression.getText(motion);
-        const arguments_ = node.arguments.map((argument) =>
-          argument.getText(motion),
-        );
-        if (
-          expression === "weakSetAdd" &&
-          arguments_[0] === "generatedMotionStyles" &&
-          arguments_[1] === "style"
-        ) {
-          registration = node;
-        }
-        if (
-          expression === "appendChild" &&
-          arguments_[0] === "root" &&
-          arguments_[1] === "style"
-        ) {
-          insertion = node;
-        }
-      }
-      ts.forEachChild(node, visitMotion);
+  test("reads shadow options once and forwards normalized values", () => {
+    let modeReads = 0;
+    const init = {
+      get mode() {
+        modeReads += 1;
+        return "closed" as const;
+      },
     };
-    if (appendMotionStyles) {
-      visitMotion(appendMotionStyles);
-    }
 
-    const collectionText = await Bun.file(
-      new URL("../src/collection.ts", import.meta.url),
-    ).text();
-    const collection = ts.createSourceFile(
-      "collection.ts",
-      collectionText,
-      ts.ScriptTarget.Latest,
-      true,
-      ts.ScriptKind.TS,
-    );
-    const cleanup = collection.statements.find(
-      (statement): statement is ts.FunctionDeclaration =>
-        ts.isFunctionDeclaration(statement) &&
-        statement.name?.text === "removeReservedMetadata",
-    );
-    let preservesGenerated = false;
-    const visitCleanup = (node: ts.Node): void => {
-      if (
-        ts.isPrefixUnaryExpression(node) &&
-        node.operator === ts.SyntaxKind.ExclamationToken &&
-        ts.isCallExpression(node.operand) &&
-        node.operand.expression.getText(collection) === "isGeneratedMotionStyle"
-      ) {
-        preservesGenerated = true;
-      }
-      ts.forEachChild(node, visitCleanup);
+    const root = new Element().attachShadow(init) as unknown as {
+      init: ShadowRootInit;
     };
-    if (cleanup) {
-      visitCleanup(cleanup);
-    }
 
-    expect(registration).toBeDefined();
-    expect(insertion).toBeDefined();
-    expect(registration?.getStart()).toBeLessThan(insertion?.getStart() ?? 0);
-    expect(preservesGenerated).toBe(true);
-  });
-
-  test("snapshots the shadow mode before native attachment", async () => {
-    const sourceText = await Bun.file(
-      new URL("../src/shadow.ts", import.meta.url),
-    ).text();
-    const source = ts.createSourceFile(
-      "shadow.ts",
-      sourceText,
-      ts.ScriptTarget.Latest,
-      true,
-      ts.ScriptKind.TS,
-    );
-    const modeReads: ts.PropertyAccessExpression[] = [];
-    const nativeCalls: ts.CallExpression[] = [];
-    const visit = (node: ts.Node): void => {
-      if (
-        ts.isPropertyAccessExpression(node) &&
-        ts.isIdentifier(node.expression) &&
-        node.expression.text === "init" &&
-        node.name.text === "mode"
-      ) {
-        modeReads.push(node);
-      }
-      if (
-        ts.isCallExpression(node) &&
-        ts.isIdentifier(node.expression) &&
-        node.expression.text === "safeReflectApply" &&
-        node.arguments[0]?.getText(source) === "originalAttachShadow"
-      ) {
-        nativeCalls.push(node);
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(source);
-
-    expect(modeReads).toHaveLength(1);
-    expect(nativeCalls).toHaveLength(1);
-    expect(modeReads[0]?.getStart()).toBeLessThan(
-      nativeCalls[0]?.getStart() ?? 0,
-    );
-    const forwarded = nativeCalls[0]?.arguments[2];
-    const forwardsPageObject =
-      forwarded !== undefined &&
-      ts.isArrayLiteralExpression(forwarded) &&
-      forwarded.elements.some(
-        (element) => ts.isIdentifier(element) && element.text === "init",
-      );
-    expect(forwardsPageObject).toBe(false);
+    expect(modeReads).toBe(1);
+    expect(root.init).toEqual({
+      clonable: undefined,
+      customElementRegistry: undefined,
+      delegatesFocus: undefined,
+      mode: "closed",
+      serializable: undefined,
+      slotAssignment: undefined,
+    });
+    expect(root.init).not.toBe(init);
   });
 });

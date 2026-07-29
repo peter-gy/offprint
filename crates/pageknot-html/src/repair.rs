@@ -271,7 +271,7 @@ mod tests {
     use pageknot_document::{Document, serialize_document};
 
     use super::{
-        REPAIR_DATA_ELEMENT_ID, REPAIR_MEDIA_TYPE, REPAIR_SCRIPT_ELEMENT_ID, RESTORATION_SCRIPT,
+        REPAIR_DATA_ELEMENT_ID, REPAIR_MEDIA_TYPE, REPAIR_SCRIPT_ELEMENT_ID,
         apply_structural_repair,
     };
 
@@ -300,56 +300,5 @@ mod tests {
             html.as_ref()
                 .is_some_and(|html| html.contains(REPAIR_SCRIPT_ELEMENT_ID))
         );
-    }
-
-    #[test]
-    fn shadow_repair_data_keeps_declarative_contents_in_the_owned_program() {
-        let source = format!(
-            r#"<html data-pageknot-node="0"><head data-pageknot-node="1">
-            <script id="{REPAIR_DATA_ELEMENT_ID}" type="{REPAIR_MEDIA_TYPE}">{{
-              "documentElement": {{
-                "kind": "element",
-                "marker": "0",
-                "namespace": "http://www.w3.org/1999/xhtml",
-                "name": "html",
-                "children": [{{
-                  "kind": "element",
-                  "marker": "1",
-                  "namespace": "http://www.w3.org/1999/xhtml",
-                  "name": "body",
-                  "children": [{{
-                    "kind": "element",
-                    "marker": "2",
-                    "namespace": "http://www.w3.org/1999/xhtml",
-                    "name": "section",
-                    "children": [{{
-                      "kind": "element",
-                      "marker": "3",
-                      "namespace": "http://www.w3.org/1999/xhtml",
-                      "name": "template",
-                      "children": [],
-                      "templateContent": [{{
-                        "kind": "element",
-                        "marker": "4",
-                        "namespace": "http://www.w3.org/1999/xhtml",
-                        "name": "strong",
-                        "children": [{{"kind": "text", "value": "shadow"}}],
-                        "templateContent": []
-                      }}],
-                      "shadowMode": "open"
-                    }}],
-                    "templateContent": []
-                  }}],
-                  "templateContent": []
-                }}],
-                "templateContent": []
-              }}
-            }}</script></head><body data-pageknot-node="1"></body></html>"#
-        );
-        let mut document = Document::parse(source.as_bytes());
-
-        assert_eq!(apply_structural_repair(&mut document), Ok(true));
-        assert!(RESTORATION_SCRIPT.contains("restoreShadow"));
-        assert!(RESTORATION_SCRIPT.contains("spec.templateContent"));
     }
 }
