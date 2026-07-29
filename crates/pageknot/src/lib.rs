@@ -33,7 +33,6 @@ mod capture_builder;
 mod capture_service;
 mod dependencies;
 mod diagnostics;
-mod export_transaction;
 mod pipeline;
 mod runtime;
 mod scheduler;
@@ -47,6 +46,7 @@ pub use browser_service::BrowserService;
 pub use capture_builder::CaptureBuilder;
 pub use capture_service::{CaptureEvents, CaptureJob, CaptureService};
 pub use dependencies::{CaptureIdGenerator, Clock, SystemClock, UlidCaptureIdGenerator};
+pub use pageknot_artifact::portable_file_stem;
 pub use pageknot_browser::{
     BrowserAcquireRequest, BrowserBackend, BrowserContext, BrowserContextRequest, BrowserLease,
     CollectedPageObservation, CollectorLimits, PageSession,

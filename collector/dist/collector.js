@@ -44,6 +44,25 @@
     sha256Fallback: () => sha256Fallback
   });
 
+  // src/identity.ts
+  var protocol = { major: 1, minor: 5 };
+  var availableCapabilities = [
+    "adopted-stylesheets",
+    "canvas-pixels",
+    "closed-shadow-roots",
+    "cssom",
+    "form-state",
+    "frame-owner-mapping",
+    "hidden-element-removal",
+    "media-state",
+    "open-shadow-roots",
+    "responsive-images",
+    "selection-capture",
+    "selector-capture",
+    "unused-css-removal",
+    "unused-font-removal"
+  ];
+
   // src/constants.ts
   var manifestElementId = "pageknot-manifest";
   var repairDataElementId = "pageknot-repair-data";
@@ -61,24 +80,7 @@
   var cssBaseAttribute = "data-pageknot-css-base";
   var freezeAttribute = "data-pageknot-freeze";
   var freezeCss = "*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}";
-  var protocol = { major: 1, minor: 5 };
-  var buildSha256 = "b2dacc72dda5561b45fad76038f5786227cba293178a2b3549b9067da8ac73e6";
-  var availableCapabilities = [
-    "adopted-stylesheets",
-    "canvas-pixels",
-    "closed-shadow-roots",
-    "cssom",
-    "form-state",
-    "frame-owner-mapping",
-    "hidden-element-removal",
-    "media-state",
-    "open-shadow-roots",
-    "responsive-images",
-    "selection-capture",
-    "selector-capture",
-    "unused-css-removal",
-    "unused-font-removal"
-  ];
+  var buildSha256 = "4232f4a93e90823e6e18068b7a0b035d3bb4bd5a989b4529645b93e9c2b5a797";
 
   // src/primordials.ts
   var reflectApply = Reflect.apply;
@@ -1491,6 +1493,184 @@
     }
   }
 
+  // src/repair.ts
+  var htmlNamespace = "http://www.w3.org/1999/xhtml";
+  function removeReservedMetadata(root) {
+    const remove = [];
+    walkElements(root, (element) => {
+      if (arrayIncludes([
+        manifestElementId,
+        repairDataElementId,
+        repairScriptElementId,
+        stateScriptElementId
+      ], getAttribute(element, "id") ?? "") || hasAttribute(element, animationStyleAttribute) && !isGeneratedMotionStyle(element)) {
+        arrayPush(remove, element);
+      }
+    });
+    for (let index = 0;index < remove.length; index += 1) {
+      removeNode(remove[index]);
+    }
+  }
+  function serializeDocumentWithRepair(source, root, maximumBytes) {
+    assignRepairMarkers(root);
+    const initial = serializeHtmlBounded(root, maximumBytes);
+    if (initial.kind === "limit") {
+      return initial;
+    }
+    const structuralRepair = structuralRepairFor(root, initial.value);
+    if (structuralRepair) {
+      const repairJson = serializeJsonStringBounded(structuralRepair, maximumBytes);
+      if (repairJson.kind === "limit") {
+        return repairJson;
+      }
+      const repairData = escapeScriptDataBounded(repairJson.value, maximumBytes);
+      if (repairData.kind === "limit") {
+        return repairData;
+      }
+      appendRepairData(source, root, repairData.value);
+    } else {
+      removeRepairMarkers(root);
+    }
+    return serializeHtmlBounded(root, maximumBytes);
+  }
+  function structuralRepairFor(root, serialized) {
+    const reparsed = parseHtml(serialized);
+    if (repairNodesEqual(root, documentElement(reparsed))) {
+      return;
+    }
+    return { documentElement: repairNode(root) };
+  }
+  function repairNodesEqual(left, right) {
+    const pending = [[left, right]];
+    while (pending.length > 0) {
+      const pair = arrayPop(pending);
+      if (!pair) {
+        continue;
+      }
+      const leftNode = pair[0];
+      const rightNode = pair[1];
+      const leftType = nodeType(leftNode);
+      if (leftType !== nodeType(rightNode)) {
+        return false;
+      }
+      if (leftType === 3 || leftType === 8) {
+        if ((nodeValue(leftNode) ?? "") !== (nodeValue(rightNode) ?? "")) {
+          return false;
+        }
+        continue;
+      }
+      if (!isElement(leftNode) || !isElement(rightNode)) {
+        return false;
+      }
+      if (getAttribute(leftNode, repairMarkerAttribute) !== getAttribute(rightNode, repairMarkerAttribute) || (namespaceUri(leftNode) ?? htmlNamespace) !== (namespaceUri(rightNode) ?? htmlNamespace) || (localName(leftNode) ?? "") !== (localName(rightNode) ?? "") || shadowModeFor(leftNode) !== shadowModeFor(rightNode)) {
+        return false;
+      }
+      const leftChildren = childNodes(leftNode);
+      const rightChildren = childNodes(rightNode);
+      if (leftChildren.length !== rightChildren.length) {
+        return false;
+      }
+      for (let index = 0;index < leftChildren.length; index += 1) {
+        arrayPush(pending, [leftChildren[index], rightChildren[index]]);
+      }
+      const leftTemplate = templateChildren(leftNode);
+      const rightTemplate = templateChildren(rightNode);
+      if (leftTemplate.length !== rightTemplate.length) {
+        return false;
+      }
+      for (let index = 0;index < leftTemplate.length; index += 1) {
+        arrayPush(pending, [leftTemplate[index], rightTemplate[index]]);
+      }
+    }
+    return true;
+  }
+  function repairNode(node) {
+    if (nodeType(node) === 3) {
+      return { kind: "text", value: nodeValue(node) ?? "" };
+    }
+    if (nodeType(node) === 8) {
+      return { kind: "comment", value: nodeValue(node) ?? "" };
+    }
+    if (!isElement(node)) {
+      throw new SafeTypeError("structural repair supports element, text, and comment nodes");
+    }
+    const marker = getAttribute(node, repairMarkerAttribute) ?? "";
+    const children = repairChildren(node);
+    const shadowMode2 = shadowModeFor(node);
+    return {
+      kind: "element",
+      marker,
+      namespace: namespaceUri(node) ?? htmlNamespace,
+      name: localName(node) ?? "",
+      children,
+      templateContent: repairNodes(templateChildren(node)),
+      ...shadowMode2 ? { shadowMode: shadowMode2 } : {}
+    };
+  }
+  function repairChildren(parent) {
+    return repairNodes(childNodes(parent));
+  }
+  function repairNodes(nodes) {
+    const repaired = [];
+    for (let index = 0;index < nodes.length; index += 1) {
+      arrayPush(repaired, repairNode(nodes[index]));
+    }
+    return repaired;
+  }
+  function templateChildren(node) {
+    return isHtmlTemplate(node) ? childNodes(templateContent(node)) : [];
+  }
+  function shadowModeFor(node) {
+    return isHtmlTemplate(node) ? getAttribute(node, "shadowrootmode") ?? undefined : undefined;
+  }
+  function isHtmlTemplate(node) {
+    return namespaceUri(node) === htmlNamespace && localName(node) === "template";
+  }
+  function assignRepairMarkers(root) {
+    let nextMarker = 0;
+    walkElements(root, (element) => {
+      setAttribute(element, repairMarkerAttribute, SafeString(nextMarker));
+      nextMarker += 1;
+    });
+  }
+  function removeRepairMarkers(root) {
+    walkElements(root, (element) => {
+      removeAttribute(element, repairMarkerAttribute);
+    });
+  }
+  function walkElements(root, visit) {
+    const pending = [root];
+    while (pending.length > 0) {
+      const element = arrayPop(pending);
+      if (!element) {
+        continue;
+      }
+      visit(element);
+      const children = elementChildren(element);
+      const template = templateChildren(element);
+      for (let index = 0;index < template.length; index += 1) {
+        const child = template[index];
+        if (isElement(child)) {
+          arrayPush(children, child);
+        }
+      }
+      for (let index = children.length - 1;index >= 0; index -= 1) {
+        arrayPush(pending, children[index]);
+      }
+    }
+  }
+  function appendRepairData(source, root, repairData) {
+    const head = querySelector(root, "head");
+    if (!head) {
+      throw new SafeTypeError("structural repair requires an HTML head element");
+    }
+    const data = createElement(source, "script");
+    setAttribute(data, "id", repairDataElementId);
+    setAttribute(data, "type", repairMediaType);
+    setNodeTextContent(data, repairData);
+    appendChild(head, data);
+  }
+
   // src/scope.ts
   function resolveSelector(source, options) {
     if (options.selector === undefined) {
@@ -1944,10 +2124,10 @@
     };
   }
 
-  // src/collection.ts
+  // src/styles.ts
   function copyCssRules(sheet, root, context, maximumBytes) {
     try {
-      const usedFonts = context.options.removeUnusedFonts ? usedFontFamilies(root) : undefined;
+      const usedFonts = context.options.removeUnusedFonts ? usedFontsForRoot(root, context) : undefined;
       const inheritedFontFaces = nodeType(root) === 11 && styleSheetOwner(sheet) === null ? context.documentFontFaces : undefined;
       const copied = [];
       let bytes = 0;
@@ -2006,6 +2186,7 @@
 `);
   }
   var statefulSelector = /::|:(?:active|any-link|autofill|checked|defined|disabled|enabled|focus|focus-visible|focus-within|fullscreen|future|has|host|hover|indeterminate|link|modal|open|past|paused|picture-in-picture|placeholder-shown|playing|read-only|read-write|required|target|user-invalid|user-valid|valid|visited)\b/i;
+  var pseudoElements = ["::before", "::after"];
   function keepCssRule(rule, root, context, usedFonts, inheritedFontFaces) {
     const kind = cssRuleType(rule);
     if (context.options.removeUnusedCss && kind === 1) {
@@ -2028,6 +2209,15 @@
     }
     return true;
   }
+  function usedFontsForRoot(root, context) {
+    const cached = mapGet(context.usedFontsByRoot, root);
+    if (cached) {
+      return cached;
+    }
+    const families = usedFontFamilies(root);
+    mapSet(context.usedFontsByRoot, root, families);
+    return families;
+  }
   function usedFontFamilies(root) {
     const families = new SafeSet;
     const elements = querySelectorAll(root, "*");
@@ -2043,9 +2233,8 @@
       for (let familyIndex = 0;familyIndex < elementFonts.length; familyIndex += 1) {
         setAdd(families, elementFonts[familyIndex]);
       }
-      const pseudos = ["::before", "::after"];
-      for (let pseudoIndex = 0;pseudoIndex < pseudos.length; pseudoIndex += 1) {
-        const pseudoStyle = computedStyle(view, element, pseudos[pseudoIndex]);
+      for (let pseudoIndex = 0;pseudoIndex < pseudoElements.length; pseudoIndex += 1) {
+        const pseudoStyle = computedStyle(view, element, pseudoElements[pseudoIndex]);
         if (stylePropertyValue(pseudoStyle, "content") !== "none") {
           const pseudoFonts = fontFamilies(stylePropertyValue(pseudoStyle, "font-family"));
           for (let familyIndex = 0;familyIndex < pseudoFonts.length; familyIndex += 1) {
@@ -2090,6 +2279,64 @@
       appendChild(cloneRoot, style);
     }
   }
+  function applyCssom(source, clones, context) {
+    const sheets = nodeType(source) === 9 ? styleSheetsFromList(styleSheets(source)) : ownedStyleSheets(source);
+    for (let index = 0;index < sheets.length; index += 1) {
+      const sheet = sheets[index];
+      const owner = styleSheetOwner(sheet);
+      if (!owner || nodeType(owner) !== 1) {
+        continue;
+      }
+      const ownerClone = mapGet(clones, owner);
+      if (!ownerClone || !isElement(ownerClone)) {
+        continue;
+      }
+      const replacesStyleText = namespaceUri(ownerClone) === "http://www.w3.org/1999/xhtml" && localName(ownerClone) === "style";
+      const css = materializeCssRules(sheet, source, context, !replacesStyleText);
+      if (css === undefined) {
+        continue;
+      }
+      if (replacesStyleText) {
+        setNodeTextContent(ownerClone, css);
+        markStyleBase(ownerClone, sheet);
+      } else {
+        const style = createElement(documentFor(source), "style");
+        setAttribute(style, "data-pageknot-cssom", "");
+        markStyleBase(style, sheet);
+        setNodeTextContent(style, css);
+        replaceNode(ownerClone, style);
+      }
+    }
+  }
+  function markStyleBase(element, sheet) {
+    const href = styleSheetHref(sheet);
+    if (href) {
+      setAttribute(element, cssBaseAttribute, href);
+    }
+  }
+  function ownedStyleSheets(root) {
+    const sheets = [];
+    const owners = querySelectorAll(root, 'style, link[rel~="stylesheet"]');
+    for (let index = 0;index < owners.length; index += 1) {
+      const sheet = styleSheetFor(owners[index]);
+      if (sheet) {
+        arrayPush(sheets, sheet);
+      }
+    }
+    return sheets;
+  }
+  function documentFor(root) {
+    if (nodeType(root) === 9) {
+      return root;
+    }
+    const document2 = ownerDocument(root);
+    if (!document2) {
+      throw new SafeTypeError("a shadow root has no owner document");
+    }
+    return document2;
+  }
+
+  // src/collection.ts
   function copyShadowRoot(liveRoot, cloneHost, context) {
     const template = createInspectableShadowTemplate(liveRoot);
     const document2 = ownerDocument(liveRoot);
@@ -2151,52 +2398,6 @@
       }
     }
     return clones;
-  }
-  function applyCssom(source, clones, context) {
-    const sheets = nodeType(source) === 9 ? styleSheetsFromList(styleSheets(source)) : ownedStyleSheets(source);
-    for (let index = 0;index < sheets.length; index += 1) {
-      const sheet = sheets[index];
-      const owner = styleSheetOwner(sheet);
-      if (!owner || nodeType(owner) !== 1) {
-        continue;
-      }
-      const ownerClone = mapGet(clones, owner);
-      if (!ownerClone || !isElement(ownerClone)) {
-        continue;
-      }
-      const replacesStyleText = namespaceUri(ownerClone) === "http://www.w3.org/1999/xhtml" && localName(ownerClone) === "style";
-      const css = materializeCssRules(sheet, source, context, !replacesStyleText);
-      if (css === undefined) {
-        continue;
-      }
-      if (replacesStyleText) {
-        setNodeTextContent(ownerClone, css);
-        markStyleBase(ownerClone, sheet);
-      } else {
-        const style = createElement(documentFor(source), "style");
-        setAttribute(style, "data-pageknot-cssom", "");
-        markStyleBase(style, sheet);
-        setNodeTextContent(style, css);
-        replaceNode(ownerClone, style);
-      }
-    }
-  }
-  function markStyleBase(element, sheet) {
-    const href = styleSheetHref(sheet);
-    if (href) {
-      setAttribute(element, cssBaseAttribute, href);
-    }
-  }
-  function ownedStyleSheets(root) {
-    const sheets = [];
-    const owners = querySelectorAll(root, 'style, link[rel~="stylesheet"]');
-    for (let index = 0;index < owners.length; index += 1) {
-      const sheet = styleSheetFor(owners[index]);
-      if (sheet) {
-        arrayPush(sheets, sheet);
-      }
-    }
-    return sheets;
   }
   function isLayoutlessHiddenElement(element) {
     const document2 = ownerDocument(element);
@@ -2267,7 +2468,8 @@
       ...rootContext,
       documentFontFaces: documentFontFaces(source),
       inlineFrameOwners: new SafeMap,
-      reservation
+      reservation,
+      usedFontsByRoot: new SafeMap
     };
     freezeMotion(source);
     reportMotionCaptureFailure(source, context);
@@ -2310,27 +2512,8 @@
         retainedIndex += 1;
       }
     }
-    assignRepairMarkers(clone);
     const maximumDocumentBytes = context.budget.maximumDocumentBytes(reservation);
-    let serialized = serializeHtmlBounded(clone, maximumDocumentBytes);
-    if (serialized.kind === "limit") {
-      context.budget.rejectPayload(serialized.attempted);
-    }
-    const structuralRepair = structuralRepairFor(clone, serialized.value);
-    if (structuralRepair) {
-      const repairJson = serializeJsonStringBounded(structuralRepair, maximumDocumentBytes);
-      if (repairJson.kind === "limit") {
-        context.budget.rejectPayload(repairJson.attempted);
-      }
-      const repairData = escapeScriptDataBounded(repairJson.value, maximumDocumentBytes);
-      if (repairData.kind === "limit") {
-        context.budget.rejectPayload(repairData.attempted);
-      }
-      appendRepairData(source, clone, repairData.value);
-    } else {
-      removeRepairMarkers(clone);
-    }
-    serialized = serializeHtmlBounded(clone, maximumDocumentBytes);
+    const serialized = serializeDocumentWithRepair(source, clone, maximumDocumentBytes);
     if (serialized.kind === "limit") {
       context.budget.rejectPayload(serialized.attempted);
     }
@@ -2384,144 +2567,6 @@
     });
     return { ...snapshot, warnings, visualFallbacks, visualFallbackTargets };
   }
-  function removeReservedMetadata(root) {
-    const remove = [];
-    walkElements(root, (element) => {
-      if (arrayIncludes([
-        manifestElementId,
-        repairDataElementId,
-        repairScriptElementId,
-        stateScriptElementId
-      ], getAttribute(element, "id") ?? "") || hasAttribute(element, animationStyleAttribute) && !isGeneratedMotionStyle(element)) {
-        arrayPush(remove, element);
-      }
-    });
-    for (let index = 0;index < remove.length; index += 1) {
-      removeNode(remove[index]);
-    }
-  }
-  function structuralRepairFor(root, serialized) {
-    const expected = repairNode(root);
-    const reparsed = parseHtml(serialized);
-    const actual = repairNode(documentElement(reparsed));
-    if (repairNodesEqual(expected, actual)) {
-      return;
-    }
-    return { documentElement: expected };
-  }
-  function repairNodesEqual(left, right) {
-    const pending = [[left, right]];
-    while (pending.length > 0) {
-      const pair = arrayPop(pending);
-      if (!pair) {
-        continue;
-      }
-      const leftNode = pair[0];
-      const rightNode = pair[1];
-      if (leftNode.kind !== rightNode.kind) {
-        return false;
-      }
-      if (leftNode.kind === "text" || leftNode.kind === "comment") {
-        if (rightNode.kind !== leftNode.kind || leftNode.value !== rightNode.value) {
-          return false;
-        }
-        continue;
-      }
-      if (rightNode.kind !== "element" || leftNode.marker !== rightNode.marker || leftNode.namespace !== rightNode.namespace || leftNode.name !== rightNode.name || leftNode.shadowMode !== rightNode.shadowMode || leftNode.children.length !== rightNode.children.length || leftNode.templateContent.length !== rightNode.templateContent.length) {
-        return false;
-      }
-      for (let index = 0;index < leftNode.children.length; index += 1) {
-        arrayPush(pending, [leftNode.children[index], rightNode.children[index]]);
-      }
-      for (let index = 0;index < leftNode.templateContent.length; index += 1) {
-        arrayPush(pending, [
-          leftNode.templateContent[index],
-          rightNode.templateContent[index]
-        ]);
-      }
-    }
-    return true;
-  }
-  function repairNode(node) {
-    if (nodeType(node) === 3) {
-      return { kind: "text", value: nodeValue(node) ?? "" };
-    }
-    if (nodeType(node) === 8) {
-      return { kind: "comment", value: nodeValue(node) ?? "" };
-    }
-    if (!isElement(node)) {
-      throw new SafeTypeError("structural repair supports element, text, and comment nodes");
-    }
-    const element = node;
-    const marker = getAttribute(element, repairMarkerAttribute) ?? "";
-    const children = repairChildren(element);
-    const template = namespaceUri(element) === "http://www.w3.org/1999/xhtml" && localName(element) === "template" ? element : undefined;
-    const shadowMode2 = template ? getAttribute(template, "shadowrootmode") ?? undefined : undefined;
-    const repairTemplateContent = template ? repairChildren(templateContent(template)) : [];
-    return {
-      kind: "element",
-      marker,
-      namespace: namespaceUri(element) ?? "http://www.w3.org/1999/xhtml",
-      name: localName(element) ?? "",
-      children,
-      templateContent: repairTemplateContent,
-      ...shadowMode2 ? { shadowMode: shadowMode2 } : {}
-    };
-  }
-  function repairChildren(parent) {
-    const repaired = [];
-    const children = childNodes(parent);
-    for (let index = 0;index < children.length; index += 1) {
-      arrayPush(repaired, repairNode(children[index]));
-    }
-    return repaired;
-  }
-  function assignRepairMarkers(root) {
-    let nextMarker = 0;
-    walkElements(root, (element) => {
-      setAttribute(element, repairMarkerAttribute, SafeString(nextMarker));
-      nextMarker += 1;
-    });
-  }
-  function removeRepairMarkers(root) {
-    walkElements(root, (element) => {
-      removeAttribute(element, repairMarkerAttribute);
-    });
-  }
-  function walkElements(root, visit) {
-    const pending = [root];
-    while (pending.length > 0) {
-      const element = arrayPop(pending);
-      if (!element) {
-        continue;
-      }
-      visit(element);
-      const children = elementChildren(element);
-      if (namespaceUri(element) === "http://www.w3.org/1999/xhtml" && localName(element) === "template") {
-        const templateChildren = childNodes(templateContent(element));
-        for (let index = 0;index < templateChildren.length; index += 1) {
-          const child = templateChildren[index];
-          if (isElement(child)) {
-            arrayPush(children, child);
-          }
-        }
-      }
-      for (let index = children.length - 1;index >= 0; index -= 1) {
-        arrayPush(pending, children[index]);
-      }
-    }
-  }
-  function appendRepairData(source, root, repairData) {
-    const head = querySelector(root, "head");
-    if (!head) {
-      throw new SafeTypeError("structural repair requires an HTML head element");
-    }
-    const data = createElement(source, "script");
-    setAttribute(data, "id", repairDataElementId);
-    setAttribute(data, "type", repairMediaType);
-    setNodeTextContent(data, repairData);
-    appendChild(head, data);
-  }
   function doctypeText(source) {
     const doctype = documentDoctype(source);
     if (!doctype) {
@@ -2533,19 +2578,9 @@
     const systemId = systemIdentifier ? `${publicIdentifier ? "" : " SYSTEM"} "${systemIdentifier}"` : "";
     return `<!DOCTYPE ${doctypeName(doctype)}${publicId}${systemId}>`;
   }
-  function documentFor(root) {
-    if (nodeType(root) === 9) {
-      return root;
-    }
-    const document2 = ownerDocument(root);
-    if (!document2) {
-      throw new SafeTypeError("a shadow root has no owner document");
-    }
-    return document2;
-  }
 
   // src/budget.ts
-  var htmlNamespace = "http://www.w3.org/1999/xhtml";
+  var htmlNamespace2 = "http://www.w3.org/1999/xhtml";
   var elementNode = 1;
   var documentNode = 9;
   var documentFragmentNode = 11;
@@ -2700,7 +2735,7 @@
       if (nodeType(node) !== elementNode) {
         continue;
       }
-      if (namespaceUri(node) === htmlNamespace && localName(node) === "template") {
+      if (namespaceUri(node) === htmlNamespace2 && localName(node) === "template") {
         arrayPush(pending, templateContent(node));
       }
       const shadow = observedShadowRoot(node);

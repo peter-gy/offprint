@@ -12,6 +12,4 @@ pub(crate) trait CdpEventMessage: DeserializeOwned {
     const METHOD: &'static str;
 }
 
-pub(crate) mod generated {
-    include!("cdp_generated.rs");
-}
+pub(crate) mod generated;

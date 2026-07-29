@@ -1,55 +1,22 @@
 use std::path::Path;
 
 use pageknot::{
-    ArtifactSpec, ArtifactTarget, ArtifactVariant as ModelArtifactVariant, ArtifactVariantKind,
-    CaptureRequest, CaptureScope, ColorScheme as ModelColorScheme, ConflictPolicy,
-    DiagnosticsPolicy, ErrorStage, LazyLoadPolicy, MarkdownOptions, Milliseconds,
-    MissingResourcePolicy, NetworkPolicy as ModelNetworkPolicy, PageKnotError, PdfOptions,
-    ReadinessMode, Result, VerificationPolicy, Viewport,
+    ArtifactVariant as ModelArtifactVariant, ArtifactVariantKind, CaptureRequest, CaptureScope,
+    ColorScheme as ModelColorScheme, ConflictPolicy, DiagnosticsPolicy, ErrorStage,
+    MarkdownOptions, Milliseconds, MissingResourcePolicy, NetworkPolicy as ModelNetworkPolicy,
+    PageKnotError, PdfOptions, ReadinessMode, Result, VerificationPolicy, Viewport,
+    portable_file_stem,
 };
-use pageknot_artifact::portable_file_stem;
 use url::Url;
 
 use crate::command::{
-    ArtifactVariant as CliArtifactVariant, CaptureArguments, CaptureFormat, ColorScheme,
-    ConflictMode, ContentScope, MissingResources, NetworkPolicy, VerificationLevel, WaitUntil,
+    ArtifactVariant as CliArtifactVariant, CaptureArguments, ColorScheme, ConflictMode,
+    ContentScope, MissingResources, NetworkPolicy, VerificationLevel, WaitUntil,
 };
-use crate::config::ResolvedConfig;
-
-pub(super) fn validate_capture_combinations(arguments: &CaptureArguments) -> Result<()> {
-    if arguments.output.as_deref() == Some("-") && arguments.output_options.json {
-        return Err(PageKnotError::new(
-            "pageknot.input.output",
-            ErrorStage::Validation,
-            "`--json` cannot be combined with `--output -`",
-        ));
-    }
-    if arguments.format == CaptureFormat::Html
-        && (arguments.landscape || arguments.prefer_css_page_size)
-    {
-        return Err(PageKnotError::new(
-            "pageknot.input.export_option",
-            ErrorStage::Validation,
-            "PDF print options require `--format pdf`",
-        ));
-    }
-    if arguments.format == CaptureFormat::Pdf
-        && arguments.output.as_deref().is_some_and(|output| {
-            output != "-"
-                && Path::new(output)
-                    .extension()
-                    .and_then(std::ffi::OsStr::to_str)
-                    .is_none_or(|extension| extension != "pdf")
-        })
-    {
-        return Err(PageKnotError::new(
-            "pageknot.input.output",
-            ErrorStage::Validation,
-            "PDF capture output must use a .pdf extension",
-        ));
-    }
-    Ok(())
-}
+use crate::config::value::{
+    CdpEndpointError, parse_cdp_endpoint, parse_duration_text, parse_viewport_text,
+};
+use crate::config::{ResolvedConfig, set_readiness_mode};
 
 pub(super) fn require_local_browser(resolved: &ResolvedConfig, operation: &str) -> Result<()> {
     if resolved.uses_remote_browser() {
@@ -69,33 +36,6 @@ pub(super) fn apply_capture_arguments(
     request: &mut CaptureRequest,
     arguments: &CaptureArguments,
 ) -> Result<()> {
-    if arguments.format == CaptureFormat::Pdf {
-        request.artifact = ArtifactSpec::html_bytes(request.limits.artifact_bytes);
-    } else if let Some(output) = &arguments.output {
-        let ArtifactSpec::Html(spec) = &mut request.artifact;
-        spec.target = if output == "-" {
-            ArtifactTarget::Bytes {
-                max_bytes: request.limits.artifact_bytes,
-            }
-        } else {
-            ArtifactTarget::File(output.as_str().into())
-        };
-        spec.conflict = ConflictPolicy::Replace;
-    } else {
-        request.artifact = ArtifactSpec::html_bytes(request.limits.artifact_bytes);
-    }
-    if let Some(path) = &arguments.browser_path {
-        request.browser = pageknot::BrowserSpec::Executable(path.as_str().into());
-    }
-    if let Some(endpoint) = &arguments.cdp_url {
-        request.browser = pageknot::BrowserSpec::Remote(Url::parse(endpoint).map_err(|error| {
-            PageKnotError::new(
-                "pageknot.input.cdp_url",
-                ErrorStage::Validation,
-                format!("invalid remote browser endpoint: {error}"),
-            )
-        })?);
-    }
     if arguments.headed {
         request.headed = Some(true);
     }
@@ -118,15 +58,13 @@ pub(super) fn apply_capture_arguments(
         request.limits.duration = Milliseconds::from(parse_duration(timeout)?);
     }
     if let Some(wait_until) = arguments.wait_until {
-        request.readiness.mode = match wait_until {
+        let mode = match wait_until {
             WaitUntil::RenderIdle => ReadinessMode::RenderIdle,
             WaitUntil::NetworkIdle => ReadinessMode::NetworkIdle,
             WaitUntil::Load => ReadinessMode::Load,
             WaitUntil::DomContentLoaded => ReadinessMode::DomContentLoaded,
         };
-        if wait_until != WaitUntil::RenderIdle {
-            request.readiness.lazy_load = LazyLoadPolicy::Disabled;
-        }
+        set_readiness_mode(&mut request.readiness, mode);
     }
     if let Some(delay) = &arguments.delay {
         request.readiness.delay = Milliseconds::from(parse_duration(delay)?);
@@ -228,37 +166,22 @@ pub(super) fn export_base_name(path: &str) -> String {
 }
 
 pub(super) fn parse_cdp_url(value: &str) -> Result<Url> {
-    let endpoint = Url::parse(value).map_err(|error| {
-        PageKnotError::new(
+    parse_cdp_endpoint(value).map_err(|error| match error {
+        CdpEndpointError::Parse(error) => PageKnotError::new(
             "pageknot.input.cdp_url",
             ErrorStage::Validation,
             format!("invalid remote browser endpoint: {error}"),
-        )
-    })?;
-    if !matches!(endpoint.scheme(), "http" | "https" | "ws" | "wss") {
-        return Err(PageKnotError::new(
+        ),
+        CdpEndpointError::Scheme => PageKnotError::new(
             "pageknot.input.cdp_url",
             ErrorStage::Validation,
             "remote browser endpoint must use http, https, ws, or wss",
-        ));
-    }
-    Ok(endpoint)
+        ),
+    })
 }
 
 fn parse_viewport(value: &str) -> Result<Viewport> {
-    let (width, height) = value
-        .split_once(['x', 'X'])
-        .ok_or_else(|| viewport_error(value))?;
-    let width = width.parse::<u32>().map_err(|_| viewport_error(value))?;
-    let height = height.parse::<u32>().map_err(|_| viewport_error(value))?;
-    if width == 0 || height == 0 {
-        return Err(viewport_error(value));
-    }
-    Ok(Viewport {
-        width,
-        height,
-        scale: 1,
-    })
+    parse_viewport_text(value).ok_or_else(|| viewport_error(value))
 }
 
 fn viewport_error(value: &str) -> PageKnotError {
@@ -270,22 +193,7 @@ fn viewport_error(value: &str) -> PageKnotError {
 }
 
 pub(super) fn parse_duration(value: &str) -> Result<std::time::Duration> {
-    let split = value
-        .find(|character: char| !character.is_ascii_digit() && character != '.')
-        .unwrap_or(value.len());
-    let (number, unit) = value.split_at(split);
-    let number = number.parse::<f64>().map_err(|_| duration_error(value))?;
-    if !number.is_finite() || number <= 0.0 {
-        return Err(duration_error(value));
-    }
-    let seconds = match unit {
-        "ms" => number / 1000.0,
-        "" | "s" => number,
-        "m" => number * 60.0,
-        "h" => number * 3600.0,
-        _ => return Err(duration_error(value)),
-    };
-    Ok(std::time::Duration::from_secs_f64(seconds))
+    parse_duration_text(value).ok_or_else(|| duration_error(value))
 }
 
 fn duration_error(value: &str) -> PageKnotError {

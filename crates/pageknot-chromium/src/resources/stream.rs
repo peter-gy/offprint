@@ -10,7 +10,7 @@ use tokio_util::sync::CancellationToken;
 use super::identity::{ObservedResourceState, request_key};
 use super::storage::{
     ObservedBody, append_observed_bytes_at, append_observed_chunk, append_observed_data,
-    available_append_bytes, mark_observed_body_unavailable,
+    append_observed_data_at, available_append_bytes, mark_observed_body_unavailable,
 };
 use crate::CdpClient;
 
@@ -122,26 +122,58 @@ pub(crate) fn resource_body_stream(
     Box::pin(ReceiverStream::new(receiver))
 }
 
+pub(super) async fn capture_service_worker_buffered_data(
+    client: &CdpClient,
+    state: &Mutex<ObservedResourceState>,
+    session_id: &str,
+    request_id: &str,
+    cancellation: CancellationToken,
+) -> pageknot_model::Result<()> {
+    let key = request_key(session_id, request_id);
+    let response = tokio::select! {
+        () = cancellation.cancelled() => return Ok(()),
+        response = client.command(
+            "Network.streamResourceContent",
+            json!({"requestId": request_id}),
+            Some(session_id),
+        ) => response,
+    };
+    let Some(buffered_data) = response.ok().and_then(|result| {
+        result
+            .get("bufferedData")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+    }) else {
+        return Ok(());
+    };
+    append_observed_data_at(state, &key, &buffered_data, true).await
+}
+
+pub(super) async fn service_worker_body_pending(
+    state: &Mutex<ObservedResourceState>,
+    key: &super::identity::RequestKey,
+) -> bool {
+    let state = state.lock().await;
+    state.records.get(key).is_some_and(|response| {
+        response.from_service_worker
+            && response.stream_attempted
+            && matches!(&response.body, ObservedBody::Streaming(body) if body.is_empty())
+    })
+}
+
 pub(super) async fn capture_service_worker_body(
     client: &CdpClient,
     state: &Mutex<ObservedResourceState>,
     session_id: &str,
     parameters: &Value,
-) {
+    cancellation: CancellationToken,
+) -> pageknot_model::Result<()> {
     let Some(request_id) = parameters.get("requestId").and_then(Value::as_str) else {
-        return;
+        return Ok(());
     };
     let key = request_key(session_id, request_id);
-    let needs_body = {
-        let state = state.lock().await;
-        state.records.get(&key).is_some_and(|response| {
-            response.from_service_worker
-                && response.stream_attempted
-                && matches!(&response.body, ObservedBody::Streaming(body) if body.is_empty())
-        })
-    };
-    if !needs_body {
-        return;
+    if !service_worker_body_pending(state, &key).await {
+        return Ok(());
     }
     let declared_bytes = parameters
         .get("encodedDataLength")
@@ -153,33 +185,35 @@ pub(super) async fn capture_service_worker_body(
         let _ignored =
             append_observed_chunk(state, &key, None, declared_bytes.unwrap_or(u64::MAX), false)
                 .await;
-        return;
+        return Ok(());
     }
-    let response = client
-        .command(
+    let response = tokio::select! {
+        () = cancellation.cancelled() => {
+            mark_observed_body_unavailable(state, &key).await;
+            return Ok(());
+        }
+        response = client.command(
             "Network.getResponseBody",
             json!({"requestId": request_id}),
             Some(session_id),
-        )
-        .await;
+        ) => response,
+    };
     let Some(response) = response.ok() else {
         mark_observed_body_unavailable(state, &key).await;
-        return;
+        return Ok(());
     };
     let Some(body) = response.get("body").and_then(Value::as_str) else {
         mark_observed_body_unavailable(state, &key).await;
-        return;
+        return Ok(());
     };
-    let appended = if response
+    if response
         .get("base64Encoded")
         .and_then(Value::as_bool)
         .unwrap_or(false)
     {
-        append_observed_data(state, &key, body).await
+        append_observed_data(state, &key, body).await?;
     } else {
-        append_observed_bytes_at(state, &key, body.as_bytes().to_vec(), false).await
-    };
-    if let Err(error) = appended {
-        state.lock().await.error = Some(error);
+        append_observed_bytes_at(state, &key, body.as_bytes().to_vec(), false).await?;
     }
+    Ok(())
 }

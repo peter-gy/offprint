@@ -9,7 +9,10 @@ repository.workspace = true
 readme.workspace = true
 [dependencies]
 camino.workspace = true
+fs2.workspace = true
 pageknot-model.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 sha2.workspace = true
 tempfile.workspace = true
 

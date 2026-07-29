@@ -1,14 +1,16 @@
 use std::borrow::Cow;
 use std::collections::BTreeSet;
 
-use pageknot_export::VariantEvidence;
+use pageknot_artifact::{
+    ArtifactDirectory, ArtifactTransaction, ArtifactTransactionLimits, PreparedArtifact,
+};
+use pageknot_export::{VariantEvidence, VerifiedVariant};
 use pageknot_model::{
     ArtifactExportRequest, ArtifactExportResult, ArtifactInput, ArtifactManifest, ArtifactResult,
     ArtifactVariant, ArtifactVariantKind, ArtifactVariantVerification, BrowserSpec, CaptureId,
     CaptureResult, ContentDigest, ErrorStage, PageKnotError, PortablePath, Result,
     VerificationPolicy,
 };
-use tokio_util::sync::CancellationToken;
 use url::Url;
 
 use super::markdown_bundle::read_markdown_bundle;
@@ -16,8 +18,7 @@ use super::{
     ArtifactService, BoundedFileReadError, offline_verification_result, read_bounded_file,
     read_input, stage_temporary_artifact,
 };
-use crate::export_transaction::{ExportTransaction, PreparedVariant, markdown_bundle_digest};
-use crate::runtime::RuntimePageRequest;
+use crate::runtime::{RuntimePagePurpose, RuntimePageRequest, operation_cancelled_error};
 use crate::verified_html::OfflineHtmlArtifact;
 
 pub(super) const MAXIMUM_EXPORT_BYTES: u64 = 256 * 1024 * 1024;
@@ -41,22 +42,26 @@ impl ArtifactService {
             ArtifactVariant::Pdf(options) => Some(*options),
             _ => None,
         });
-        let (verification, manifest, rendered_pdf) = match pdf_options {
+        let (verification, proof, rendered_pdf) = match pdf_options {
             Some(options) => {
-                let (static_result, manifest) = pageknot_html::verify_static_with_manifest(&bytes)?;
-                let rendered = self.render_pdf(&bytes, &manifest, options).await?;
-                let verification =
-                    offline_verification_result(static_result, rendered.observation)?;
-                (verification, manifest, Some(rendered.bytes))
+                let proof = pageknot_html::verify_html(bytes.as_slice())?.into_proof();
+                let rendered = self
+                    .render_pdf(proof.bytes(), proof.manifest(), options)
+                    .await?;
+                let verification = offline_verification_result(
+                    proof.verification().clone(),
+                    rendered.observation,
+                )?;
+                (verification, proof, Some(rendered.bytes))
             }
             None => {
-                let (verification, manifest) = self
-                    .verify_html(&bytes, VerificationPolicy::Offline)
+                let (verification, proof) = self
+                    .verify_html_proof(bytes.as_slice(), VerificationPolicy::Offline)
                     .await?;
-                (verification, manifest, None)
+                (verification, proof, None)
             }
         };
-        let source = OfflineHtmlArtifact::new(&bytes, manifest, &verification)?;
+        let source = OfflineHtmlArtifact::from_static_proof(proof, &verification)?;
         self.export_validated(source, request, rendered_pdf).await
     }
 
@@ -77,8 +82,8 @@ impl ArtifactService {
             }
             ArtifactResult::Bytes { content, .. } => Cow::Borrowed(content.as_slice()),
         };
-        let (_, manifest) = pageknot_html::verify_static_with_manifest(&bytes)?;
-        let source = OfflineHtmlArtifact::new(&bytes, manifest, &capture.verification)?;
+        let proof = pageknot_html::verify_html(bytes.as_ref())?.into_proof();
+        let source = OfflineHtmlArtifact::from_static_proof(proof, &capture.verification)?;
         self.export_validated(source, request, None).await
     }
 
@@ -106,12 +111,14 @@ impl ArtifactService {
             );
         }
         prepare_export_directory(&request.output_directory).await?;
-        let variants = ExportTransaction::stage(
+        let variants = ArtifactTransaction::stage(
             &request.output_directory,
             request.conflict,
             prepared,
-            MAXIMUM_MARKDOWN_ASSETS,
-            MAXIMUM_EXPORT_BYTES,
+            ArtifactTransactionLimits::new(
+                MAXIMUM_MARKDOWN_ASSETS.saturating_add(1),
+                MAXIMUM_EXPORT_BYTES,
+            ),
         )?
         .commit()?;
         Ok(ArtifactExportResult {
@@ -131,70 +138,43 @@ impl ArtifactService {
         stem: &str,
         variant: ArtifactVariant,
         rendered_pdf: &mut Option<Vec<u8>>,
-    ) -> Result<PreparedVariant> {
+    ) -> Result<PreparedArtifact> {
         match variant {
             ArtifactVariant::Pdf(options) => {
                 let rendered = match rendered_pdf.take() {
                     Some(encoded) => encoded,
                     None => self.render_pdf(html, manifest, options).await?.bytes,
                 };
-                let encoded = pageknot_export::embed_pdf_metadata(
+                let verified = pageknot_export::prepare_pdf(
                     &rendered,
                     html,
                     manifest,
                     source_artifact_sha256,
                     MAXIMUM_EXPORT_BYTES,
                 )?;
-                let evidence = pageknot_export::verify_pageknot_pdf(&encoded)?;
-                PreparedVariant::file(
-                    format!("{stem}.pdf"),
-                    ArtifactVariantKind::Pdf,
-                    encoded,
-                    evidence,
-                    MAXIMUM_EXPORT_BYTES,
-                )
+                prepare_file(format!("{stem}.pdf"), verified)
             }
             ArtifactVariant::Markdown(options) => {
-                let encoded = pageknot_export::encode_markdown(html, manifest, options)?;
-                PreparedVariant::markdown(
+                let verified = pageknot_export::prepare_markdown(html, manifest, options)?;
+                prepare_directory(
                     format!("{stem}-markdown"),
-                    encoded,
+                    "index.md",
+                    verified,
                     MAXIMUM_MARKDOWN_ASSETS,
                     MAXIMUM_EXPORT_BYTES,
                 )
             }
             ArtifactVariant::Zip => {
-                let encoded = pageknot_export::encode_zip(html, manifest)?;
-                let evidence = pageknot_export::verify_zip(&encoded)?;
-                PreparedVariant::file(
-                    format!("{stem}.zip"),
-                    ArtifactVariantKind::Zip,
-                    encoded,
-                    evidence,
-                    MAXIMUM_EXPORT_BYTES,
-                )
+                let verified = pageknot_export::prepare_zip(html, manifest)?;
+                prepare_file(format!("{stem}.zip"), verified)
             }
             ArtifactVariant::SelfExtracting => {
-                let encoded = pageknot_export::encode_self_extracting(html)?;
-                let evidence = pageknot_export::verify_self_extracting(&encoded)?;
-                PreparedVariant::file(
-                    format!("{stem}.compressed.html"),
-                    ArtifactVariantKind::SelfExtracting,
-                    encoded,
-                    evidence,
-                    MAXIMUM_EXPORT_BYTES,
-                )
+                let verified = pageknot_export::prepare_self_extracting(html)?;
+                prepare_file(format!("{stem}.compressed.html"), verified)
             }
             ArtifactVariant::Mhtml => {
-                let encoded = pageknot_export::encode_mhtml(html, manifest)?;
-                let evidence = pageknot_export::verify_mhtml(&encoded)?;
-                PreparedVariant::file(
-                    format!("{stem}.mhtml"),
-                    ArtifactVariantKind::Mhtml,
-                    encoded,
-                    evidence,
-                    MAXIMUM_EXPORT_BYTES,
-                )
+                let verified = pageknot_export::prepare_mhtml(html, manifest)?;
+                prepare_file(format!("{stem}.mhtml"), verified)
             }
         }
     }
@@ -210,8 +190,8 @@ impl ArtifactService {
             ArtifactVariantKind::Markdown => {
                 let bundle = read_markdown_bundle(&path).await?;
                 let evidence = pageknot_export::verify_markdown(&bundle)?;
-                let (bytes, sha256) = markdown_bundle_digest(&bundle);
-                Ok(variant_verification(kind, bytes, sha256, evidence))
+                let directory = ArtifactDirectory::new(bundle.into_files())?;
+                Ok(evidence.into_verification(directory.bytes(), directory.sha256()))
             }
             ArtifactVariantKind::Pdf
             | ArtifactVariantKind::Zip
@@ -219,11 +199,9 @@ impl ArtifactService {
             | ArtifactVariantKind::Mhtml => {
                 let bytes = read_export_file(&path).await?;
                 let evidence = verify_file_variant(kind, &bytes)?;
-                Ok(variant_verification(
-                    kind,
+                Ok(evidence.into_verification(
                     u64::try_from(bytes.len()).unwrap_or(u64::MAX),
                     ContentDigest::sha256(&bytes),
-                    evidence,
                 ))
             }
         }
@@ -251,6 +229,7 @@ impl ArtifactService {
                 format!("captured source URL cannot be used for PDF links: {error}"),
             )
         })?;
+        let cancellation = self.state.operation_cancellation();
         let page = self
             .state
             .open_page(RuntimePageRequest {
@@ -261,11 +240,14 @@ impl ArtifactService {
                 network: self.state.default_network_policy.clone(),
                 maximum_frames: manifest.frames.max(1),
                 resource_observation: pageknot_browser::ResourceObservationLimits::default(),
-                deny_network: true,
-                cancellation: CancellationToken::new(),
+                purpose: RuntimePagePurpose::OfflineVerification,
+                cancellation: cancellation.clone(),
             })
             .await?;
-        let render = async {
+        let render = tokio::select! {
+            biased;
+            () = cancellation.cancelled() => Err(operation_cancelled_error()),
+            render = async {
             let observation = page
                 .page()?
                 .verify_offline_url(&url, std::time::Duration::from_secs(120))
@@ -281,8 +263,8 @@ impl ArtifactService {
                 )
                 .await?;
             Ok(RenderedPdf { bytes, observation })
-        }
-        .await;
+            } => render,
+        };
         let close = page.close().await;
         match (render, close) {
             (Ok(rendered), Ok(())) => Ok(rendered),
@@ -391,20 +373,27 @@ fn verify_file_variant(kind: ArtifactVariantKind, bytes: &[u8]) -> Result<Varian
     }
 }
 
-fn variant_verification(
-    kind: ArtifactVariantKind,
-    bytes: u64,
-    sha256: ContentDigest,
-    evidence: VariantEvidence,
-) -> ArtifactVariantVerification {
-    ArtifactVariantVerification {
-        kind,
-        passed: evidence.structure_valid && evidence.content_valid,
-        bytes,
-        sha256,
-        structure_valid: evidence.structure_valid,
-        content_valid: evidence.content_valid,
-    }
+fn prepare_file(name: String, verified: VerifiedVariant<Vec<u8>>) -> Result<PreparedArtifact> {
+    let (bytes, evidence) = verified.into_parts();
+    let verification = evidence.into_verification(
+        u64::try_from(bytes.len()).unwrap_or(u64::MAX),
+        ContentDigest::sha256(&bytes),
+    );
+    PreparedArtifact::file(name, bytes, verification)
+}
+
+fn prepare_directory(
+    name: String,
+    entrypoint: &str,
+    verified: VerifiedVariant<pageknot_export::MarkdownBundle>,
+    maximum_assets: usize,
+    maximum_bytes: u64,
+) -> Result<PreparedArtifact> {
+    let (bundle, evidence) = verified.into_parts();
+    bundle.validate_limits(maximum_assets, maximum_bytes, ErrorStage::Encoding)?;
+    let directory = ArtifactDirectory::new(bundle.into_files())?;
+    let verification = evidence.into_verification(directory.bytes(), directory.sha256());
+    PreparedArtifact::directory(name, entrypoint, directory, verification)
 }
 
 fn validate_offline_observation(

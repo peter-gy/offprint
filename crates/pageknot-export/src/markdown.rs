@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use data_url::DataUrl;
+use html5ever::ns;
 use pageknot_document::{Document, NodeData};
 use pageknot_model::{
     ArtifactManifest, ArtifactVariantKind, ContentDigest, MarkdownOptions, Result,
@@ -142,7 +143,7 @@ impl MarkdownEncoder<'_> {
                     push_collapsed_text(output, contents);
                 }
             }
-            NodeData::Element { name, attrs, .. } => {
+            NodeData::Element { name, attrs, .. } if name.ns == ns!(html) => {
                 let tag = name.local.as_ref();
                 match tag {
                     "head" | "script" | "style" | "template" | "meta" | "link" => {}
@@ -244,6 +245,7 @@ impl MarkdownEncoder<'_> {
                     _ => self.render_children(id, output, mode)?,
                 }
             }
+            NodeData::Element { .. } => self.render_children(id, output, mode)?,
             NodeData::Document => self.render_children(id, output, mode)?,
             NodeData::Doctype { .. }
             | NodeData::Comment { .. }
@@ -302,7 +304,8 @@ impl MarkdownEncoder<'_> {
             let is_item = self.document.node(item).is_some_and(|node| {
                 matches!(
                     &node.data,
-                    NodeData::Element { name, .. } if name.local.as_ref() == "li"
+                    NodeData::Element { name, .. }
+                        if name.ns == ns!(html) && name.local.as_ref() == "li"
                 )
             });
             if !is_item {
@@ -322,7 +325,7 @@ impl MarkdownEncoder<'_> {
     }
 
     fn render_table(&mut self, id: pageknot_model::NodeId, output: &mut String) -> Result<()> {
-        let rows = descendant_elements(self.document, id, "tr");
+        let rows = owned_table_rows(self.document, id);
         if rows.is_empty() {
             return Ok(());
         }
@@ -339,7 +342,8 @@ impl MarkdownEncoder<'_> {
                         matches!(
                             &node.data,
                             NodeData::Element { name, .. }
-                                if matches!(name.local.as_ref(), "th" | "td")
+                                if name.ns == ns!(html)
+                                    && matches!(name.local.as_ref(), "th" | "td")
                         )
                     })
                 })
@@ -379,33 +383,40 @@ impl MarkdownEncoder<'_> {
     }
 }
 
-fn descendant_elements(
+fn owned_table_rows(
     document: &Document,
-    root: pageknot_model::NodeId,
-    name: &str,
+    table: pageknot_model::NodeId,
 ) -> Vec<pageknot_model::NodeId> {
-    let mut output = Vec::new();
+    let mut rows = Vec::new();
     let mut pending = document
-        .node(root)
+        .node(table)
         .map(|node| node.children.iter().rev().copied().collect::<Vec<_>>())
         .unwrap_or_default();
     while let Some(id) = pending.pop() {
         let Some(node) = document.node(id) else {
             continue;
         };
-        pending.extend(node.children.iter().rev().copied());
-        if matches!(&node.data, NodeData::Element { name: element, .. } if element.local.as_ref() == name)
-        {
-            output.push(id);
+        match &node.data {
+            NodeData::Element { name, .. }
+                if name.ns == ns!(html) && name.local.as_ref() == "table" =>
+            {
+                continue;
+            }
+            NodeData::Element { name, .. }
+                if name.ns == ns!(html) && name.local.as_ref() == "tr" =>
+            {
+                rows.push(id);
+            }
+            _ => pending.extend(node.children.iter().rev().copied()),
         }
     }
-    output
+    rows
 }
 
 fn attribute<'a>(attrs: &'a [html5ever::Attribute], name: &str) -> Option<&'a str> {
     attrs
         .iter()
-        .find(|attribute| attribute.name.local.as_ref() == name)
+        .find(|attribute| attribute.name.ns == ns!() && attribute.name.local.as_ref() == name)
         .map(|attribute| attribute.value.as_ref())
 }
 
@@ -690,6 +701,50 @@ mod tests {
         assert!(rendered.contains("javascript%3Aalert%281%29"));
         assert!(!rendered.contains("](javascript:"));
         assert!(verify_markdown(&bundle).is_ok());
+        Ok(())
+    }
+
+    #[test]
+    fn markdown_dispatches_semantics_for_html_elements() -> Result<()> {
+        let (html, manifest) = fixture_from_html(
+            br#"<html><body>
+            <svg xmlns="http://www.w3.org/2000/svg">
+              <a href="https://example.test/vector"><text>Vector link</text></a>
+              <title>Vector title</title>
+            </svg>
+            <p>HTML paragraph</p>
+            </body></html>"#,
+        )?;
+        let bundle = encode_markdown(&html, &manifest, MarkdownOptions::default())?;
+        let rendered = std::str::from_utf8(&bundle.markdown)
+            .map_err(|_| test_error("Markdown fixture was not UTF-8"))?;
+
+        assert!(rendered.contains("Vector link"));
+        assert!(rendered.contains("Vector title"));
+        assert!(!rendered.contains("[Vector link]("));
+        assert!(rendered.contains("HTML paragraph"));
+        Ok(())
+    }
+
+    #[test]
+    fn markdown_tables_do_not_claim_rows_from_nested_tables() -> Result<()> {
+        let (html, manifest) = fixture_from_html(
+            br#"<html><body>
+            <table>
+              <thead><tr><th>Outer heading</th></tr></thead>
+              <tbody><tr><td>Before<table><tbody><tr><td>Inner value</td></tr></tbody></table>After</td></tr></tbody>
+            </table>
+            </body></html>"#,
+        )?;
+        let first = encode_markdown(&html, &manifest, MarkdownOptions::default())?;
+        let second = encode_markdown(&html, &manifest, MarkdownOptions::default())?;
+        let rendered = std::str::from_utf8(&first.markdown)
+            .map_err(|_| test_error("Markdown fixture was not UTF-8"))?;
+
+        assert_eq!(first, second);
+        assert_eq!(rendered.matches("Outer heading").count(), 1);
+        assert_eq!(rendered.matches("Inner value").count(), 1);
+        assert_eq!(rendered.matches("| Inner value |").count(), 1);
         Ok(())
     }
 

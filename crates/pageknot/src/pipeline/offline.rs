@@ -9,7 +9,7 @@ use pageknot_model::{
 use tokio_util::sync::CancellationToken;
 use url::Url;
 
-use crate::runtime::{RuntimePageRequest, RuntimeState};
+use crate::runtime::{RuntimePagePurpose, RuntimePageRequest, RuntimeState};
 
 use super::cancellable;
 
@@ -38,7 +38,7 @@ pub(super) async fn verify(
             environment: request.environment.clone(),
             headed: request.headed,
             network: request.network.clone(),
-            deny_network: true,
+            purpose: RuntimePagePurpose::OfflineVerification,
             maximum_frames: request.limits.frames,
             resource_observation: pageknot_browser::ResourceObservationLimits {
                 maximum_resource_bytes: request.limits.resource_bytes,

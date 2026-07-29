@@ -170,7 +170,15 @@ impl StagedFileArtifact {
         Ok(bytes)
     }
 
-    pub fn commit(mut self) -> Result<ArtifactResult> {
+    pub fn commit(self) -> Result<ArtifactResult> {
+        let parent = open_parent_directory(&self.destination)?;
+        self.commit_with_parent_sync(|| sync_parent_directory(parent))
+    }
+
+    fn commit_with_parent_sync(
+        mut self,
+        sync_parent: impl FnOnce() -> io::Result<()>,
+    ) -> Result<ArtifactResult> {
         self.validate_staged_contents()?;
         let destination = match self.conflict {
             ConflictPolicy::Fail => {
@@ -183,7 +191,12 @@ impl StagedFileArtifact {
             }
             ConflictPolicy::Uniquify => persist_unique(self.staging, self.destination)?,
         };
-        sync_parent_directory(&destination)?;
+        // The destination is visible after persist succeeds. A later directory
+        // sync failure cannot be reported as an uncommitted transaction.
+        let _durability = match sync_parent() {
+            Ok(()) => CommitDurability::Synced,
+            Err(_error) => CommitDurability::AppliedWithSyncWarning,
+        };
         Ok(ArtifactResult::File {
             path: destination.into(),
             bytes: self.bytes,
@@ -312,26 +325,45 @@ fn same_file(_left: &std::fs::Metadata, _right: &std::fs::Metadata) -> bool {
     true
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CommitDurability {
+    Synced,
+    AppliedWithSyncWarning,
+}
+
 #[cfg(unix)]
-fn sync_parent_directory(destination: &Utf8Path) -> Result<()> {
+fn open_parent_directory(destination: &Utf8Path) -> Result<Option<File>> {
     let parent = destination
         .parent()
         .filter(|path| !path.as_str().is_empty())
         .unwrap_or(Utf8Path::new("."));
-    match File::open(parent).and_then(|directory| directory.sync_all()) {
-        Ok(()) => Ok(()),
-        Err(error) if directory_sync_is_unavailable(&error) => Ok(()),
+    match File::open(parent) {
+        Ok(directory) => Ok(Some(directory)),
+        Err(error) if directory_sync_is_unavailable(&error) => Ok(None),
         Err(error) => Err(output_io_error(
             "pageknot.output.sync",
             ErrorStage::Commit,
-            "failed to synchronize the output directory",
+            "failed to open the output directory for synchronization",
             error,
         )),
     }
 }
 
 #[cfg(not(unix))]
-fn sync_parent_directory(_destination: &Utf8Path) -> Result<()> {
+fn open_parent_directory(_destination: &Utf8Path) -> Result<()> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn sync_parent_directory(directory: Option<File>) -> io::Result<()> {
+    match directory {
+        Some(directory) => directory.sync_all(),
+        None => Ok(()),
+    }
+}
+
+#[cfg(not(unix))]
+fn sync_parent_directory(_directory: ()) -> io::Result<()> {
     Ok(())
 }
 
@@ -589,6 +621,30 @@ mod tests {
             fs::read(&destination).ok().as_deref(),
             Some(b"new".as_slice())
         );
+        Ok(())
+    }
+
+    #[test]
+    fn post_commit_parent_sync_failure_keeps_the_committed_outcome() -> std::io::Result<()> {
+        let directory = tempfile::tempdir()?;
+        let destination = utf8_path(&directory.path().join("capture.html"))?;
+        fs::write(&destination, b"old")?;
+        let mut writer = FileArtifactWriter::create(&destination, ConflictPolicy::Replace)
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+        writer.write_all(b"new")?;
+        let staged = writer
+            .finish()
+            .map_err(|error| std::io::Error::other(error.to_string()))?;
+
+        let result = staged.commit_with_parent_sync(|| {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                "injected parent sync failure",
+            ))
+        });
+
+        assert!(result.is_ok());
+        assert_eq!(fs::read(destination)?, b"new");
         Ok(())
     }
 

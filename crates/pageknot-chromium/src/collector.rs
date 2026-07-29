@@ -8,7 +8,7 @@ use pageknot_model::{
 use pageknot_protocol::{
     COLLECTOR_PROTOCOL_VERSION, COLLECTOR_PROTOCOL_VERSION_STRING, ChunkAssembler, ChunkEnvelope,
     CollectorCapability, CollectorCommand, CollectorErrorResponse, CollectorHandshake,
-    CollectorMessage, FrameOwnerObservation, ObservationDescriptor, PageObservation,
+    CollectorMessage, FrameOwnerObservation, ObservationDescriptor, PageObservation, TransferPlan,
     negotiate_protocol,
 };
 use serde_json::{Value, json};
@@ -100,22 +100,19 @@ pub(crate) async fn collect_frame_observation_with_metadata(
         serde_json::from_value(descriptor_value).map_err(|error| {
             collector_shape_error(format!("collector descriptor is malformed: {error}"))
         })?;
-    validate_descriptor(
-        &descriptor,
+    let transfer = TransferPlan::new(
+        descriptor,
         capture_id,
-        frame_id,
-        limits.maximum_payload_bytes,
-    )?;
-
-    let mut assembler = ChunkAssembler::new(
-        capture_id.clone(),
         frame_id,
         negotiated.chunk_bytes,
         limits.maximum_payload_bytes,
-    );
+    )?;
+    let sequences = transfer.sequences();
+    let encoded_bytes = transfer.encoded_bytes();
+    let mut assembler = ChunkAssembler::new(transfer);
     let mut complete = None;
     let collection = async {
-        for sequence in 0..descriptor.chunks {
+        for sequence in sequences {
             let chunk_value = page
                 .collector_call_in_session(
                     session_id,
@@ -143,14 +140,6 @@ pub(crate) async fn collect_frame_observation_with_metadata(
         let payload = complete.take().ok_or_else(|| {
             collector_shape_error("collector ended before its payload was complete")
         })?;
-        let encoded_bytes = validate_payload_length(&descriptor, &payload)?;
-        if ContentDigest::sha256(&payload) != descriptor.payload_sha256 {
-            return Err(PageKnotError::new(
-                "pageknot.collector.payload_checksum",
-                ErrorStage::Collection,
-                "collector payload digest does not match its descriptor",
-            ));
-        }
         let observation = serde_json::from_slice::<PageObservation>(&payload).map_err(|error| {
             collector_shape_error(format!("collector observation is malformed: {error}"))
         })?;
@@ -261,41 +250,6 @@ fn host_build_digest() -> ContentDigest {
     ContentDigest::sha256(input.as_bytes())
 }
 
-fn validate_descriptor(
-    descriptor: &ObservationDescriptor,
-    capture_id: &CaptureId,
-    frame_id: FrameId,
-    maximum_payload_bytes: u64,
-) -> Result<()> {
-    if descriptor.capture_id != *capture_id || descriptor.frame_id != frame_id {
-        return Err(collector_shape_error(
-            "collector descriptor belongs to another capture or frame",
-        ));
-    }
-    if descriptor.chunks == 0 || descriptor.encoded_bytes > maximum_payload_bytes {
-        return Err(PageKnotError::new(
-            "pageknot.collector.payload_limit",
-            ErrorStage::Collection,
-            "collector descriptor exceeds the remaining capture limit",
-        )
-        .with_detail("encodedBytes", descriptor.encoded_bytes)
-        .with_detail("limit", maximum_payload_bytes));
-    }
-    Ok(())
-}
-
-fn validate_payload_length(descriptor: &ObservationDescriptor, payload: &[u8]) -> Result<u64> {
-    let encoded_bytes = u64::try_from(payload.len()).unwrap_or(u64::MAX);
-    if encoded_bytes == descriptor.encoded_bytes {
-        return Ok(encoded_bytes);
-    }
-    Err(
-        collector_shape_error("collector payload length does not match its descriptor")
-            .with_detail("actual", encoded_bytes)
-            .with_detail("declared", descriptor.encoded_bytes),
-    )
-}
-
 fn collector_protocol_error(
     value: &Value,
     expected_capture_id: &CaptureId,
@@ -344,14 +298,11 @@ fn collector_shape_error(message: impl Into<String>) -> PageKnotError {
 
 #[cfg(test)]
 mod tests {
-    use pageknot_model::{CaptureId, ContentDigest, FrameId, MAXIMUM_CAPTURE_NODES};
-    use pageknot_protocol::{FrameOwnerObservation, ObservationDescriptor};
+    use pageknot_model::{CaptureId, MAXIMUM_CAPTURE_NODES};
+    use pageknot_protocol::FrameOwnerObservation;
     use serde_json::json;
 
-    use super::{
-        collector_protocol_error, validate_descriptor, validate_frame_owner_paths,
-        validate_maximum_nodes, validate_payload_length,
-    };
+    use super::{collector_protocol_error, validate_frame_owner_paths, validate_maximum_nodes};
 
     #[test]
     fn collector_node_limit_matches_the_public_capture_boundary() {
@@ -370,64 +321,6 @@ mod tests {
         assert_eq!(
             error.and_then(|error| error.details.get("limit")),
             Some(&json!(MAXIMUM_CAPTURE_NODES))
-        );
-    }
-
-    #[test]
-    fn descriptor_accepts_the_exact_payload_limit_and_rejects_the_next_byte() {
-        let capture_id = CaptureId::new();
-        let frame_id = FrameId::new(3);
-        let mut descriptor = ObservationDescriptor {
-            capture_id: capture_id.clone(),
-            frame_id,
-            chunks: 1,
-            encoded_bytes: 4096,
-            payload_sha256: ContentDigest::sha256(b"payload"),
-        };
-
-        assert!(validate_descriptor(&descriptor, &capture_id, frame_id, 4096).is_ok());
-
-        descriptor.encoded_bytes = 4097;
-        let rejection = validate_descriptor(&descriptor, &capture_id, frame_id, 4096);
-        assert_eq!(
-            rejection.as_ref().map_err(|error| error.code.as_str()),
-            Err("pageknot.collector.payload_limit")
-        );
-    }
-
-    #[test]
-    fn reconstructed_payload_length_must_match_the_descriptor() {
-        let capture_id = CaptureId::new();
-        let frame_id = FrameId::new(3);
-        let mut descriptor = ObservationDescriptor {
-            capture_id,
-            frame_id,
-            chunks: 1,
-            encoded_bytes: 2,
-            payload_sha256: ContentDigest::sha256(b"payload"),
-        };
-
-        assert_eq!(validate_payload_length(&descriptor, b"ok"), Ok(2));
-
-        descriptor.encoded_bytes = 1;
-        let underreported = validate_payload_length(&descriptor, b"ok");
-        assert_eq!(
-            underreported.as_ref().map_err(|error| error.code.as_str()),
-            Err("pageknot.collector.protocol_shape")
-        );
-        assert_eq!(
-            underreported
-                .as_ref()
-                .err()
-                .and_then(|error| error.details.get("actual")),
-            Some(&json!(2))
-        );
-        assert_eq!(
-            underreported
-                .as_ref()
-                .err()
-                .and_then(|error| error.details.get("declared")),
-            Some(&json!(1))
         );
     }
 

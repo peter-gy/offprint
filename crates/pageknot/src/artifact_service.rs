@@ -1,17 +1,21 @@
 use std::io;
+use std::io::Write as _;
 use std::path::Path;
 use std::sync::Arc;
 
+use pageknot_artifact::FileArtifactWriter;
+use pageknot_document::{Document, NodeData};
 use pageknot_model::{
-    ArtifactInput, ArtifactManifest, BrowserEnvironment, BrowserSpec, CaptureId,
-    ERROR_CODE_REGISTRY, ErrorStage, PageKnotError, RedactedUrl, RedactionPolicy, Result,
-    VerificationPolicy, VerificationResult,
+    ArtifactInput, ArtifactManifest, ArtifactResult, BrowserEnvironment, BrowserSpec, CaptureId,
+    CaptureResult, ConflictPolicy, ERROR_CODE_REGISTRY, ErrorStage, PageKnotError, PortablePath,
+    RedactedUrl, RedactionPolicy, Result, VerificationPolicy, VerificationResult,
 };
 use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
-use tokio_util::sync::CancellationToken;
 use url::Url;
 
-use crate::runtime::{RuntimePageRequest, RuntimeState};
+use crate::runtime::{
+    RuntimePagePurpose, RuntimePageRequest, RuntimeState, operation_cancelled_error,
+};
 
 mod export;
 mod markdown_bundle;
@@ -28,6 +32,98 @@ pub struct ArtifactService {
 impl ArtifactService {
     pub(crate) const fn new(state: Arc<RuntimeState>) -> Self {
         Self { state }
+    }
+
+    /// Derives a portable file name from an in-memory capture title.
+    ///
+    /// The source host is used when the document has no title.
+    pub fn suggested_capture_file_name(
+        &self,
+        result: &CaptureResult,
+        extension: &str,
+    ) -> Result<String> {
+        validate_file_extension(extension)?;
+        let ArtifactResult::Bytes { content, .. } = &result.artifact else {
+            return Err(PageKnotError::new(
+                "pageknot.input.artifact",
+                ErrorStage::Validation,
+                "a suggested file name requires an in-memory capture",
+            ));
+        };
+        let document = Document::parse(content);
+        let title = document.find_html_element("title").map(|title| {
+            document
+                .node(title)
+                .into_iter()
+                .flat_map(|node| &node.children)
+                .filter_map(|id| document.node(*id))
+                .filter_map(|node| match &node.data {
+                    NodeData::Text { contents } => Some(contents.as_ref()),
+                    _ => None,
+                })
+                .collect::<String>()
+        });
+        let fallback = url::Url::parse(result.source.final_url.as_str())
+            .ok()
+            .and_then(|url| url.host_str().map(str::to_owned))
+            .unwrap_or_else(|| "capture".to_owned());
+        let stem = pageknot_artifact::portable_file_stem(
+            title
+                .as_deref()
+                .filter(|title| !title.trim().is_empty())
+                .unwrap_or(&fallback),
+        );
+        Ok(format!("{stem}.{extension}"))
+    }
+
+    /// Commits an in-memory capture to `destination`.
+    ///
+    /// The returned capture contains the committed file artifact. Existing
+    /// files follow `conflict`.
+    pub fn commit_capture(
+        &self,
+        mut result: CaptureResult,
+        destination: impl Into<PortablePath>,
+        conflict: ConflictPolicy,
+    ) -> Result<CaptureResult> {
+        self.state.ensure_open()?;
+        let ArtifactResult::Bytes {
+            content,
+            bytes,
+            sha256,
+        } = &result.artifact
+        else {
+            return Err(PageKnotError::new(
+                "pageknot.input.artifact",
+                ErrorStage::Validation,
+                "capture commit requires an in-memory artifact",
+            ));
+        };
+        let content_bytes = u64::try_from(content.len()).unwrap_or(u64::MAX);
+        let content_sha256 = pageknot_model::ContentDigest::sha256(content);
+        if *bytes != content_bytes
+            || *sha256 != content_sha256
+            || result.verification.bytes != content_bytes
+            || result.verification.artifact_sha256 != content_sha256
+            || !result.verification.passed
+        {
+            return Err(PageKnotError::new(
+                "pageknot.input.artifact",
+                ErrorStage::Validation,
+                "capture bytes and verification evidence do not match",
+            ));
+        }
+        let destination = destination.into();
+        let mut writer = FileArtifactWriter::create(destination.into_utf8_path_buf(), conflict)?;
+        writer.write_all(content).map_err(|error| {
+            PageKnotError::new(
+                "pageknot.output.flush",
+                ErrorStage::Encoding,
+                format!("failed to write the capture staging artifact: {error}"),
+            )
+        })?;
+        result.artifact = writer.finish()?.commit()?;
+        Ok(result)
     }
 
     /// Parses and validates the embedded artifact manifest.
@@ -77,9 +173,22 @@ impl ArtifactService {
         bytes: &[u8],
         policy: VerificationPolicy,
     ) -> Result<(VerificationResult, ArtifactManifest)> {
-        let (static_result, manifest) = pageknot_html::verify_static_with_manifest(bytes)?;
+        let (verification, proof) = self.verify_html_proof(bytes, policy).await?;
+        let manifest = proof.manifest().clone();
+        Ok((verification, manifest))
+    }
+
+    async fn verify_html_proof<'a>(
+        &self,
+        bytes: &'a [u8],
+        policy: VerificationPolicy,
+    ) -> Result<(
+        VerificationResult,
+        pageknot_html::VerifiedHtmlProof<&'a [u8]>,
+    )> {
+        let proof = pageknot_html::verify_html(bytes)?.into_proof();
         if policy == VerificationPolicy::Static {
-            return Ok((static_result, manifest));
+            return Ok((proof.verification().clone(), proof));
         }
         let file =
             stage_temporary_artifact("pageknot-verify-", ".html", bytes, "verification").await?;
@@ -90,6 +199,7 @@ impl ArtifactService {
                 "artifact path cannot be represented as a file URL",
             )
         })?;
+        let cancellation = self.state.operation_cancellation();
         let verifier = self
             .state
             .open_page(RuntimePageRequest {
@@ -98,27 +208,39 @@ impl ArtifactService {
                 environment: BrowserEnvironment::default(),
                 headed: None,
                 network: self.state.default_network_policy.clone(),
-                maximum_frames: manifest.frames.max(1),
+                maximum_frames: proof.manifest().frames.max(1),
                 resource_observation: pageknot_browser::ResourceObservationLimits::default(),
-                deny_network: true,
-                cancellation: CancellationToken::new(),
+                purpose: RuntimePagePurpose::OfflineVerification,
+                cancellation: cancellation.clone(),
             })
             .await?;
-        let observation = verifier
-            .page()?
-            .verify_offline_url(&url, std::time::Duration::from_secs(120))
-            .await;
+        let observation = tokio::select! {
+            biased;
+            () = cancellation.cancelled() => Err(operation_cancelled_error()),
+            observation = verifier
+                .page()?
+                .verify_offline_url(&url, std::time::Duration::from_secs(120)) => observation,
+        };
         let close = verifier.close().await;
         let observation = match (observation, close) {
             (Ok(observation), Ok(())) => observation,
             (Err(error), _) => return Err(error),
             (Ok(_), Err(error)) => return Err(error),
         };
-        Ok((
-            offline_verification_result(static_result, observation)?,
-            manifest,
-        ))
+        let verification = offline_verification_result(proof.verification().clone(), observation)?;
+        Ok((verification, proof))
     }
+}
+
+fn validate_file_extension(extension: &str) -> Result<()> {
+    if extension.is_empty() || !extension.bytes().all(|byte| byte.is_ascii_alphanumeric()) {
+        return Err(PageKnotError::new(
+            "pageknot.input.output",
+            ErrorStage::Validation,
+            "capture file extension must contain ASCII letters or digits",
+        ));
+    }
+    Ok(())
 }
 
 pub(super) fn offline_verification_result(
@@ -379,12 +501,16 @@ mod tests {
     use std::error::Error;
     use std::io::{self, Write as _};
 
-    use pageknot_model::{ERROR_CODE_REGISTRY, ErrorStage};
+    use pageknot_model::{
+        ArtifactResult, CaptureResult, ConflictPolicy, ContentDigest, ERROR_CODE_REGISTRY,
+        ErrorStage,
+    };
 
     use super::{
         BoundedFileReadError, StagingOperation, map_staging_io, read_bounded_file,
         read_bounded_open_file, stage_temporary_artifact,
     };
+    use crate::PageKnot;
 
     type TestResult = std::result::Result<(), Box<dyn Error + Send + Sync>>;
 
@@ -434,6 +560,38 @@ mod tests {
                 Some(operation.name())
             );
         }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn capture_file_name_and_commit_stay_in_the_artifact_service() -> TestResult {
+        let mut result: CaptureResult = serde_json::from_str(include_str!(
+            "../../../schemas/examples/capture-result.json"
+        ))?;
+        let content = b"<!doctype html><title>Portable Capture</title><main>ready</main>".to_vec();
+        result.artifact = ArtifactResult::Bytes {
+            bytes: u64::try_from(content.len())?,
+            sha256: ContentDigest::sha256(&content),
+            content: content.clone(),
+        };
+        result.verification.bytes = u64::try_from(content.len())?;
+        result.verification.artifact_sha256 = ContentDigest::sha256(&content);
+        let directory = tempfile::tempdir()?;
+        let pageknot = PageKnot::builder().build()?;
+        let artifacts = pageknot.artifacts();
+
+        let file_name = artifacts.suggested_capture_file_name(&result, "html")?;
+        let destination = directory.path().join(&file_name);
+        let committed = artifacts.commit_capture(
+            result,
+            pageknot_model::PortablePath::from_path_buf(destination.clone())?,
+            ConflictPolicy::Replace,
+        )?;
+
+        assert_eq!(file_name, "portable-capture.html");
+        assert_eq!(std::fs::read(&destination)?, content);
+        assert!(matches!(committed.artifact, ArtifactResult::File { .. }));
+        pageknot.close().await?;
         Ok(())
     }
 

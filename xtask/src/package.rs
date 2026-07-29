@@ -38,6 +38,14 @@ pub(crate) const PUBLISHABLE_CRATES: &[&str] = &[
 ];
 pub(crate) const CRATE_LICENSE: &str = "AGPL-3.0-or-later";
 const MAXIMUM_CRATE_METADATA_BYTES: u64 = 1024 * 1024;
+const MAXIMUM_CRATE_ENTRIES: usize = 100_000;
+const MAXIMUM_CRATE_UNPACKED_BYTES: u64 = 256 * 1024 * 1024;
+
+struct VerifiedCrate {
+    name: String,
+    archive: PathBuf,
+    root: PathBuf,
+}
 
 #[derive(Debug, Deserialize)]
 struct Versions {
@@ -147,14 +155,16 @@ pub fn verify_crate_packages(root: &Path, directory: &Path) -> Result<(), String
     archives.sort();
 
     let mut missing = PUBLISHABLE_CRATES.iter().copied().collect::<BTreeSet<_>>();
+    let mut verified = Vec::with_capacity(archives.len());
     for archive in &archives {
-        let name = verify_crate_archive(archive, &version, &root_license)?;
-        if !missing.remove(name.as_str()) {
+        let package = verify_crate_archive(archive, &version, &root_license)?;
+        if !missing.remove(package.name.as_str()) {
             return Err(format!(
                 "{} is an unexpected or duplicate crate package",
                 archive.display()
             ));
         }
+        verified.push(package);
     }
     if !missing.is_empty() {
         return Err(format!(
@@ -162,14 +172,14 @@ pub fn verify_crate_packages(root: &Path, directory: &Path) -> Result<(), String
             missing.into_iter().collect::<Vec<_>>().join(", ")
         ));
     }
-    Ok(())
+    verify_packaged_workspace(&verified)
 }
 
 fn verify_crate_archive(
     path: &Path,
     workspace_version: &str,
     root_license: &[u8],
-) -> Result<String, String> {
+) -> Result<VerifiedCrate, String> {
     let file =
         File::open(path).map_err(|error| format!("failed to open {}: {error}", path.display()))?;
     let mut archive = tar::Archive::new(GzDecoder::new(file));
@@ -281,7 +291,158 @@ fn verify_crate_archive(
             path.display()
         ));
     }
-    Ok(name.to_owned())
+    Ok(VerifiedCrate {
+        name: name.to_owned(),
+        archive: path.to_owned(),
+        root: PathBuf::from(expected_root),
+    })
+}
+
+fn verify_packaged_workspace(packages: &[VerifiedCrate]) -> Result<(), String> {
+    let staging = TempDir::new()
+        .map_err(|error| format!("failed to create crate verification directory: {error}"))?;
+    for package in packages {
+        unpack_crate(package, staging.path())?;
+    }
+    let manifest = verification_workspace_manifest(packages)?;
+    fs::write(staging.path().join("Cargo.toml"), manifest)
+        .map_err(|error| format!("failed to write crate verification workspace: {error}"))?;
+
+    let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let lock = Command::new(&cargo)
+        .current_dir(staging.path())
+        .arg("generate-lockfile")
+        .output()
+        .map_err(|error| format!("failed to resolve packaged crates: {error}"))?;
+    if !lock.status.success() {
+        return Err(format!(
+            "packaged crate workspace failed to resolve with status {}: {}",
+            lock.status,
+            String::from_utf8_lossy(&lock.stderr).trim()
+        ));
+    }
+    let mut command = Command::new(cargo);
+    command.current_dir(staging.path()).args([
+        "check",
+        "--workspace",
+        "--lib",
+        "--bins",
+        "--examples",
+        "--locked",
+    ]);
+    let output = command
+        .output()
+        .map_err(|error| format!("failed to build packaged crates: {error}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        Err(format!(
+            "packaged crate workspace failed to build with status {}: {}",
+            output.status,
+            stderr.trim()
+        ))
+    }
+}
+
+fn unpack_crate(package: &VerifiedCrate, destination: &Path) -> Result<(), String> {
+    let file = File::open(&package.archive)
+        .map_err(|error| format!("failed to open {}: {error}", package.archive.display()))?;
+    let mut archive = tar::Archive::new(GzDecoder::new(file));
+    let mut entries = 0_usize;
+    let mut unpacked_bytes = 0_u64;
+    for entry in archive
+        .entries()
+        .map_err(|error| format!("failed to read {}: {error}", package.archive.display()))?
+    {
+        let mut entry = entry
+            .map_err(|error| format!("failed to read {}: {error}", package.archive.display()))?;
+        entries = entries.saturating_add(1);
+        if entries > MAXIMUM_CRATE_ENTRIES {
+            return Err(format!(
+                "{} exceeds {MAXIMUM_CRATE_ENTRIES} entries",
+                package.archive.display()
+            ));
+        }
+        let path = entry
+            .path()
+            .map_err(|error| format!("invalid path in {}: {error}", package.archive.display()))?
+            .into_owned();
+        let mut components = path.components();
+        if components.next() != Some(std::path::Component::Normal(package.root.as_os_str()))
+            || components.any(|component| !matches!(component, std::path::Component::Normal(_)))
+        {
+            return Err(format!(
+                "{} contains an entry outside {}",
+                package.archive.display(),
+                package.root.display()
+            ));
+        }
+        let entry_type = entry.header().entry_type();
+        if !entry_type.is_file() && !entry_type.is_dir() {
+            return Err(format!(
+                "{} contains a link or special entry at {}",
+                package.archive.display(),
+                path.display()
+            ));
+        }
+        if entry_type.is_file() {
+            unpacked_bytes =
+                unpacked_bytes.saturating_add(entry.header().size().map_err(|error| {
+                    format!(
+                        "invalid entry size in {} at {}: {error}",
+                        package.archive.display(),
+                        path.display()
+                    )
+                })?);
+            if unpacked_bytes > MAXIMUM_CRATE_UNPACKED_BYTES {
+                return Err(format!(
+                    "{} exceeds {MAXIMUM_CRATE_UNPACKED_BYTES} unpacked bytes",
+                    package.archive.display()
+                ));
+            }
+        }
+        if !entry.unpack_in(destination).map_err(|error| {
+            format!(
+                "failed to unpack {} from {}: {error}",
+                path.display(),
+                package.archive.display()
+            )
+        })? {
+            return Err(format!(
+                "{} contains an entry outside the verification directory",
+                package.archive.display()
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn verification_workspace_manifest(packages: &[VerifiedCrate]) -> Result<String, String> {
+    let members = packages
+        .iter()
+        .map(|package| toml::Value::String(portable_name(&package.root)))
+        .collect();
+    let mut workspace = toml::Table::new();
+    workspace.insert("resolver".to_owned(), toml::Value::String("3".to_owned()));
+    workspace.insert("members".to_owned(), toml::Value::Array(members));
+
+    let mut crates_io = toml::Table::new();
+    for package in packages {
+        let mut dependency = toml::Table::new();
+        dependency.insert(
+            "path".to_owned(),
+            toml::Value::String(portable_name(&package.root)),
+        );
+        crates_io.insert(package.name.clone(), toml::Value::Table(dependency));
+    }
+    let mut patch = toml::Table::new();
+    patch.insert("crates-io".to_owned(), toml::Value::Table(crates_io));
+    let mut manifest = toml::Table::new();
+    manifest.insert("workspace".to_owned(), toml::Value::Table(workspace));
+    manifest.insert("patch".to_owned(), toml::Value::Table(patch));
+    toml::to_string(&toml::Value::Table(manifest))
+        .map_err(|error| format!("failed to encode crate verification workspace: {error}"))
 }
 
 fn read_bounded_entry(
@@ -684,6 +845,17 @@ mod tests {
             return Err("a package with different license metadata passed verification".to_owned());
         };
         assert!(mismatch.contains("package license must be AGPL-3.0-or-later"));
+        write_crate_source(
+            &packages,
+            PUBLISHABLE_CRATES[0],
+            license,
+            CRATE_LICENSE,
+            b"this is not Rust\n",
+        )?;
+        let Err(build_error) = verify_crate_packages(temporary.path(), &packages) else {
+            return Err("a package with invalid Rust source passed verification".to_owned());
+        };
+        assert!(build_error.contains("failed to build"));
         Ok(())
     }
 
@@ -748,6 +920,22 @@ managed_version = "151.0.7922.47"
         license: &[u8],
         license_id: &str,
     ) -> Result<(), String> {
+        write_crate_source(
+            directory,
+            name,
+            license,
+            license_id,
+            b"pub fn packaged() {}\n",
+        )
+    }
+
+    fn write_crate_source(
+        directory: &Path,
+        name: &str,
+        license: &[u8],
+        license_id: &str,
+        source: &[u8],
+    ) -> Result<(), String> {
         let path = directory.join(format!("{name}-0.1.0.crate"));
         let file = File::create(&path)
             .map_err(|error| format!("failed to create {}: {error}", path.display()))?;
@@ -755,7 +943,7 @@ managed_version = "151.0.7922.47"
         let mut archive = TarBuilder::new(gzip);
         let root = format!("{name}-0.1.0");
         let manifest = format!(
-            "[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nlicense = \"{license_id}\"\n"
+            "[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2024\"\nlicense = \"{license_id}\"\n"
         );
         append_test_file(
             &mut archive,
@@ -763,6 +951,7 @@ managed_version = "151.0.7922.47"
             manifest.as_bytes(),
         )?;
         append_test_file(&mut archive, &format!("{root}/LICENSE"), license)?;
+        append_test_file(&mut archive, &format!("{root}/src/lib.rs"), source)?;
         archive
             .finish()
             .map_err(|error| format!("failed to finish {}: {error}", path.display()))?;

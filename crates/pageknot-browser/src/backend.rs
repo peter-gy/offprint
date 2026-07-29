@@ -194,6 +194,14 @@ pub trait BrowserBackend: fmt::Debug + Send + Sync {
     /// Reports availability and recovery diagnostics for `browser`.
     async fn doctor(&self, browser: &BrowserSpec) -> BrowserDoctorReport;
 
+    /// Returns the browser currently owned by this backend.
+    ///
+    /// The default implementation returns `None`. Shared backends override
+    /// this method with their current browser identity.
+    async fn active_browser(&self) -> Option<BrowserInfo> {
+        None
+    }
+
     /// Releases every browser resource owned by this backend.
     async fn close(&self) -> Result<()>;
 }

@@ -3,17 +3,20 @@ use std::sync::Arc;
 use pageknot_browser::NetworkGuard;
 use pageknot_model::{ErrorStage, PageKnotError, RequestHeader, Result};
 use serde_json::{Value, json};
-use tokio::sync::{Mutex, Semaphore};
+use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
 use url::Url;
 
 use super::activity::is_long_lived_response;
 use crate::CdpClient;
-use crate::resources::{InterceptedResponse, ObservedResourceRecorder, captures_rendered_response};
+use crate::resources::ObservedResourceRecorder;
 use crate::targets::SessionRegistry;
 
+use self::paused::{InterceptionContext, InterceptionFailure, PausedRequest};
+
+mod paused;
+
 const MAXIMUM_INTERCEPTION_TASKS: usize = 256;
-const MAXIMUM_RESPONSE_STREAMS: usize = 4;
 
 #[derive(Debug)]
 struct InterceptionState {
@@ -43,28 +46,22 @@ impl NetworkInterception {
         let task = tokio::spawn(async move {
             let mut events = client.subscribe();
             let mut continuations = tokio::task::JoinSet::new();
-            let response_streams = Arc::new(Semaphore::new(MAXIMUM_RESPONSE_STREAMS));
+            let context = InterceptionContext::new(
+                client.clone(),
+                observed_resources,
+                guard,
+                headers,
+                header_origin,
+                task_cancellation.clone(),
+            );
             loop {
                 let event = tokio::select! {
                     () = task_cancellation.cancelled() => {
-                        continuations.abort_all();
-                        while continuations.join_next().await.is_some() {}
+                        drain_interception_tasks(&mut continuations, &task_state).await;
                         return;
                     }
                     completed = continuations.join_next(), if !continuations.is_empty() => {
-                        if let Some(Err(error)) = completed {
-                            record_interception_error(
-                                &task_state,
-                                PageKnotError::new(
-                                    "pageknot.browser.interception_task",
-                                    ErrorStage::Navigation,
-                                    format!("network interception task failed: {error}"),
-                                ),
-                                None,
-                                true,
-                            )
-                            .await;
-                        }
+                        record_interception_task_completion(&task_state, completed).await;
                         continue;
                     }
                     event = events.recv() => event,
@@ -83,6 +80,8 @@ impl NetworkInterception {
                             true,
                         )
                         .await;
+                        task_cancellation.cancel();
+                        drain_interception_tasks(&mut continuations, &task_state).await;
                         return;
                     }
                 };
@@ -94,199 +93,31 @@ impl NetworkInterception {
                 {
                     continue;
                 }
-                let Some(request_id) = event.params.get("requestId").and_then(Value::as_str) else {
-                    record_interception_error(
-                        &task_state,
-                        PageKnotError::new(
-                            "pageknot.browser.cdp_shape",
-                            ErrorStage::Navigation,
-                            "Fetch.requestPaused omitted requestId",
-                        ),
-                        None,
-                        true,
-                    )
-                    .await;
-                    return;
-                };
-                if event.params.get("responseStatusCode").is_some() {
-                    let parameters = json!({"requestId": request_id});
-                    let response_code = event
-                        .params
-                        .get("responseStatusCode")
-                        .and_then(Value::as_u64)
-                        .and_then(|value| u16::try_from(value).ok())
-                        .unwrap_or(200);
-                    let continue_without_body = !captures_rendered_response(
-                        event.params.get("resourceType").and_then(Value::as_str),
-                    ) || is_long_lived_response(&event.params)
-                        || matches!(response_code, 204 | 205 | 304)
-                        || (300..400).contains(&response_code);
-                    if continue_without_body {
-                        if let Err(error) = client
-                            .command("Fetch.continueResponse", parameters, Some(session_id))
-                            .await
-                        {
-                            record_interception_error(&task_state, error, None, true).await;
-                            return;
-                        }
-                        continue;
-                    }
-                    if let Some(network_id) = event.params.get("networkId").and_then(Value::as_str)
-                        && observed_resources
-                            .begin_stream(session_id, network_id, &event.params)
-                            .await
-                    {
-                        if continuations.len() >= MAXIMUM_INTERCEPTION_TASKS {
-                            let error = PageKnotError::new(
-                                "pageknot.navigation.request_limit",
-                                ErrorStage::Navigation,
-                                "concurrent intercepted requests exceed the supported limit",
-                            )
-                            .with_detail("limit", MAXIMUM_INTERCEPTION_TASKS);
-                            record_interception_error(&task_state, error, None, false).await;
-                            observed_resources
-                                .fail_intercepted_response(
-                                    &client, session_id, request_id, network_id,
-                                )
-                                .await;
-                            continue;
-                        }
-                        let task_client = client.clone();
-                        let task_observed_resources = observed_resources.clone();
-                        let task_state = Arc::clone(&task_state);
-                        let task_session_id = session_id.to_owned();
-                        let task_network_id = network_id.to_owned();
-                        let task_request_id = request_id.to_owned();
-                        let task_parameters = event.params.clone();
-                        let task_frame_id = event
-                            .params
-                            .get("frameId")
-                            .and_then(Value::as_str)
-                            .map(str::to_owned);
-                        let task_cancellation = task_cancellation.clone();
-                        let task_response_streams = Arc::clone(&response_streams);
-                        continuations.spawn(async move {
-                            let permit = task_response_streams.acquire_owned().await;
-                            let Ok(_permit) = permit else {
-                                let error = PageKnotError::new(
-                                    "pageknot.browser.interception_closed",
-                                    ErrorStage::Resource,
-                                    "response interception closed before the body was captured",
-                                );
-                                task_observed_resources
-                                    .fail_intercepted_response(
-                                        &task_client,
-                                        &task_session_id,
-                                        &task_request_id,
-                                        &task_network_id,
-                                    )
-                                    .await;
-                                record_interception_error(&task_state, error, task_frame_id, false)
-                                    .await;
-                                return;
-                            };
-                            let captured = task_observed_resources
-                                .capture_intercepted_response(
-                                    &task_client,
-                                    InterceptedResponse {
-                                        session_id: &task_session_id,
-                                        request_id: &task_request_id,
-                                        network_id: &task_network_id,
-                                        response_code,
-                                        parameters: &task_parameters,
-                                        cancellation: task_cancellation,
-                                    },
-                                )
-                                .await;
-                            if let Err(error) = captured {
-                                task_observed_resources
-                                    .fail_intercepted_response(
-                                        &task_client,
-                                        &task_session_id,
-                                        &task_request_id,
-                                        &task_network_id,
-                                    )
-                                    .await;
-                                record_interception_error(&task_state, error, task_frame_id, false)
-                                    .await;
-                            }
-                        });
-                        continue;
-                    }
-                    if let Err(error) = client
-                        .command("Fetch.continueResponse", parameters, Some(session_id))
-                        .await
-                    {
+                let request = match PausedRequest::from_event(session_id, event.params.clone()) {
+                    Ok(request) => request,
+                    Err(error) => {
                         record_interception_error(&task_state, error, None, true).await;
+                        task_cancellation.cancel();
+                        drain_interception_tasks(&mut continuations, &task_state).await;
                         return;
+                    }
+                };
+                drain_ready_interception_tasks(&mut continuations, &task_state).await;
+                if continuations.len() >= MAXIMUM_INTERCEPTION_TASKS {
+                    let error = PageKnotError::new(
+                        "pageknot.navigation.request_limit",
+                        ErrorStage::Navigation,
+                        "concurrent intercepted requests exceed the supported limit",
+                    )
+                    .with_detail("limit", MAXIMUM_INTERCEPTION_TASKS);
+                    record_interception_error(&task_state, error, None, false).await;
+                    if let Err(error) = request.fail_overloaded(&client).await {
+                        record_interception_error(&task_state, error, None, true).await;
                     }
                     continue;
                 }
-                let destination = event
-                    .params
-                    .pointer("/request/url")
-                    .and_then(Value::as_str)
-                    .ok_or_else(|| {
-                        PageKnotError::new(
-                            "pageknot.browser.cdp_shape",
-                            ErrorStage::Navigation,
-                            "Fetch.requestPaused omitted the request URL",
-                        )
-                    })
-                    .and_then(|value| {
-                        Url::parse(value).map_err(|error| {
-                            PageKnotError::new(
-                                "pageknot.navigation.url",
-                                ErrorStage::Navigation,
-                                format!("Chromium requested an invalid URL: {error}"),
-                            )
-                        })
-                    });
-                let inject_headers = destination
-                    .as_ref()
-                    .is_ok_and(|destination| same_origin(destination, &header_origin));
-                let decision = match &destination {
-                    Ok(destination) => validate_guard_destination(&guard, destination).await,
-                    Err(error) => Err(error.clone()),
-                };
-                let (method, parameters) = match decision {
-                    Ok(()) => {
-                        let mut parameters = json!({"requestId": request_id});
-                        if inject_headers && !headers.is_empty() {
-                            parameters["headers"] =
-                                Value::Array(continued_headers(&event.params, &headers));
-                        }
-                        ("Fetch.continueRequest", parameters)
-                    }
-                    Err(error) => {
-                        let document_request =
-                            event.params.get("resourceType").and_then(Value::as_str)
-                                == Some("Document")
-                                || event
-                                    .params
-                                    .get("isNavigationRequest")
-                                    .and_then(Value::as_bool)
-                                    .unwrap_or(false);
-                        let frame_id = event
-                            .params
-                            .get("frameId")
-                            .and_then(Value::as_str)
-                            .map(str::to_owned);
-                        record_interception_error(&task_state, error, frame_id, document_request)
-                            .await;
-                        (
-                            "Fetch.failRequest",
-                            json!({
-                                "requestId": request_id,
-                                "errorReason": "BlockedByClient"
-                            }),
-                        )
-                    }
-                };
-                if let Err(error) = client.command(method, parameters, Some(session_id)).await {
-                    record_interception_error(&task_state, error, None, true).await;
-                    return;
-                }
+                let task_context = context.clone();
+                continuations.spawn(request.run(task_context));
             }
         });
         Self {
@@ -328,9 +159,58 @@ impl NetworkInterception {
 impl Drop for NetworkInterception {
     fn drop(&mut self) {
         self.cancellation.cancel();
-        if let Some(task) = self.task.take() {
-            task.abort();
+        let _detached = self.task.take();
+    }
+}
+
+async fn drain_ready_interception_tasks(
+    tasks: &mut tokio::task::JoinSet<Vec<InterceptionFailure>>,
+    state: &Mutex<InterceptionState>,
+) {
+    while let Some(completed) = tasks.try_join_next() {
+        record_interception_task_completion(state, Some(completed)).await;
+    }
+}
+
+async fn drain_interception_tasks(
+    tasks: &mut tokio::task::JoinSet<Vec<InterceptionFailure>>,
+    state: &Mutex<InterceptionState>,
+) {
+    while let Some(completed) = tasks.join_next().await {
+        record_interception_task_completion(state, Some(completed)).await;
+    }
+}
+
+async fn record_interception_task_completion(
+    state: &Mutex<InterceptionState>,
+    completed: Option<std::result::Result<Vec<InterceptionFailure>, tokio::task::JoinError>>,
+) {
+    match completed {
+        Some(Ok(failures)) => {
+            for failure in failures {
+                record_interception_error(
+                    state,
+                    failure.error,
+                    failure.frame_id,
+                    failure.document_request,
+                )
+                .await;
+            }
         }
+        Some(Err(error)) => {
+            record_interception_error(
+                state,
+                PageKnotError::new(
+                    "pageknot.browser.interception_task",
+                    ErrorStage::Navigation,
+                    format!("network interception task failed: {error}"),
+                ),
+                None,
+                true,
+            )
+            .await;
+        }
+        None => {}
     }
 }
 
@@ -428,4 +308,115 @@ pub(super) async fn validate_guard_destination(guard: &NetworkGuard, url: &Url) 
         .map(|address| address.ip())
         .collect::<Vec<_>>();
     guard.validate_resolved(url, addresses)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+    use std::error::Error;
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use pageknot_browser::{NetworkGuard, ResourceObservationLimits};
+    use pageknot_model::NetworkPolicy;
+    use serde_json::json;
+    use tokio::sync::RwLock;
+    use tokio::time::timeout;
+
+    use super::*;
+    use crate::resources::ObservedResources;
+    use crate::resources::test_support::TestCdpServer;
+
+    type TestResult<T = ()> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
+
+    #[tokio::test]
+    async fn cancellation_resolves_each_paused_response_once() -> TestResult {
+        let server = TestCdpServer::start("Fetch.takeResponseBodyAsStream").await?;
+        let client = CdpClient::connect(server.endpoint().clone()).await?;
+        let sessions = Arc::new(RwLock::new(HashSet::from(["session".to_owned()])));
+        let observed = ObservedResources::start(
+            client.clone(),
+            Arc::clone(&sessions),
+            ResourceObservationLimits::default(),
+        );
+        let origin = Url::parse("https://example.test/")?;
+        let interception = NetworkInterception::start(
+            client.clone(),
+            sessions,
+            observed.recorder(),
+            NetworkGuard::new(NetworkPolicy::Unrestricted, &origin)?,
+            Vec::new(),
+            origin,
+        );
+        wait_for_receivers(&client, 2).await?;
+
+        server.send_event(
+            "Network.requestWillBeSent",
+            json!({
+                "requestId": "network",
+                "frameId": "frame",
+                "request": {
+                    "url": "https://example.test/image.svg",
+                    "method": "GET",
+                    "headers": {}
+                }
+            }),
+            "session",
+        )?;
+        timeout(Duration::from_secs(2), async {
+            while !observed.has_request("session", "network").await {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
+        server.send_event(
+            "Fetch.requestPaused",
+            json!({
+                "requestId": "paused",
+                "networkId": "network",
+                "frameId": "frame",
+                "resourceType": "Image",
+                "responseStatusCode": 200,
+                "responseHeaders": [
+                    {"name": "Content-Type", "value": "image/svg+xml"}
+                ],
+                "request": {
+                    "url": "https://example.test/image.svg",
+                    "method": "GET",
+                    "headers": {}
+                }
+            }),
+            "session",
+        )?;
+        server
+            .wait_for_method("Fetch.takeResponseBodyAsStream")
+            .await?;
+
+        interception.close().await;
+
+        timeout(Duration::from_secs(2), async {
+            while server.terminal_commands("paused").await.is_empty() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
+        let terminal = server.terminal_commands("paused").await;
+        assert_eq!(terminal.len(), 1);
+        assert_eq!(terminal[0]["method"], "Fetch.failRequest");
+
+        observed.close().await;
+        client.close().await?;
+        server.close().await;
+        Ok(())
+    }
+
+    async fn wait_for_receivers(client: &CdpClient, expected: usize) -> TestResult {
+        timeout(Duration::from_secs(2), async {
+            while client.event_receiver_count() < expected {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
+        Ok(())
+    }
 }

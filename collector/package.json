@@ -9,7 +9,8 @@
     "check": "bun build ./src/index.ts --target=browser --format=iife --outfile=/dev/null",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\" build.ts package.json tsconfig.json",
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\" build.ts package.json tsconfig.json",
-    "test": "bun test"
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "@types/bun": "1.3.10",

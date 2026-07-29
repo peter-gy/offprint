@@ -280,7 +280,6 @@ pub(super) async fn capture(
         resources: resource_state.summary,
         resource_records,
         warnings: resource_state.warnings,
-        structural_repair: resource_state.structural_repair,
         view_state,
         timings,
     })
@@ -294,7 +293,6 @@ pub(super) struct CapturedIntermediate {
     pub(super) resources: ResourceSummary,
     pub(super) resource_records: Vec<ResourceRecord>,
     pub(super) warnings: Vec<CaptureWarning>,
-    pub(super) structural_repair: bool,
     pub(super) view_state: ViewState,
     pub(super) timings: CaptureTimings,
 }

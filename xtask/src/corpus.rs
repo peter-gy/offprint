@@ -96,22 +96,31 @@ pub async fn run(
         builder = builder.browser_path(path);
     }
     let pageknot = builder.build().map_err(|error| error.to_string())?;
-    let browser = pageknot
-        .browsers()
-        .ensure()
-        .await
-        .map_err(|error| error.to_string())?;
-    let count = limit
-        .unwrap_or(manifest.entries.len())
-        .min(manifest.entries.len());
-    let mut results = Vec::with_capacity(count);
-    for entry in manifest.entries.iter().take(count) {
-        results.push(capture_entry(&pageknot, entry).await);
+    let capture_result: Result<_, String> = async {
+        let browser = pageknot
+            .browsers()
+            .ensure()
+            .await
+            .map_err(|error| error.to_string())?;
+        let count = limit
+            .unwrap_or(manifest.entries.len())
+            .min(manifest.entries.len());
+        let mut results = Vec::with_capacity(count);
+        for entry in manifest.entries.iter().take(count) {
+            results.push(capture_entry(&pageknot, entry).await);
+        }
+        Ok((browser, results))
     }
-    pageknot
+    .await;
+    let close_result = pageknot
         .close()
         .await
-        .map_err(|error| format!("failed to close the corpus browser: {error}"))?;
+        .map_err(|error| format!("failed to close the corpus browser: {error}"));
+    let (browser, results) = match (capture_result, close_result) {
+        (Err(error), _) => return Err(error),
+        (Ok(_), Err(error)) => return Err(error),
+        (Ok(result), Ok(())) => result,
+    };
 
     let succeeded = results
         .iter()

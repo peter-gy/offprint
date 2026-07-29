@@ -7,6 +7,7 @@
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations)]
 
+mod backend;
 mod cdp;
 mod collector;
 mod discovery;
@@ -21,6 +22,7 @@ mod resources;
 mod targets;
 mod transport;
 
+pub use backend::{ChromiumBackend, ChromiumBackendOptions};
 pub use collector::{
     COLLECTOR_BUNDLE, collect_frame_observation, collect_page_observation,
     probe_collector_handshake,
@@ -36,5 +38,5 @@ pub use pageknot_browser::{
     AttachedFrame, CollectedPageObservation, CollectorLimits, LoadedResource, NavigationRedirect,
     NavigationResult, OfflineBrowserObservation, ResourceObservationLimits,
 };
-pub use remote::resolve_remote_endpoint;
+pub use remote::{probe_remote_browser, resolve_remote_endpoint};
 pub use transport::{CdpClient, CdpEvent};

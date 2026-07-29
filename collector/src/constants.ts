@@ -1,4 +1,4 @@
-import type { Capability } from "./types";
+export { availableCapabilities, protocol } from "./identity";
 
 export const manifestElementId = "pageknot-manifest";
 export const repairDataElementId = "pageknot-repair-data";
@@ -18,21 +18,4 @@ export const freezeAttribute = "data-pageknot-freeze";
 export const freezeCss =
   "*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}";
 
-export const protocol = { major: 1, minor: 5 } as const;
 export const buildSha256 = "__PAGEKNOT_COLLECTOR_BUILD_SHA256__";
-export const availableCapabilities: Capability[] = [
-  "adopted-stylesheets",
-  "canvas-pixels",
-  "closed-shadow-roots",
-  "cssom",
-  "form-state",
-  "frame-owner-mapping",
-  "hidden-element-removal",
-  "media-state",
-  "open-shadow-roots",
-  "responsive-images",
-  "selection-capture",
-  "selector-capture",
-  "unused-css-removal",
-  "unused-font-removal",
-];

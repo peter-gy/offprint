@@ -22,10 +22,20 @@ struct RecordingCdpServer {
 
 impl RecordingCdpServer {
     async fn start() -> AsyncTestResult<Self> {
+        Self::start_with_failures(Vec::new()).await
+    }
+
+    async fn start_with_failures(
+        failures: Vec<(&'static str, &'static str)>,
+    ) -> AsyncTestResult<Self> {
         let listener = TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, 0)).await?;
         let endpoint = Url::parse(&format!("ws://{}", listener.local_addr()?))?;
         let commands = Arc::new(Mutex::new(Vec::new()));
         let task_commands = Arc::clone(&commands);
+        let mut failures = failures
+            .into_iter()
+            .map(|(method, session_id)| (method.to_owned(), session_id.to_owned()))
+            .collect::<Vec<_>>();
         let task = tokio::spawn(async move {
             let (stream, _) = listener.accept().await?;
             let mut socket = tokio_tungstenite::accept_async(stream).await?;
@@ -41,14 +51,38 @@ impl RecordingCdpServer {
                 let Some(id) = command.get("id").cloned() else {
                     continue;
                 };
-                let Some(method) = command.get("method").and_then(Value::as_str) else {
+                let Some(method) = command
+                    .get("method")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned)
+                else {
                     continue;
                 };
-                task_commands.lock().await.push(method.to_owned());
+                task_commands.lock().await.push(method.clone());
+                let session_id = command
+                    .get("sessionId")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+                    .to_owned();
+                let failure = failures
+                    .iter()
+                    .position(|(failure_method, failure_session)| {
+                        failure_method == &method && failure_session == &session_id
+                    });
+                let response = if let Some(failure) = failure {
+                    failures.remove(failure);
+                    json!({
+                        "id": id,
+                        "error": {
+                            "code": -32_000,
+                            "message": "injected target policy failure"
+                        }
+                    })
+                } else {
+                    json!({"id": id, "result": {}})
+                };
                 socket
-                    .send(Message::Text(
-                        json!({"id": id, "result": {}}).to_string().into(),
-                    ))
+                    .send(Message::Text(response.to_string().into()))
                     .await?;
             }
             Ok(())
@@ -65,6 +99,104 @@ impl RecordingCdpServer {
         let _aborted = self.task.await;
         Ok(())
     }
+}
+
+#[tokio::test]
+async fn policy_commits_after_every_existing_target_is_configured() -> AsyncTestResult {
+    let server =
+        RecordingCdpServer::start_with_failures(vec![("Fetch.enable", "session-1")]).await?;
+    let client = CdpClient::connect(server.endpoint.clone()).await?;
+    let manager = test_target_manager(client.clone());
+    add_policy_targets(&manager).await;
+
+    let first = manager.enable_fetch(false).await;
+
+    assert_eq!(
+        first.as_ref().err().map(|error| error.code.as_str()),
+        Some("pageknot.browser.cdp_command")
+    );
+    assert!(manager.error().await.is_none());
+    assert!(!manager.cancellation.is_cancelled());
+
+    manager.enable_fetch(false).await?;
+
+    assert_eq!(
+        *server.commands.lock().await,
+        ["Fetch.enable", "Fetch.enable", "Fetch.enable"]
+    );
+    manager.close().await;
+    client.close().await?;
+    server.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn partial_policy_application_closes_manager_with_recorded_error() -> AsyncTestResult {
+    let server =
+        RecordingCdpServer::start_with_failures(vec![("Fetch.enable", "session-2")]).await?;
+    let client = CdpClient::connect(server.endpoint.clone()).await?;
+    let manager = test_target_manager(client.clone());
+    add_policy_targets(&manager).await;
+
+    let first = manager.enable_fetch(false).await;
+    let second = manager.enable_fetch(false).await;
+    let frames = manager.frames().await;
+
+    for result in [&first, &second] {
+        assert_eq!(
+            result.as_ref().err().map(|error| error.code.as_str()),
+            Some("pageknot.browser.cdp_command")
+        );
+    }
+    assert_eq!(
+        frames.as_ref().err().map(|error| error.code.as_str()),
+        Some("pageknot.browser.cdp_command")
+    );
+    assert_eq!(
+        manager
+            .error()
+            .await
+            .as_ref()
+            .map(|error| error.code.as_str()),
+        Some("pageknot.browser.cdp_command")
+    );
+    assert_eq!(
+        *server.commands.lock().await,
+        ["Fetch.enable", "Fetch.enable"]
+    );
+    assert!(manager.cancellation.is_cancelled());
+
+    client.close().await?;
+    server.close().await?;
+    Ok(())
+}
+
+fn test_target_manager(client: CdpClient) -> FrameTargetManager {
+    FrameTargetManager::start_with_limits(
+        client,
+        "main".to_owned(),
+        Arc::new(RwLock::new(HashSet::new())),
+        false,
+        TargetLimits::default(),
+        true,
+    )
+}
+
+async fn add_policy_targets(manager: &FrameTargetManager) {
+    manager.state.lock().await.managed.extend([
+        (
+            "session-1".to_owned(),
+            ManagedTarget {
+                kind: TargetKind::ServiceWorker,
+            },
+        ),
+        (
+            "session-2".to_owned(),
+            ManagedTarget {
+                kind: TargetKind::ServiceWorker,
+            },
+        ),
+    ]);
 }
 
 #[tokio::test]

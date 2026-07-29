@@ -11,8 +11,9 @@
 mod chunk;
 mod handshake;
 mod message;
+mod transfer;
 
-pub use chunk::{ChunkAssembler, ChunkEnvelope};
+pub use chunk::ChunkEnvelope;
 pub use handshake::{
     CollectorCapability, CollectorHandshake, NegotiatedProtocol, ProtocolVersion,
     negotiate_protocol,
@@ -22,6 +23,7 @@ pub use message::{
     CollectorRelease, CollectorWarning, FrameOwnerObservation, ObservationDescriptor,
     ObservationViewport, PageObservation, SelectionObservation, VisualFallback, VisualFallbackKind,
 };
+pub use transfer::{ChunkAssembler, TransferPlan};
 
 pub const COLLECTOR_PROTOCOL_VERSION_STRING: &str = "1.5";
 pub const COLLECTOR_PROTOCOL_VERSION: ProtocolVersion = ProtocolVersion { major: 1, minor: 5 };

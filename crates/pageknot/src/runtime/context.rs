@@ -1,10 +1,7 @@
 use std::future::Future;
 use std::sync::{Arc, Weak};
 
-use pageknot_browser::{
-    BrowserAcquireRequest, BrowserBackend, BrowserContext, BrowserContextRequest, BrowserLease,
-    PageSession,
-};
+use pageknot_browser::{BrowserContext, BrowserContextRequest, BrowserLease, PageSession};
 use pageknot_model::{BrowserInfo, ErrorStage, PageKnotError, Result};
 use tokio::sync::OwnedSemaphorePermit;
 
@@ -54,28 +51,15 @@ impl PendingRuntimePage {
         }
     }
 
-    pub(super) fn set_page(&mut self, page: Box<dyn PageSession>) {
-        self.page = Some(page);
+    pub(super) fn set_lease(&mut self, lease: Box<dyn BrowserLease>) {
+        self.lease = Some(lease);
     }
 
-    pub(super) async fn acquire_custom(
+    pub(super) async fn acquire_context_and_page(
         mut self,
-        backend: &Arc<dyn BrowserBackend>,
         request: RuntimePageRequest,
-        default_headed: bool,
+        browser: BrowserInfo,
     ) -> Result<RuntimePage> {
-        let lease = backend
-            .acquire(
-                BrowserAcquireRequest {
-                    capture_id: request.capture_id,
-                    browser: request.browser,
-                    headed: request.headed.unwrap_or(default_headed),
-                },
-                request.cancellation.clone(),
-            )
-            .await?;
-        let browser = lease.info().clone();
-        self.lease = Some(lease);
         let context = match self
             .lease
             .as_ref()
@@ -86,7 +70,7 @@ impl PendingRuntimePage {
                     network: request.network,
                     maximum_frames: request.maximum_frames,
                     resource_observation: request.resource_observation,
-                    deny_network: request.deny_network,
+                    deny_network: request.purpose.denies_network(),
                 },
                 request.cancellation.clone(),
             )

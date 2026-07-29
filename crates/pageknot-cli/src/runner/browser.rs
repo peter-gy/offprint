@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use pageknot::{BrowserAction, BrowserInstallRequest, BrowserOperationResult, PageKnot, Result};
+use pageknot::{BrowserInstallRequest, PageKnot, Result};
 
 use super::scheduler::finish_runtime;
 use crate::command::BrowserCommand;
@@ -47,22 +47,13 @@ pub(super) async fn execute_browser(command: BrowserCommand, output: &mut dyn Wr
             }
             let pageknot = builder.build()?;
             let operation = async {
-                let browser = pageknot
+                let result = pageknot
                     .browsers()
-                    .install(BrowserInstallRequest {
+                    .install_operation(BrowserInstallRequest {
                         revision: arguments.revision,
                         cache_dir: arguments.cache_dir.map(Into::into),
                     })
                     .await?;
-                let report = pageknot.browsers().doctor().await;
-                let result = BrowserOperationResult {
-                    schema_version: pageknot::PUBLIC_SCHEMA_VERSION,
-                    action: BrowserAction::Install,
-                    revision: browser.revision.clone(),
-                    browser: Some(browser),
-                    cache_dir: report.managed_cache.cache_dir,
-                    candidates: Vec::new(),
-                };
                 render_browser_operation(&result, &arguments.output_options, output)
             }
             .await;

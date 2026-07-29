@@ -2,13 +2,9 @@ use std::io::Write;
 use std::path::Path;
 
 use camino::Utf8PathBuf;
-use pageknot::{
-    ArtifactResult, CaptureEvent, ConflictPolicy, ErrorStage, PageKnotError, Result,
-    VerificationPolicy,
-};
-use pageknot_artifact::FileArtifactWriter;
+use pageknot::{CaptureEvent, ErrorStage, PageKnotError, PortablePath, Result, VerificationPolicy};
 
-use crate::output::{DiagnosticTone, output_error, write_diagnostic};
+use crate::output::{DiagnosticTone, write_diagnostic};
 
 #[derive(Debug, Default)]
 pub(super) struct CaptureProgress {
@@ -200,18 +196,71 @@ impl VerificationDiagnostics {
             )
         })?;
         bytes.push(b'\n');
-        let mut writer = FileArtifactWriter::create(self.destination, ConflictPolicy::Uniquify)?;
-        writer.write_all(&bytes).map_err(output_error)?;
-        let artifact = writer.finish()?.commit()?;
-        let ArtifactResult::File { path, .. } = artifact else {
-            return Err(PageKnotError::new(
-                "pageknot.output.diagnostics",
-                ErrorStage::Commit,
-                "verification diagnostics did not produce a file",
-            ));
-        };
-        Ok(path)
+        write_unique_diagnostics(self.destination, &bytes)
     }
+}
+
+fn write_unique_diagnostics(destination: Utf8PathBuf, bytes: &[u8]) -> Result<PortablePath> {
+    let parent = destination
+        .parent()
+        .filter(|path| !path.as_str().is_empty())
+        .unwrap_or_else(|| camino::Utf8Path::new("."));
+    let mut staging = tempfile::Builder::new()
+        .prefix(".pageknot-diagnostics-")
+        .tempfile_in(parent)
+        .map_err(|error| diagnostics_io_error("create", error))?;
+    staging
+        .write_all(bytes)
+        .map_err(|error| diagnostics_io_error("write", error))?;
+    staging
+        .as_file_mut()
+        .sync_all()
+        .map_err(|error| diagnostics_io_error("synchronize", error))?;
+
+    for suffix in 0..=10_000 {
+        let candidate = unique_diagnostic_path(&destination, suffix);
+        match staging.persist_noclobber(&candidate) {
+            Ok(file) => {
+                file.sync_all()
+                    .map_err(|error| diagnostics_io_error("synchronize", error))?;
+                return Ok(PortablePath::new(candidate));
+            }
+            Err(error) if error.error.kind() == std::io::ErrorKind::AlreadyExists => {
+                staging = error.file;
+            }
+            Err(error) => return Err(diagnostics_io_error("commit", error.error)),
+        }
+    }
+    Err(PageKnotError::new(
+        "pageknot.output.diagnostics",
+        ErrorStage::Commit,
+        "diagnostic destination has too many conflicting files",
+    ))
+}
+
+fn unique_diagnostic_path(destination: &camino::Utf8Path, suffix: u32) -> Utf8PathBuf {
+    if suffix == 0 {
+        return destination.to_owned();
+    }
+    let parent = destination
+        .parent()
+        .unwrap_or_else(|| camino::Utf8Path::new(""));
+    let stem = destination
+        .file_stem()
+        .unwrap_or("verification.diagnostics");
+    match destination.extension() {
+        Some(extension) => parent.join(format!("{stem}-{suffix}.{extension}")),
+        None => parent.join(format!("{stem}-{suffix}")),
+    }
+}
+
+fn diagnostics_io_error(operation: &'static str, error: std::io::Error) -> PageKnotError {
+    PageKnotError::new(
+        "pageknot.output.diagnostics",
+        ErrorStage::Commit,
+        format!("failed to {operation} verification diagnostics: {error}"),
+    )
+    .with_detail("ioKind", format!("{:?}", error.kind()))
 }
 
 fn prepare_diagnostic_directory(directory: &Path) -> Result<()> {

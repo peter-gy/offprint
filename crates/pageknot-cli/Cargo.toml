@@ -19,8 +19,6 @@ clap_complete.workspace = true
 directories.workspace = true
 futures-util.workspace = true
 pageknot.workspace = true
-pageknot-artifact.workspace = true
-pageknot-document.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true
@@ -30,6 +28,7 @@ url.workspace = true
 zeroize.workspace = true
 
 [dev-dependencies]
+pageknot-document.workspace = true
 pageknot-html.workspace = true
 pageknot-test-support = { path = "../pageknot-test-support" }
 tempfile.workspace = true

@@ -395,9 +395,11 @@ pub(super) async fn update_observed_completion(
 mod tests {
     use std::collections::BTreeMap;
     use std::error::Error;
+    use std::sync::Arc;
 
     use pageknot_browser::ResourceObservationLimits;
     use serde_json::json;
+    use tokio::sync::Barrier;
     use url::Url;
 
     use super::*;
@@ -591,6 +593,71 @@ mod tests {
                 }
             )
         }));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn simultaneous_appends_reserve_total_bytes_atomically() -> TestResult {
+        let first = ("session".to_owned(), "first".to_owned());
+        let second = ("session".to_owned(), "second".to_owned());
+        let state = Arc::new(Mutex::new(ObservedResourceState {
+            limits: ResourceObservationLimits {
+                maximum_resource_bytes: 4,
+                maximum_total_resource_bytes: 4,
+            },
+            requests: BTreeMap::from([
+                (
+                    first.clone(),
+                    streaming_request(Url::parse("https://example.test/first.svg")?),
+                ),
+                (
+                    second.clone(),
+                    streaming_request(Url::parse("https://example.test/second.svg")?),
+                ),
+            ]),
+            ..ObservedResourceState::default()
+        }));
+        let barrier = Arc::new(Barrier::new(3));
+        let first_state = Arc::clone(&state);
+        let first_barrier = Arc::clone(&barrier);
+        let first_append = tokio::spawn(async move {
+            first_barrier.wait().await;
+            append_observed_bytes_at(&first_state, &first, b"1234".to_vec(), false).await
+        });
+        let second_state = Arc::clone(&state);
+        let second_barrier = Arc::clone(&barrier);
+        let second_append = tokio::spawn(async move {
+            second_barrier.wait().await;
+            append_observed_bytes_at(&second_state, &second, b"5678".to_vec(), false).await
+        });
+
+        barrier.wait().await;
+        first_append.await??;
+        second_append.await??;
+
+        let state = state.lock().await;
+        assert_eq!(state.body_bytes, 4);
+        let retained = state
+            .requests
+            .values()
+            .filter(
+                |request| matches!(&request.body, ObservedBody::Streaming(body) if body.len() == 4),
+            )
+            .count();
+        let rejected = state
+            .requests
+            .values()
+            .filter(|request| {
+                matches!(
+                    request.body,
+                    ObservedBody::TooLarge {
+                        attempted: 8,
+                        limit: 4
+                    }
+                )
+            })
+            .count();
+        assert_eq!((retained, rejected), (1, 1));
         Ok(())
     }
 

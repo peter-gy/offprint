@@ -1650,7 +1650,6 @@ dependencies = [
  "chrono",
  "data-url",
  "directories",
- "fs2",
  "futures-core",
  "futures-util",
  "image",
@@ -1682,8 +1681,11 @@ name = "pageknot-artifact"
 version = "0.1.0"
 dependencies = [
  "camino",
+ "fs2",
  "pageknot-model",
  "proptest",
+ "serde",
+ "serde_json",
  "sha2",
  "tempfile",
 ]
@@ -1776,7 +1778,6 @@ dependencies = [
  "directories",
  "futures-util",
  "pageknot",
- "pageknot-artifact",
  "pageknot-document",
  "pageknot-html",
  "pageknot-test-support",

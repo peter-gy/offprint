@@ -1,16 +1,14 @@
 use html5ever::Attribute;
 use markup5ever::{local_name, ns};
-use pageknot_document::{Document, NodeData, serialize_document};
+use pageknot_document::{NodeData, serialize_document};
 use pageknot_model::{ErrorStage, PageKnotError, Result};
 
 use crate::csp::sandboxed_content_security_policy;
-use crate::{
-    CSP_ELEMENT_ID, STATE_SCRIPT_ELEMENT_ID, inspect_html, verify_static, verify_static_sandboxed,
-};
+use crate::{CSP_ELEMENT_ID, STATE_SCRIPT_ELEMENT_ID, verify_html, verify_static_sandboxed};
 
 pub fn encode_sandboxed_html(bytes: &[u8]) -> Result<Vec<u8>> {
-    verify_static(bytes)?;
-    let manifest = inspect_html(bytes)?;
+    let verified = verify_html(bytes)?;
+    let manifest = verified.manifest();
     if manifest.structural_repair.applied {
         return Err(PageKnotError::new(
             "pageknot.artifact.sandbox",
@@ -19,7 +17,7 @@ pub fn encode_sandboxed_html(bytes: &[u8]) -> Result<Vec<u8>> {
         ));
     }
 
-    let mut document = Document::parse(bytes);
+    let mut document = verified.document().clone();
     let state_scripts = document
         .walk()
         .filter(|id| {
@@ -36,7 +34,7 @@ pub fn encode_sandboxed_html(bytes: &[u8]) -> Result<Vec<u8>> {
         document.detach(script);
     }
 
-    let policy = sandboxed_content_security_policy(&manifest);
+    let policy = sandboxed_content_security_policy(manifest);
     let csp = document
         .walk()
         .find(|id| {

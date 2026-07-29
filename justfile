@@ -139,6 +139,7 @@ semver-check:
 collector-check:
     cd collector && bun install --frozen-lockfile
     cd collector && bun run format:check
+    cd collector && bun run typecheck
     cd collector && bun run check
     cd collector && bun test
     cd collector && bun run build:check

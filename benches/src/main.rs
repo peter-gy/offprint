@@ -143,6 +143,8 @@ struct Comparison {
     passed: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     missing_baseline_cases: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    missing_candidate_cases: Vec<String>,
     cases: Vec<CaseComparison>,
 }
 
@@ -443,6 +445,16 @@ async fn browser_cases(
     browser_path: Option<&Path>,
 ) -> BenchResult<(Vec<CaseResult>, String, Option<String>)> {
     let server = FixtureServer::start().await?;
+    let result = browser_cases_with_server(&server, iterations, browser_path).await;
+    server.close().await;
+    result
+}
+
+async fn browser_cases_with_server(
+    server: &FixtureServer,
+    iterations: usize,
+    browser_path: Option<&Path>,
+) -> BenchResult<(Vec<CaseResult>, String, Option<String>)> {
     let image = deterministic_svg(64, 64);
     server
         .register(
@@ -475,64 +487,70 @@ async fn browser_cases(
         builder = builder.browser_path(path);
     }
     let pageknot = builder.build()?;
-    let browser = pageknot.browsers().ensure().await?;
-    let article_url = server.url("/article")?;
+    let result: BenchResult<_> = async {
+        let browser = pageknot.browsers().ensure().await?;
+        let article_url = server.url("/article")?;
 
-    black_box(capture_once(&pageknot, article_url.as_str()).await?);
-    let browser_version = browser.version;
-    let browser_revision = browser.revision;
+        black_box(capture_once(&pageknot, article_url.as_str()).await?);
+        let browser_version = browser.version;
+        let browser_revision = browser.revision;
 
-    let mut cases = Vec::new();
-    for (name, path, input_bytes) in [
-        (
-            "end-to-end-static-article",
-            "/article",
+        let mut cases = Vec::new();
+        for (name, path, input_bytes) in [
+            (
+                "end-to-end-static-article",
+                "/article",
+                browser_article_corpus(200).len(),
+            ),
+            (
+                "end-to-end-frame-heavy",
+                "/frames",
+                browser_frame_corpus(24).len(),
+            ),
+            (
+                "end-to-end-image-heavy",
+                "/images",
+                browser_image_corpus(200).len(),
+            ),
+        ] {
+            let url = server.url(path)?;
+            let case = measure_async(name, "browser", input_bytes, iterations, || {
+                let pageknot = pageknot.clone();
+                let url = url.clone();
+                async move {
+                    black_box(capture_once(&pageknot, url.as_str()).await?);
+                    Ok(())
+                }
+            })
+            .await?;
+            cases.push(case);
+        }
+
+        let repeated = measure_async(
+            "repeated-service-capture",
+            "lifecycle",
             browser_article_corpus(200).len(),
-        ),
-        (
-            "end-to-end-frame-heavy",
-            "/frames",
-            browser_frame_corpus(24).len(),
-        ),
-        (
-            "end-to-end-image-heavy",
-            "/images",
-            browser_image_corpus(200).len(),
-        ),
-    ] {
-        let url = server.url(path)?;
-        let case = measure_async(name, "browser", input_bytes, iterations, || {
-            let pageknot = pageknot.clone();
-            let url = url.clone();
-            async move {
-                black_box(capture_once(&pageknot, url.as_str()).await?);
-                Ok(())
-            }
-        })
+            iterations.saturating_mul(2),
+            || {
+                let pageknot = pageknot.clone();
+                let url = article_url.clone();
+                async move {
+                    black_box(capture_once(&pageknot, url.as_str()).await?);
+                    Ok(())
+                }
+            },
+        )
         .await?;
-        cases.push(case);
+        cases.push(repeated);
+        Ok((cases, browser_version, browser_revision))
     }
-
-    let repeated = measure_async(
-        "repeated-service-capture",
-        "lifecycle",
-        browser_article_corpus(200).len(),
-        iterations.saturating_mul(2),
-        || {
-            let pageknot = pageknot.clone();
-            let url = article_url.clone();
-            async move {
-                black_box(capture_once(&pageknot, url.as_str()).await?);
-                Ok(())
-            }
-        },
-    )
-    .await?;
-    cases.push(repeated);
-
-    pageknot.close().await?;
-    server.close().await;
-    Ok((cases, browser_version, browser_revision))
+    .await;
+    let close_result: BenchResult = pageknot.close().await.map_err(Into::into);
+    match (result, close_result) {
+        (Err(error), _) => Err(error),
+        (Ok(_), Err(error)) => Err(error),
+        (Ok(result), Ok(())) => Ok(result),
+    }
 }
 
 async fn capture_once(
@@ -680,8 +698,19 @@ fn compare(
         .iter()
         .map(|case| (case.name.as_str(), case))
         .collect::<BTreeMap<_, _>>();
+    let candidate_names = candidate
+        .cases
+        .iter()
+        .map(|case| case.name.as_str())
+        .collect::<std::collections::BTreeSet<_>>();
     let mut cases = Vec::new();
     let mut missing_baseline_cases = Vec::new();
+    let missing_candidate_cases = baseline
+        .cases
+        .iter()
+        .filter(|case| !candidate_names.contains(case.name.as_str()))
+        .map(|case| case.name.clone())
+        .collect::<Vec<_>>();
     for candidate_case in &candidate.cases {
         let Some(baseline_case) = baseline_cases.get(candidate_case.name.as_str()) else {
             missing_baseline_cases.push(candidate_case.name.clone());
@@ -699,6 +728,7 @@ fn compare(
     }
     let passed = !cases.is_empty()
         && missing_baseline_cases.is_empty()
+        && missing_candidate_cases.is_empty()
         && cases.iter().all(|case| case.passed);
     Comparison {
         baseline_path: baseline_path.display().to_string(),
@@ -706,6 +736,7 @@ fn compare(
         maximum_regression_percent,
         passed,
         missing_baseline_cases,
+        missing_candidate_cases,
         cases,
     }
 }
@@ -854,4 +885,73 @@ fn deterministic_svg(width: u32, height: u32) -> String {
     format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width}\" height=\"{height}\"><rect width=\"{width}\" height=\"{height}\" fill=\"rgb(24,96,160)\"/></svg>"
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::Path;
+
+    use chrono::Utc;
+
+    use super::{CaseResult, Configuration, Environment, Report, SCHEMA_VERSION, compare};
+
+    #[test]
+    fn comparison_requires_the_same_cases_in_both_reports() {
+        let baseline = report(&["shared", "removed"]);
+        let candidate = report(&["shared", "added"]);
+
+        let comparison = compare(
+            Path::new("baseline.json"),
+            &baseline,
+            &candidate,
+            10.0,
+            true,
+        );
+
+        assert!(!comparison.passed);
+        assert_eq!(comparison.missing_baseline_cases, ["added"]);
+        assert_eq!(comparison.missing_candidate_cases, ["removed"]);
+        assert_eq!(comparison.cases.len(), 1);
+        assert_eq!(comparison.cases[0].name, "shared");
+    }
+
+    fn report(names: &[&str]) -> Report {
+        Report {
+            schema_version: SCHEMA_VERSION,
+            generated_at: Utc::now(),
+            git_revision: None,
+            environment: Environment {
+                os: "test".to_owned(),
+                architecture: "test".to_owned(),
+                rustc: "test".to_owned(),
+                logical_cpus: 1,
+                browser_version: None,
+                browser_revision: None,
+            },
+            configuration: Configuration {
+                suite: "test".to_owned(),
+                warmup_iterations: 0,
+                micro_iterations: 1,
+                browser_iterations: 1,
+            },
+            calibration_median_nanoseconds: 1,
+            cases: names.iter().map(|name| case(name)).collect(),
+            comparison: None,
+        }
+    }
+
+    fn case(name: &str) -> CaseResult {
+        CaseResult {
+            name: name.to_owned(),
+            category: "test".to_owned(),
+            input_bytes: 1,
+            iterations: 1,
+            minimum_nanoseconds: 1,
+            median_nanoseconds: 1,
+            p95_nanoseconds: 1,
+            maximum_nanoseconds: 1,
+            throughput_bytes_per_second: 1,
+            normalized_median: 1.0,
+        }
+    }
 }

@@ -10,6 +10,7 @@ use crate::support::{
 };
 
 mod metadata;
+mod semantics;
 
 pub use metadata::{embed_pdf_metadata, verify_pageknot_pdf};
 

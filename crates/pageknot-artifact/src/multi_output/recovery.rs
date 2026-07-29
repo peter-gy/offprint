@@ -8,12 +8,12 @@ use super::journal::{
     CommitMode, JournalEntry, JournalPhase, JournalStore, OutputKind, TransactionJournal,
     TransactionNamespace, load_latest_journal,
 };
+use super::payload::ArtifactTransactionLimits;
 use super::plan::{output_matches_complete_set, path_matches_entry};
 
 pub(super) fn recover_pending_transactions(
     namespace: &TransactionNamespace,
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> Result<()> {
     for root in namespace.transaction_roots()? {
         let loaded = load_latest_journal(&root, namespace.identity())
@@ -58,31 +58,13 @@ pub(super) fn recover_pending_transactions(
                     )
                 })?;
                 journal = store.snapshot().clone();
-                rollback_transaction(
-                    namespace.output_directory(),
-                    &root,
-                    &journal,
-                    maximum_assets,
-                    maximum_bytes,
-                )?;
+                rollback_transaction(namespace.output_directory(), &root, &journal, limits)?;
             }
             JournalPhase::RollingBack => {
-                rollback_transaction(
-                    namespace.output_directory(),
-                    &root,
-                    &journal,
-                    maximum_assets,
-                    maximum_bytes,
-                )?;
+                rollback_transaction(namespace.output_directory(), &root, &journal, limits)?;
             }
             JournalPhase::Committed => {
-                finalize_committed(
-                    namespace.output_directory(),
-                    &root,
-                    &journal,
-                    maximum_assets,
-                    maximum_bytes,
-                )?;
+                finalize_committed(namespace.output_directory(), &root, &journal, limits)?;
             }
         }
     }
@@ -93,24 +75,13 @@ pub(super) fn rollback_transaction(
     output_directory: &Path,
     root: &Path,
     journal: &TransactionJournal,
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> Result<()> {
     let failures = match journal.mode {
-        CommitMode::Entries => rollback_entries(
-            output_directory,
-            root,
-            &journal.entries,
-            maximum_assets,
-            maximum_bytes,
-        ),
-        CommitMode::DirectorySwap => rollback_directory_swap(
-            output_directory,
-            root,
-            &journal.entries,
-            maximum_assets,
-            maximum_bytes,
-        ),
+        CommitMode::Entries => rollback_entries(output_directory, root, &journal.entries, limits),
+        CommitMode::DirectorySwap => {
+            rollback_directory_swap(output_directory, root, &journal.entries, limits)
+        }
     };
     if !failures.is_empty() {
         return Err(recovery_error(
@@ -145,24 +116,19 @@ pub(super) fn finalize_committed(
     output_directory: &Path,
     root: &Path,
     journal: &TransactionJournal,
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> Result<()> {
     let complete = match journal.mode {
         CommitMode::Entries => journal.entries.iter().all(|entry| {
             path_matches_entry(
                 &output_directory.join(&entry.destination_name),
                 entry,
-                maximum_assets,
-                maximum_bytes,
+                limits,
             )
         }),
-        CommitMode::DirectorySwap => output_matches_complete_set(
-            output_directory,
-            &journal.entries,
-            maximum_assets,
-            maximum_bytes,
-        ),
+        CommitMode::DirectorySwap => {
+            output_matches_complete_set(output_directory, &journal.entries, limits)
+        }
     };
     if !complete {
         return Err(recovery_error(
@@ -188,8 +154,7 @@ fn rollback_entries(
     output_directory: &Path,
     root: &Path,
     entries: &[JournalEntry],
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> Vec<String> {
     let mut failures = Vec::new();
     for (index, entry) in entries.iter().enumerate().rev() {
@@ -204,7 +169,7 @@ fn rollback_entries(
         };
         if backup_exists {
             if destination_exists {
-                if path_matches_entry(&destination, entry, maximum_assets, maximum_bytes) {
+                if path_matches_entry(&destination, entry, limits) {
                     if let Err(error) = ensure_parent_and_move(&destination, &discard) {
                         failures.push(format!(
                             "failed to retain the committed output `{}` during rollback: {error}",
@@ -238,7 +203,7 @@ fn rollback_entries(
                     "original destination `{}` and its backup are both missing",
                     destination.display()
                 ));
-            } else if path_matches_entry(&destination, entry, maximum_assets, maximum_bytes) {
+            } else if path_matches_entry(&destination, entry, limits) {
                 failures.push(format!(
                     "replacement at `{}` remains but its original backup is missing",
                     destination.display()
@@ -249,7 +214,7 @@ fn rollback_entries(
         if !destination_exists {
             continue;
         }
-        if path_matches_entry(&destination, entry, maximum_assets, maximum_bytes) {
+        if path_matches_entry(&destination, entry, limits) {
             if let Err(error) = ensure_parent_and_move(&destination, &discard) {
                 failures.push(format!(
                     "failed to retract committed output `{}`: {error}",
@@ -270,8 +235,7 @@ fn rollback_directory_swap(
     output_directory: &Path,
     root: &Path,
     entries: &[JournalEntry],
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> Vec<String> {
     let previous = root.join("previous-output");
     let discard = root.join("discard-output");
@@ -285,12 +249,7 @@ fn rollback_directory_swap(
     };
     if previous_exists {
         if output_exists {
-            let complete = output_matches_complete_set(
-                output_directory,
-                entries,
-                maximum_assets,
-                maximum_bytes,
-            );
+            let complete = output_matches_complete_set(output_directory, entries, limits);
             let empty = match directory_is_empty(output_directory) {
                 Ok(empty) => empty,
                 Err(error) => return vec![error.to_string()],
@@ -348,7 +307,7 @@ fn ensure_parent_and_move(source: &Path, destination: &Path) -> Result<()> {
             "export rollback retention path is already occupied",
         ));
     }
-    durable_rename(source, destination)
+    durable_rename(source, destination).map(|_| ())
 }
 
 fn validate_backup_kind(path: &Path, expected: Option<OutputKind>) -> Result<()> {

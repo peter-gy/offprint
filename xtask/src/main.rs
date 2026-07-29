@@ -144,12 +144,50 @@ fn test_fixture_group(group: &str) -> Result<(), String> {
     runners.sort();
     runners.dedup();
     for runner in &runners {
-        run_fixture(runner)?;
+        validate_fixture_runner(runner)?;
+    }
+    for runner in &runners {
+        execute_fixture_runner(runner)?;
     }
     Ok(())
 }
 
 fn run_fixture(runner: &pageknot_test_support::FixtureRunner) -> Result<(), String> {
+    validate_fixture_runner(runner)?;
+    execute_fixture_runner(runner)
+}
+
+fn validate_fixture_runner(runner: &pageknot_test_support::FixtureRunner) -> Result<(), String> {
+    let listing = fixture_command(runner)
+        .arg("--list")
+        .output()
+        .map_err(|error| format!("failed to list fixture test: {error}"))?;
+    if !listing.status.success() {
+        return Err(format!(
+            "failed to list fixture test `{}`: cargo exited with {}",
+            runner.filter, listing.status
+        ));
+    }
+    let listing = String::from_utf8(listing.stdout)
+        .map_err(|error| format!("fixture test listing is not UTF-8: {error}"))?;
+    validate_fixture_listing(&listing, &runner.filter)
+}
+
+fn execute_fixture_runner(runner: &pageknot_test_support::FixtureRunner) -> Result<(), String> {
+    let status = fixture_command(runner)
+        .status()
+        .map_err(|error| format!("failed to start fixture test: {error}"))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "fixture test `{}` exited with {status}",
+            runner.filter
+        ))
+    }
+}
+
+fn fixture_command(runner: &pageknot_test_support::FixtureRunner) -> ProcessCommand {
     let mut command = ProcessCommand::new("cargo");
     command
         .current_dir(workspace_root())
@@ -167,16 +205,27 @@ fn run_fixture(runner: &pageknot_test_support::FixtureRunner) -> Result<(), Stri
     if runner.serial {
         command.arg("--test-threads=1");
     }
-    let status = command
-        .status()
-        .map_err(|error| format!("failed to start fixture test: {error}"))?;
-    if status.success() {
-        Ok(())
-    } else {
-        Err(format!(
-            "fixture test `{}` exited with {status}",
-            runner.filter
-        ))
+    command
+}
+
+fn validate_fixture_listing(listing: &str, expected: &str) -> Result<(), String> {
+    let matches = listing
+        .lines()
+        .filter_map(|line| line.trim().strip_suffix(": test"))
+        .collect::<Vec<_>>();
+    match matches.as_slice() {
+        [actual] if *actual == expected => Ok(()),
+        [] => Err(format!(
+            "fixture runner `{expected}` resolved to zero tests"
+        )),
+        [actual] => Err(format!(
+            "fixture runner `{expected}` resolved to `{actual}`"
+        )),
+        _ => Err(format!(
+            "fixture runner `{expected}` resolved to {} tests: {}",
+            matches.len(),
+            matches.join(", ")
+        )),
     }
 }
 
@@ -612,3 +661,25 @@ fn workspace_root() -> PathBuf {
 
 #[allow(dead_code)]
 fn _schema_type_is_serializable(_: Schema) {}
+
+#[cfg(test)]
+mod tests {
+    use super::validate_fixture_listing;
+
+    #[test]
+    fn fixture_listing_requires_one_exact_test() {
+        assert!(validate_fixture_listing("fixture_name: test\n", "fixture_name").is_ok());
+        assert_eq!(
+            validate_fixture_listing("", "fixture_name"),
+            Err("fixture runner `fixture_name` resolved to zero tests".to_owned())
+        );
+        assert_eq!(
+            validate_fixture_listing("another_name: test\n", "fixture_name"),
+            Err("fixture runner `fixture_name` resolved to `another_name`".to_owned())
+        );
+        assert!(
+            validate_fixture_listing("fixture_name: test\nfixture_name: test\n", "fixture_name")
+                .is_err()
+        );
+    }
+}

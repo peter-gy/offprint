@@ -13,7 +13,8 @@ use sha2::{Digest as _, Sha256};
 
 use super::durable::{create_directory, sync_directory, write_new_file};
 
-const JOURNAL_SCHEMA_VERSION: u32 = 1;
+const JOURNAL_SCHEMA_VERSION: u32 = 2;
+const LEGACY_JOURNAL_SCHEMA_VERSION: u32 = 1;
 const MAXIMUM_JOURNAL_BYTES: u64 = 64 * 1024;
 const MAXIMUM_JOURNAL_FILES: usize = 16;
 const MAXIMUM_JOURNAL_VARIANTS: usize = 8;
@@ -52,7 +53,10 @@ pub(super) struct JournalEntry {
     pub(super) existed: bool,
     pub(super) previous_kind: Option<OutputKind>,
     pub(super) verification: ArtifactVariantVerification,
-    pub(super) markdown_assets: usize,
+    #[serde(alias = "markdownAssets")]
+    pub(super) directory_files: usize,
+    #[serde(default)]
+    pub(super) entrypoint: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -393,14 +397,19 @@ pub(super) fn load_latest_journal(
         if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > MAXIMUM_JOURNAL_BYTES {
             continue;
         }
-        let Ok(snapshot) = serde_json::from_slice::<TransactionJournal>(&bytes) else {
+        let Ok(mut snapshot) = serde_json::from_slice::<TransactionJournal>(&bytes) else {
             continue;
         };
-        if snapshot.schema_version != JOURNAL_SCHEMA_VERSION
-            || snapshot.output_identity != output_identity
+        if !matches!(
+            snapshot.schema_version,
+            LEGACY_JOURNAL_SCHEMA_VERSION | JOURNAL_SCHEMA_VERSION
+        ) || snapshot.output_identity != output_identity
             || Some(snapshot.transaction_id.as_str()) != transaction_id
-            || validate_entries(&snapshot.entries).is_err()
         {
+            continue;
+        }
+        normalize_snapshot(&mut snapshot);
+        if validate_entries(&snapshot.entries).is_err() {
             continue;
         }
         let file_sequence = path
@@ -440,8 +449,53 @@ fn validate_entries(entries: &[JournalEntry]) -> Result<()> {
                 "export transaction journal contains an invalid destination name",
             ));
         }
+        match entry.output_kind {
+            OutputKind::File if entry.directory_files != 1 || entry.entrypoint.is_some() => {
+                return Err(journal_error(
+                    ErrorStage::Commit,
+                    "export transaction journal contains invalid file payload metadata",
+                ));
+            }
+            OutputKind::Directory
+                if entry.directory_files == 0
+                    || entry.entrypoint.as_deref().is_none_or(|entrypoint| {
+                        entrypoint.is_empty()
+                            || entrypoint.starts_with('/')
+                            || entrypoint.ends_with('/')
+                            || entrypoint.contains('\\')
+                            || entrypoint.split('/').any(|component| {
+                                component.is_empty() || component == "." || component == ".."
+                            })
+                    }) =>
+            {
+                return Err(journal_error(
+                    ErrorStage::Commit,
+                    "export transaction journal contains invalid directory payload metadata",
+                ));
+            }
+            OutputKind::File | OutputKind::Directory => {}
+        }
     }
     Ok(())
+}
+
+fn normalize_snapshot(snapshot: &mut TransactionJournal) {
+    if snapshot.schema_version != LEGACY_JOURNAL_SCHEMA_VERSION {
+        return;
+    }
+    for entry in &mut snapshot.entries {
+        match entry.output_kind {
+            OutputKind::File => {
+                entry.directory_files = 1;
+                entry.entrypoint = None;
+            }
+            OutputKind::Directory => {
+                entry.directory_files = entry.directory_files.saturating_add(1);
+                entry.entrypoint = Some("index.md".to_owned());
+            }
+        }
+    }
+    snapshot.schema_version = JOURNAL_SCHEMA_VERSION;
 }
 
 fn namespace_identity(output_directory: &Path) -> String {
@@ -461,4 +515,73 @@ fn journal_io_error(
 ) -> PageKnotError {
     journal_error(stage, format!("{message}: {error}"))
         .with_detail("ioKind", format!("{:?}", error.kind()))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+    use std::fs;
+
+    use pageknot_model::{ArtifactVariantKind, ArtifactVariantVerification, ContentDigest};
+
+    use super::{
+        CommitMode, JOURNAL_SCHEMA_VERSION, JournalEntry, JournalPhase, OutputKind,
+        TransactionJournal, load_latest_journal,
+    };
+
+    #[test]
+    fn legacy_markdown_journal_migrates_to_a_generic_directory_entry() -> Result<(), Box<dyn Error>>
+    {
+        let directory = tempfile::tempdir()?;
+        let root = directory.path().join("txn-legacy");
+        fs::create_dir(&root)?;
+        let journal = TransactionJournal {
+            schema_version: 1,
+            transaction_id: "txn-legacy".to_owned(),
+            output_identity: "output".to_owned(),
+            sequence: 0,
+            phase: JournalPhase::Prepared,
+            mode: CommitMode::Entries,
+            entries: vec![JournalEntry {
+                destination_name: "capture-markdown".to_owned(),
+                kind: ArtifactVariantKind::Markdown,
+                output_kind: OutputKind::Directory,
+                existed: false,
+                previous_kind: None,
+                verification: ArtifactVariantVerification {
+                    kind: ArtifactVariantKind::Markdown,
+                    passed: true,
+                    bytes: 7,
+                    sha256: ContentDigest::sha256(b"legacy"),
+                    structure_valid: true,
+                    content_valid: true,
+                },
+                directory_files: 2,
+                entrypoint: None,
+            }],
+        };
+        let mut value = serde_json::to_value(journal)?;
+        let entry = value
+            .get_mut("entries")
+            .and_then(serde_json::Value::as_array_mut)
+            .and_then(|entries| entries.first_mut())
+            .and_then(serde_json::Value::as_object_mut)
+            .ok_or("missing journal entry")?;
+        let legacy_files = entry
+            .remove("directoryFiles")
+            .ok_or("missing directory file count")?;
+        entry.insert("markdownAssets".to_owned(), legacy_files);
+        entry.remove("entrypoint");
+        fs::write(
+            root.join("journal-00000000.json"),
+            serde_json::to_vec(&value)?,
+        )?;
+
+        let loaded = load_latest_journal(&root, "output")?.ok_or("legacy journal was ignored")?;
+
+        assert_eq!(loaded.schema_version, JOURNAL_SCHEMA_VERSION);
+        assert_eq!(loaded.entries[0].directory_files, 3);
+        assert_eq!(loaded.entries[0].entrypoint.as_deref(), Some("index.md"));
+        Ok(())
+    }
 }

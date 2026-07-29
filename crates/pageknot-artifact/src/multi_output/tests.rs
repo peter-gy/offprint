@@ -3,12 +3,14 @@ use std::error::Error;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use pageknot_export::{MarkdownBundle, VariantEvidence};
-use pageknot_model::{ArtifactVariantKind, ConflictPolicy, PageKnotError, PortablePath};
+use pageknot_model::{
+    ArtifactVariantKind, ArtifactVariantVerification, ConflictPolicy, ContentDigest, PageKnotError,
+    PortablePath,
+};
 
 use super::fault::{FaultAction, FaultInjector, FaultPoint, OneFault};
 use super::journal::JournalPhase;
-use super::{ExportTransaction, PreparedVariant};
+use super::{ArtifactDirectory, ArtifactTransaction, ArtifactTransactionLimits, PreparedArtifact};
 
 type TestResult<T = ()> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 
@@ -19,7 +21,7 @@ fn empty_output_commits_as_one_staged_directory() -> TestResult {
         ConflictPolicy::Fail,
         vec![
             verified_file("capture.zip", b"archive")?,
-            verified_markdown("capture-markdown")?,
+            verified_directory("capture-markdown")?,
         ],
     )?;
     let root = transaction.root().to_owned();
@@ -34,6 +36,83 @@ fn empty_output_commits_as_one_staged_directory() -> TestResult {
     );
     assert!(!root.exists());
     assert!(transaction_roots(&fixture)?.is_empty());
+    Ok(())
+}
+
+#[test]
+fn directory_payload_commits_nested_files_and_explicit_entrypoint() -> TestResult {
+    let fixture = Fixture::new()?;
+    let directory = ArtifactDirectory::new(BTreeMap::from([
+        ("assets/charts/plot.bin".to_owned(), b"plot".to_vec()),
+        ("pages/readme.txt".to_owned(), b"capture".to_vec()),
+    ]))?;
+    let verification = verification(
+        ArtifactVariantKind::Markdown,
+        directory.bytes(),
+        directory.sha256(),
+    );
+    let artifact =
+        PreparedArtifact::directory("capture-tree", "pages/readme.txt", directory, verification)?;
+
+    let results = fixture
+        .stage(ConflictPolicy::Fail, vec![artifact])?
+        .commit()?;
+
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0].entrypoint.file_name(), Some("readme.txt"));
+    assert_eq!(
+        fs::read(fixture.output.join("capture-tree/assets/charts/plot.bin"))?,
+        b"plot"
+    );
+    assert_eq!(
+        fs::read(fixture.output.join("capture-tree/pages/readme.txt"))?,
+        b"capture"
+    );
+    Ok(())
+}
+
+#[test]
+fn preflight_file_limit_applies_to_single_file_payloads() -> TestResult {
+    let fixture = Fixture::new()?;
+
+    let error = ArtifactTransaction::stage(
+        &fixture.portable,
+        ConflictPolicy::Fail,
+        vec![verified_file("capture.zip", b"archive")?],
+        ArtifactTransactionLimits::new(0, 1024),
+    )
+    .err()
+    .ok_or("zero-file transaction limit was ignored")?;
+
+    assert_eq!(error.code.as_str(), "pageknot.export.files");
+    assert!(fs::read_dir(&fixture.output)?.next().is_none());
+    Ok(())
+}
+
+#[test]
+fn preflight_directory_limit_runs_before_filesystem_staging() -> TestResult {
+    let fixture = Fixture::new()?;
+    let directory =
+        ArtifactDirectory::new(BTreeMap::from([("one/two/index.txt".to_owned(), vec![])]))?;
+    let verification = verification(
+        ArtifactVariantKind::Markdown,
+        directory.bytes(),
+        directory.sha256(),
+    );
+    let artifact =
+        PreparedArtifact::directory("capture-tree", "one/two/index.txt", directory, verification)?;
+
+    let error = ArtifactTransaction::stage(
+        &fixture.portable,
+        ConflictPolicy::Fail,
+        vec![artifact],
+        ArtifactTransactionLimits::new(1, 1024),
+    )
+    .err()
+    .ok_or("directory count limit was ignored")?;
+
+    assert_eq!(error.code.as_str(), "pageknot.export.files");
+    assert!(fs::read_dir(&fixture.output)?.next().is_none());
     Ok(())
 }
 
@@ -95,12 +174,11 @@ fn staging_journal_crash_is_cleaned_on_the_next_entry() -> TestResult {
     let fixture = Fixture::new()?;
     let mut fault = OneFault::crash(FaultPoint::AfterJournal(JournalPhase::Staging));
 
-    let error = ExportTransaction::stage_with_injector(
+    let error = ArtifactTransaction::stage_with_injector(
         &fixture.portable,
         ConflictPolicy::Fail,
         vec![verified_file("capture.zip", b"first")?],
-        10,
-        1024,
+        ArtifactTransactionLimits::new(10, 1024),
         &mut fault,
     )
     .err()
@@ -481,35 +559,55 @@ impl Fixture {
     fn stage(
         &self,
         conflict: ConflictPolicy,
-        prepared: Vec<PreparedVariant>,
-    ) -> Result<ExportTransaction, PageKnotError> {
-        ExportTransaction::stage(&self.portable, conflict, prepared, 10, 1024)
+        prepared: Vec<PreparedArtifact>,
+    ) -> Result<ArtifactTransaction, PageKnotError> {
+        ArtifactTransaction::stage(
+            &self.portable,
+            conflict,
+            prepared,
+            ArtifactTransactionLimits::new(10, 1024),
+        )
     }
 }
 
-fn verified_file(name: &str, contents: &[u8]) -> Result<PreparedVariant, PageKnotError> {
-    PreparedVariant::file(
+fn verified_file(name: &str, contents: &[u8]) -> Result<PreparedArtifact, PageKnotError> {
+    PreparedArtifact::file(
         name.to_owned(),
-        ArtifactVariantKind::Zip,
         contents.to_vec(),
-        VariantEvidence {
-            structure_valid: true,
-            content_valid: true,
-        },
-        1024,
+        verification(
+            ArtifactVariantKind::Zip,
+            u64::try_from(contents.len()).unwrap_or(u64::MAX),
+            ContentDigest::sha256(contents),
+        ),
     )
 }
 
-fn verified_markdown(name: &str) -> Result<PreparedVariant, PageKnotError> {
-    PreparedVariant::markdown(
-        name.to_owned(),
-        MarkdownBundle {
-            markdown: b"# capture\n".to_vec(),
-            assets: BTreeMap::new(),
-        },
-        10,
-        1024,
-    )
+fn verified_directory(name: &str) -> Result<PreparedArtifact, PageKnotError> {
+    let directory = ArtifactDirectory::new(BTreeMap::from([(
+        "index.md".to_owned(),
+        b"# capture\n".to_vec(),
+    )]))?;
+    let verification = verification(
+        ArtifactVariantKind::Markdown,
+        directory.bytes(),
+        directory.sha256(),
+    );
+    PreparedArtifact::directory(name.to_owned(), "index.md", directory, verification)
+}
+
+fn verification(
+    kind: ArtifactVariantKind,
+    bytes: u64,
+    sha256: ContentDigest,
+) -> ArtifactVariantVerification {
+    ArtifactVariantVerification {
+        kind,
+        passed: true,
+        bytes,
+        sha256,
+        structure_valid: true,
+        content_valid: true,
+    }
 }
 
 fn transaction_path(error: &PageKnotError) -> TestResult<PathBuf> {

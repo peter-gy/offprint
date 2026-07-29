@@ -20,7 +20,7 @@ pub use discover::{
     DocumentResources, discover_css_resources, discover_css_resources_bounded,
     discover_document_resources, discover_document_resources_bounded,
 };
-pub use document::{Document, DocumentParse, InlineFrame, Node, NodeData};
+pub use document::{Document, InlineFrame, Node, NodeData};
 pub use policy::{LinkRelPolicy, SafeStaticPolicy};
 pub use resource::{
     RenderingRole, ResourceGraph, ResourceGraphRecord, ResourceLocationKind, ResourceReference,

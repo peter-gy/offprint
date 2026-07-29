@@ -12,6 +12,7 @@ pub(crate) fn ensure_verified(
 ) -> Result<VariantEvidence> {
     if structure_valid && content_valid {
         Ok(VariantEvidence {
+            kind,
             structure_valid,
             content_valid,
         })

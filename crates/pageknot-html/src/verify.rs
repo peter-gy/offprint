@@ -5,6 +5,8 @@ use pageknot_model::{
     ContentDigest, ErrorStage, PageKnotError, Result, VerificationPolicy, VerificationResult,
 };
 
+use crate::VerifiedHtml;
+
 #[cfg(test)]
 use pageknot_model::{ArtifactKind, ArtifactManifest};
 
@@ -19,54 +21,65 @@ use resource::validate_embedded_resource;
 use structure::{validate_artifact_documents, validate_csp};
 
 pub fn verify_static(bytes: &[u8]) -> Result<VerificationResult> {
-    verify_static_with_manifest(bytes).map(|(verification, _)| verification)
+    verify_html(bytes).map(|verified| verified.into_verification_and_manifest().0)
+}
+
+/// Parses and statically verifies bytes as one proof-bearing HTML value.
+pub fn verify_html<B: AsRef<[u8]>>(bytes: B) -> Result<VerifiedHtml<B>> {
+    verify_html_with_state_restoration(bytes, true)
 }
 
 /// Verifies a safe-static HTML artifact and returns its validated manifest.
 pub fn verify_static_with_manifest(
     bytes: &[u8],
 ) -> Result<(VerificationResult, pageknot_model::ArtifactManifest)> {
-    verify_static_with_state_restoration(bytes, true)
+    verify_html(bytes).map(VerifiedHtml::into_verification_and_manifest)
 }
 
 pub fn verify_static_sandboxed(bytes: &[u8]) -> Result<VerificationResult> {
-    verify_static_with_state_restoration(bytes, false).map(|(verification, _)| verification)
+    verify_html_with_state_restoration(bytes, false)
+        .map(|verified| verified.into_verification_and_manifest().0)
 }
 
-fn verify_static_with_state_restoration(
-    bytes: &[u8],
+fn verify_html_with_state_restoration<B: AsRef<[u8]>>(
+    bytes: B,
     restore_state: bool,
-) -> Result<(VerificationResult, pageknot_model::ArtifactManifest)> {
-    let manifest = inspect_html(bytes)?;
+) -> Result<VerifiedHtml<B>> {
+    let document = Document::parse(bytes.as_ref());
+    let manifest = manifest::inspect_document(&document)?;
     if !restore_state && manifest.structural_repair.applied {
         return Err(verification_error(
             "pageknot.verification.structural_repair",
             "sandboxed artifacts cannot apply structural repair",
         ));
     }
-    let document = Document::parse(bytes);
     validate_csp(&document, &manifest, restore_state)?;
     validate_artifact_documents(&document, &manifest, restore_state)?;
-    let byte_count = u64::try_from(bytes.len()).map_err(|error| {
+    let byte_count = u64::try_from(bytes.as_ref().len()).map_err(|error| {
         verification_error(
             "pageknot.verification.size",
             format!("artifact byte count exceeds the supported range: {error}"),
         )
     })?;
-    Ok((
-        VerificationResult {
-            schema_version: pageknot_model::PUBLIC_SCHEMA_VERSION,
-            level: VerificationPolicy::Static,
-            passed: true,
-            artifact_sha256: ContentDigest::sha256(bytes),
-            bytes: byte_count,
-            network_requests: 0,
-            attempted_urls: Vec::new(),
-            page_errors: Vec::new(),
-            frame_failures: Vec::new(),
-            stable: true,
-        },
+    let sha256 = ContentDigest::sha256(bytes.as_ref());
+    let verification = VerificationResult {
+        schema_version: pageknot_model::PUBLIC_SCHEMA_VERSION,
+        level: VerificationPolicy::Static,
+        passed: true,
+        artifact_sha256: sha256,
+        bytes: byte_count,
+        network_requests: 0,
+        attempted_urls: Vec::new(),
+        page_errors: Vec::new(),
+        frame_failures: Vec::new(),
+        stable: true,
+    };
+    Ok(VerifiedHtml::new(
+        bytes,
+        document,
         manifest,
+        sha256,
+        verification,
     ))
 }
 
@@ -174,7 +187,7 @@ mod tests {
 
     use crate::{STATE_RESTORATION_SCRIPT, encode_html};
 
-    use super::{test_manifest, validate_embedded_resource, verify_static};
+    use super::{test_manifest, validate_embedded_resource, verify_html, verify_static};
 
     fn attach_empty_embedded_records(
         manifest: &mut pageknot_model::ArtifactManifest,
@@ -239,6 +252,22 @@ mod tests {
         let verified = encoded.as_deref().map(verify_static);
 
         assert!(verified.is_ok_and(|result| result.is_ok_and(|result| result.passed)));
+    }
+
+    #[test]
+    fn verified_html_binds_owned_bytes_to_one_parsed_proof() {
+        let document = Document::parse(b"<html><head></head><body><p>bound</p></body></html>");
+        let encoded = encode_html(&document, &test_manifest());
+        let verified = encoded.and_then(verify_html);
+
+        assert!(verified.as_ref().is_ok_and(|html| {
+            html.verification().passed
+                && html.verification().artifact_sha256 == html.sha256()
+                && html.verification().bytes
+                    == u64::try_from(html.bytes().len()).unwrap_or(u64::MAX)
+                && html.document().node_count() > 0
+                && html.manifest().format.kind == pageknot_model::ArtifactKind::Html
+        }));
     }
 
     #[test]

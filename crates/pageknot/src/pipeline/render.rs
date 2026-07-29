@@ -8,7 +8,7 @@ use pageknot_browser::{LoadedResource, NetworkGuard, PageSession};
 use pageknot_capture::{CaptureBudget, StoredContent};
 use pageknot_document::{
     CssParseMode, Document, RenderingRole, discover_css_resources_bounded,
-    discover_document_resources_bounded, ensure_render_freeze_styles, sanitize_safe_static,
+    discover_document_resources_bounded, serialize_document,
 };
 use pageknot_model::{
     CaptureEvent, CaptureId, CaptureRequest, CaptureWarning, ContentDigest, ErrorStage,
@@ -70,7 +70,6 @@ pub(super) struct ResourceState {
     next_resource_id: u32,
     pub(super) frames: u32,
     next_frame_id: u64,
-    pub(super) structural_repair: bool,
 }
 
 impl ResourceState {
@@ -86,19 +85,20 @@ impl ResourceState {
             next_resource_id: 0,
             frames,
             next_frame_id,
-            structural_repair: false,
         })
     }
 
-    fn begin_inline_frame(&mut self, html: &str) -> Result<(pageknot_model::FrameId, u64)> {
-        let nodes =
-            u64::try_from(Document::parse(html.as_bytes()).node_count()).map_err(|error| {
-                PageKnotError::new(
-                    "pageknot.frame.nodes",
-                    ErrorStage::Collection,
-                    format!("inline frame node count exceeds the supported range: {error}"),
-                )
-            })?;
+    fn begin_inline_frame(
+        &mut self,
+        document: &Document,
+    ) -> Result<(pageknot_model::FrameId, u64)> {
+        let nodes = u64::try_from(document.node_count()).map_err(|error| {
+            PageKnotError::new(
+                "pageknot.frame.nodes",
+                ErrorStage::Collection,
+                format!("inline frame node count exceeds the supported range: {error}"),
+            )
+        })?;
         let frame_id = pageknot_model::FrameId::new(self.next_frame_id);
         self.next_frame_id = self.next_frame_id.checked_add(1).ok_or_else(|| {
             PageKnotError::new(
@@ -286,7 +286,8 @@ pub(super) fn render_frame_document<'a>(
                 })?,
                 None => base_url.clone(),
             };
-            let (child_frame_id, child_nodes) = state.begin_inline_frame(&frame.html)?;
+            let (child_frame_id, child_nodes) =
+                state.begin_inline_frame(&Document::parse(frame.html.as_bytes()))?;
             context.job.emit(CaptureEvent::FrameCollected {
                 capture_id: context.capture_id.clone(),
                 frame_id: child_frame_id,
@@ -355,7 +356,6 @@ pub(super) fn render_frame_document<'a>(
 
         let mut document = Document::parse(&source);
         apply_inline_frame_replacements(&mut document, &inline_frames, &inline_replacements)?;
-        ensure_render_freeze_styles(&mut document)?;
         let discovered =
             discover_document_resources_bounded(&document, &base_url, resource_inputs.len())?;
         if discovered.resources().len() != resource_inputs.len() {
@@ -366,24 +366,24 @@ pub(super) fn render_frame_document<'a>(
             ));
         }
         discovered.rewrite(&mut document, &replacements)?;
-        let _sanitization = sanitize_safe_static(&mut document);
-        if pageknot_html::apply_structural_repair(&mut document)? {
-            state.structural_repair = true;
-        }
-        let html = pageknot_document::serialize_document(&document).map_err(|error| {
-            PageKnotError::new(
-                "pageknot.artifact.serialize",
-                ErrorStage::Transform,
-                format!("transformed frame could not be serialized: {error}"),
-            )
-        })?;
-        String::from_utf8(html).map_err(|error| {
-            PageKnotError::new(
-                "pageknot.artifact.serialize",
-                ErrorStage::Transform,
-                format!("transformed frame is not UTF-8: {error}"),
-            )
-        })
+        serialize_frame_document(&document)
+    })
+}
+
+pub(super) fn serialize_frame_document(document: &Document) -> Result<String> {
+    let html = serialize_document(document).map_err(|error| {
+        PageKnotError::new(
+            "pageknot.artifact.serialize",
+            ErrorStage::Transform,
+            format!("frame could not be serialized: {error}"),
+        )
+    })?;
+    String::from_utf8(html).map_err(|error| {
+        PageKnotError::new(
+            "pageknot.artifact.serialize",
+            ErrorStage::Transform,
+            format!("frame is not UTF-8: {error}"),
+        )
     })
 }
 

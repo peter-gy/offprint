@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::{
     collections::{BTreeMap, BTreeSet},
     env,
@@ -9,17 +9,7 @@ use serde::Deserialize;
 
 use crate::package::{CRATE_LICENSE, PUBLISHABLE_CRATES};
 
-const TEXT_EXTENSIONS: &[&str] = &[
-    "cjs", "css", "html", "js", "json", "md", "py", "rs", "sh", "toml", "ts", "yml", "yaml",
-];
-const IGNORED_DIRECTORIES: &[&str] = &[
-    ".git",
-    ".mypy_cache",
-    ".pytest_cache",
-    ".venv",
-    "node_modules",
-    "target",
-];
+mod structure;
 
 #[derive(Debug, Deserialize)]
 struct VersionManifest {
@@ -43,11 +33,10 @@ struct ChromiumVersionManifest {
 }
 
 pub fn check(root: &Path) -> Result<(), String> {
-    let mut files = Vec::new();
-    collect_files(root, &mut files)?;
-    files.sort();
+    let files = structure::repository_text_files(root)?;
 
     let mut violations = Vec::new();
+    structure::check(root, &files, &mut violations)?;
     for path in &files {
         check_text_file(path, &mut violations)?;
         if path.extension().and_then(|value| value.to_str()) == Some("md") {
@@ -371,43 +360,6 @@ fn workflow_named_step<'a>(text: &'a str, name: &str) -> Option<Vec<&'a str>> {
     Some(step)
 }
 
-fn collect_files(directory: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
-    let entries = fs::read_dir(directory)
-        .map_err(|error| format!("failed to read {}: {error}", directory.display()))?;
-    for entry in entries {
-        let entry = entry.map_err(|error| {
-            format!(
-                "failed to read an entry under {}: {error}",
-                directory.display()
-            )
-        })?;
-        let path = entry.path();
-        let file_type = entry
-            .file_type()
-            .map_err(|error| format!("failed to inspect {}: {error}", path.display()))?;
-        if file_type.is_symlink() {
-            continue;
-        }
-        if file_type.is_dir() {
-            let name = entry.file_name();
-            if !IGNORED_DIRECTORIES
-                .iter()
-                .any(|ignored| name == std::ffi::OsStr::new(ignored))
-            {
-                collect_files(&path, files)?;
-            }
-            continue;
-        }
-        let extension = path.extension().and_then(|value| value.to_str());
-        if extension.is_some_and(|extension| TEXT_EXTENSIONS.contains(&extension))
-            || path.file_name().and_then(|value| value.to_str()) == Some("justfile")
-        {
-            files.push(path);
-        }
-    }
-    Ok(())
-}
-
 fn check_text_file(path: &Path, violations: &mut Vec<String>) -> Result<(), String> {
     let bytes =
         fs::read(path).map_err(|error| format!("failed to read {}: {error}", path.display()))?;
@@ -634,11 +586,11 @@ fn check_collector_protocol_source(
     }
     let expected =
         format!("export const protocol = {{ major: {major}, minor: {minor} }} as const;");
-    let collector = fs::read_to_string(root.join("collector/src/constants.ts"))
+    let collector = fs::read_to_string(root.join("collector/src/identity.ts"))
         .map_err(|error| format!("failed to read collector protocol source: {error}"))?;
     if !collector.lines().any(|line| line.trim() == expected) {
         violations.push(format!(
-            "collector/src/constants.ts does not declare protocol {protocol_version}"
+            "collector/src/identity.ts does not declare protocol {protocol_version}"
         ));
     }
     Ok(())

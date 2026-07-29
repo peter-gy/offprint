@@ -13,6 +13,7 @@ from pageknot import PageKnot, ShutdownError
 
 
 EXAMPLES = Path(__file__).parents[3] / "schemas" / "examples"
+ASYNC_OPERATION_TIMEOUT = 15.0
 
 
 class FixtureHandler(BaseHTTPRequestHandler):
@@ -141,18 +142,32 @@ async def test_capture_event_cancellation_and_close_contract(
         job = await pageknot.captures.start(request)
         events = job.events()
         saw_started = False
-        async for event in events:
+        while True:
+            event = await asyncio.wait_for(
+                anext(events),
+                timeout=ASYNC_OPERATION_TIMEOUT,
+            )
             saw_started = saw_started or event["type"] == "capture.started"
             if event["type"] == "navigation.started":
                 job.cancel()
                 break
         assert saw_started
         with pytest.raises(ShutdownError) as captured:
-            await job.result()
+            await asyncio.wait_for(
+                job.result(),
+                timeout=ASYNC_OPERATION_TIMEOUT,
+            )
         assert captured.value.code == "pageknot.runtime.cancelled"
 
         terminal = None
-        async for event in events:
+        while True:
+            try:
+                event = await asyncio.wait_for(
+                    anext(events),
+                    timeout=ASYNC_OPERATION_TIMEOUT,
+                )
+            except StopAsyncIteration:
+                break
             if event["type"] == "capture.cancelled":
                 terminal = event
         assert terminal is not None

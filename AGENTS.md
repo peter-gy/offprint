@@ -15,6 +15,8 @@ artifact through an atomic transaction.
 | `crates/pageknot-capture` | Capture mechanics | Validation, state transitions, cancellation, budgets, resource graph, and content store |
 | `crates/pageknot-document` | Document model | Arena DOM, discovery, CSS rewriting, state materialization, and sanitization |
 | `crates/pageknot-html` | HTML artifact | Encoding, manifest embedding, structural repair, static verification, and fallbacks |
+| `crates/pageknot-transform` | Safe-static transform | Rendering freeze, sanitization, structural repair, manifest encoding, and static verification |
+| `crates/pageknot-export` | Alternate representations | Format encoders, source metadata preservation, and representation-specific verification |
 | `crates/pageknot-artifact` | Delivery | Bounded memory output and transactional file output |
 | `crates/pageknot` | Service API | Runtime ownership, capture jobs, pipeline, diagnostics, browser service, inspect, and verify |
 | `crates/pageknot-cli` | Command boundary | Commands, configuration precedence, output routing, diagnostics, and exit status |
@@ -24,8 +26,47 @@ artifact through an atomic transaction.
 | `benches` | Performance evidence | Microbenchmarks, browser corpora, normalized comparison, and recorded baseline |
 | `xtask` | Repository automation | Schema generation, CDP generation, fixture selection, and release checks |
 
-The service crate owns orchestration. Parser, protocol, and CDP types stay
-behind their owning crate boundaries.
+The service crate is the production composition root. Parser, protocol, and
+CDP types stay behind their owning crate boundaries.
+
+## Dependency rule
+
+Dependencies point toward canonical records and interface seams.
+
+- `pageknot-model` imports no PageKnot crate.
+- `pageknot-browser` owns browser ports. `pageknot-chromium` implements them
+  and owns CDP, process, target, and managed-browser details.
+- `pageknot-document`, `pageknot-html`, `pageknot-transform`, and
+  `pageknot-export` depend on document and model contracts. They do not select
+  runtime adapters.
+- `pageknot-artifact` stages, recovers, and commits generic payloads. Format
+  encoders prepare payloads before delivery.
+- `pageknot` selects browser and format adapters and owns runtime
+  orchestration.
+- The CLI and language bindings call the `pageknot` service API.
+
+`xtask` validates the internal Cargo dependency graph. Reject changes that
+introduce an adapter dependency into a port, model, frontend, or
+format-independent delivery crate.
+
+## Module boundaries
+
+Keep each handwritten production source file below 990 lines. Review ownership
+when a file approaches 900 lines, then split by invariant, lifecycle owner,
+protocol phase, or representation boundary.
+
+Generated files are exempt when their source generator and byte-for-byte
+freshness check are recorded below. Test files may exceed the ceiling when one
+contract suite remains easier to inspect as a unit. Do not satisfy the ceiling
+with pass-through modules or arbitrary slices.
+
+Keep parsed, normalized, and verified values typed across internal boundaries.
+Parse and serialize at I/O boundaries. A representation encoder returns its
+verified value after one verification pass. Standalone verification handles
+artifacts loaded from storage.
+
+Every browser adapter runs the shared backend conformance suite. Every artifact
+representation runs the shared representation conformance suite.
 
 ## Domain vocabulary
 
@@ -70,7 +111,7 @@ capture path.
 
 - `schemas/**` comes from `cargo run -p xtask -- codegen`.
 - `fixtures/manifest/**` comes from the same schema command.
-- `crates/pageknot-chromium/src/cdp_generated.rs` comes from
+- `crates/pageknot-chromium/src/cdp/generated/*.rs` comes from
   `cargo run -p xtask -- codegen-cdp`.
 - `collector/dist/collector.js` and `collector.sha256` come from
   `bun run build` in `collector`.
@@ -103,6 +144,14 @@ Tests protect public records, lifecycle ownership, resource outcomes, output
 transactions, and browser behavior. Browser appearance and offline behavior
 require browser evidence.
 
+Every required fixture has one executable owner. Fixture selection fails when
+it resolves to zero tests or more than one test. Ignored browser tests need an
+explicit fixture or workflow owner. Browser fixtures run serially and every
+external wait has a deadline.
+
+Package checks build and exercise the extracted package graph. Source-tree
+tests do not establish package contents.
+
 Every acquired browser lease, context, page, temporary store, event producer,
 and staging artifact needs one explicit terminal owner. Cancellation, consumer
 drop, encoding failure, verification failure, and shutdown must release those
@@ -111,6 +160,10 @@ owners.
 Changes must not add stubs, weaken assertions, skip required fixtures, or alter
 public contracts to hide a failure. Report the exact failing command and
 evidence when a required environment is unavailable.
+
+Before handoff, run the repository checks for handwritten file size and Cargo
+dependency direction. Confirm that browser, server, page, process, stream, and
+staging owners terminate on success, failure, cancellation, and consumer drop.
 
 ## Documentation
 

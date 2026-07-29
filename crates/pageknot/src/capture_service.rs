@@ -1,28 +1,25 @@
-use std::collections::VecDeque;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
-use std::task::{Context, Poll};
+use std::sync::atomic::{AtomicU8, Ordering};
 
-use futures_core::Stream;
 use futures_util::FutureExt as _;
 use pageknot_capture::{CaptureStateMachine, ValidatedCaptureRequest};
 use pageknot_model::{
     BatchRequest, BatchResult, CaptureEvent, CaptureId, CaptureRequest, CaptureResult,
     CaptureStatus, CrawlRequest, CrawlResult, ErrorStage, PageKnotError, Result,
 };
-use serde_json::Value;
-use tokio::sync::{broadcast, watch};
-use tokio_stream::wrappers::BroadcastStream;
-use tokio_stream::wrappers::errors::BroadcastStreamRecvError;
+use tokio::sync::watch;
 
+use crate::diagnostics::CaptureDiagnostics;
 use crate::pipeline::run_capture_job;
 use crate::runtime::RuntimeState;
-use crate::{diagnostics::CaptureDiagnostics, diagnostics::sanitized_event};
 
-const EVENT_CAPACITY: usize = 16_384;
-const DIAGNOSTIC_EVENT_CAPACITY: usize = 4_096;
+mod diagnostics;
+mod events;
+
+use diagnostics::DiagnosticsRecorder;
+pub use events::CaptureEvents;
+use events::EventJournal;
 
 #[derive(Clone, Debug)]
 /// Starts validated capture requests through one PageKnot runtime.
@@ -44,21 +41,17 @@ impl CaptureService {
         if matches!(request.browser, pageknot_model::BrowserSpec::Auto) {
             request.browser = self.state.default_browser().clone();
         }
-        let request = ValidatedCaptureRequest::new(request)?.into_inner();
+        let request = ValidatedCaptureRequest::new(request)?;
         let capture_id = self.state.next_capture_id();
-        let diagnostics = CaptureDiagnostics::prepare(&request).await?;
-        let control = Arc::new(JobControl::new());
-        let (events, _) = broadcast::channel(EVENT_CAPACITY);
+        let diagnostics = CaptureDiagnostics::prepare(request.get())
+            .await?
+            .map(DiagnosticsRecorder::new);
+        let control = Arc::new(JobControl::new(self.state.operation_cancellation()));
         let (result, result_receiver) = watch::channel(None);
         let job_state = Arc::new(JobState {
             lifecycle: Mutex::new(CaptureStateMachine::new()),
             control: Arc::clone(&control),
-            event_sequence: AtomicU64::new(0),
-            event_gate: Mutex::new(()),
-            events,
-            retained_events: Mutex::new(RetainedEvents::default()),
-            diagnostic_events: Mutex::new(VecDeque::new()),
-            dropped_diagnostic_events: AtomicU64::new(0),
+            events: Arc::new(EventJournal::new()),
             diagnostics,
             result,
         });
@@ -128,9 +121,9 @@ const TERMINAL_CANCELLATION: u8 = 1;
 const TERMINAL_COMMIT: u8 = 2;
 
 impl JobControl {
-    fn new() -> Self {
+    pub(crate) fn new(cancellation: tokio_util::sync::CancellationToken) -> Self {
         Self {
-            cancellation: tokio_util::sync::CancellationToken::new(),
+            cancellation,
             terminal_decision: AtomicU8::new(TERMINAL_UNDECIDED),
         }
     }
@@ -197,13 +190,8 @@ fn cancellation_error() -> PageKnotError {
 pub(crate) struct JobState {
     lifecycle: Mutex<CaptureStateMachine>,
     control: Arc<JobControl>,
-    event_sequence: AtomicU64,
-    event_gate: Mutex<()>,
-    events: broadcast::Sender<Arc<EventEnvelope>>,
-    retained_events: Mutex<RetainedEvents>,
-    diagnostic_events: Mutex<VecDeque<Value>>,
-    dropped_diagnostic_events: AtomicU64,
-    diagnostics: Option<CaptureDiagnostics>,
+    events: Arc<EventJournal>,
+    diagnostics: Option<DiagnosticsRecorder>,
     result: watch::Sender<Option<Result<CaptureResult>>>,
 }
 
@@ -223,41 +211,11 @@ impl JobState {
     }
 
     pub(crate) fn emit(&self, event: CaptureEvent) {
-        // Keep subscription baselines and sequence assignment in one order so a
-        // subscriber can recover every retained event published after it joins.
-        let _gate = self
-            .event_gate
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let sequence = self.event_sequence.fetch_add(1, Ordering::AcqRel) + 1;
-        let progress = matches!(event, CaptureEvent::ResourceProgress { .. });
-        let retained = !progress;
-        {
-            let mut diagnostic_events = self
-                .diagnostic_events
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            if diagnostic_events.len() == DIAGNOSTIC_EVENT_CAPACITY {
-                diagnostic_events.pop_front();
-                self.dropped_diagnostic_events
-                    .fetch_add(1, Ordering::AcqRel);
+        self.events.emit_with(event, |event| {
+            if let Some(diagnostics) = &self.diagnostics {
+                diagnostics.record(event);
             }
-            diagnostic_events.push_back(sanitized_event(&event));
-        }
-        let envelope = Arc::new(EventEnvelope { sequence, event });
-        if retained || progress {
-            let mut retained_events = self.retained_events();
-            if retained {
-                if retained_events.important.len() == EVENT_CAPACITY {
-                    retained_events.important.pop_front();
-                }
-                retained_events.important.push_back(Arc::clone(&envelope));
-            }
-            if progress {
-                retained_events.latest_progress = Some(Arc::clone(&envelope));
-            }
-        }
-        let _ignored = self.events.send(envelope);
+        });
     }
 
     pub(crate) fn finish(&self, result: Result<CaptureResult>) {
@@ -280,35 +238,6 @@ impl JobState {
         self.control.cancellation_won()
     }
 
-    fn retained_events(&self) -> std::sync::MutexGuard<'_, RetainedEvents> {
-        self.retained_events
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-    }
-
-    fn retained_after(&self, sequence: u64, before: Option<u64>) -> Vec<Arc<EventEnvelope>> {
-        let _gate = self
-            .event_gate
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let retained = self.retained_events();
-        let mut events = retained
-            .important
-            .iter()
-            .filter(|event| event_is_between(event, sequence, before))
-            .cloned()
-            .collect::<Vec<_>>();
-        if let Some(progress) = retained
-            .latest_progress
-            .as_ref()
-            .filter(|event| event_is_between(event, sequence, before))
-        {
-            events.push(Arc::clone(progress));
-        }
-        events.sort_unstable_by_key(|event| event.sequence);
-        events
-    }
-
     pub(crate) async fn attach_diagnostics(
         &self,
         capture_id: &CaptureId,
@@ -317,28 +246,7 @@ impl JobState {
         let Some(diagnostics) = &self.diagnostics else {
             return error;
         };
-        let events = self
-            .diagnostic_events
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .iter()
-            .cloned()
-            .collect();
-        match diagnostics
-            .write(
-                capture_id,
-                self.status(),
-                events,
-                self.dropped_diagnostic_events.load(Ordering::Acquire),
-                &error,
-            )
-            .await
-        {
-            Ok(path) => error.with_diagnostics_path(path),
-            Err(diagnostic_error) => {
-                error.with_detail("diagnosticsError", diagnostic_error.code.to_string())
-            }
-        }
+        diagnostics.attach(capture_id, self.status(), error).await
     }
 
     async fn finish_after_panic(&self, capture_id: CaptureId) {
@@ -361,22 +269,6 @@ impl JobState {
         });
         self.finish(Err(error));
     }
-}
-
-#[derive(Clone, Debug)]
-struct EventEnvelope {
-    sequence: u64,
-    event: CaptureEvent,
-}
-
-#[derive(Debug, Default)]
-struct RetainedEvents {
-    important: VecDeque<Arc<EventEnvelope>>,
-    latest_progress: Option<Arc<EventEnvelope>>,
-}
-
-fn event_is_between(event: &EventEnvelope, after: u64, before: Option<u64>) -> bool {
-    event.sequence > after && before.is_none_or(|limit| event.sequence < limit)
 }
 
 #[derive(Clone, Debug)]
@@ -406,7 +298,7 @@ impl CaptureJob {
     /// resource progress record before live events.
     #[must_use]
     pub fn events(&self) -> CaptureEvents {
-        CaptureEvents::new(Arc::clone(&self.state))
+        CaptureEvents::new(Arc::clone(&self.state.events))
     }
 
     /// Requests cancellation.
@@ -437,92 +329,11 @@ impl CaptureJob {
     }
 }
 
-#[derive(Debug)]
-/// An ordered stream of [`CaptureEvent`] records for one capture job.
-///
-/// The stream ends after its terminal event. Resource progress may be
-/// coalesced under backpressure. Lifecycle and terminal events are retained.
-pub struct CaptureEvents {
-    state: Arc<JobState>,
-    inner: BroadcastStream<Arc<EventEnvelope>>,
-    pending: VecDeque<Arc<EventEnvelope>>,
-    last_sequence: u64,
-    terminal_seen: bool,
-}
-
-impl CaptureEvents {
-    fn new(state: Arc<JobState>) -> Self {
-        let gate = state
-            .event_gate
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let inner = BroadcastStream::new(state.events.subscribe());
-        let pending = {
-            let retained = state.retained_events();
-            let mut events = retained.important.iter().cloned().collect::<Vec<_>>();
-            if let Some(progress) = &retained.latest_progress {
-                events.push(Arc::clone(progress));
-            }
-            events.sort_unstable_by_key(|event| event.sequence);
-            VecDeque::from(events)
-        };
-        drop(gate);
-        Self {
-            state,
-            inner,
-            pending,
-            last_sequence: 0,
-            terminal_seen: false,
-        }
-    }
-
-    fn next_pending(&mut self) -> Option<CaptureEvent> {
-        let envelope = self.pending.pop_front()?;
-        self.last_sequence = self.last_sequence.max(envelope.sequence);
-        self.terminal_seen |= envelope.event.is_terminal();
-        Some(envelope.event.clone())
-    }
-}
-
-impl Stream for CaptureEvents {
-    type Item = CaptureEvent;
-
-    fn poll_next(mut self: Pin<&mut Self>, context: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        loop {
-            if let Some(event) = self.next_pending() {
-                return Poll::Ready(Some(event));
-            }
-            if self.terminal_seen {
-                return Poll::Ready(None);
-            }
-            match Pin::new(&mut self.inner).poll_next(context) {
-                Poll::Ready(Some(Ok(envelope))) => {
-                    if envelope.sequence <= self.last_sequence {
-                        continue;
-                    }
-                    let retained = self
-                        .state
-                        .retained_after(self.last_sequence, Some(envelope.sequence));
-                    self.pending.extend(retained);
-                    self.pending.push_back(envelope);
-                }
-                Poll::Ready(Some(Err(BroadcastStreamRecvError::Lagged(_)))) => {
-                    let retained = self.state.retained_after(self.last_sequence, None);
-                    self.pending.extend(retained);
-                }
-                Poll::Ready(None) => return Poll::Ready(None),
-                Poll::Pending => return Poll::Pending,
-            }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::AtomicUsize;
 
-    use pageknot_model::{BatchJob, BatchRequest, CaptureWarning, ResourceId};
-    use tokio_stream::StreamExt as _;
+    use pageknot_model::{BatchJob, BatchRequest};
 
     use super::*;
 
@@ -537,17 +348,11 @@ mod tests {
     }
 
     fn job_state() -> Arc<JobState> {
-        let (events, _) = broadcast::channel(EVENT_CAPACITY);
         let (result, _) = watch::channel(None);
         Arc::new(JobState {
             lifecycle: Mutex::new(CaptureStateMachine::new()),
-            control: Arc::new(JobControl::new()),
-            event_sequence: AtomicU64::new(0),
-            event_gate: Mutex::new(()),
-            events,
-            retained_events: Mutex::new(RetainedEvents::default()),
-            diagnostic_events: Mutex::new(VecDeque::new()),
-            dropped_diagnostic_events: AtomicU64::new(0),
+            control: Arc::new(JobControl::new(tokio_util::sync::CancellationToken::new())),
+            events: Arc::new(EventJournal::new()),
             diagnostics: None,
             result,
         })
@@ -628,80 +433,9 @@ mod tests {
         pageknot.close().await
     }
 
-    #[tokio::test]
-    async fn slow_event_consumers_retain_warning_and_terminal_events() {
-        let state = job_state();
-        let mut events = CaptureEvents::new(Arc::clone(&state));
-        let capture_id = CaptureId::new();
-        for completed in 0..u32::try_from(EVENT_CAPACITY + 32).unwrap_or(u32::MAX) {
-            state.emit(CaptureEvent::ResourceProgress {
-                capture_id: capture_id.clone(),
-                completed,
-                discovered: completed,
-                bytes: u64::from(completed),
-            });
-        }
-        state.emit(CaptureEvent::Warning {
-            capture_id: capture_id.clone(),
-            warning: CaptureWarning {
-                code: "pageknot.resource.fixture".to_owned(),
-                message: "fixture warning".to_owned(),
-                frame_id: None,
-                resource_id: Some(ResourceId::new(1)),
-            },
-        });
-        state.emit(CaptureEvent::CaptureCancelled { capture_id });
-
-        let mut retained = Vec::new();
-        while let Some(event) = events.next().await {
-            if matches!(
-                event,
-                CaptureEvent::ResourceProgress { .. }
-                    | CaptureEvent::Warning { .. }
-                    | CaptureEvent::CaptureCancelled { .. }
-            ) {
-                retained.push(event);
-            }
-        }
-
-        assert_eq!(retained.len(), 3);
-        assert!(matches!(
-            retained[0],
-            CaptureEvent::ResourceProgress {
-                completed,
-                discovered,
-                ..
-            } if completed == u32::try_from(EVENT_CAPACITY + 31).unwrap_or(u32::MAX)
-                && discovered == completed
-        ));
-        assert!(matches!(retained[1], CaptureEvent::Warning { .. }));
-        assert!(matches!(retained[2], CaptureEvent::CaptureCancelled { .. }));
-    }
-
-    #[tokio::test]
-    async fn subscriber_created_after_completion_observes_the_terminal_event() {
-        let state = job_state();
-        let capture_id = CaptureId::new();
-        state.emit(CaptureEvent::CaptureStarted {
-            capture_id: capture_id.clone(),
-        });
-        state.emit(CaptureEvent::CaptureCancelled { capture_id });
-        let mut events = CaptureEvents::new(state);
-
-        assert!(matches!(
-            events.next().await,
-            Some(CaptureEvent::CaptureStarted { .. })
-        ));
-        assert!(matches!(
-            events.next().await,
-            Some(CaptureEvent::CaptureCancelled { .. })
-        ));
-        assert!(events.next().await.is_none());
-    }
-
     #[test]
     fn cancellation_claim_prevents_artifact_commit() -> Result<()> {
-        let control = JobControl::new();
+        let control = JobControl::new(tokio_util::sync::CancellationToken::new());
 
         assert!(control.request_cancel());
         assert!(control.cancellation().is_cancelled());
@@ -720,7 +454,7 @@ mod tests {
 
     #[test]
     fn commit_claim_rejects_late_cancellation() -> Result<()> {
-        let control = JobControl::new();
+        let control = JobControl::new(tokio_util::sync::CancellationToken::new());
 
         control.claim_commit()?;
         assert!(!control.request_cancel());

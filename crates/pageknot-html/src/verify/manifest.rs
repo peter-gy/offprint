@@ -15,6 +15,10 @@ const MAXIMUM_SCROLL_OFFSET: f64 = 1_000_000_000.0;
 
 pub fn inspect_html(bytes: &[u8]) -> Result<ArtifactManifest> {
     let document = Document::parse(bytes);
+    inspect_document(&document)
+}
+
+pub(super) fn inspect_document(document: &Document) -> Result<ArtifactManifest> {
     let manifest_nodes = document
         .walk()
         .filter(|id| {
@@ -34,7 +38,7 @@ pub fn inspect_html(bytes: &[u8]) -> Result<ArtifactManifest> {
             "artifact must contain one PageKnot manifest",
         ));
     }
-    let json = text_contents(&document, manifest_nodes[0]);
+    let json = text_contents(document, manifest_nodes[0]);
     let manifest = serde_json::from_str::<ArtifactManifest>(&json).map_err(|error| {
         verification_error(
             "pageknot.verification.manifest",

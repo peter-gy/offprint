@@ -52,54 +52,61 @@ pub(super) async fn finalize(
         capture_id: capture_id.clone(),
     });
     let transform_started = Instant::now();
-    let transformed = pageknot_transform::transform_document(&captured.html)?;
-    let transform = transform_started.elapsed();
+    let transform;
+    let encoding_started;
+    {
+        let transformed = pageknot_transform::transform_document(&captured.html)?;
+        transform = transform_started.elapsed();
 
-    transition(job, CaptureStatus::Encoding).await?;
-    let encoding_started = Instant::now();
-    let policy_sha256 = policy_digest(request)?;
-    let manifest = ArtifactManifest {
-        schema_version: SCHEMA_VERSION,
-        format: ArtifactFormat {
-            kind: ArtifactKind::Html,
-            version: ARTIFACT_VERSION,
-        },
-        generator: ManifestGenerator {
-            name: "PageKnot".to_owned(),
-            version: env!("CARGO_PKG_VERSION").to_owned(),
-        },
-        source: ManifestSource::from(captured.source.clone()),
-        captured_at: runtime.now(),
-        browser: browser_info,
-        environment: request.environment.clone(),
-        view_state: captured.view_state,
-        policy_sha256,
-        frames: captured.frames,
-        resources: captured.resources,
-        resource_records: captured.resource_records,
-        warning_codes: captured
-            .warnings
-            .iter()
-            .map(|warning| warning.code.clone())
-            .collect(),
-        structural_repair: StructuralRepair {
-            applied: captured.structural_repair,
-            script_sha256: captured
-                .structural_repair
-                .then(pageknot_html::structural_repair_script_digest),
-        },
-        verification: ManifestVerification {
-            level: request.verification,
-            passed: true,
-            network_requests: 0,
-        },
-    };
-    pageknot_transform::encode_artifact_to(&transformed, manifest, &mut writer)?;
+        check_cancelled(job.cancellation())?;
+        job.transition(CaptureStatus::Encoding)?;
+        encoding_started = Instant::now();
+        let policy_sha256 = policy_digest(request)?;
+        let manifest = ArtifactManifest {
+            schema_version: SCHEMA_VERSION,
+            format: ArtifactFormat {
+                kind: ArtifactKind::Html,
+                version: ARTIFACT_VERSION,
+            },
+            generator: ManifestGenerator {
+                name: "PageKnot".to_owned(),
+                version: env!("CARGO_PKG_VERSION").to_owned(),
+            },
+            source: ManifestSource::from(captured.source.clone()),
+            captured_at: runtime.now(),
+            browser: browser_info,
+            environment: request.environment.clone(),
+            view_state: captured.view_state,
+            policy_sha256,
+            frames: captured.frames,
+            resources: captured.resources,
+            resource_records: captured.resource_records,
+            warning_codes: captured
+                .warnings
+                .iter()
+                .map(|warning| warning.code.clone())
+                .collect(),
+            structural_repair: StructuralRepair {
+                applied: transformed.structural_repair(),
+                script_sha256: transformed
+                    .structural_repair()
+                    .then(pageknot_html::structural_repair_script_digest),
+            },
+            verification: ManifestVerification {
+                level: request.verification,
+                passed: true,
+                network_requests: 0,
+            },
+        };
+        pageknot_transform::encode_artifact_to(&transformed, manifest, &mut writer)?;
+    }
     let encoded_bytes = writer.bytes();
     job.emit(CaptureEvent::ArtifactEncoding {
         capture_id: capture_id.clone(),
         bytes: encoded_bytes,
     });
+    tokio::task::yield_now().await;
+    check_cancelled(job.cancellation())?;
     let mut staged = writer.finish()?;
     let (verification, encoding, verification_elapsed) = {
         let readback = staged.readback(request.limits.artifact_bytes)?;

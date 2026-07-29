@@ -3,15 +3,14 @@ use std::fs::{self, File};
 use std::io::Read as _;
 use std::path::{Path, PathBuf};
 
-use pageknot_export::MarkdownBundle;
-use pageknot_model::{
-    ArtifactVariantKind, ConflictPolicy, ContentDigest, ErrorStage, PageKnotError, Result,
-};
+use pageknot_model::{ConflictPolicy, ContentDigest, ErrorStage, PageKnotError, Result};
 use sha2::{Digest as _, Sha256};
 
-use super::PreparedVariant;
 use super::durable::{create_directory, sync_directory, write_new_file};
 use super::journal::{CommitMode, JournalEntry, OutputKind};
+use super::payload::{
+    ArtifactDirectory, ArtifactTransactionLimits, PreparedArtifact, PreparedPayload,
+};
 
 const FILE_READ_BUFFER_BYTES: usize = 64 * 1024;
 
@@ -22,44 +21,51 @@ pub(super) struct DestinationPlan {
 }
 
 #[derive(Clone, Debug)]
-pub(super) struct StagedVariant {
+pub(super) struct StagedArtifact {
     pub(super) destination: PathBuf,
     pub(super) staged_path: PathBuf,
     pub(super) entry: JournalEntry,
 }
 
+pub(super) fn validate_prepared_artifacts(
+    prepared: &[PreparedArtifact],
+    limits: ArtifactTransactionLimits,
+) -> Result<()> {
+    for artifact in prepared {
+        if artifact.file_count() > limits.maximum_files {
+            return Err(PageKnotError::new(
+                "pageknot.export.files",
+                ErrorStage::Encoding,
+                "artifact payload exceeds the file count limit",
+            ));
+        }
+        if artifact.directory_count() > limits.maximum_files {
+            return Err(PageKnotError::new(
+                "pageknot.export.files",
+                ErrorStage::Encoding,
+                "artifact payload exceeds the directory count limit",
+            ));
+        }
+        if artifact.verification().bytes > limits.maximum_bytes {
+            return Err(PageKnotError::new(
+                "pageknot.export.size",
+                ErrorStage::Encoding,
+                "artifact payload exceeds the export byte limit",
+            ));
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn plan_destinations(
     output_directory: &Path,
     conflict: ConflictPolicy,
-    prepared: &[PreparedVariant],
+    prepared: &[PreparedArtifact],
 ) -> Result<(CommitMode, Vec<DestinationPlan>)> {
     let mut plans = Vec::with_capacity(prepared.len());
-    for variant in prepared {
-        let (name, kind, output_kind, verification, markdown_assets) = match variant {
-            PreparedVariant::File {
-                name,
-                kind,
-                verification,
-                ..
-            } => (
-                name.as_str(),
-                *kind,
-                OutputKind::File,
-                verification.clone(),
-                0,
-            ),
-            PreparedVariant::Markdown {
-                name,
-                bundle,
-                verification,
-            } => (
-                name.as_str(),
-                ArtifactVariantKind::Markdown,
-                OutputKind::Directory,
-                verification.clone(),
-                bundle.assets.len(),
-            ),
-        };
+    for artifact in prepared {
+        let name = artifact.name();
+        let output_kind = artifact.output_kind();
         let (destination, existed, previous_kind) =
             resolve_destination(output_directory, name, output_kind, conflict)?;
         let destination_name = destination
@@ -76,12 +82,13 @@ pub(super) fn plan_destinations(
             destination,
             entry: JournalEntry {
                 destination_name,
-                kind,
+                kind: artifact.verification().kind,
                 output_kind,
                 existed,
                 previous_kind,
-                verification,
-                markdown_assets,
+                verification: artifact.verification().clone(),
+                directory_files: artifact.file_count(),
+                entrypoint: artifact.entrypoint().map(str::to_owned),
             },
         });
     }
@@ -93,39 +100,33 @@ pub(super) fn plan_destinations(
     Ok((mode, plans))
 }
 
-pub(super) fn stage_variants(
+pub(super) fn stage_artifacts(
     root: &Path,
-    prepared: Vec<PreparedVariant>,
+    prepared: Vec<PreparedArtifact>,
     plans: &[DestinationPlan],
-    maximum_assets: usize,
-    maximum_bytes: u64,
-) -> Result<Vec<StagedVariant>> {
+    limits: ArtifactTransactionLimits,
+) -> Result<Vec<StagedArtifact>> {
     if prepared.len() != plans.len() {
         return Err(plan_error(
             ErrorStage::Internal,
-            "artifact export plan does not match its prepared variants",
+            "artifact transaction plan does not match its prepared artifacts",
         ));
     }
     let staged_output = root.join("staged-output");
     create_directory(&staged_output, ErrorStage::Encoding)?;
     let mut staged = Vec::with_capacity(plans.len());
-    for (variant, plan) in prepared.into_iter().zip(plans) {
+    for (artifact, plan) in prepared.into_iter().zip(plans) {
         let staged_path = staged_output.join(&plan.entry.destination_name);
-        match variant {
-            PreparedVariant::File { bytes, .. } => {
+        match artifact.into_payload() {
+            PreparedPayload::File(bytes) => {
                 write_new_file(&staged_path, &bytes, ErrorStage::Encoding)?;
             }
-            PreparedVariant::Markdown { bundle, .. } => {
-                validate_markdown_bundle_limits(
-                    &bundle,
-                    maximum_assets,
-                    maximum_bytes,
-                    ErrorStage::Encoding,
-                )?;
-                stage_markdown_bundle(&staged_path, &bundle)?;
+            PreparedPayload::Directory { directory, .. } => {
+                validate_directory_limits(&directory, limits, ErrorStage::Encoding)?;
+                stage_directory(&staged_path, &directory)?;
             }
         }
-        staged.push(StagedVariant {
+        staged.push(StagedArtifact {
             destination: plan.destination.clone(),
             staged_path,
             entry: plan.entry.clone(),
@@ -135,18 +136,12 @@ pub(super) fn stage_variants(
     Ok(staged)
 }
 
-pub(super) fn validate_staged_variants(
-    variants: &[StagedVariant],
-    maximum_assets: usize,
-    maximum_bytes: u64,
+pub(super) fn validate_staged_artifacts(
+    artifacts: &[StagedArtifact],
+    limits: ArtifactTransactionLimits,
 ) -> Result<()> {
-    for variant in variants {
-        validate_entry_path(
-            &variant.staged_path,
-            &variant.entry,
-            maximum_assets,
-            maximum_bytes,
-        )?;
+    for artifact in artifacts {
+        validate_entry_path(&artifact.staged_path, &artifact.entry, limits)?;
     }
     Ok(())
 }
@@ -154,23 +149,21 @@ pub(super) fn validate_staged_variants(
 pub(super) fn validate_entry_path(
     path: &Path,
     entry: &JournalEntry,
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> Result<()> {
     match entry.output_kind {
         OutputKind::File => validate_file(
             path,
             entry.verification.bytes,
             entry.verification.sha256,
-            maximum_bytes,
+            limits.maximum_bytes,
         ),
-        OutputKind::Directory => validate_markdown(
+        OutputKind::Directory => validate_directory(
             path,
-            entry.markdown_assets,
+            entry.directory_files,
             entry.verification.bytes,
             entry.verification.sha256,
-            maximum_assets,
-            maximum_bytes,
+            limits,
         ),
     }
 }
@@ -178,26 +171,23 @@ pub(super) fn validate_entry_path(
 pub(super) fn path_matches_entry(
     path: &Path,
     entry: &JournalEntry,
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> bool {
-    validate_entry_path(path, entry, maximum_assets, maximum_bytes).is_ok()
+    validate_entry_path(path, entry, limits).is_ok()
 }
 
 pub(super) fn output_matches_complete_set(
     output_directory: &Path,
     entries: &[JournalEntry],
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> bool {
-    validate_complete_output_set(output_directory, entries, maximum_assets, maximum_bytes).is_ok()
+    validate_complete_output_set(output_directory, entries, limits).is_ok()
 }
 
 pub(super) fn validate_complete_output_set(
     output_directory: &Path,
     entries: &[JournalEntry],
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> Result<()> {
     if !direct_directory(output_directory, ErrorStage::Commit)? {
         return Err(plan_error(
@@ -246,8 +236,7 @@ pub(super) fn validate_complete_output_set(
         validate_entry_path(
             &output_directory.join(&entry.destination_name),
             entry,
-            maximum_assets,
-            maximum_bytes,
+            limits,
         )?;
     }
     Ok(())
@@ -255,19 +244,19 @@ pub(super) fn validate_complete_output_set(
 
 pub(super) fn recheck_destinations(
     conflict: ConflictPolicy,
-    variants: &[StagedVariant],
+    artifacts: &[StagedArtifact],
 ) -> Result<()> {
-    for variant in variants {
-        let current = direct_metadata(&variant.destination)?;
+    for artifact in artifacts {
+        let current = direct_metadata(&artifact.destination)?;
         match conflict {
             ConflictPolicy::Fail | ConflictPolicy::Uniquify => {
                 if current.is_some() {
-                    return Err(output_exists_error(&variant.destination));
+                    return Err(output_exists_error(&artifact.destination));
                 }
             }
-            ConflictPolicy::Replace => match (variant.entry.existed, current) {
+            ConflictPolicy::Replace => match (artifact.entry.existed, current) {
                 (false, None) => {}
-                (false, Some(_)) => return Err(output_exists_error(&variant.destination)),
+                (false, Some(_)) => return Err(output_exists_error(&artifact.destination)),
                 (true, Some(metadata)) => {
                     let current_kind = metadata_kind(&metadata).ok_or_else(|| {
                         plan_error(
@@ -275,7 +264,7 @@ pub(super) fn recheck_destinations(
                             "artifact export replacement changed to an unsupported file type",
                         )
                     })?;
-                    if Some(current_kind) != variant.entry.previous_kind {
+                    if Some(current_kind) != artifact.entry.previous_kind {
                         return Err(plan_error(
                             ErrorStage::Commit,
                             "artifact export destination kind changed before commit",
@@ -292,54 +281,6 @@ pub(super) fn recheck_destinations(
         }
     }
     Ok(())
-}
-
-pub(super) fn markdown_bundle_digest(bundle: &MarkdownBundle) -> (u64, ContentDigest) {
-    let mut hasher = Sha256::new();
-    let mut bytes = 0_u64;
-    hash_bundle_bytes(&mut hasher, &mut bytes, "index.md", &bundle.markdown);
-    for (path, content) in &bundle.assets {
-        hash_bundle_bytes(&mut hasher, &mut bytes, path, content);
-    }
-    (bytes, ContentDigest::from_bytes(hasher.finalize().into()))
-}
-
-pub(super) fn validate_markdown_bundle_limits(
-    bundle: &MarkdownBundle,
-    maximum_assets: usize,
-    maximum_bytes: u64,
-    stage: ErrorStage,
-) -> Result<()> {
-    if bundle.assets.len() > maximum_assets {
-        return Err(markdown_file_limit_error(stage));
-    }
-    let mut bytes = u64::try_from(bundle.markdown.len()).unwrap_or(u64::MAX);
-    for content in bundle.assets.values() {
-        bytes = bytes.saturating_add(u64::try_from(content.len()).unwrap_or(u64::MAX));
-        if bytes > maximum_bytes {
-            return Err(markdown_byte_limit_error(stage));
-        }
-    }
-    if bytes > maximum_bytes {
-        return Err(markdown_byte_limit_error(stage));
-    }
-    Ok(())
-}
-
-pub(super) fn markdown_file_limit_error(stage: ErrorStage) -> PageKnotError {
-    PageKnotError::new(
-        "pageknot.export.files",
-        stage,
-        "Markdown bundle exceeds the asset count limit",
-    )
-}
-
-pub(super) fn markdown_byte_limit_error(stage: ErrorStage) -> PageKnotError {
-    PageKnotError::new(
-        "pageknot.export.size",
-        stage,
-        "Markdown bundle exceeds the aggregate byte limit",
-    )
 }
 
 fn resolve_destination(
@@ -389,41 +330,61 @@ fn resolve_destination(
     }
 }
 
-fn stage_markdown_bundle(path: &Path, bundle: &MarkdownBundle) -> Result<()> {
+fn stage_directory(path: &Path, directory: &ArtifactDirectory) -> Result<()> {
     create_directory(path, ErrorStage::Encoding)?;
-    write_new_file(
-        &path.join("index.md"),
-        &bundle.markdown,
-        ErrorStage::Encoding,
-    )?;
-    if !bundle.assets.is_empty() {
-        let assets = path.join("assets");
-        create_directory(&assets, ErrorStage::Encoding)?;
-        for (relative, bytes) in &bundle.assets {
-            let name = markdown_asset_name(relative)?;
-            write_new_file(&assets.join(name), bytes, ErrorStage::Encoding)?;
-        }
-        sync_directory(&assets, ErrorStage::Encoding)?;
+    let mut directories = directory
+        .files()
+        .keys()
+        .flat_map(|relative| {
+            let mut parent = Path::new(relative).parent();
+            let mut parents = Vec::new();
+            while let Some(current) = parent.filter(|current| !current.as_os_str().is_empty()) {
+                parents.push(current.to_owned());
+                parent = current.parent();
+            }
+            parents
+        })
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    directories.sort_by(|left, right| {
+        left.components()
+            .count()
+            .cmp(&right.components().count())
+            .then_with(|| left.cmp(right))
+    });
+    for relative in &directories {
+        create_directory(&path.join(relative), ErrorStage::Encoding)?;
+    }
+    for (relative, bytes) in directory.files() {
+        write_new_file(&path.join(relative), bytes, ErrorStage::Encoding)?;
+    }
+    for relative in directories.iter().rev() {
+        sync_directory(&path.join(relative), ErrorStage::Encoding)?;
     }
     sync_directory(path, ErrorStage::Encoding)
 }
 
-fn markdown_asset_name(relative: &str) -> Result<&str> {
-    let Some(name) = relative.strip_prefix("assets/") else {
+fn validate_directory_limits(
+    directory: &ArtifactDirectory,
+    limits: ArtifactTransactionLimits,
+    stage: ErrorStage,
+) -> Result<()> {
+    if directory.file_count() > limits.maximum_files {
         return Err(PageKnotError::new(
-            "pageknot.export.markdown_asset",
-            ErrorStage::Encoding,
-            "Markdown asset path is outside its asset directory",
-        ));
-    };
-    if name.is_empty() || name.contains('/') || name.contains('\\') || name == "." || name == ".." {
-        return Err(PageKnotError::new(
-            "pageknot.export.markdown_asset",
-            ErrorStage::Encoding,
-            "Markdown asset path must be one directly addressed file",
+            "pageknot.export.files",
+            stage,
+            "artifact directory exceeds the file count limit",
         ));
     }
-    Ok(name)
+    if directory.bytes() > limits.maximum_bytes {
+        return Err(PageKnotError::new(
+            "pageknot.export.size",
+            stage,
+            "artifact directory exceeds the aggregate byte limit",
+        ));
+    }
+    Ok(())
 }
 
 fn validate_file(
@@ -456,102 +417,174 @@ fn validate_file(
     Ok(())
 }
 
-fn validate_markdown(
+fn validate_directory(
     path: &Path,
-    expected_assets: usize,
+    expected_files: usize,
     expected_bytes: u64,
     expected_sha256: ContentDigest,
-    maximum_assets: usize,
-    maximum_bytes: u64,
+    limits: ArtifactTransactionLimits,
 ) -> Result<()> {
-    let metadata = fs::symlink_metadata(path).map_err(|error| {
-        plan_io_error(
+    if expected_files == 0 || expected_files > limits.maximum_files {
+        return Err(PageKnotError::new(
+            "pageknot.export.files",
             ErrorStage::Commit,
-            "failed to inspect the staged Markdown directory",
-            error,
-        )
-    })?;
-    if metadata.file_type().is_symlink() || !metadata.is_dir() {
-        return Err(plan_error(
-            ErrorStage::Commit,
-            "staged Markdown output must be a directly addressed directory",
+            "staged artifact directory file count changed before commit",
         ));
     }
-    let mut root_entries = directory_names(path)?;
-    root_entries.sort();
-    let expected_root = if expected_assets == 0 {
-        vec!["index.md".to_owned()]
-    } else {
-        vec!["assets".to_owned(), "index.md".to_owned()]
-    };
-    if root_entries != expected_root {
-        return Err(plan_error(
+    let files = collect_directory_files(path, limits.maximum_files)?;
+    if files.len() != expected_files {
+        return Err(PageKnotError::new(
+            "pageknot.export.files",
             ErrorStage::Commit,
-            "staged Markdown output structure changed before commit",
+            "staged artifact directory file count changed before commit",
         ));
     }
     let mut hasher = Sha256::new();
     let mut total_bytes = 0_u64;
-    hash_bundle_path(
-        &mut hasher,
-        &mut total_bytes,
-        "index.md",
-        &path.join("index.md"),
-        maximum_bytes,
-    )?;
-    if expected_assets != 0 {
-        let assets_path = path.join("assets");
-        let assets_metadata = fs::symlink_metadata(&assets_path).map_err(|error| {
-            plan_io_error(
-                ErrorStage::Commit,
-                "failed to inspect staged Markdown assets",
-                error,
-            )
-        })?;
-        if assets_metadata.file_type().is_symlink() || !assets_metadata.is_dir() {
-            return Err(plan_error(
-                ErrorStage::Commit,
-                "staged Markdown assets must be a directly addressed directory",
-            ));
-        }
-        let mut assets = directory_paths(&assets_path)?;
-        assets.sort_by(|left, right| left.0.cmp(&right.0));
-        if assets.len() != expected_assets || assets.len() > maximum_assets {
-            return Err(PageKnotError::new(
-                "pageknot.export.files",
-                ErrorStage::Commit,
-                "staged Markdown asset count changed before commit",
-            ));
-        }
-        for (name, asset_path) in assets {
-            let remaining = maximum_bytes.saturating_sub(total_bytes);
-            hash_bundle_path(
-                &mut hasher,
-                &mut total_bytes,
-                &format!("assets/{name}"),
-                &asset_path,
-                remaining,
-            )?;
-        }
+    for (relative, file_path) in files {
+        let remaining = limits.maximum_bytes.saturating_sub(total_bytes);
+        hash_directory_path(
+            &mut hasher,
+            &mut total_bytes,
+            &relative,
+            &file_path,
+            remaining,
+        )?;
     }
-    if total_bytes != expected_bytes || total_bytes > maximum_bytes {
+    if total_bytes != expected_bytes || total_bytes > limits.maximum_bytes {
         return Err(PageKnotError::new(
             "pageknot.export.size",
             ErrorStage::Commit,
-            "staged Markdown byte count changed before commit",
+            "staged artifact directory byte count changed before commit",
         ));
     }
     if ContentDigest::from_bytes(hasher.finalize().into()) != expected_sha256 {
         return Err(PageKnotError::new(
             "pageknot.artifact.digest",
             ErrorStage::Commit,
-            "staged Markdown digest changed before commit",
+            "staged artifact directory digest changed before commit",
         ));
     }
     Ok(())
 }
 
-fn hash_bundle_path(
+fn collect_directory_files(root: &Path, maximum_files: usize) -> Result<Vec<(String, PathBuf)>> {
+    let metadata = fs::symlink_metadata(root).map_err(|error| {
+        plan_io_error(
+            ErrorStage::Commit,
+            "failed to inspect the staged artifact directory",
+            error,
+        )
+    })?;
+    if metadata.file_type().is_symlink() || !metadata.is_dir() {
+        return Err(plan_error(
+            ErrorStage::Commit,
+            "staged artifact output must be a directly addressed directory",
+        ));
+    }
+    let mut pending = vec![(root.to_owned(), String::new())];
+    let mut directories = BTreeSet::new();
+    let mut files = Vec::new();
+    while let Some((directory, relative_directory)) = pending.pop() {
+        let entries = fs::read_dir(&directory).map_err(|error| {
+            plan_io_error(
+                ErrorStage::Commit,
+                "failed to enumerate a staged artifact directory",
+                error,
+            )
+        })?;
+        for entry in entries {
+            let entry = entry.map_err(|error| {
+                plan_io_error(
+                    ErrorStage::Commit,
+                    "failed to enumerate a staged artifact directory",
+                    error,
+                )
+            })?;
+            let name = entry.file_name().into_string().map_err(|_| {
+                plan_error(
+                    ErrorStage::Commit,
+                    "staged artifact directory contains a non-UTF-8 name",
+                )
+            })?;
+            if name.contains('\\') {
+                return Err(plan_error(
+                    ErrorStage::Commit,
+                    "staged artifact directory contains a non-portable name",
+                ));
+            }
+            let relative = if relative_directory.is_empty() {
+                name
+            } else {
+                format!("{relative_directory}/{name}")
+            };
+            let metadata = fs::symlink_metadata(entry.path()).map_err(|error| {
+                plan_io_error(
+                    ErrorStage::Commit,
+                    "failed to inspect a staged artifact directory entry",
+                    error,
+                )
+            })?;
+            if metadata.file_type().is_symlink() {
+                return Err(plan_error(
+                    ErrorStage::Commit,
+                    "staged artifact directory must not contain symbolic links",
+                ));
+            }
+            if metadata.is_file() {
+                files.push((relative, entry.path()));
+                if files.len() > maximum_files {
+                    return Err(PageKnotError::new(
+                        "pageknot.export.files",
+                        ErrorStage::Commit,
+                        "staged artifact directory exceeds the file count limit",
+                    ));
+                }
+            } else if metadata.is_dir() {
+                if !directories.insert(relative.clone()) || directories.len() > maximum_files {
+                    return Err(PageKnotError::new(
+                        "pageknot.export.files",
+                        ErrorStage::Commit,
+                        "staged artifact directory exceeds the directory count limit",
+                    ));
+                }
+                pending.push((entry.path(), relative));
+            } else {
+                return Err(plan_error(
+                    ErrorStage::Commit,
+                    "staged artifact directory contains an unsupported filesystem entry",
+                ));
+            }
+        }
+    }
+    let expected_directories = files
+        .iter()
+        .flat_map(|(relative, _)| {
+            let mut parent = Path::new(relative).parent();
+            let mut parents = Vec::new();
+            while let Some(current) = parent.filter(|current| !current.as_os_str().is_empty()) {
+                parents.push(current.to_string_lossy().into_owned());
+                parent = current.parent();
+            }
+            parents
+        })
+        .collect::<BTreeSet<_>>();
+    if directories != expected_directories {
+        return Err(plan_error(
+            ErrorStage::Commit,
+            "staged artifact directory contains an empty directory",
+        ));
+    }
+    files.sort_by(|(left, _), (right, _)| {
+        left.matches('/')
+            .count()
+            .cmp(&right.matches('/').count())
+            .then_with(|| left.cmp(right))
+    });
+    Ok(files)
+}
+
+fn hash_directory_path(
     hasher: &mut Sha256,
     total_bytes: &mut u64,
     relative_path: &str,
@@ -563,7 +596,7 @@ fn hash_bundle_path(
         return Err(PageKnotError::new(
             "pageknot.export.size",
             ErrorStage::Commit,
-            "staged Markdown file exceeds the export byte limit",
+            "staged artifact directory file exceeds the export byte limit",
         ));
     }
     hasher.update(relative_path.as_bytes());
@@ -572,7 +605,7 @@ fn hash_bundle_path(
     let mut file = File::open(path).map_err(|error| {
         plan_io_error(
             ErrorStage::Commit,
-            "failed to read a staged Markdown file",
+            "failed to read a staged artifact directory file",
             error,
         )
     })?;
@@ -580,7 +613,7 @@ fn hash_bundle_path(
     if read != metadata.len() {
         return Err(plan_error(
             ErrorStage::Commit,
-            "staged Markdown file byte count changed before commit",
+            "staged artifact directory file byte count changed before commit",
         ));
     }
     *total_bytes = total_bytes.saturating_add(read);
@@ -624,18 +657,6 @@ fn hash_open_file(file: &mut File, hasher: &mut Sha256, maximum_bytes: u64) -> R
         }
         hasher.update(&buffer[..read]);
     }
-}
-
-fn hash_bundle_bytes(hasher: &mut Sha256, bytes: &mut u64, path: &str, content: &[u8]) {
-    hasher.update(path.as_bytes());
-    hasher.update([0]);
-    hasher.update(
-        u64::try_from(content.len())
-            .unwrap_or(u64::MAX)
-            .to_le_bytes(),
-    );
-    hasher.update(content);
-    *bytes = bytes.saturating_add(u64::try_from(content.len()).unwrap_or(u64::MAX));
 }
 
 fn direct_regular_file(path: &Path, stage: ErrorStage) -> Result<fs::Metadata> {
@@ -711,7 +732,7 @@ fn unique_candidate(requested: &Path, suffix: u32, output_kind: OutputKind) -> P
         let name = requested
             .file_name()
             .and_then(|name| name.to_str())
-            .unwrap_or("capture-markdown");
+            .unwrap_or("capture-directory");
         return parent.join(format!("{name}-{suffix}"));
     }
     let stem = requested
@@ -726,64 +747,6 @@ fn unique_candidate(requested: &Path, suffix: u32, output_kind: OutputKind) -> P
             |extension| format!("{stem}-{suffix}.{extension}"),
         );
     parent.join(name)
-}
-
-fn directory_names(path: &Path) -> Result<Vec<String>> {
-    fs::read_dir(path)
-        .map_err(|error| {
-            plan_io_error(
-                ErrorStage::Commit,
-                "failed to enumerate an artifact variant directory",
-                error,
-            )
-        })?
-        .map(|entry| {
-            entry
-                .map_err(|error| {
-                    plan_io_error(
-                        ErrorStage::Commit,
-                        "failed to enumerate an artifact variant directory",
-                        error,
-                    )
-                })?
-                .file_name()
-                .into_string()
-                .map_err(|_| {
-                    plan_error(
-                        ErrorStage::Commit,
-                        "artifact variant directory contains a non-UTF-8 name",
-                    )
-                })
-        })
-        .collect()
-}
-
-fn directory_paths(path: &Path) -> Result<Vec<(String, PathBuf)>> {
-    fs::read_dir(path)
-        .map_err(|error| {
-            plan_io_error(
-                ErrorStage::Commit,
-                "failed to enumerate an artifact variant directory",
-                error,
-            )
-        })?
-        .map(|entry| {
-            let entry = entry.map_err(|error| {
-                plan_io_error(
-                    ErrorStage::Commit,
-                    "failed to enumerate an artifact variant directory",
-                    error,
-                )
-            })?;
-            let name = entry.file_name().into_string().map_err(|_| {
-                plan_error(
-                    ErrorStage::Commit,
-                    "artifact variant directory contains a non-UTF-8 name",
-                )
-            })?;
-            Ok((name, entry.path()))
-        })
-        .collect()
 }
 
 fn direct_directory(path: &Path, stage: ErrorStage) -> Result<bool> {

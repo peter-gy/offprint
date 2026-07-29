@@ -13,6 +13,7 @@ mod fallback;
 mod repair;
 mod sandbox;
 mod state;
+mod verified;
 mod verify;
 
 pub use csp::content_security_policy;
@@ -28,8 +29,9 @@ pub use state::{
     STATE_RESTORATION_SCRIPT, STATE_SCRIPT_ELEMENT_ID, apply_state_restoration,
     state_restoration_script_digest,
 };
+pub use verified::{VerifiedHtml, VerifiedHtmlProof};
 pub use verify::{
-    inspect_html, verify_static, verify_static_sandboxed, verify_static_with_manifest,
+    inspect_html, verify_html, verify_static, verify_static_sandboxed, verify_static_with_manifest,
 };
 
 pub const MANIFEST_ELEMENT_ID: &str = "pageknot-manifest";

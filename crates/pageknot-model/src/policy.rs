@@ -326,12 +326,24 @@ impl CaptureProfile {
     }
 
     pub fn apply_to(&self, request: &mut crate::CaptureRequest) {
+        let crate::ArtifactSpec::Html(artifact) = &request.artifact;
+        let inherits_artifact_limit = matches!(
+            artifact.target,
+            crate::ArtifactTarget::Bytes { max_bytes }
+                if max_bytes == request.limits.artifact_bytes
+        );
         request.environment = self.environment.clone();
         request.readiness = self.readiness.clone();
         request.capture = self.capture.clone();
         request.network = self.network.clone();
         request.limits = self.limits.clone();
         request.verification = self.verification;
+        if inherits_artifact_limit {
+            let crate::ArtifactSpec::Html(artifact) = &mut request.artifact;
+            artifact.target = crate::ArtifactTarget::Bytes {
+                max_bytes: self.limits.artifact_bytes,
+            };
+        }
     }
 }
 
@@ -345,5 +357,39 @@ impl Default for CaptureProfile {
             limits: CaptureLimits::default(),
             verification: VerificationPolicy::Offline,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{ArtifactSpec, ArtifactTarget, CaptureProfile, CaptureRequest};
+
+    #[test]
+    fn profile_updates_an_inherited_memory_artifact_limit() -> crate::Result<()> {
+        let mut request =
+            CaptureRequest::builder("https://example.com").and_then(|builder| builder.build())?;
+        let mut profile = CaptureProfile::default();
+        profile.limits.artifact_bytes = 4096;
+
+        profile.apply_to(&mut request);
+
+        let ArtifactSpec::Html(artifact) = request.artifact;
+        assert_eq!(artifact.target, ArtifactTarget::Bytes { max_bytes: 4096 });
+        Ok(())
+    }
+
+    #[test]
+    fn profile_preserves_an_explicit_memory_artifact_limit() -> crate::Result<()> {
+        let mut request =
+            CaptureRequest::builder("https://example.com").and_then(|builder| builder.build())?;
+        request.artifact = ArtifactSpec::html_bytes(2048);
+        let mut profile = CaptureProfile::default();
+        profile.limits.artifact_bytes = 4096;
+
+        profile.apply_to(&mut request);
+
+        let ArtifactSpec::Html(artifact) = request.artifact;
+        assert_eq!(artifact.target, ArtifactTarget::Bytes { max_bytes: 2048 });
+        Ok(())
     }
 }

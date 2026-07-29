@@ -1,14 +1,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
-use pageknot_export::MarkdownBundle;
+use pageknot_export::{MarkdownBundle, markdown_byte_limit_error, markdown_file_limit_error};
 use pageknot_model::{ErrorStage, PortablePath, Result};
 
 use super::export::{MAXIMUM_EXPORT_BYTES, MAXIMUM_MARKDOWN_ASSETS, export_error};
 use super::{BoundedFileReadError, read_bounded_file};
-use crate::export_transaction::{
-    markdown_byte_limit_error, markdown_file_limit_error, validate_markdown_bundle_limits,
-};
 
 pub(super) async fn read_markdown_bundle(path: &PortablePath) -> Result<MarkdownBundle> {
     read_markdown_bundle_with_limits(path, MAXIMUM_MARKDOWN_ASSETS, MAXIMUM_EXPORT_BYTES).await
@@ -78,12 +75,7 @@ pub(super) async fn read_markdown_bundle_with_limits(
         ));
     }
     let bundle = MarkdownBundle { markdown, assets };
-    validate_markdown_bundle_limits(
-        &bundle,
-        maximum_assets,
-        maximum_bytes,
-        ErrorStage::Verification,
-    )?;
+    bundle.validate_limits(maximum_assets, maximum_bytes, ErrorStage::Verification)?;
     Ok(bundle)
 }
 

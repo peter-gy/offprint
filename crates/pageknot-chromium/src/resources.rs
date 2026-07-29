@@ -19,11 +19,14 @@ use self::identity::{
 };
 use self::normalization::{fulfilled_response_headers, validate_intercepted_body};
 use self::storage::{
-    ObservedBody, append_observed_bytes_at, append_observed_data, append_observed_data_at,
-    begin_observed_stream, complete_observed_stream, mark_observed_body_too_large,
-    mark_observed_body_unavailable, observed_body_error, update_observed_completion,
+    ObservedBody, append_observed_bytes_at, append_observed_data, begin_observed_stream,
+    complete_observed_stream, mark_observed_body_too_large, mark_observed_body_unavailable,
+    observed_body_error, update_observed_completion,
 };
-use self::stream::capture_service_worker_body;
+use self::stream::{
+    capture_service_worker_body, capture_service_worker_buffered_data, service_worker_body_pending,
+};
+use self::tasks::OrderedBodyTasks;
 use crate::CdpClient;
 use crate::targets::SessionRegistry;
 
@@ -31,11 +34,15 @@ mod identity;
 mod normalization;
 mod storage;
 mod stream;
+mod tasks;
+#[cfg(test)]
+pub(crate) mod test_support;
 
 pub(crate) use normalization::{RENDERED_RESPONSE_RESOURCE_TYPES, captures_rendered_response};
 pub(crate) use stream::resource_body_stream;
 
 const MAXIMUM_OBSERVED_RESPONSES: usize = 20_000;
+const MAXIMUM_RESOURCE_BODY_TASKS: usize = 64;
 const OBSERVED_RESPONSE_WAIT: Duration = Duration::from_secs(2);
 
 #[derive(Debug)]
@@ -56,9 +63,13 @@ pub(crate) struct InterceptedResponse<'a> {
     pub(crate) session_id: &'a str,
     pub(crate) request_id: &'a str,
     pub(crate) network_id: &'a str,
-    pub(crate) response_code: u16,
     pub(crate) parameters: &'a Value,
     pub(crate) cancellation: CancellationToken,
+}
+
+pub(crate) struct CapturedInterceptedResponse {
+    pub(crate) response_headers: Vec<Value>,
+    pub(crate) body: String,
 }
 
 impl ObservedResources {
@@ -75,9 +86,26 @@ impl ObservedResources {
         let task_cancellation = cancellation.clone();
         let task = tokio::spawn(async move {
             let mut events = client.subscribe();
+            let mut body_tasks = OrderedBodyTasks::new(MAXIMUM_RESOURCE_BODY_TASKS);
             loop {
                 let event = tokio::select! {
-                    () = task_cancellation.cancelled() => return,
+                    () = task_cancellation.cancelled() => {
+                        body_tasks.abort_and_drain().await;
+                        return;
+                    }
+                    completed = body_tasks.join_next(), if !body_tasks.is_empty() => {
+                        if !handle_body_task_completion(
+                            completed,
+                            &task_state,
+                            &task_changed,
+                        )
+                        .await
+                        {
+                            body_tasks.abort_and_drain().await;
+                            return;
+                        }
+                        continue;
+                    }
                     event = events.recv() => event,
                 };
                 let event = match event {
@@ -92,6 +120,7 @@ impl ObservedResources {
                             .retryable(true),
                         );
                         task_changed.notify_waiters();
+                        body_tasks.abort_and_drain().await;
                         return;
                     }
                 };
@@ -110,6 +139,7 @@ impl ObservedResources {
                             continue;
                         };
                         let key = request_key(&response.session_id, &response.request_id);
+                        let request_id = response.request_id.clone();
                         let stream_service_worker_body = event
                             .params
                             .pointer("/response/fromServiceWorker")
@@ -117,36 +147,34 @@ impl ObservedResources {
                             .unwrap_or(false)
                             && captures_rendered_response(
                                 event.params.get("type").and_then(Value::as_str),
-                            )
-                            && begin_observed_stream(&task_state, &key).await;
-                        let buffered_data = if stream_service_worker_body {
-                            client
-                                .command(
-                                    "Network.streamResourceContent",
-                                    json!({"requestId": response.request_id.as_str()}),
-                                    Some(session_id),
-                                )
-                                .await
-                                .ok()
-                                .and_then(|result| {
-                                    result
-                                        .get("bufferedData")
-                                        .and_then(Value::as_str)
-                                        .map(str::to_owned)
-                                })
-                        } else {
-                            None
-                        };
+                            );
                         record_response(&task_state, key.clone(), response).await;
-                        if stream_service_worker_body
-                            && let Some(buffered_data) = buffered_data
-                            && let Err(error) =
-                                append_observed_data_at(&task_state, &key, &buffered_data, true)
+                        if stream_service_worker_body {
+                            if !drain_ready_body_tasks(&mut body_tasks, &task_state, &task_changed)
+                                .await
+                            {
+                                body_tasks.abort_and_drain().await;
+                                return;
+                            }
+                            if !body_tasks.has_capacity() {
+                                mark_observed_body_unavailable(&task_state, &key).await;
+                            } else if begin_observed_stream(&task_state, &key).await {
+                                let body_client = client.clone();
+                                let body_state = Arc::clone(&task_state);
+                                let body_session_id = session_id.to_owned();
+                                let body_cancellation = task_cancellation.clone();
+                                let spawned = body_tasks.spawn(key.clone(), async move {
+                                    capture_service_worker_buffered_data(
+                                        &body_client,
+                                        &body_state,
+                                        &body_session_id,
+                                        &request_id,
+                                        body_cancellation,
+                                    )
                                     .await
-                        {
-                            task_state.lock().await.error = Some(error);
-                            task_changed.notify_waiters();
-                            return;
+                                });
+                                debug_assert!(spawned);
+                            }
                         }
                     }
                     "Network.dataReceived" => {
@@ -166,15 +194,63 @@ impl ObservedResources {
                         }
                     }
                     "Network.loadingFinished" => {
-                        capture_service_worker_body(
-                            &client,
-                            &task_state,
-                            session_id,
-                            &event.params,
-                        )
-                        .await;
-                        update_observed_completion(&task_state, session_id, &event.params, true)
+                        let Some(request_id) =
+                            event.params.get("requestId").and_then(Value::as_str)
+                        else {
+                            continue;
+                        };
+                        let key = request_key(session_id, request_id);
+                        if service_worker_body_pending(&task_state, &key).await {
+                            if !drain_ready_body_tasks(&mut body_tasks, &task_state, &task_changed)
+                                .await
+                            {
+                                body_tasks.abort_and_drain().await;
+                                return;
+                            }
+                            if body_tasks.has_capacity() {
+                                let body_client = client.clone();
+                                let body_state = Arc::clone(&task_state);
+                                let body_session_id = session_id.to_owned();
+                                let body_parameters = event.params.clone();
+                                let body_cancellation = task_cancellation.clone();
+                                let spawned = body_tasks.spawn(key, async move {
+                                    capture_service_worker_body(
+                                        &body_client,
+                                        &body_state,
+                                        &body_session_id,
+                                        &body_parameters,
+                                        body_cancellation,
+                                    )
+                                    .await?;
+                                    update_observed_completion(
+                                        &body_state,
+                                        &body_session_id,
+                                        &body_parameters,
+                                        true,
+                                    )
+                                    .await;
+                                    Ok(())
+                                });
+                                debug_assert!(spawned);
+                            } else {
+                                mark_observed_body_unavailable(&task_state, &key).await;
+                                update_observed_completion(
+                                    &task_state,
+                                    session_id,
+                                    &event.params,
+                                    true,
+                                )
+                                .await;
+                            }
+                        } else {
+                            update_observed_completion(
+                                &task_state,
+                                session_id,
+                                &event.params,
+                                true,
+                            )
                             .await;
+                        }
                     }
                     "Network.loadingFailed" => {
                         update_observed_completion(&task_state, session_id, &event.params, false)
@@ -324,6 +400,52 @@ impl ObservedResources {
             let _ignored = task.await;
         }
     }
+
+    #[cfg(test)]
+    pub(crate) async fn has_request(&self, session_id: &str, request_id: &str) -> bool {
+        self.state
+            .lock()
+            .await
+            .requests
+            .contains_key(&request_key(session_id, request_id))
+    }
+}
+
+async fn drain_ready_body_tasks(
+    tasks: &mut OrderedBodyTasks,
+    state: &Mutex<ObservedResourceState>,
+    changed: &Notify,
+) -> bool {
+    while let Some(completed) = tasks.try_join_next() {
+        if !handle_body_task_completion(Some(completed), state, changed).await {
+            return false;
+        }
+    }
+    true
+}
+
+async fn handle_body_task_completion(
+    completed: Option<std::result::Result<pageknot_model::Result<()>, tokio::task::JoinError>>,
+    state: &Mutex<ObservedResourceState>,
+    changed: &Notify,
+) -> bool {
+    let error = match completed {
+        Some(Ok(Ok(()))) => None,
+        Some(Ok(Err(error))) => Some(error),
+        Some(Err(error)) => Some(PageKnotError::new(
+            "pageknot.browser.resource_task",
+            ErrorStage::Resource,
+            format!("resource body task failed: {error}"),
+        )),
+        None => None,
+    };
+    if let Some(error) = error {
+        state.lock().await.error = Some(error);
+        changed.notify_waiters();
+        return false;
+    }
+    changed.notify_waiters();
+    true
 }
 
 impl ObservedResourceRecorder {
@@ -331,7 +453,7 @@ impl ObservedResourceRecorder {
         &self,
         client: &CdpClient,
         response: InterceptedResponse<'_>,
-    ) -> Result<()> {
+    ) -> Result<CapturedInterceptedResponse> {
         let taken = client
             .command(
                 "Fetch.takeResponseBodyAsStream",
@@ -385,41 +507,14 @@ impl ObservedResourceRecorder {
             .map_err(|error| with_intercepted_resource_url(error, response.parameters))?;
         validate_intercepted_body(response.parameters, body.len())
             .map_err(|error| with_intercepted_resource_url(error, response.parameters))?;
-        let encoded = base64::engine::general_purpose::STANDARD.encode(&body);
-        client
-            .command(
-                "Fetch.fulfillRequest",
-                json!({
-                    "requestId": response.request_id,
-                    "responseCode": response.response_code,
-                    "responseHeaders": fulfilled_response_headers(response.parameters),
-                    "body": encoded,
-                }),
-                Some(response.session_id),
-            )
-            .await
-            .map_err(|error| with_intercepted_resource_url(error, response.parameters))
-            .map(|_| ())
+        Ok(CapturedInterceptedResponse {
+            response_headers: fulfilled_response_headers(response.parameters),
+            body: base64::engine::general_purpose::STANDARD.encode(&body),
+        })
     }
 
-    pub(crate) async fn fail_intercepted_response(
-        &self,
-        client: &CdpClient,
-        session_id: &str,
-        request_id: &str,
-        network_id: &str,
-    ) {
+    pub(crate) async fn reject_intercepted_response(&self, session_id: &str, network_id: &str) {
         self.reject_stream(session_id, network_id).await;
-        let _ignored = client
-            .command(
-                "Fetch.failRequest",
-                json!({
-                    "requestId": request_id,
-                    "errorReason": "Failed",
-                }),
-                Some(session_id),
-            )
-            .await;
     }
 
     pub(crate) async fn begin_stream(
@@ -508,7 +603,15 @@ impl Drop for ObservedResources {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashSet;
+    use std::sync::Arc;
+
+    use pageknot_browser::ResourceObservationLimits;
+    use serde_json::json;
+    use tokio::sync::RwLock;
+
     use super::*;
+    use crate::resources::test_support::TestCdpServer;
 
     #[tokio::test]
     async fn enabled_notification_preserves_a_change_before_await() {
@@ -520,6 +623,99 @@ mod tests {
         changed.notify_waiters();
 
         assert!(timeout(Duration::from_millis(20), notified).await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn slow_body_commands_do_not_block_later_network_events()
+    -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let server = TestCdpServer::start("Network.streamResourceContent").await?;
+        let client = CdpClient::connect(server.endpoint().clone()).await?;
+        let sessions = Arc::new(RwLock::new(HashSet::from(["session".to_owned()])));
+        let observed = ObservedResources::start(
+            client.clone(),
+            sessions,
+            ResourceObservationLimits::default(),
+        );
+        wait_for_receivers(&client, 1).await?;
+
+        server.send_event(
+            "Network.requestWillBeSent",
+            json!({
+                "requestId": "slow",
+                "frameId": "frame",
+                "request": {
+                    "url": "https://example.test/slow.svg",
+                    "method": "GET",
+                    "headers": {}
+                }
+            }),
+            "session",
+        )?;
+        wait_for_request(&observed, "slow").await?;
+        server.send_event(
+            "Network.responseReceived",
+            json!({
+                "requestId": "slow",
+                "frameId": "frame",
+                "type": "Image",
+                "response": {
+                    "url": "https://example.test/slow.svg",
+                    "status": 200,
+                    "mimeType": "image/svg+xml",
+                    "fromServiceWorker": true
+                }
+            }),
+            "session",
+        )?;
+        server
+            .wait_for_method("Network.streamResourceContent")
+            .await?;
+
+        server.send_event(
+            "Network.requestWillBeSent",
+            json!({
+                "requestId": "later",
+                "frameId": "frame",
+                "request": {
+                    "url": "https://example.test/later.svg",
+                    "method": "GET",
+                    "headers": {}
+                }
+            }),
+            "session",
+        )?;
+
+        wait_for_request(&observed, "later").await?;
+        observed.close().await;
+        client.close().await?;
+        server.close().await;
+        Ok(())
+    }
+
+    async fn wait_for_receivers(
+        client: &CdpClient,
+        expected: usize,
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        timeout(Duration::from_secs(2), async {
+            while client.event_receiver_count() < expected {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
+        Ok(())
+    }
+
+    async fn wait_for_request(
+        observed: &ObservedResources,
+        request_id: &str,
+    ) -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        timeout(Duration::from_secs(2), async {
+            while !observed.has_request("session", request_id).await {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
+        Ok(())
     }
 
     #[test]

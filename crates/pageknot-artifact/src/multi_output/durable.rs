@@ -39,12 +39,26 @@ pub(super) fn write_new_file(path: &Path, bytes: &[u8], stage: ErrorStage) -> Re
     sync_parent(path, stage)
 }
 
-pub(super) fn durable_rename(source: &Path, destination: &Path) -> Result<()> {
+#[derive(Debug)]
+pub(super) enum DurabilityOutcome {
+    Synced,
+    AppliedWithSyncWarning,
+}
+
+pub(super) fn durable_rename(source: &Path, destination: &Path) -> Result<DurabilityOutcome> {
+    durable_rename_with(source, destination, sync_directory)
+}
+
+fn durable_rename_with(
+    source: &Path,
+    destination: &Path,
+    mut sync: impl FnMut(&Path, ErrorStage) -> Result<()>,
+) -> Result<DurabilityOutcome> {
     let source_parent = parent(source);
     let destination_parent = parent(destination);
-    sync_directory(source_parent, ErrorStage::Commit)?;
+    sync(source_parent, ErrorStage::Commit)?;
     if destination_parent != source_parent {
-        sync_directory(destination_parent, ErrorStage::Commit)?;
+        sync(destination_parent, ErrorStage::Commit)?;
     }
     fs::rename(source, destination).map_err(|error| {
         io_error(
@@ -53,14 +67,17 @@ pub(super) fn durable_rename(source: &Path, destination: &Path) -> Result<()> {
             error,
         )
     })?;
-    sync_directory(source_parent, ErrorStage::Commit)?;
+    let mut warning = sync(source_parent, ErrorStage::Commit).err();
     if destination_parent != source_parent {
-        sync_directory(destination_parent, ErrorStage::Commit)?;
+        warning = warning.or_else(|| sync(destination_parent, ErrorStage::Commit).err());
     }
-    Ok(())
+    Ok(match warning {
+        Some(_error) => DurabilityOutcome::AppliedWithSyncWarning,
+        None => DurabilityOutcome::Synced,
+    })
 }
 
-pub(super) fn durable_hard_link(source: &Path, destination: &Path) -> Result<()> {
+pub(super) fn durable_hard_link(source: &Path, destination: &Path) -> Result<DurabilityOutcome> {
     let source_parent = parent(source);
     let destination_parent = parent(destination);
     sync_directory(source_parent, ErrorStage::Commit)?;
@@ -74,7 +91,12 @@ pub(super) fn durable_hard_link(source: &Path, destination: &Path) -> Result<()>
             error,
         )
     })?;
-    sync_directory(destination_parent, ErrorStage::Commit)
+    Ok(
+        match sync_directory(destination_parent, ErrorStage::Commit) {
+            Ok(()) => DurabilityOutcome::Synced,
+            Err(_error) => DurabilityOutcome::AppliedWithSyncWarning,
+        },
+    )
 }
 
 pub(super) fn cleanup_transaction_root(root: &Path) -> Result<()> {
@@ -210,5 +232,42 @@ mod tests {
         assert!(!super::directory_sync_is_unavailable(
             &std::io::Error::from_raw_os_error(13)
         ));
+    }
+}
+
+#[cfg(test)]
+mod rename_tests {
+    use std::fs;
+
+    use pageknot_model::{ErrorStage, PageKnotError};
+
+    use super::{DurabilityOutcome, durable_rename_with};
+
+    #[test]
+    fn post_rename_sync_failure_reports_an_applied_outcome() -> std::io::Result<()> {
+        let directory = tempfile::tempdir()?;
+        let source = directory.path().join("source");
+        let destination = directory.path().join("destination");
+        fs::write(&source, b"committed")?;
+        let mut syncs = 0_usize;
+
+        let outcome = durable_rename_with(&source, &destination, |_, _| {
+            syncs = syncs.saturating_add(1);
+            if syncs == 2 {
+                Err(PageKnotError::new(
+                    "pageknot.export.output",
+                    ErrorStage::Commit,
+                    "injected post-rename parent sync failure",
+                ))
+            } else {
+                Ok(())
+            }
+        })
+        .map_err(|error| std::io::Error::other(error.to_string()))?;
+
+        assert!(matches!(outcome, DurabilityOutcome::AppliedWithSyncWarning));
+        assert!(!source.exists());
+        assert_eq!(fs::read(destination)?, b"committed");
+        Ok(())
     }
 }

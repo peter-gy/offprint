@@ -2,11 +2,11 @@ use std::collections::BTreeMap;
 
 use pageknot::{
     BrowserChannel, BrowserInstallationPolicy, CaptureProfile, CaptureRequest, CaptureScope,
-    ColorScheme, ConfigProvenance, MAXIMUM_CAPTURE_NODES, Milliseconds, MissingResourcePolicy,
-    NetworkPolicy, ReadinessMode, VerificationPolicy, Viewport,
+    ColorScheme, ConfigProvenance, LazyLoadPolicy, MAXIMUM_CAPTURE_NODES, Milliseconds,
+    MissingResourcePolicy, NetworkPolicy, ReadinessMode, VerificationPolicy, Viewport,
 };
 
-use super::{ConfigFile, resolve_documents};
+use super::{BrowserSelection, ConfigFile, resolve_documents};
 
 #[test]
 fn environment_overrides_explicit_and_user_profile_values() {
@@ -64,9 +64,84 @@ fn environment_selects_network_idle_readiness() {
     );
 
     assert_eq!(
-        resolved.map(|resolved| resolved.profile.readiness.mode),
-        Ok(ReadinessMode::NetworkIdle)
+        resolved.map(|resolved| (
+            resolved.profile.readiness.mode,
+            resolved.profile.readiness.lazy_load,
+        )),
+        Ok((ReadinessMode::NetworkIdle, LazyLoadPolicy::Disabled))
     );
+}
+
+#[test]
+fn one_config_source_rejects_two_browser_selections() {
+    let explicit = toml::from_str::<ConfigFile>(
+        r#"
+        [browser]
+        path = "/opt/chromium"
+        cdp_url = "http://127.0.0.1:9222"
+        "#,
+    );
+    let result = explicit
+        .ok()
+        .map(|explicit| resolve_documents(ConfigFile::default(), explicit, &BTreeMap::new(), None));
+
+    assert!(result.is_some_and(|result| {
+        result.is_err_and(|error| error.code.as_str() == "pageknot.config.value")
+    }));
+}
+
+#[test]
+fn environment_rejects_two_browser_selections() {
+    let environment = BTreeMap::from([
+        (
+            "PAGEKNOT_BROWSER_PATH".to_owned(),
+            "/opt/chromium".to_owned(),
+        ),
+        (
+            "PAGEKNOT_CDP_URL".to_owned(),
+            "http://127.0.0.1:9222".to_owned(),
+        ),
+    ]);
+
+    let result = resolve_documents(
+        ConfigFile::default(),
+        ConfigFile::default(),
+        &environment,
+        None,
+    );
+
+    assert!(result.is_err_and(|error| error.code.as_str() == "pageknot.config.value"));
+}
+
+#[test]
+fn later_browser_source_replaces_earlier_selection() {
+    let user = toml::from_str::<ConfigFile>(
+        r#"
+        [browser]
+        path = "/opt/chromium"
+        "#,
+    );
+    let explicit = toml::from_str::<ConfigFile>(
+        r#"
+        [browser]
+        cdp_url = "http://127.0.0.1:9222"
+        "#,
+    );
+    let resolved = user.ok().zip(explicit.ok()).and_then(|(user, explicit)| {
+        resolve_documents(user, explicit, &BTreeMap::new(), None).ok()
+    });
+
+    assert!(matches!(
+        resolved.as_ref().map(|resolved| &resolved.browser),
+        Some(BrowserSelection::Remote(_))
+    ));
+    assert!(resolved.as_ref().is_some_and(|resolved| {
+        !resolved.configuration.contains_key("browser.path")
+            && resolved
+                .configuration
+                .get("browser.cdpUrl")
+                .is_some_and(|value| value.provenance == ConfigProvenance::ExplicitConfig)
+    }));
 }
 
 #[test]
@@ -116,6 +191,7 @@ fn environment_applies_the_typed_capture_profile_overlay() {
     profile.environment.color_scheme = ColorScheme::Dark;
     profile.limits.duration = Milliseconds::new(45_000);
     profile.readiness.mode = ReadinessMode::NetworkIdle;
+    profile.readiness.lazy_load = LazyLoadPolicy::Disabled;
     profile.readiness.delay = Milliseconds::new(750);
     profile.capture.missing_resources = MissingResourcePolicy::Fail;
     profile.capture.scope = CaptureScope::Page;
@@ -444,7 +520,38 @@ fn browser_flag_replaces_the_configured_endpoint_in_diagnostics() {
     assert!(resolved.as_ref().is_some_and(|resolved| {
         !resolved.configuration.contains_key("browser.cdpUrl")
             && !resolved.uses_remote_browser()
-            && resolved.browser_path.as_deref() == Some("/opt/chromium")
+            && matches!(
+                &resolved.browser,
+                BrowserSelection::Executable(path) if path == "/opt/chromium"
+            )
+    }));
+}
+
+#[test]
+fn cdp_flag_replaces_the_configured_path_in_diagnostics() {
+    let explicit = toml::from_str::<ConfigFile>(
+        r#"
+        [browser]
+        path = "/opt/chromium"
+        "#,
+    );
+    let mut resolved = explicit
+        .ok()
+        .map(|explicit| resolve_documents(ConfigFile::default(), explicit, &BTreeMap::new(), None))
+        .and_then(Result::ok);
+
+    let applied = resolved
+        .as_mut()
+        .map(|resolved| resolved.apply_cdp_url_flag("http://127.0.0.1:9222"));
+
+    assert!(applied.is_some_and(|result| result.is_ok()));
+    assert!(resolved.as_ref().is_some_and(|resolved| {
+        !resolved.configuration.contains_key("browser.path")
+            && matches!(&resolved.browser, BrowserSelection::Remote(_))
+            && resolved
+                .configuration
+                .get("browser.cdpUrl")
+                .is_some_and(|value| value.provenance == ConfigProvenance::Flag && value.redacted)
     }));
 }
 
@@ -482,6 +589,80 @@ fn documented_profile_environment_shape_is_accepted() {
         .and_then(Result::ok);
 
     assert!(resolved.is_some());
+}
+
+#[cfg(unix)]
+#[test]
+fn unrelated_non_unicode_environment_value_is_ignored() {
+    use std::ffi::OsString;
+
+    let result = super::resolve::collect_environment([(
+        OsString::from("UNRELATED"),
+        super::resolve::non_unicode(b"\xff"),
+    )]);
+
+    assert_eq!(result, Ok(BTreeMap::new()));
+}
+
+#[cfg(unix)]
+#[test]
+fn pageknot_environment_value_requires_unicode() {
+    use std::ffi::OsString;
+
+    let result = super::resolve::collect_environment([(
+        OsString::from("PAGEKNOT_PROFILE"),
+        super::resolve::non_unicode(b"\xff"),
+    )]);
+
+    assert!(result.is_err_and(|error| error.code.as_str() == "pageknot.config.value"));
+}
+
+#[test]
+fn duration_overflow_is_a_validation_result() {
+    let value = format!("{:.0}h", f64::MAX / 2.0);
+
+    assert_eq!(super::value::parse_duration_text(&value), None);
+}
+
+#[test]
+fn every_byte_limit_updates_the_profile_and_provenance() {
+    let explicit = toml::from_str::<ConfigFile>(
+        r#"
+        [profile.default.limits]
+        resource_bytes = "1KiB"
+        total_resource_bytes = "2KiB"
+        collector_chunk_bytes = "3KiB"
+        artifact_bytes = "4KiB"
+        "#,
+    );
+    let resolved = explicit.ok().and_then(|explicit| {
+        resolve_documents(ConfigFile::default(), explicit, &BTreeMap::new(), None).ok()
+    });
+    let resolved = resolved.as_ref();
+
+    assert_eq!(
+        resolved.map(|resolved| (
+            resolved.profile.limits.resource_bytes,
+            resolved.profile.limits.total_resource_bytes,
+            resolved.profile.limits.collector_chunk_bytes,
+            resolved.profile.limits.artifact_bytes,
+        )),
+        Some((1024, 2048, 3072, 4096))
+    );
+    for field in [
+        "limits.resourceBytes",
+        "limits.totalResourceBytes",
+        "limits.collectorChunkBytes",
+        "limits.artifactBytes",
+    ] {
+        assert_eq!(
+            resolved
+                .and_then(|resolved| resolved.configuration.get(field))
+                .map(|value| value.provenance),
+            Some(ConfigProvenance::Profile),
+            "{field}"
+        );
+    }
 }
 
 #[test]

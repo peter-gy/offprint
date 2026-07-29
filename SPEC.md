@@ -2673,9 +2673,12 @@ Threats include:
 
 `Server`:
 
-- Permits allowlisted public destinations.
+- Permits public destinations.
 - Blocks loopback, private, link-local, and metadata ranges.
 - Applies DNS and redirect checks to every destination.
+
+Use `Custom` with `allowed_hosts` or `allowed_cidrs` when a server deployment
+needs an explicit destination allowlist.
 
 `Unrestricted`:
 

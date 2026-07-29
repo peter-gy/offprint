@@ -16,7 +16,6 @@ data-url.workspace = true
 directories.workspace = true
 futures-core.workspace = true
 futures-util.workspace = true
-fs2.workspace = true
 pageknot-artifact.workspace = true
 pageknot-browser.workspace = true
 pageknot-capture.workspace = true

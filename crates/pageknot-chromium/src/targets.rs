@@ -70,6 +70,51 @@ struct TargetPolicy {
     network_blocked: bool,
 }
 
+#[derive(Clone, Copy, Debug)]
+enum PolicyChange {
+    EnableFetch {
+        intercept_subresource_requests: bool,
+    },
+    BlockNetwork,
+}
+
+impl PolicyChange {
+    const fn committed(self, policy: TargetPolicy) -> bool {
+        match self {
+            Self::EnableFetch { .. } => policy.fetch_enabled,
+            Self::BlockNetwork => policy.network_blocked,
+        }
+    }
+
+    fn applies_to(self, target: &ManagedTarget) -> bool {
+        match self {
+            Self::EnableFetch { .. } => target.kind.supports_fetch_interception(),
+            Self::BlockNetwork => true,
+        }
+    }
+
+    async fn apply(self, client: &CdpClient, session_id: &str) -> Result<()> {
+        match self {
+            Self::EnableFetch {
+                intercept_subresource_requests,
+            } => enable_fetch(client, session_id, intercept_subresource_requests).await,
+            Self::BlockNetwork => block_network(client, session_id).await,
+        }
+    }
+
+    fn commit(self, policy: &mut TargetPolicy) {
+        match self {
+            Self::EnableFetch {
+                intercept_subresource_requests,
+            } => {
+                policy.fetch_enabled = true;
+                policy.intercept_subresource_requests = intercept_subresource_requests;
+            }
+            Self::BlockNetwork => policy.network_blocked = true,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum TargetKind {
     Document,
@@ -192,44 +237,45 @@ impl FrameTargetManager {
     }
 
     pub(crate) async fn enable_fetch(&self, intercept_subresource_requests: bool) -> Result<()> {
-        let mut policy = self.policy.write().await;
-        if policy.fetch_enabled {
-            return Ok(());
-        }
-        policy.fetch_enabled = true;
-        policy.intercept_subresource_requests = intercept_subresource_requests;
-        let sessions = self
-            .state
-            .lock()
-            .await
-            .managed
-            .iter()
-            .filter(|(_, target)| target.kind.supports_fetch_interception())
-            .map(|(session_id, _)| session_id.clone())
-            .collect::<Vec<_>>();
-        for session_id in sessions {
-            enable_fetch(&self.client, &session_id, intercept_subresource_requests).await?;
-        }
-        Ok(())
+        self.apply_policy(PolicyChange::EnableFetch {
+            intercept_subresource_requests,
+        })
+        .await
     }
 
     pub(crate) async fn block_network(&self) -> Result<()> {
+        self.apply_policy(PolicyChange::BlockNetwork).await
+    }
+
+    async fn apply_policy(&self, change: PolicyChange) -> Result<()> {
         let mut policy = self.policy.write().await;
-        if policy.network_blocked {
-            return Ok(());
+        let sessions = {
+            let state = self.state.lock().await;
+            if let Some(error) = &state.error {
+                return Err(error.clone());
+            }
+            if change.committed(*policy) {
+                return Ok(());
+            }
+            state
+                .managed
+                .iter()
+                .filter(|(_, target)| change.applies_to(target))
+                .map(|(session_id, _)| session_id.clone())
+                .collect::<Vec<_>>()
+        };
+        for (applied, session_id) in sessions.into_iter().enumerate() {
+            if let Err(error) = change.apply(&self.client, &session_id).await {
+                if applied > 0 {
+                    self.cancellation.cancel();
+                    drop(policy);
+                    set_target_error(&self.state, error.clone()).await;
+                    self.close().await;
+                }
+                return Err(error);
+            }
         }
-        policy.network_blocked = true;
-        let sessions = self
-            .state
-            .lock()
-            .await
-            .managed
-            .keys()
-            .cloned()
-            .collect::<Vec<_>>();
-        for session_id in sessions {
-            block_network(&self.client, &session_id).await?;
-        }
+        change.commit(&mut policy);
         Ok(())
     }
 
@@ -382,14 +428,20 @@ async fn run_target_manager(
                     continue;
                 }
                 sessions.write().await.insert(session_id.clone());
-                let target_policy = *policy.read().await;
+                let target_policy = tokio::select! {
+                    () = cancellation.cancelled() => return,
+                    target_policy = policy.read() => target_policy,
+                };
+                if cancellation.is_cancelled() {
+                    return;
+                }
                 let configured = tokio::select! {
                     () = cancellation.cancelled() => return,
                     configured = configure_target_session(
                         &client,
                         &session_id,
                         kind,
-                        target_policy,
+                        *target_policy,
                         block_direct_sockets,
                         install_collector,
                     ) => configured,
@@ -411,6 +463,7 @@ async fn run_target_manager(
                         set_target_error(&state, error).await;
                     }
                 }
+                drop(target_policy);
             }
             "Target.detachedFromTarget" => match event.decode::<DetachedFromTargetEvent>() {
                 Ok(Some(detached)) => {

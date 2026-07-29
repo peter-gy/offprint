@@ -1,5 +1,11 @@
 [
   {
+    "code": "pageknot.artifact.digest",
+    "stage": "commit",
+    "retryable": false,
+    "description": "The staged artifact digest changed before commit."
+  },
+  {
     "code": "pageknot.artifact.head",
     "stage": "encoding",
     "retryable": false,
@@ -30,6 +36,12 @@
     "description": "The artifact resource summary is incomplete."
   },
   {
+    "code": "pageknot.artifact.sandbox",
+    "stage": "encoding",
+    "retryable": false,
+    "description": "The sandboxed HTML artifact is inconsistent."
+  },
+  {
     "code": "pageknot.artifact.serialize",
     "stage": "encoding",
     "retryable": false,
@@ -42,22 +54,46 @@
     "description": "The artifact exceeds a configured or platform byte limit."
   },
   {
+    "code": "pageknot.binding.runtime",
+    "stage": "internal",
+    "retryable": false,
+    "description": "A language binding runtime could not be started."
+  },
+  {
+    "code": "pageknot.binding.serialization",
+    "stage": "internal",
+    "retryable": false,
+    "description": "A language binding could not serialize a canonical record."
+  },
+  {
+    "code": "pageknot.binding.shutdown",
+    "stage": "shutdown",
+    "retryable": false,
+    "description": "A language binding shutdown ended before reporting its result."
+  },
+  {
+    "code": "pageknot.binding.shutdown_timeout",
+    "stage": "shutdown",
+    "retryable": true,
+    "description": "A language binding shutdown exceeded its deadline."
+  },
+  {
+    "code": "pageknot.browser.acquisition",
+    "stage": "internal",
+    "retryable": false,
+    "description": "Browser ownership was lost during acquisition."
+  },
+  {
+    "code": "pageknot.browser.acquisition_cancelled",
+    "stage": "shutdown",
+    "retryable": false,
+    "description": "Browser acquisition was cancelled during shutdown."
+  },
+  {
     "code": "pageknot.browser.active",
     "stage": "browser",
     "retryable": true,
     "description": "The selected managed browser has active leases or requires replacement."
-  },
-  {
-    "code": "pageknot.browser.containment",
-    "stage": "browser",
-    "retryable": false,
-    "description": "The owned browser process tree could not be contained."
-  },
-  {
-    "code": "pageknot.browser.executable",
-    "stage": "browser",
-    "retryable": false,
-    "description": "The selected browser executable is unavailable."
   },
   {
     "code": "pageknot.browser.cdp_close_timeout",
@@ -102,6 +138,12 @@
     "description": "A CDP event consumer exceeded its bounded buffer."
   },
   {
+    "code": "pageknot.browser.cdp_event_limit",
+    "stage": "browser",
+    "retryable": false,
+    "description": "A CDP event exceeded its byte limit."
+  },
+  {
     "code": "pageknot.browser.cdp_shape",
     "stage": "browser",
     "retryable": false,
@@ -126,6 +168,18 @@
     "description": "The CDP WebSocket transport failed."
   },
   {
+    "code": "pageknot.browser.containment",
+    "stage": "browser",
+    "retryable": false,
+    "description": "The owned browser process tree could not be contained."
+  },
+  {
+    "code": "pageknot.browser.context",
+    "stage": "internal",
+    "retryable": false,
+    "description": "The browser context lifecycle is internally inconsistent."
+  },
+  {
     "code": "pageknot.browser.devtools_port",
     "stage": "browser",
     "retryable": false,
@@ -138,6 +192,12 @@
     "description": "Chromium published an invalid DevTools endpoint."
   },
   {
+    "code": "pageknot.browser.executable",
+    "stage": "browser",
+    "retryable": false,
+    "description": "The selected browser executable is unavailable."
+  },
+  {
     "code": "pageknot.browser.incompatible",
     "stage": "browser",
     "retryable": false,
@@ -148,6 +208,18 @@
     "stage": "browser",
     "retryable": false,
     "description": "A managed browser installation needs attention."
+  },
+  {
+    "code": "pageknot.browser.interception_closed",
+    "stage": "resource",
+    "retryable": false,
+    "description": "Response interception closed before collection completed."
+  },
+  {
+    "code": "pageknot.browser.interception_task",
+    "stage": "navigation",
+    "retryable": false,
+    "description": "The network interception task failed."
   },
   {
     "code": "pageknot.browser.launch",
@@ -198,6 +270,12 @@
     "description": "An ephemeral browser profile could not be created."
   },
   {
+    "code": "pageknot.browser.resource_task",
+    "stage": "resource",
+    "retryable": false,
+    "description": "A browser resource collection task failed."
+  },
+  {
     "code": "pageknot.browser.selection_conflict",
     "stage": "browser",
     "retryable": false,
@@ -234,12 +312,6 @@
     "description": "The browser version could not be identified."
   },
   {
-    "code": "pageknot.binding.serialization",
-    "stage": "internal",
-    "retryable": false,
-    "description": "A language binding could not serialize a canonical record."
-  },
-  {
     "code": "pageknot.collector.base_url",
     "stage": "collection",
     "retryable": false,
@@ -250,18 +322,6 @@
     "stage": "collection",
     "retryable": false,
     "description": "The collector lacks a requested capability."
-  },
-  {
-    "code": "pageknot.collector.document",
-    "stage": "collection",
-    "retryable": false,
-    "description": "The rendered document could not be collected."
-  },
-  {
-    "code": "pageknot.collector.evaluate",
-    "stage": "collection",
-    "retryable": false,
-    "description": "The in-page collector evaluation failed."
   },
   {
     "code": "pageknot.collector.chunk_checksum",
@@ -300,10 +360,16 @@
     "description": "The collector changed a declared chunk count."
   },
   {
-    "code": "pageknot.collector.payload_limit",
+    "code": "pageknot.collector.document",
     "stage": "collection",
     "retryable": false,
-    "description": "Collector payloads exceed the configured capture limit."
+    "description": "The rendered document could not be collected."
+  },
+  {
+    "code": "pageknot.collector.evaluate",
+    "stage": "collection",
+    "retryable": false,
+    "description": "The in-page collector evaluation failed."
   },
   {
     "code": "pageknot.collector.payload_checksum",
@@ -312,16 +378,22 @@
     "description": "A collector payload digest is invalid."
   },
   {
-    "code": "pageknot.collector.protocol_shape",
+    "code": "pageknot.collector.payload_limit",
     "stage": "collection",
     "retryable": false,
-    "description": "A collector message does not match the protocol shape."
+    "description": "Collector payloads exceed the configured capture limit."
   },
   {
     "code": "pageknot.collector.protocol_major",
     "stage": "collection",
     "retryable": false,
     "description": "The collector protocol major version is incompatible."
+  },
+  {
+    "code": "pageknot.collector.protocol_shape",
+    "stage": "collection",
+    "retryable": false,
+    "description": "A collector message does not match the protocol shape."
   },
   {
     "code": "pageknot.collector.value",
@@ -396,10 +468,28 @@
     "description": "Chromium returned an invalid PDF payload."
   },
   {
+    "code": "pageknot.export.pdf_metadata",
+    "stage": "encoding",
+    "retryable": false,
+    "description": "The PDF metadata record is incomplete or inconsistent."
+  },
+  {
+    "code": "pageknot.export.pdf_semantics",
+    "stage": "encoding",
+    "retryable": false,
+    "description": "The PDF semantic structure is unavailable or malformed."
+  },
+  {
     "code": "pageknot.export.size",
     "stage": "encoding",
     "retryable": false,
     "description": "An artifact variant exceeds its byte limit."
+  },
+  {
+    "code": "pageknot.export.source",
+    "stage": "encoding",
+    "retryable": false,
+    "description": "An artifact variant source is inconsistent with the verified HTML."
   },
   {
     "code": "pageknot.export.variant",
@@ -618,6 +708,12 @@
     "description": "The navigation host resolved to no addresses."
   },
   {
+    "code": "pageknot.navigation.dns_timeout",
+    "stage": "navigation",
+    "retryable": true,
+    "description": "A network policy DNS decision exceeded its deadline."
+  },
+  {
     "code": "pageknot.navigation.failed",
     "stage": "navigation",
     "retryable": true,
@@ -636,16 +732,34 @@
     "description": "The navigation request has no validated network policy state."
   },
   {
+    "code": "pageknot.navigation.popup",
+    "stage": "navigation",
+    "retryable": false,
+    "description": "A popup target could not be rejected safely."
+  },
+  {
     "code": "pageknot.navigation.port",
     "stage": "navigation",
     "retryable": false,
     "description": "The navigation URL has no usable port."
   },
   {
+    "code": "pageknot.navigation.proxy",
+    "stage": "navigation",
+    "retryable": true,
+    "description": "The validated network proxy could not complete a request."
+  },
+  {
     "code": "pageknot.navigation.redirect_limit",
     "stage": "navigation",
     "retryable": false,
     "description": "Navigation exceeded the configured redirect count."
+  },
+  {
+    "code": "pageknot.navigation.request_limit",
+    "stage": "navigation",
+    "retryable": false,
+    "description": "Concurrent intercepted requests exceed the supported limit."
   },
   {
     "code": "pageknot.navigation.scheme",
@@ -666,16 +780,16 @@
     "description": "The verified artifact could not be committed."
   },
   {
-    "code": "pageknot.output.directory",
-    "stage": "validation",
-    "retryable": false,
-    "description": "The output directory is unavailable."
-  },
-  {
     "code": "pageknot.output.diagnostics",
     "stage": "commit",
     "retryable": true,
     "description": "The sanitized diagnostic bundle could not be committed."
+  },
+  {
+    "code": "pageknot.output.directory",
+    "stage": "validation",
+    "retryable": false,
+    "description": "The output directory is unavailable."
   },
   {
     "code": "pageknot.output.exists",
@@ -736,6 +850,12 @@
     "stage": "readiness",
     "retryable": false,
     "description": "The readiness tracker observed an inconsistent request count."
+  },
+  {
+    "code": "pageknot.readiness.timeout",
+    "stage": "readiness",
+    "retryable": true,
+    "description": "The page did not reach the requested readiness state before its deadline."
   },
   {
     "code": "pageknot.resource.css_cycle",
@@ -864,34 +984,16 @@
     "description": "A captured resource URL is invalid."
   },
   {
-    "code": "pageknot.selector.invalid",
-    "stage": "collection",
+    "code": "pageknot.runtime.acquisition",
+    "stage": "internal",
     "retryable": false,
-    "description": "The DOM selector is not a valid CSS selector."
-  },
-  {
-    "code": "pageknot.selector.not_found",
-    "stage": "collection",
-    "retryable": false,
-    "description": "The top-level document has no element matching the DOM selector."
-  },
-  {
-    "code": "pageknot.selection.empty",
-    "stage": "collection",
-    "retryable": false,
-    "description": "The selected document scope has no active top-level selection."
+    "description": "Runtime ownership was lost during acquisition."
   },
   {
     "code": "pageknot.runtime.cancelled",
     "stage": "shutdown",
     "retryable": false,
     "description": "The active capture was cancelled."
-  },
-  {
-    "code": "pageknot.runtime.state_transition",
-    "stage": "internal",
-    "retryable": false,
-    "description": "The capture state machine rejected a transition."
   },
   {
     "code": "pageknot.runtime.capture_unavailable",
@@ -924,10 +1026,22 @@
     "description": "A runtime state lock is poisoned."
   },
   {
+    "code": "pageknot.runtime.shutdown",
+    "stage": "shutdown",
+    "retryable": false,
+    "description": "Runtime shutdown did not complete cleanly."
+  },
+  {
     "code": "pageknot.runtime.signal",
     "stage": "shutdown",
     "retryable": false,
     "description": "The command could not subscribe to interruption signals."
+  },
+  {
+    "code": "pageknot.runtime.state_transition",
+    "stage": "internal",
+    "retryable": false,
+    "description": "The capture state machine rejected a transition."
   },
   {
     "code": "pageknot.runtime.terminal_event",
@@ -990,6 +1104,12 @@
     "description": "Resume state could not be inspected or decoded."
   },
   {
+    "code": "pageknot.scheduler.manifest_shape",
+    "stage": "validation",
+    "retryable": false,
+    "description": "Resume state has an invalid or inconsistent record shape."
+  },
+  {
     "code": "pageknot.scheduler.manifest_write",
     "stage": "commit",
     "retryable": true,
@@ -1006,6 +1126,12 @@
     "stage": "validation",
     "retryable": false,
     "description": "A scheduler plan could not be serialized."
+  },
+  {
+    "code": "pageknot.scheduler.resume_credentials",
+    "stage": "validation",
+    "retryable": false,
+    "description": "A scheduler plan with capture credentials cannot use persisted resume state."
   },
   {
     "code": "pageknot.scheduler.resume_target",
@@ -1026,10 +1152,40 @@
     "description": "A crawl URL uses an unsupported scheme."
   },
   {
-    "code": "pageknot.readiness.timeout",
-    "stage": "readiness",
-    "retryable": true,
-    "description": "The page did not reach the requested readiness state before its deadline."
+    "code": "pageknot.screenshot.encoding",
+    "stage": "verification",
+    "retryable": false,
+    "description": "A screenshot response could not be decoded."
+  },
+  {
+    "code": "pageknot.screenshot.protocol_shape",
+    "stage": "verification",
+    "retryable": false,
+    "description": "A screenshot response did not match the pinned protocol shape."
+  },
+  {
+    "code": "pageknot.selection.empty",
+    "stage": "collection",
+    "retryable": false,
+    "description": "The selected document scope has no active top-level selection."
+  },
+  {
+    "code": "pageknot.selector.invalid",
+    "stage": "collection",
+    "retryable": false,
+    "description": "The DOM selector is not a valid CSS selector."
+  },
+  {
+    "code": "pageknot.selector.not_found",
+    "stage": "collection",
+    "retryable": false,
+    "description": "The top-level document has no element matching the DOM selector."
+  },
+  {
+    "code": "pageknot.transform.document",
+    "stage": "transform",
+    "retryable": false,
+    "description": "The document model is incomplete or inconsistent."
   },
   {
     "code": "pageknot.transform.node",
@@ -1084,6 +1240,12 @@
     "stage": "verification",
     "retryable": false,
     "description": "The artifact format or schema is incompatible."
+  },
+  {
+    "code": "pageknot.verification.frame",
+    "stage": "verification",
+    "retryable": false,
+    "description": "An artifact frame could not be inspected during offline verification."
   },
   {
     "code": "pageknot.verification.frames",
@@ -1152,6 +1314,12 @@
     "description": "The artifact structural repair data is malformed or inconsistent."
   },
   {
+    "code": "pageknot.verification.timeout",
+    "stage": "verification",
+    "retryable": true,
+    "description": "Offline verification exceeded its deadline."
+  },
+  {
     "code": "pageknot.verification.unstable",
     "stage": "verification",
     "retryable": true,
@@ -1170,6 +1338,24 @@
     "description": "A visual fallback image could not be decoded."
   },
   {
+    "code": "pageknot.visual_fallback.evaluate",
+    "stage": "collection",
+    "retryable": false,
+    "description": "Visual fallback evaluation failed in the browser."
+  },
+  {
+    "code": "pageknot.visual_fallback.frame",
+    "stage": "collection",
+    "retryable": false,
+    "description": "A visual fallback frame is unavailable or inconsistent."
+  },
+  {
+    "code": "pageknot.visual_fallback.frame_owner",
+    "stage": "collection",
+    "retryable": false,
+    "description": "A visual fallback frame owner is unavailable or inconsistent."
+  },
+  {
     "code": "pageknot.visual_fallback.pixel_limit",
     "stage": "collection",
     "retryable": false,
@@ -1180,5 +1366,11 @@
     "stage": "collection",
     "retryable": false,
     "description": "A visual fallback response did not match the pinned protocol shape."
+  },
+  {
+    "code": "pageknot.visual_fallback.viewport",
+    "stage": "collection",
+    "retryable": false,
+    "description": "A visual fallback lies outside its browser viewport."
   }
 ]

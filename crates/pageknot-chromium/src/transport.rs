@@ -1,10 +1,12 @@
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use futures_util::{SinkExt, StreamExt};
+use futures_util::{Sink, SinkExt, Stream, StreamExt};
 use pageknot_model::{ErrorStage, PageKnotError, Result};
+use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio::sync::{Semaphore, broadcast, mpsc, oneshot};
 use tokio::task::JoinHandle;
@@ -28,6 +30,17 @@ const CLOSE_TIMEOUT: Duration = Duration::from_secs(5);
 // Each guarded connection holds one browser socket and one upstream socket.
 // Share this limit across every context owned by the browser process.
 const MAXIMUM_PROXY_CONNECTIONS: usize = 32;
+
+#[derive(Clone, Copy, Debug)]
+struct WireDeadlines {
+    send: Duration,
+    close: Duration,
+}
+
+const WIRE_DEADLINES: WireDeadlines = WireDeadlines {
+    send: COMMAND_TIMEOUT,
+    close: CLOSE_TIMEOUT,
+};
 
 #[derive(Clone, Debug)]
 pub struct CdpEvent {
@@ -69,7 +82,7 @@ struct ClientInner {
     cancellations: mpsc::UnboundedSender<u64>,
     events: EventBus,
     proxy_connections: Arc<Semaphore>,
-    task: Mutex<Option<JoinHandle<()>>>,
+    task: Mutex<Option<JoinHandle<Result<()>>>>,
 }
 
 #[derive(Clone, Debug)]
@@ -214,9 +227,13 @@ impl CdpClient {
         let (cancellation_tx, cancellation_rx) = mpsc::unbounded_channel();
         let events = EventBus::new(EVENT_CAPACITY);
         let actor_events = events.clone();
-        let task = tokio::spawn(async move {
-            run_transport(socket, outbound_rx, cancellation_rx, actor_events).await;
-        });
+        let task = tokio::spawn(run_transport(
+            socket,
+            outbound_rx,
+            cancellation_rx,
+            actor_events,
+            WIRE_DEADLINES,
+        ));
 
         Ok(Self {
             inner: Arc::new(ClientInner {
@@ -441,12 +458,7 @@ impl CdpClient {
                 Ok(())
             } else {
                 match timeout(deadline, &mut task).await {
-                    Ok(result) => result.map_err(|error| {
-                        cdp_error(
-                            "pageknot.browser.cdp_task",
-                            format!("CDP transport task failed: {error}"),
-                        )
-                    }),
+                    Ok(result) => result.map_err(cdp_task_error)?,
                     Err(_) => {
                         task.abort();
                         let _ignored = task.await;
@@ -466,25 +478,28 @@ impl CdpClient {
     }
 }
 
-async fn run_transport<S>(
-    socket: tokio_tungstenite::WebSocketStream<S>,
+async fn run_transport<W>(
+    socket: W,
     mut outbound: mpsc::Receiver<Outbound>,
     mut cancellations: mpsc::UnboundedReceiver<u64>,
     events: EventBus,
-) where
-    S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin,
+    deadlines: WireDeadlines,
+) -> Result<()>
+where
+    W: Sink<Message, Error = tungstenite::Error>
+        + Stream<Item = std::result::Result<Message, tungstenite::Error>>
+        + Unpin,
 {
     let (mut writer, mut reader) = socket.split();
     let mut pending = BTreeMap::<u64, PendingCommand>::new();
-    let terminal_error = loop {
+    let outcome = loop {
         tokio::select! {
             Some(id) = cancellations.recv() => {
                 pending.remove(&id);
             }
             outbound_message = outbound.recv() => {
                 let Some(outbound_message) = outbound_message else {
-                    let _ignored = writer.close().await;
-                    break cdp_closed();
+                    break close_wire(&mut writer, deadlines.close).await;
                 };
                 match outbound_message {
                     Outbound::Command {
@@ -521,24 +536,28 @@ async fn run_transport<S>(
                             }
                         };
                         pending.insert(id, PendingCommand { method, response });
-                        if let Err(error) = writer.send(Message::Text(serialized.into())).await {
-                            break websocket_error(error);
+                        if let Err(error) =
+                            send_wire(&mut writer, Message::Text(serialized.into()), deadlines.send)
+                                .await
+                        {
+                            break Err(error);
                         }
                     }
                     Outbound::CommandNoWait { payload, sent } => {
                         if sent.is_closed() {
                             continue;
                         }
-                        if let Err(error) = writer.send(Message::Text(payload.into())).await {
-                            let error = websocket_error(error);
+                        if let Err(error) =
+                            send_wire(&mut writer, Message::Text(payload.into()), deadlines.send)
+                                .await
+                        {
                             let _ignored = sent.send(Err(error.clone()));
-                            break error;
+                            break Err(error);
                         }
                         let _ignored = sent.send(Ok(()));
                     }
                     Outbound::Close => {
-                        let _ignored = writer.close().await;
-                        break cdp_closed();
+                        break close_wire(&mut writer, deadlines.close).await;
                     }
                 }
             }
@@ -546,20 +565,54 @@ async fn run_transport<S>(
                 match inbound {
                     Some(Ok(message)) => {
                         if let Some(error) = route_message(message, &mut pending, &events) {
-                            break error;
+                            break Err(error);
                         }
                     }
-                    Some(Err(error)) => break websocket_error(error),
-                    None => break cdp_closed(),
+                    Some(Err(error)) => break Err(websocket_error(error)),
+                    None => break Err(cdp_closed()),
                 }
             }
         }
     };
 
+    let terminal_error = outcome.as_ref().err().cloned().unwrap_or_else(cdp_closed);
     for (id, command) in pending {
         let error = command_context(terminal_error.clone(), id, &command.method);
         let _ignored = command.response.send(Err(error));
     }
+    outcome
+}
+
+async fn send_wire<W>(writer: &mut W, message: Message, deadline: Duration) -> Result<()>
+where
+    W: Sink<Message, Error = tungstenite::Error> + Unpin,
+{
+    timeout(deadline, writer.send(message))
+        .await
+        .map_err(|_| {
+            cdp_error(
+                "pageknot.browser.cdp_transport",
+                "CDP WebSocket send exceeded its deadline",
+            )
+            .retryable(true)
+        })?
+        .map_err(websocket_error)
+}
+
+async fn close_wire<W>(writer: &mut W, deadline: Duration) -> Result<()>
+where
+    W: Sink<Message, Error = tungstenite::Error> + Unpin,
+{
+    timeout(deadline, writer.close())
+        .await
+        .map_err(|_| {
+            cdp_error(
+                "pageknot.browser.cdp_close_timeout",
+                "CDP WebSocket close exceeded its deadline",
+            )
+            .retryable(true)
+        })?
+        .map_err(websocket_error)
 }
 
 fn route_message(
@@ -581,14 +634,47 @@ fn route_message(
         Message::Close(_) => return Some(cdp_closed()),
         Message::Ping(_) | Message::Pong(_) | Message::Frame(_) => return None,
     };
-    let message: Value = match serde_json::from_str(&text) {
+    if text.len() > MAX_EVENT_BYTES {
+        return route_oversized_message(&text, pending, events);
+    }
+    route_materialized_message(&text, pending, events)
+}
+
+fn route_oversized_message(
+    text: &str,
+    pending: &mut BTreeMap<u64, PendingCommand>,
+    events: &EventBus,
+) -> Option<PageKnotError> {
+    let envelope: WireEnvelope<'_> = match serde_json::from_str(text) {
+        Ok(envelope) => envelope,
+        Err(error) => return Some(cdp_decode_error(error)),
+    };
+    if envelope.id.is_some() {
+        return route_materialized_message(text, pending, events);
+    }
+    let method = envelope.method.as_deref()?;
+    if oversized_inline_resource_event(method, text) {
+        return None;
+    }
+    Some(
+        cdp_error(
+            "pageknot.browser.cdp_event_limit",
+            "browser event exceeds the CDP event byte limit",
+        )
+        .with_detail("attempted", text.len())
+        .with_detail("cdpEventMethod", diagnostic_method(method))
+        .with_detail("limit", MAX_EVENT_BYTES),
+    )
+}
+
+fn route_materialized_message(
+    text: &str,
+    pending: &mut BTreeMap<u64, PendingCommand>,
+    events: &EventBus,
+) -> Option<PageKnotError> {
+    let message: Value = match serde_json::from_str(text) {
         Ok(message) => message,
-        Err(error) => {
-            return Some(cdp_error(
-                "pageknot.browser.cdp_decode",
-                format!("browser sent malformed CDP JSON: {error}"),
-            ));
-        }
+        Err(error) => return Some(cdp_decode_error(error)),
     };
     if let Some(id) = message.get("id").and_then(Value::as_u64) {
         if let Some(command) = pending.remove(&id) {
@@ -602,20 +688,6 @@ fn route_message(
         return None;
     }
     if let Some(method) = message.get("method").and_then(Value::as_str) {
-        if text.len() > MAX_EVENT_BYTES {
-            if oversized_inline_resource_event(method, &message) {
-                return None;
-            }
-            return Some(
-                cdp_error(
-                    "pageknot.browser.cdp_event_limit",
-                    "browser event exceeds the CDP event byte limit",
-                )
-                .with_detail("attempted", text.len())
-                .with_detail("cdpEventMethod", diagnostic_method(method))
-                .with_detail("limit", MAX_EVENT_BYTES),
-            );
-        }
         let event = CdpEvent {
             method: Arc::from(method),
             params: Arc::new(message.get("params").cloned().unwrap_or(Value::Null)),
@@ -659,14 +731,44 @@ fn target_event(event: &CdpEvent) -> bool {
     )
 }
 
-fn oversized_inline_resource_event(method: &str, message: &Value) -> bool {
+#[derive(Debug, Deserialize)]
+struct WireEnvelope<'a> {
+    id: Option<u64>,
+    #[serde(borrow)]
+    method: Option<Cow<'a, str>>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct InlineResourceEnvelope<'a> {
+    #[serde(borrow, default)]
+    params: InlineResourceParams<'a>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct InlineResourceParams<'a> {
+    #[serde(borrow, default)]
+    request: InlineResourceUrl<'a>,
+    #[serde(borrow, default)]
+    response: InlineResourceUrl<'a>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct InlineResourceUrl<'a> {
+    #[serde(borrow, default)]
+    url: Option<Cow<'a, str>>,
+}
+
+fn oversized_inline_resource_event(method: &str, text: &str) -> bool {
+    let envelope: InlineResourceEnvelope<'_> = match serde_json::from_str(text) {
+        Ok(envelope) => envelope,
+        Err(_) => return false,
+    };
     let url = match method {
-        "Network.requestWillBeSent" => message.pointer("/params/request/url"),
-        "Network.responseReceived" => message.pointer("/params/response/url"),
+        "Network.requestWillBeSent" => envelope.params.request.url,
+        "Network.responseReceived" => envelope.params.response.url,
         _ => None,
     };
-    url.and_then(Value::as_str)
-        .is_some_and(|url| url.starts_with("data:"))
+    url.is_some_and(|url| url.starts_with("data:"))
 }
 
 fn remote_error(error: &Value, request_id: u64, method: &str) -> PageKnotError {
@@ -717,6 +819,20 @@ fn websocket_error(error: tungstenite::Error) -> PageKnotError {
     .retryable(true)
 }
 
+fn cdp_task_error(error: tokio::task::JoinError) -> PageKnotError {
+    cdp_error(
+        "pageknot.browser.cdp_task",
+        format!("CDP transport task failed: {error}"),
+    )
+}
+
+fn cdp_decode_error(error: serde_json::Error) -> PageKnotError {
+    cdp_error(
+        "pageknot.browser.cdp_decode",
+        format!("browser sent malformed CDP JSON: {error}"),
+    )
+}
+
 fn cdp_closed() -> PageKnotError {
     cdp_error(
         "pageknot.browser.cdp_closed",
@@ -730,415 +846,4 @@ fn cdp_error(code: &'static str, message: impl Into<String>) -> PageKnotError {
 }
 
 #[cfg(test)]
-mod tests {
-    use std::collections::BTreeMap;
-    use std::error::Error;
-    use std::future::pending;
-    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-    use std::sync::{Arc, Mutex};
-    use std::time::Duration;
-
-    use pageknot_model::PageKnotError;
-    use serde_json::{Value, json};
-    use tokio::sync::{Semaphore, mpsc, oneshot};
-    use tokio::task::JoinHandle;
-    use tokio_tungstenite::tungstenite::Message;
-
-    use super::{CdpClient, ClientInner, EventBus, Outbound, PendingCommand, route_message};
-
-    type TestResult<T = ()> = std::result::Result<T, Box<dyn Error>>;
-
-    #[test]
-    fn response_routes_to_the_matching_command() {
-        let (sender, receiver) = oneshot::channel();
-        let mut pending = BTreeMap::from([(
-            7,
-            PendingCommand {
-                method: "Runtime.evaluate".to_owned(),
-                response: sender,
-            },
-        )]);
-        let events = EventBus::new(1);
-
-        let terminal = route_message(
-            Message::Text(r#"{"id":7,"result":{"value":42}}"#.into()),
-            &mut pending,
-            &events,
-        );
-        let response = receiver.blocking_recv();
-
-        assert!(terminal.is_none());
-        assert_eq!(
-            response.ok().and_then(Result::ok),
-            Some(json!({"value": 42}))
-        );
-        assert!(pending.is_empty());
-    }
-
-    #[test]
-    fn remote_error_messages_cannot_publish_urls_or_header_secrets() -> TestResult {
-        let error = route_remote_error(
-            41,
-            "Page.navigate",
-            json!({
-                "code": -32_000,
-                "message": concat!(
-                    "navigation rejected https://user:userinfo-secret@example.test/path",
-                    "?X-Amz-Signature=signed-secret ",
-                    "Authorization: Bearer authorization-secret ",
-                    "Cookie: session=cookie-secret"
-                )
-            }),
-        )?;
-        let encoded = serde_json::to_string(&error)?;
-
-        for secret in [
-            "userinfo-secret",
-            "signed-secret",
-            "authorization-secret",
-            "cookie-secret",
-        ] {
-            assert!(!encoded.contains(secret));
-        }
-        assert_eq!(error.message, "browser rejected the CDP command");
-        assert_eq!(error.details.get("cdpCode"), Some(&json!(-32_000)));
-        assert_eq!(
-            error.details.get("cdpMethod"),
-            Some(&json!("Page.navigate"))
-        );
-        assert_eq!(error.details.get("cdpRequestId"), Some(&json!(41)));
-        assert_eq!(error.details.get("cdpMessageRedacted"), Some(&json!(true)));
-        Ok(())
-    }
-
-    #[test]
-    fn remote_error_data_is_suppressed_while_correlation_is_retained() -> TestResult {
-        let error = route_remote_error(
-            73,
-            "Network.setCookies",
-            json!({
-                "code": -32_001,
-                "message": "invalid cookie input",
-                "data": {
-                    "Authorization": "Bearer data-authorization-secret",
-                    "Cookie": "session=data-cookie-secret",
-                    "nested": [
-                        {
-                            "url": concat!(
-                                "https://data-user:data-userinfo-secret@example.test/",
-                                "?token=data-token-secret"
-                            )
-                        }
-                    ]
-                }
-            }),
-        )?;
-        let encoded = serde_json::to_string(&error)?;
-
-        for secret in [
-            "data-authorization-secret",
-            "data-cookie-secret",
-            "data-userinfo-secret",
-            "data-token-secret",
-        ] {
-            assert!(!encoded.contains(secret));
-        }
-        assert_eq!(
-            error.details.get("cdpMethod"),
-            Some(&json!("Network.setCookies"))
-        );
-        assert_eq!(error.details.get("cdpRequestId"), Some(&json!(73)));
-        assert_eq!(error.details.get("cdpDataRedacted"), Some(&json!(true)));
-        assert!(!error.details.contains_key("cdpData"));
-        Ok(())
-    }
-
-    #[test]
-    fn events_keep_the_flat_session_identifier() {
-        let mut pending = BTreeMap::new();
-        let events = EventBus::new(1);
-        let mut receiver = events.all.subscribe();
-
-        let terminal = route_message(
-            Message::Text(
-                r#"{"method":"Page.loadEventFired","params":{"timestamp":1},"sessionId":"s1"}"#
-                    .into(),
-            ),
-            &mut pending,
-            &events,
-        );
-        let event = receiver.try_recv().ok();
-
-        assert!(terminal.is_none());
-        assert_eq!(
-            event.as_ref().map(|value| value.method.as_ref()),
-            Some("Page.loadEventFired")
-        );
-        assert_eq!(
-            event.and_then(|value| value.session_id).as_deref(),
-            Some("s1")
-        );
-    }
-
-    #[test]
-    fn navigation_stream_ignores_subresource_event_bursts() -> TestResult {
-        let mut pending = BTreeMap::new();
-        let events = EventBus::new(1);
-        let mut navigation = events.navigation.subscribe();
-        for index in 0..512 {
-            let message = serde_json::to_string(&json!({
-                "method": "Network.requestWillBeSent",
-                "params": {
-                    "requestId": format!("image-{index}"),
-                    "type": "Image",
-                    "request": {"url": format!("data:image/svg+xml,{index}")},
-                },
-                "sessionId": "s1",
-            }))?;
-            assert!(route_message(Message::Text(message.into()), &mut pending, &events).is_none());
-        }
-        let terminal = route_message(
-            Message::Text(
-                r#"{"method":"Page.loadEventFired","params":{"timestamp":1},"sessionId":"s1"}"#
-                    .into(),
-            ),
-            &mut pending,
-            &events,
-        );
-        let event = navigation.try_recv()?;
-
-        assert!(terminal.is_none());
-        assert_eq!(event.method.as_ref(), "Page.loadEventFired");
-        Ok(())
-    }
-
-    #[test]
-    fn offline_stream_ignores_inline_resource_event_bursts() -> TestResult {
-        let mut pending = BTreeMap::new();
-        let events = EventBus::new(1);
-        let mut offline = events.offline.subscribe();
-        for index in 0..512 {
-            let message = serde_json::to_string(&json!({
-                "method": "Network.requestWillBeSent",
-                "params": {
-                    "requestId": format!("image-{index}"),
-                    "type": "Image",
-                    "request": {"url": format!("data:image/svg+xml,{index}")},
-                },
-                "sessionId": "s1",
-            }))?;
-            assert!(route_message(Message::Text(message.into()), &mut pending, &events).is_none());
-        }
-        let terminal = route_message(
-            Message::Text(
-                r#"{"method":"Network.requestWillBeSent","params":{"request":{"url":"https://example.com/pixel"}},"sessionId":"s1"}"#
-                    .into(),
-            ),
-            &mut pending,
-            &events,
-        );
-        let event = offline.try_recv()?;
-
-        assert!(terminal.is_none());
-        assert_eq!(
-            event.params.pointer("/request/url").and_then(Value::as_str),
-            Some("https://example.com/pixel")
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn event_clones_share_the_parsed_parameter_storage() {
-        let mut pending = BTreeMap::new();
-        let events = EventBus::new(1);
-        let mut receiver = events.all.subscribe();
-        let terminal = route_message(
-            Message::Text(r#"{"method":"Runtime.consoleAPICalled","params":{"value":42}}"#.into()),
-            &mut pending,
-            &events,
-        );
-        let event = receiver.try_recv().ok();
-        let cloned = event.clone();
-
-        assert!(terminal.is_none());
-        assert!(
-            event
-                .as_ref()
-                .zip(cloned.as_ref())
-                .is_some_and(|(event, cloned)| Arc::ptr_eq(&event.params, &cloned.params))
-        );
-    }
-
-    #[test]
-    fn oversized_events_close_the_transport_before_broadcast() {
-        let mut pending = BTreeMap::new();
-        let events = EventBus::new(1);
-        let mut receiver = events.all.subscribe();
-        let payload = "x".repeat(super::MAX_EVENT_BYTES);
-        let terminal = route_message(
-            Message::Text(
-                format!(
-                    r#"{{"method":"Runtime.consoleAPICalled","params":{{"value":"{payload}"}}}}"#
-                )
-                .into(),
-            ),
-            &mut pending,
-            &events,
-        );
-
-        assert_eq!(
-            terminal.as_ref().map(|error| error.code.as_str()),
-            Some("pageknot.browser.cdp_event_limit")
-        );
-        assert!(receiver.try_recv().is_err());
-    }
-
-    #[test]
-    fn oversized_inline_resource_events_do_not_close_the_transport() -> TestResult {
-        let mut pending = BTreeMap::new();
-        let events = EventBus::new(1);
-        let mut receiver = events.all.subscribe();
-        let payload = "x".repeat(super::MAX_EVENT_BYTES);
-        let message = serde_json::to_string(&json!({
-            "method": "Network.requestWillBeSent",
-            "params": {
-                "requestId": "inline",
-                "type": "Image",
-                "request": {
-                    "url": format!("data:image/svg+xml,{payload}"),
-                },
-            },
-        }))?;
-        let terminal = route_message(Message::Text(message.into()), &mut pending, &events);
-
-        assert!(terminal.is_none());
-        assert!(receiver.try_recv().is_err());
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn command_deadline_includes_outbound_queue_wait() -> TestResult {
-        let (outbound, mut outbound_receiver) = mpsc::channel(1);
-        assert!(outbound.try_send(Outbound::Close).is_ok());
-        let (client, _cancellations) = test_client(outbound, None);
-
-        let result = tokio::time::timeout(
-            Duration::from_secs(1),
-            client.command_with_timeout(
-                "Runtime.evaluate",
-                json!({}),
-                None,
-                Duration::from_millis(20),
-            ),
-        )
-        .await?;
-
-        assert_eq!(
-            result.as_ref().err().map(|error| error.code.as_str()),
-            Some("pageknot.browser.cdp_timeout")
-        );
-        assert!(matches!(outbound_receiver.try_recv(), Ok(Outbound::Close)));
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn close_send_timeout_aborts_and_awaits_the_transport_task() {
-        let (task, task_dropped) = spawn_pending_task().await;
-        let (outbound, _outbound_receiver) = mpsc::channel(1);
-        assert!(outbound.try_send(Outbound::Close).is_ok());
-        let (client, _cancellations) = test_client(outbound, Some(task));
-
-        let result = client.close_with_timeout(Duration::from_millis(20)).await;
-
-        assert_eq!(
-            result.as_ref().err().map(|error| error.code.as_str()),
-            Some("pageknot.browser.cdp_close_timeout")
-        );
-        assert!(task_dropped.load(Ordering::Acquire));
-    }
-
-    #[tokio::test]
-    async fn close_aborts_and_awaits_a_task_that_does_not_finish_shutdown() {
-        let (task, task_dropped) = spawn_pending_task().await;
-        let (outbound, _outbound_receiver) = mpsc::channel(1);
-        let (client, _cancellations) = test_client(outbound, Some(task));
-
-        let result = client.close_with_timeout(Duration::from_millis(20)).await;
-
-        assert_eq!(
-            result.as_ref().err().map(|error| error.code.as_str()),
-            Some("pageknot.browser.cdp_close_timeout")
-        );
-        assert!(task_dropped.load(Ordering::Acquire));
-    }
-
-    fn route_remote_error(id: u64, method: &str, remote_error: Value) -> TestResult<PageKnotError> {
-        let (sender, receiver) = oneshot::channel();
-        let mut pending = BTreeMap::from([(
-            id,
-            PendingCommand {
-                method: method.to_owned(),
-                response: sender,
-            },
-        )]);
-        let events = EventBus::new(1);
-        let message = serde_json::to_string(&json!({
-            "id": id,
-            "error": remote_error,
-        }))?;
-        let terminal = route_message(Message::Text(message.into()), &mut pending, &events);
-        if let Some(error) = terminal {
-            return Err(std::io::Error::other(format!(
-                "remote error closed the transport: {error}"
-            ))
-            .into());
-        }
-        match receiver.blocking_recv()? {
-            Err(error) => Ok(error),
-            Ok(_) => {
-                Err(std::io::Error::other("remote error produced a successful response").into())
-            }
-        }
-    }
-
-    fn test_client(
-        outbound: mpsc::Sender<Outbound>,
-        task: Option<JoinHandle<()>>,
-    ) -> (CdpClient, mpsc::UnboundedReceiver<u64>) {
-        let (cancellations, cancellation_receiver) = mpsc::unbounded_channel();
-        let events = EventBus::new(1);
-        let client = CdpClient {
-            inner: Arc::new(ClientInner {
-                next_id: AtomicU64::new(1),
-                owned_browser: AtomicBool::new(false),
-                outbound,
-                cancellations,
-                events,
-                proxy_connections: Arc::new(Semaphore::new(1)),
-                task: Mutex::new(task),
-            }),
-        };
-        (client, cancellation_receiver)
-    }
-
-    async fn spawn_pending_task() -> (JoinHandle<()>, Arc<AtomicBool>) {
-        let task_dropped = Arc::new(AtomicBool::new(false));
-        let task_drop_signal = Arc::clone(&task_dropped);
-        let (task_started, task_started_receiver) = oneshot::channel();
-        let task = tokio::spawn(async move {
-            let _drop_signal = DropSignal(task_drop_signal);
-            let _ignored = task_started.send(());
-            pending::<()>().await;
-        });
-        assert!(task_started_receiver.await.is_ok());
-        (task, task_dropped)
-    }
-
-    struct DropSignal(Arc<AtomicBool>);
-
-    impl Drop for DropSignal {
-        fn drop(&mut self) {
-            self.0.store(true, Ordering::Release);
-        }
-    }
-}
+mod tests;

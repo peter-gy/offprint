@@ -53,7 +53,9 @@ pub enum FixtureGroup {
 )]
 #[serde(rename_all = "kebab-case")]
 pub enum FixtureCapability {
+    AdoptedFontFace,
     AdoptedStylesheet,
+    AdoptedStylesheetCascade,
     AtomicReplace,
     Authentication,
     BlobResource,
@@ -64,6 +66,7 @@ pub enum FixtureCapability {
     ClosedShadowRoot,
     CliCaptureOutput,
     CliInterrupt,
+    CliJsonOutput,
     Compression,
     ContentSecurityPolicy,
     Cookies,
@@ -76,19 +79,23 @@ pub enum FixtureCapability {
     DomMutationSettling,
     EventSource,
     ExplicitOutputConflict,
+    ExternalStylesheetResources,
     FontLoading,
     FormState,
     FrameDetachment,
     HeaderValidation,
     LazyImages,
     MalformedDomNesting,
+    MissingResourceDeduplication,
     MultipleOrigins,
     NavigationTimeout,
+    NetworkIdleDeadline,
     OfflineReopen,
     OpenShadowRoot,
     OptimizationPolicy,
     OversizedPayload,
     PartialResponse,
+    PdfOutput,
     PermanentNetworkActivity,
     Redirects,
     ReferrerSensitiveResponse,
@@ -120,6 +127,7 @@ pub enum FixtureExpectation {
     EveryResourceHasOutcome,
     ProcessRecovers,
     ProcessRecycles,
+    RepresentationVerified,
     SecretsRedacted,
     TypedFailure,
     VisibleOutputPreserved,
@@ -199,8 +207,22 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
         fixture(
             "adopted-stylesheet",
             FixtureGroup::BrowserState,
-            "Preserves rules from a constructable stylesheet adopted by a shadow root.",
-            &[FixtureCapability::AdoptedStylesheet],
+            "Preserves constructable stylesheet cascade order in light and shadow trees.",
+            &[
+                FixtureCapability::AdoptedStylesheet,
+                FixtureCapability::AdoptedStylesheetCascade,
+            ],
+            state_success(),
+        ),
+        fixture(
+            "adopted-font-face",
+            FixtureGroup::BrowserState,
+            "Reuses an observed document font face from an adopted shadow stylesheet.",
+            &[
+                FixtureCapability::AdoptedFontFace,
+                FixtureCapability::AdoptedStylesheet,
+                FixtureCapability::FontLoading,
+            ],
             state_success(),
         ),
         fixture(
@@ -271,19 +293,42 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
             state_success(),
         ),
         fixture(
-            "selection-optimization",
+            "visual-optimization",
             FixtureGroup::Artifact,
-            "Preserves visible output while selection scope and output optimizations reshape the artifact.",
-            &[
-                FixtureCapability::SelectionScope,
-                FixtureCapability::OptimizationPolicy,
-            ],
+            "Preserves visible output while output optimizations reshape the artifact.",
+            &[FixtureCapability::OptimizationPolicy],
             &[
                 FixtureExpectation::CaptureSucceeds,
                 FixtureExpectation::VisibleOutputPreserved,
                 FixtureExpectation::EveryResourceHasOutcome,
                 FixtureExpectation::ZeroExternalRequests,
             ],
+        ),
+        fixture(
+            "selection-scope",
+            FixtureGroup::Artifact,
+            "Captures the active selection or the first rendered selector match.",
+            &[FixtureCapability::SelectionScope],
+            &[
+                FixtureExpectation::CaptureSucceeds,
+                FixtureExpectation::VisibleOutputPreserved,
+                FixtureExpectation::EveryResourceHasOutcome,
+                FixtureExpectation::ZeroExternalRequests,
+            ],
+        ),
+        fixture(
+            "external-stylesheet-resources",
+            FixtureGroup::Resources,
+            "Resolves stylesheet-relative fonts and images against the stylesheet URL.",
+            &[FixtureCapability::ExternalStylesheetResources],
+            success(),
+        ),
+        fixture(
+            "missing-resource-deduplication",
+            FixtureGroup::Resources,
+            "Bounds repeated browser loads for references to one missing resource.",
+            &[FixtureCapability::MissingResourceDeduplication],
+            success(),
         ),
         fixture(
             "css-imports",
@@ -359,6 +404,16 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
             &[
                 FixtureCapability::NavigationTimeout,
                 FixtureCapability::SlowResponse,
+            ],
+            typed_failure(),
+        ),
+        fixture(
+            "network-idle-deadline",
+            FixtureGroup::Lifecycle,
+            "Applies the total capture deadline while waiting for network idle.",
+            &[
+                FixtureCapability::NavigationTimeout,
+                FixtureCapability::NetworkIdleDeadline,
             ],
             typed_failure(),
         ),
@@ -456,6 +511,35 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
                 FixtureExpectation::TypedFailure,
                 FixtureExpectation::DestinationUnchanged,
                 FixtureExpectation::SecretsRedacted,
+            ],
+        ),
+        fixture(
+            "cli-pdf-output",
+            FixtureGroup::Artifact,
+            "Commits and verifies a PDF representation through the capture command.",
+            &[
+                FixtureCapability::CliCaptureOutput,
+                FixtureCapability::PdfOutput,
+            ],
+            &[
+                FixtureExpectation::CaptureSucceeds,
+                FixtureExpectation::CommittedPathReported,
+                FixtureExpectation::RepresentationVerified,
+            ],
+        ),
+        fixture(
+            "cli-pdf-json-output",
+            FixtureGroup::Artifact,
+            "Reports the committed PDF representation through command JSON output.",
+            &[
+                FixtureCapability::CliCaptureOutput,
+                FixtureCapability::CliJsonOutput,
+                FixtureCapability::PdfOutput,
+            ],
+            &[
+                FixtureExpectation::CaptureSucceeds,
+                FixtureExpectation::CommittedPathReported,
+                FixtureExpectation::RepresentationVerified,
             ],
         ),
         fixture(
@@ -574,7 +658,6 @@ fn runner(id: &str) -> FixtureRunner {
         | "responsive-images"
         | "open-shadow-root"
         | "closed-shadow-root"
-        | "adopted-stylesheet"
         | "canvas-2d"
         | "webgl-canvas"
         | "form-state"
@@ -584,6 +667,30 @@ fn runner(id: &str) -> FixtureRunner {
             "pageknot",
             Some("fixture_matrix"),
             "browser_state_fixture_round_trips",
+            true,
+        ),
+        "adopted-stylesheet" => (
+            "pageknot",
+            Some("fixture_matrix"),
+            "adopted_stylesheets_preserve_their_cascade_order",
+            true,
+        ),
+        "adopted-font-face" => (
+            "pageknot",
+            Some("fixture_matrix"),
+            "adopted_stylesheet_reuses_the_document_font_face",
+            true,
+        ),
+        "external-stylesheet-resources" => (
+            "pageknot",
+            Some("fixture_matrix"),
+            "external_stylesheet_resources_resolve_from_stylesheet_url",
+            true,
+        ),
+        "missing-resource-deduplication" => (
+            "pageknot",
+            Some("fixture_matrix"),
+            "repeated_missing_resource_loads_stop_after_the_first_batch",
             true,
         ),
         "same-origin-iframe" | "cross-origin-oopif" | "srcdoc-frame" | "sandboxed-iframe" => (
@@ -622,17 +729,23 @@ fn runner(id: &str) -> FixtureRunner {
             "navigation_deadline_returns_a_typed_timeout",
             true,
         ),
-        "browser-crash" => (
+        "network-idle-deadline" => (
             "pageknot",
+            Some("fixture_matrix"),
+            "network_idle_uses_the_total_capture_deadline",
+            true,
+        ),
+        "browser-crash" => (
+            "pageknot-chromium",
             None,
-            "runtime::tests::local_browser_restarts_after_its_process_tree_crashes",
+            "backend::tests::local_browser_restarts_after_its_process_tree_crashes",
             true,
         ),
         "browser-job-recycling" => (
             "pageknot",
             None,
-            "runtime::tests::local_browser_recycles_after_the_configured_job_threshold",
-            true,
+            "runtime::browser::tests::local_browser_recycles_after_the_configured_job_threshold",
+            false,
         ),
         "frame-detachment" => (
             "pageknot",
@@ -664,22 +777,40 @@ fn runner(id: &str) -> FixtureRunner {
             "rendered_state_reopens_across_light_and_shadow_trees",
             true,
         ),
-        "selection-optimization" => (
+        "visual-optimization" => (
             "pageknot",
             Some("fixture_matrix"),
-            "selection_and_optimizers_preserve_visible_output",
+            "visual_optimizers_reduce_resources_and_preserve_rendering",
+            true,
+        ),
+        "selection-scope" => (
+            "pageknot",
+            Some("fixture_matrix"),
+            "selection_and_selector_capture_the_first_rendered_target",
             true,
         ),
         "cli-committed-path" => (
             "pageknot-cli",
             None,
-            "runner::tests::capture_writes_the_committed_path_to_stdout",
+            "runner::tests::capture_commits_and_reports_the_destination",
             true,
         ),
         "cli-interrupted-capture" => (
             "pageknot-cli",
             None,
             "runner::tests::interrupted_capture_preserves_the_existing_destination_and_redacts_progress",
+            true,
+        ),
+        "cli-pdf-output" => (
+            "pageknot-cli",
+            None,
+            "runner::tests::capture_writes_and_verifies_pdf_output",
+            true,
+        ),
+        "cli-pdf-json-output" => (
+            "pageknot-cli",
+            None,
+            "runner::tests::pdf_capture_json_returns_the_committed_representation",
             true,
         ),
         "network-denied-reopen" => (

@@ -27,8 +27,8 @@ if (typeof Element === "undefined") {
 const { sha256Fallback, utf8LengthWithinLimit } = await import("../src/index");
 const { countCloneableNodesWithinLimit, RecursiveSnapshotBudget } =
   await import("../src/budget");
-const { copyCssRules, frameOwnerMappings, materializeCssRules } =
-  await import("../src/collection");
+const { frameOwnerMappings } = await import("../src/collection");
+const { copyCssRules, materializeCssRules } = await import("../src/styles");
 const { serializeJsonBytesBounded } = await import("../src/serialize");
 const { maximumPngDataUrlBytes } = await import("../src/state");
 
@@ -415,6 +415,59 @@ describe("collector source", () => {
     });
   });
 
+  test("computes used fonts once for every captured root", () => {
+    let computedStyleReads = 0;
+    const style = {
+      getPropertyValue(name: string) {
+        return name === "content" ? "none" : "Fixture";
+      },
+    };
+    const view = {
+      getComputedStyle() {
+        computedStyleReads += 1;
+        return style;
+      },
+    };
+    const root = {
+      nodeType: 9,
+      defaultView: view,
+      querySelectorAll() {
+        return {
+          length: 1,
+          item() {
+            return { ownerDocument: root };
+          },
+        };
+      },
+    } as unknown as Document;
+    const sheet = {
+      cssRules: {
+        length: 1,
+        item() {
+          return {
+            type: 5,
+            cssText:
+              '@font-face { font-family: "Fixture"; src: url("./fixture.woff2"); }',
+            style,
+          };
+        },
+      },
+    } as unknown as CSSStyleSheet;
+    const context = {
+      documentFontFaces: new Set<string>(),
+      options: {
+        removeUnusedCss: false,
+        removeUnusedFonts: true,
+      },
+      usedFontsByRoot: new Map<Document | ShadowRoot, Set<string>>(),
+      warnings: [],
+    } as unknown as Parameters<typeof copyCssRules>[2];
+
+    expect(copyCssRules(sheet, root, context, 1024)?.kind).toBe("ok");
+    expect(copyCssRules(sheet, root, context, 1024)?.kind).toBe("ok");
+    expect(computedStyleReads).toBe(3);
+  });
+
   test("reserves the remaining payload before native CSS rule serialization", () => {
     const source = node(9);
     const budget = new RecursiveSnapshotBudget("capture-css-rule", 10, 4, 1, 0);
@@ -618,9 +671,11 @@ describe("collector source", () => {
       "index.ts",
       "motion.ts",
       "protocol.ts",
+      "repair.ts",
       "serialize.ts",
       "shadow.ts",
       "state.ts",
+      "styles.ts",
     ];
     const mutableMethods = new Set([
       "append",

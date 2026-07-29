@@ -7,9 +7,10 @@ use super::durable::{
 };
 use super::fault::{FaultAction, FaultInjector, FaultPoint, injected_fault};
 use super::journal::{CommitMode, JournalPhase, JournalStore, OutputKind};
+use super::payload::ArtifactTransactionLimits;
 use super::plan::{
-    StagedVariant, output_directory_is_empty, recheck_destinations, validate_complete_output_set,
-    validate_entry_path, validate_staged_variants,
+    StagedArtifact, output_directory_is_empty, recheck_destinations, validate_complete_output_set,
+    validate_entry_path, validate_staged_artifacts,
 };
 use super::recovery::{finalize_committed, rollback_transaction};
 
@@ -17,11 +18,10 @@ pub(super) struct CommitRequest<'a> {
     pub(super) output_directory: &'a Path,
     pub(super) root: &'a Path,
     pub(super) journal: &'a mut JournalStore,
-    pub(super) variants: &'a [StagedVariant],
+    pub(super) artifacts: &'a [StagedArtifact],
     pub(super) conflict: pageknot_model::ConflictPolicy,
     pub(super) mode: CommitMode,
-    pub(super) maximum_assets: usize,
-    pub(super) maximum_bytes: u64,
+    pub(super) limits: ArtifactTransactionLimits,
 }
 
 pub(super) fn commit_transaction(
@@ -50,7 +50,7 @@ pub(super) fn commit_transaction(
         return handle_mutating_failure(&mut request, injector, error, FaultAction::Error);
     }
     if let Err(error) = sync_directory(request.output_directory, ErrorStage::Commit) {
-        return handle_mutating_failure(&mut request, injector, error, FaultAction::Error);
+        return Err(commit_confirmation_error(request.root, error));
     }
     if let Err(error) = request.journal.persist(JournalPhase::Committed) {
         return Err(commit_confirmation_error(request.root, error));
@@ -68,25 +68,20 @@ pub(super) fn commit_transaction(
         ));
     }
 
-    let results = build_results(request.output_directory, request.variants)
+    let results = build_results(request.output_directory, request.artifacts)
         .map_err(|error| committed_recovery_error(request.root, error))?;
     finalize_committed(
         request.output_directory,
         request.root,
         request.journal.snapshot(),
-        request.maximum_assets,
-        request.maximum_bytes,
+        request.limits,
     )?;
     Ok(results)
 }
 
 fn validate_before_mutation(request: &CommitRequest<'_>) -> Result<()> {
-    validate_staged_variants(
-        request.variants,
-        request.maximum_assets,
-        request.maximum_bytes,
-    )?;
-    recheck_destinations(request.conflict, request.variants)?;
+    validate_staged_artifacts(request.artifacts, request.limits)?;
+    recheck_destinations(request.conflict, request.artifacts)?;
     if request.mode == CommitMode::DirectorySwap
         && !output_directory_is_empty(request.output_directory, ErrorStage::Commit)?
     {
@@ -103,17 +98,21 @@ fn commit_entries(
     request: &CommitRequest<'_>,
     injector: &mut impl FaultInjector,
 ) -> std::result::Result<(), (PageKnotError, FaultAction)> {
-    if request.variants.iter().any(|variant| variant.entry.existed) {
+    if request
+        .artifacts
+        .iter()
+        .any(|artifact| artifact.entry.existed)
+    {
         let backups = request.root.join("backups");
         if let Err(error) = create_directory(&backups, ErrorStage::Commit) {
             return Err((error, FaultAction::Error));
         }
-        for (index, variant) in request.variants.iter().enumerate() {
-            if !variant.entry.existed {
+        for (index, artifact) in request.artifacts.iter().enumerate() {
+            if !artifact.entry.existed {
                 continue;
             }
             let backup = backups.join(format!("entry-{index}"));
-            if let Err(error) = durable_rename(&variant.destination, &backup) {
+            if let Err(error) = durable_rename(&artifact.destination, &backup) {
                 return Err((error, FaultAction::Error));
             }
             if let Some(action) = injector.action(FaultPoint::AfterBackup(index)) {
@@ -124,10 +123,10 @@ fn commit_entries(
             }
         }
     }
-    for (index, variant) in request.variants.iter().enumerate() {
-        let result = match variant.entry.output_kind {
-            OutputKind::File => durable_hard_link(&variant.staged_path, &variant.destination),
-            OutputKind::Directory => durable_rename(&variant.staged_path, &variant.destination),
+    for (index, artifact) in request.artifacts.iter().enumerate() {
+        let result = match artifact.entry.output_kind {
+            OutputKind::File => durable_hard_link(&artifact.staged_path, &artifact.destination),
+            OutputKind::Directory => durable_rename(&artifact.staged_path, &artifact.destination),
         };
         if let Err(error) = result {
             return Err((error, FaultAction::Error));
@@ -180,21 +179,15 @@ fn commit_directory_swap(
 fn validate_committed_outputs(request: &CommitRequest<'_>) -> Result<()> {
     match request.mode {
         CommitMode::Entries => {
-            for variant in request.variants {
-                validate_entry_path(
-                    &variant.destination,
-                    &variant.entry,
-                    request.maximum_assets,
-                    request.maximum_bytes,
-                )?;
+            for artifact in request.artifacts {
+                validate_entry_path(&artifact.destination, &artifact.entry, request.limits)?;
             }
             Ok(())
         }
         CommitMode::DirectorySwap => validate_complete_output_set(
             request.output_directory,
             request.journal.snapshot().entries.as_slice(),
-            request.maximum_assets,
-            request.maximum_bytes,
+            request.limits,
         ),
     }
 }
@@ -221,8 +214,7 @@ fn handle_mutating_failure(
         request.output_directory,
         request.root,
         request.journal.snapshot(),
-        request.maximum_assets,
-        request.maximum_bytes,
+        request.limits,
     ) {
         Ok(()) => Err(PageKnotError::new(
             "pageknot.export.output",
@@ -304,26 +296,27 @@ fn recovery_pending_error(root: &Path, source: PageKnotError) -> PageKnotError {
 
 fn build_results(
     output_directory: &Path,
-    variants: &[StagedVariant],
+    artifacts: &[StagedArtifact],
 ) -> Result<Vec<ExportedArtifact>> {
-    variants
+    artifacts
         .iter()
-        .map(|variant| {
+        .map(|artifact| {
             let path = PortablePath::from_path_buf(
-                output_directory.join(&variant.entry.destination_name),
+                output_directory.join(&artifact.entry.destination_name),
             )?;
-            let entrypoint = if variant.entry.output_kind == OutputKind::Directory {
-                PortablePath::from_path_buf(path.join("index.md").into_std_path_buf())?
-            } else {
-                path.clone()
+            let entrypoint = match artifact.entry.entrypoint.as_deref() {
+                Some(relative) => {
+                    PortablePath::from_path_buf(path.join(relative).into_std_path_buf())?
+                }
+                None => path.clone(),
             };
             Ok(ExportedArtifact {
-                kind: variant.entry.kind,
+                kind: artifact.entry.kind,
                 path,
                 entrypoint,
-                bytes: variant.entry.verification.bytes,
-                sha256: variant.entry.verification.sha256,
-                verification: variant.entry.verification.clone(),
+                bytes: artifact.entry.verification.bytes,
+                sha256: artifact.entry.verification.sha256,
+                verification: artifact.entry.verification.clone(),
             })
         })
         .collect()

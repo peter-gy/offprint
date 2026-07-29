@@ -1,18 +1,4 @@
-export type Capability =
-  | "adopted-stylesheets"
-  | "canvas-pixels"
-  | "closed-shadow-roots"
-  | "cssom"
-  | "form-state"
-  | "frame-owner-mapping"
-  | "hidden-element-removal"
-  | "media-state"
-  | "open-shadow-roots"
-  | "responsive-images"
-  | "selection-capture"
-  | "selector-capture"
-  | "unused-css-removal"
-  | "unused-font-removal";
+export type { Capability } from "./identity";
 
 export type CaptureScope = "page" | "selection";
 
@@ -84,6 +70,7 @@ export interface SnapshotContext {
   nextInlineFallbackNamespace: number;
   options: SnapshotOptions;
   reservation: SnapshotReservation;
+  usedFontsByRoot: Map<Document | ShadowRoot, Set<string>>;
 }
 
 export interface SnapshotRootContext {

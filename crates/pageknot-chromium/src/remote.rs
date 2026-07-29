@@ -1,7 +1,10 @@
 use std::collections::BTreeSet;
 use std::time::Duration;
 
-use pageknot_model::{ErrorStage, PageKnotError, Result};
+use pageknot_model::{
+    BrowserInfo, BrowserProduct, BrowserSource, ErrorStage, PageKnotError, RedactedUrl,
+    RedactionPolicy, Result,
+};
 use reqwest::{Client, Response};
 use serde_json::{Value, json};
 use tokio::time::timeout;
@@ -66,6 +69,60 @@ pub async fn resolve_remote_endpoint(endpoint: &Url) -> Result<Url> {
             }),
         ),
     )
+}
+
+/// Connects to a remote CDP endpoint and returns its browser identity.
+///
+/// The probe connection is closed before this function returns.
+pub async fn probe_remote_browser(endpoint: &Url) -> Result<BrowserInfo> {
+    let (client, info) = connect_remote_browser(endpoint).await?;
+    client.close().await?;
+    Ok(info)
+}
+
+pub(crate) async fn connect_remote_browser(
+    requested_endpoint: &Url,
+) -> Result<(CdpClient, BrowserInfo)> {
+    let websocket_endpoint = resolve_remote_endpoint(requested_endpoint).await?;
+    let client = CdpClient::connect(websocket_endpoint).await?;
+    let version = client
+        .command("Browser.getVersion", json!({}), None)
+        .await?;
+    let product_value = version
+        .get("product")
+        .and_then(Value::as_str)
+        .unwrap_or("Chromium/unknown");
+    let (product, version_number) = parse_remote_product(product_value);
+    let protocol_version = version
+        .get("protocolVersion")
+        .and_then(Value::as_str)
+        .unwrap_or("unknown")
+        .to_owned();
+    let info = BrowserInfo {
+        product,
+        version: version_number,
+        source: BrowserSource::Remote,
+        executable_path: None,
+        endpoint: Some(RedactedUrl::from_url(
+            requested_endpoint,
+            &RedactionPolicy::default(),
+        )),
+        revision: None,
+        protocol_version,
+    };
+    Ok((client, info))
+}
+
+fn parse_remote_product(value: &str) -> (BrowserProduct, String) {
+    let (name, version) = value.split_once('/').unwrap_or((value, "unknown"));
+    let product = if name.contains("Edge") || name.contains("Edg") {
+        BrowserProduct::Edge
+    } else if name.contains("Chrome") {
+        BrowserProduct::Chrome
+    } else {
+        BrowserProduct::Chromium
+    };
+    (product, version.to_owned())
 }
 
 async fn discover_from_version(

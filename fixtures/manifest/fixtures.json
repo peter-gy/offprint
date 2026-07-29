@@ -157,10 +157,11 @@
     {
       "id": "adopted-stylesheet",
       "group": "browser-state",
-      "summary": "Preserves rules from a constructable stylesheet adopted by a shadow root.",
+      "summary": "Preserves constructable stylesheet cascade order in light and shadow trees.",
       "required": true,
       "capabilities": [
-        "adopted-stylesheet"
+        "adopted-stylesheet",
+        "adopted-stylesheet-cascade"
       ],
       "expectations": [
         "capture-succeeds",
@@ -171,7 +172,31 @@
       "runner": {
         "package": "pageknot",
         "testTarget": "fixture_matrix",
-        "filter": "browser_state_fixture_round_trips",
+        "filter": "adopted_stylesheets_preserve_their_cascade_order",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "adopted-font-face",
+      "group": "browser-state",
+      "summary": "Reuses an observed document font face from an adopted shadow stylesheet.",
+      "required": true,
+      "capabilities": [
+        "adopted-font-face",
+        "adopted-stylesheet",
+        "font-loading"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "artifact-state-round-trips",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "adopted_stylesheet_reuses_the_document_font_face",
         "ignored": true,
         "serial": true
       }
@@ -377,12 +402,11 @@
       }
     },
     {
-      "id": "selection-optimization",
+      "id": "visual-optimization",
       "group": "artifact",
-      "summary": "Preserves visible output while selection scope and output optimizations reshape the artifact.",
+      "summary": "Preserves visible output while output optimizations reshape the artifact.",
       "required": true,
       "capabilities": [
-        "selection-scope",
         "optimization-policy"
       ],
       "expectations": [
@@ -394,7 +418,71 @@
       "runner": {
         "package": "pageknot",
         "testTarget": "fixture_matrix",
-        "filter": "selection_and_optimizers_preserve_visible_output",
+        "filter": "visual_optimizers_reduce_resources_and_preserve_rendering",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "selection-scope",
+      "group": "artifact",
+      "summary": "Captures the active selection or the first rendered selector match.",
+      "required": true,
+      "capabilities": [
+        "selection-scope"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "visible-output-preserved",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "selection_and_selector_capture_the_first_rendered_target",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "external-stylesheet-resources",
+      "group": "resources",
+      "summary": "Resolves stylesheet-relative fonts and images against the stylesheet URL.",
+      "required": true,
+      "capabilities": [
+        "external-stylesheet-resources"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "external_stylesheet_resources_resolve_from_stylesheet_url",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "missing-resource-deduplication",
+      "group": "resources",
+      "summary": "Bounds repeated browser loads for references to one missing resource.",
+      "required": true,
+      "capabilities": [
+        "missing-resource-deduplication"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "repeated_missing_resource_loads_stop_after_the_first_batch",
         "ignored": true,
         "serial": true
       }
@@ -613,6 +701,26 @@
       }
     },
     {
+      "id": "network-idle-deadline",
+      "group": "lifecycle",
+      "summary": "Applies the total capture deadline while waiting for network idle.",
+      "required": true,
+      "capabilities": [
+        "navigation-timeout",
+        "network-idle-deadline"
+      ],
+      "expectations": [
+        "typed-failure"
+      ],
+      "runner": {
+        "package": "pageknot",
+        "testTarget": "fixture_matrix",
+        "filter": "network_idle_uses_the_total_capture_deadline",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
       "id": "browser-crash",
       "group": "lifecycle",
       "summary": "Returns a typed crash and starts the next capture in a healthy browser.",
@@ -625,8 +733,8 @@
         "process-recovers"
       ],
       "runner": {
-        "package": "pageknot",
-        "filter": "runtime::tests::local_browser_restarts_after_its_process_tree_crashes",
+        "package": "pageknot-chromium",
+        "filter": "backend::tests::local_browser_restarts_after_its_process_tree_crashes",
         "ignored": true,
         "serial": true
       }
@@ -644,8 +752,8 @@
       ],
       "runner": {
         "package": "pageknot",
-        "filter": "runtime::tests::local_browser_recycles_after_the_configured_job_threshold",
-        "ignored": true,
+        "filter": "runtime::browser::tests::local_browser_recycles_after_the_configured_job_threshold",
+        "ignored": false,
         "serial": true
       }
     },
@@ -756,7 +864,7 @@
       ],
       "runner": {
         "package": "pageknot-cli",
-        "filter": "runner::tests::capture_writes_the_committed_path_to_stdout",
+        "filter": "runner::tests::capture_commits_and_reports_the_destination",
         "ignored": true,
         "serial": true
       }
@@ -779,6 +887,49 @@
       "runner": {
         "package": "pageknot-cli",
         "filter": "runner::tests::interrupted_capture_preserves_the_existing_destination_and_redacts_progress",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "cli-pdf-output",
+      "group": "artifact",
+      "summary": "Commits and verifies a PDF representation through the capture command.",
+      "required": true,
+      "capabilities": [
+        "cli-capture-output",
+        "pdf-output"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "committed-path-reported",
+        "representation-verified"
+      ],
+      "runner": {
+        "package": "pageknot-cli",
+        "filter": "runner::tests::capture_writes_and_verifies_pdf_output",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "cli-pdf-json-output",
+      "group": "artifact",
+      "summary": "Reports the committed PDF representation through command JSON output.",
+      "required": true,
+      "capabilities": [
+        "cli-capture-output",
+        "cli-json-output",
+        "pdf-output"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "committed-path-reported",
+        "representation-verified"
+      ],
+      "runner": {
+        "package": "pageknot-cli",
+        "filter": "runner::tests::pdf_capture_json_returns_the_committed_representation",
         "ignored": true,
         "serial": true
       }

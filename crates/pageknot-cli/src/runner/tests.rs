@@ -2,9 +2,9 @@ use std::error::Error;
 
 use clap::Parser as _;
 use pageknot::{
-    ArtifactExportResult, ArtifactVariantKind, CaptureRequest, ConflictPolicy, ErrorStage,
-    LazyLoadPolicy, Milliseconds, PageKnot, PageKnotError, PortablePath, ReadinessMode,
-    VerificationResult,
+    ArtifactExportResult, ArtifactSpec, ArtifactTarget, ArtifactVariantKind, CaptureRequest,
+    ConflictPolicy, ErrorStage, LazyLoadPolicy, Milliseconds, PageKnot, PageKnotError,
+    PortablePath, ReadinessMode, VerificationResult,
 };
 use pageknot_test_support::{FixtureResponse, FixtureServer};
 
@@ -12,7 +12,8 @@ use crate::command::{ColorOutput, OutputOptions};
 use crate::output::exit_for_error;
 use crate::{Cli, CommandExit, run_with_terminal_diagnostics};
 
-use super::arguments::apply_capture_arguments;
+use super::arguments::{apply_capture_arguments, parse_duration};
+use super::capture::CapturePlan;
 use super::{drive_capture, drive_verification, read_credentials, run};
 
 type TestResult<T = ()> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
@@ -78,8 +79,80 @@ fn capture_wait_until_accepts_each_readiness_mode() -> TestResult {
         apply_capture_arguments(&mut request, &arguments)?;
 
         assert_eq!(request.readiness.mode, expected, "{value}");
+        if expected != ReadinessMode::RenderIdle {
+            assert_eq!(
+                request.readiness.lazy_load,
+                LazyLoadPolicy::Disabled,
+                "{value}"
+            );
+        }
     }
     Ok(())
+}
+
+#[test]
+fn capture_plan_selects_the_canonical_html_target() -> TestResult {
+    for (arguments, expected) in [
+        (vec!["pageknot", "capture", "https://example.com"], "bytes"),
+        (
+            vec![
+                "pageknot",
+                "capture",
+                "https://example.com",
+                "--output",
+                "-",
+            ],
+            "bytes",
+        ),
+        (
+            vec![
+                "pageknot",
+                "capture",
+                "https://example.com",
+                "--output",
+                "capture.html",
+            ],
+            "capture.html",
+        ),
+        (
+            vec![
+                "pageknot",
+                "capture",
+                "https://example.com",
+                "--format",
+                "pdf",
+                "--output",
+                "capture.pdf",
+            ],
+            "bytes",
+        ),
+    ] {
+        let cli = Cli::try_parse_from(arguments)?;
+        let crate::command::Command::Capture(arguments) = cli.command else {
+            return Err(std::io::Error::other("fixture parsed the wrong command").into());
+        };
+        let plan = CapturePlan::from_arguments(&arguments)?;
+        let mut request = CaptureRequest::builder("https://example.com")?.build()?;
+
+        plan.apply_to_request(&mut request);
+
+        let ArtifactSpec::Html(spec) = request.artifact;
+        match spec.target {
+            ArtifactTarget::Bytes { .. } => assert_eq!(expected, "bytes"),
+            ArtifactTarget::File(path) => assert_eq!(path.as_str(), expected),
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn capture_duration_overflow_is_invalid_input() {
+    let value = format!("{:.0}h", f64::MAX / 2.0);
+
+    assert!(
+        parse_duration(&value)
+            .is_err_and(|error| { error.code.as_str() == "pageknot.input.duration" })
+    );
 }
 
 #[test]

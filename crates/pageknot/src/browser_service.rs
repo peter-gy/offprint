@@ -54,6 +54,23 @@ impl BrowserService {
             .await
     }
 
+    /// Installs a managed browser and returns the stable browser-operation
+    /// record used by machine-facing clients.
+    pub async fn install_operation(
+        &self,
+        request: BrowserInstallRequest,
+    ) -> Result<BrowserOperationResult> {
+        let browser = self.install(request).await?;
+        Ok(BrowserOperationResult {
+            schema_version: pageknot_model::PUBLIC_SCHEMA_VERSION,
+            action: BrowserAction::Install,
+            revision: browser.revision.clone(),
+            browser: Some(browser),
+            cache_dir: self.state.cache_dir.clone().into(),
+            candidates: Vec::new(),
+        })
+    }
+
     /// Lists compatible, selected, shadowed, and incompatible browser
     /// candidates.
     pub async fn list(&self) -> Result<Vec<BrowserCandidate>> {

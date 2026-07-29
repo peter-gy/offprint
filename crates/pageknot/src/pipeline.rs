@@ -3,14 +3,14 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use pageknot_browser::NetworkGuard;
+use pageknot_capture::ValidatedCaptureRequest;
 use pageknot_model::{
-    CaptureEvent, CaptureId, CaptureRequest, CaptureResult, CaptureStatus, ErrorStage,
-    PageKnotError, Result,
+    CaptureEvent, CaptureId, CaptureResult, CaptureStatus, ErrorStage, PageKnotError, Result,
 };
 use tokio_util::sync::CancellationToken;
 
 use crate::capture_service::JobState;
-use crate::runtime::{RuntimePageRequest, RuntimeState};
+use crate::runtime::{RuntimePagePurpose, RuntimePageRequest, RuntimeState};
 
 mod artifact;
 mod frames;
@@ -24,9 +24,9 @@ pub(crate) async fn run_capture_job(
     runtime: Arc<RuntimeState>,
     job: Arc<JobState>,
     capture_id: CaptureId,
-    request: CaptureRequest,
+    request: ValidatedCaptureRequest,
 ) {
-    let duration = Duration::from(request.limits.duration);
+    let duration = Duration::from(request.get().limits.duration);
     let cancellation = job.cancellation().clone();
     let (result, timed_out) = {
         let pipeline = run_pipeline(&runtime, &job, &capture_id, request);
@@ -97,7 +97,7 @@ async fn run_pipeline(
     runtime: &Arc<RuntimeState>,
     job: &Arc<JobState>,
     capture_id: &CaptureId,
-    request: CaptureRequest,
+    request: ValidatedCaptureRequest,
 ) -> Result<CaptureResult> {
     let total_started = Instant::now();
     transition(job, CaptureStatus::Validating).await?;
@@ -105,7 +105,7 @@ async fn run_pipeline(
         capture_id: capture_id.clone(),
     });
     let validation_started = Instant::now();
-    request.validate()?;
+    let request = request.get();
     let writer = artifact::PreparedWriter::new(&request.artifact, request.limits.artifact_bytes)?;
     let guard = NetworkGuard::new(request.network.clone(), &request.url)?;
     cancellable(
@@ -126,7 +126,7 @@ async fn run_pipeline(
             environment: request.environment.clone(),
             headed: request.headed,
             network: request.network.clone(),
-            deny_network: false,
+            purpose: RuntimePagePurpose::Capture,
             maximum_frames: request.limits.frames,
             resource_observation: pageknot_browser::ResourceObservationLimits {
                 maximum_resource_bytes: request.limits.resource_bytes,
@@ -146,7 +146,7 @@ async fn run_pipeline(
 
     let page_result = cancellable(
         job.cancellation(),
-        frames::capture(runtime_page.page()?, job, capture_id, &request, &guard),
+        frames::capture(runtime_page.page()?, job, capture_id, request, &guard),
     )
     .await;
     let page_close = runtime_page.close().await;
@@ -161,7 +161,7 @@ async fn run_pipeline(
             runtime,
             job,
             capture_id,
-            request: &request,
+            request,
             browser_info,
             total_started,
             validation,
