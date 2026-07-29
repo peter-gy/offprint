@@ -278,7 +278,7 @@ miri:
       -p pageknot-protocol
 
 docs-check:
-    RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --no-deps
+    RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --no-deps --lib
     cargo test --locked --workspace --doc
 
 package target binary output="dist":

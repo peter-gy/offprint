@@ -6,7 +6,10 @@ try {
   const result = await pageknot.capture("https://example.com", {
     output: "example.html",
   });
-  console.log(result.artifact);
+  if (result.artifact.kind !== "file") {
+    throw new Error("expected a file artifact");
+  }
+  console.log(result.artifact.path);
 } finally {
   await pageknot.close();
 }

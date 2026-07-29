@@ -3,6 +3,9 @@
 The `pageknot` crate exposes one service handle, three service views, one
 capture builder, one job handle, and the canonical model records.
 
+This page describes the current alpha source checkout. The crate requires Rust
+1.97 or newer.
+
 ```rust
 use pageknot::PageKnot;
 
@@ -143,8 +146,7 @@ their owning crates.
 
 ## Compatibility policy
 
-The 0.1 release establishes the naming and defaults reviewed for the 1.0
-contract:
+The current alpha uses the naming and defaults reviewed for the 1.0 contract:
 
 - `PageKnot` is the root service noun.
 - `CaptureRequest -> CaptureService -> CaptureJob -> CaptureResult` is the
@@ -156,6 +158,10 @@ contract:
   guarantee receives SemVer review.
 - The minimum supported Rust version is 1.97.
 
-After the first published tag, release CI compares public Rust APIs against the
-latest compatible release. Schema freshness and binding contract tests protect
-the serialized surface in every release.
+Public APIs, JSON schemas, and artifact formats may change before the first
+tagged release. Release CI is configured to compare Rust APIs with the latest
+compatible tag once that baseline exists. Schema freshness and binding contract
+tests protect the serialized surface on the current branch.
+
+Return to the [documentation index](./README.md) or inspect the generated API
+with `cargo doc --open -p pageknot`.

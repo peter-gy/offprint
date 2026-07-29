@@ -21,7 +21,8 @@ catalog versions.
 command and event traits, stable formatting, a checked freshness mode, and
 workspace-specific output.
 
-The PageKnot implementation does not embed SingleFile program source. The
+PageKnot uses independently authored capture code. SingleFile remains a pinned
+external differential oracle for rendered state and offline behavior. The
 project license follows the AGPL-compatible posture required by the direct
 source inspection recorded in `SPEC.md`.
 

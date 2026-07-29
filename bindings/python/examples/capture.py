@@ -9,7 +9,7 @@ async def main() -> None:
             "https://example.com",
             output="example.html",
         )
-        print(result["artifact"])
+        print(result["artifact"]["path"])
 
 
 asyncio.run(main())

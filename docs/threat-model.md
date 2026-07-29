@@ -5,6 +5,27 @@ retrieves render-affecting resources, and writes a portable artifact. The
 default workflow assumes the page and every value derived from it are
 untrusted.
 
+## Safe capture baseline
+
+Use the default `standard` network policy and `offline` verification for public
+web pages:
+
+```console
+pageknot capture https://example.com \
+  --network-policy standard \
+  --verify offline \
+  --output example.html
+```
+
+The default policy blocks private and link-local destinations. A loopback URL
+can reach loopback resources from the same initial origin. Redirects are
+revalidated before navigation or resource retrieval.
+
+Credentials can expose authenticated content to the page and the saved
+artifact. Load them from a protected file and apply the source system's
+retention and sharing controls to the output. See
+[Configuration](./configuration.md#credential-inputs).
+
 ## Assets
 
 - Local files and services reachable from the capture host
@@ -65,4 +86,5 @@ truth or safety of the captured page.
 Security-sensitive failures use stable `pageknot.*` error codes and avoid
 embedding attacker-controlled secrets in diagnostics. Reports should include
 the PageKnot version, platform, managed browser revision, error code, and a
-minimal local fixture.
+minimal local fixture. Follow [Troubleshooting](./troubleshooting.md) to collect
+the doctor report and a sanitized diagnostic bundle.
