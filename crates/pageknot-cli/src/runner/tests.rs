@@ -2,8 +2,9 @@ use std::error::Error;
 
 use clap::Parser as _;
 use pageknot::{
-    ArtifactSpec, CaptureRequest, ConflictPolicy, ErrorStage, LazyLoadPolicy, Milliseconds,
-    PageKnot, PageKnotError, ReadinessMode, VerificationResult,
+    ArtifactExportResult, ArtifactVariantKind, CaptureRequest, ConflictPolicy, ErrorStage,
+    LazyLoadPolicy, Milliseconds, PageKnot, PageKnotError, PortablePath, ReadinessMode,
+    VerificationResult,
 };
 use pageknot_test_support::{FixtureResponse, FixtureServer};
 
@@ -16,29 +17,41 @@ use super::{drive_capture, drive_verification, read_credentials, run};
 
 type TestResult<T = ()> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 
-#[test]
-fn capture_file_output_defaults_to_atomic_replacement() -> TestResult {
-    let directory = tempfile::tempdir()?;
-    let destination = directory.path().join("capture.html");
-    let destination = destination
-        .to_str()
-        .ok_or_else(|| std::io::Error::other("artifact path is not UTF-8"))?;
-    let cli = Cli::try_parse_from([
-        "pageknot",
-        "capture",
-        "https://example.com",
-        "--output",
-        destination,
-    ])?;
-    let crate::command::Command::Capture(arguments) = cli.command else {
-        return Err(std::io::Error::other("fixture parsed the wrong command").into());
-    };
-    let mut request = CaptureRequest::builder("https://example.com")?.build()?;
+#[tokio::test]
+async fn capture_validates_pdf_options_and_destination() -> TestResult {
+    for (arguments, expected_code) in [
+        (
+            vec!["pageknot", "capture", "https://example.com", "--landscape"],
+            "pageknot.input.export_option",
+        ),
+        (
+            vec![
+                "pageknot",
+                "capture",
+                "https://example.com",
+                "--format",
+                "pdf",
+                "--output",
+                "capture.html",
+            ],
+            "pageknot.input.output",
+        ),
+    ] {
+        let cli = Cli::try_parse_from(arguments)?;
+        let mut input = std::io::empty();
+        let mut output = Vec::new();
+        let mut diagnostics = Vec::new();
 
-    apply_capture_arguments(&mut request, &arguments)?;
+        let exit = run(cli, &mut input, &mut output, &mut diagnostics).await;
 
-    let ArtifactSpec::Html(artifact) = request.artifact;
-    assert_eq!(artifact.conflict, ConflictPolicy::Replace);
+        assert_eq!(exit, CommandExit::InvalidInput);
+        assert!(output.is_empty());
+        assert!(
+            String::from_utf8_lossy(&diagnostics).contains(expected_code),
+            "{}",
+            String::from_utf8_lossy(&diagnostics)
+        );
+    }
     Ok(())
 }
 
@@ -817,8 +830,104 @@ async fn capture_writes_the_committed_path_to_stdout() -> TestResult {
 
     assert_eq!(exit, CommandExit::Success);
     assert_eq!(String::from_utf8_lossy(&output), format!("{destination}\n"));
-    assert!(std::path::Path::new(destination).is_file());
+    let verification = pageknot_html::verify_static(&std::fs::read(destination)?)?;
+    assert!(verification.passed);
     assert!(diagnostics.is_empty());
+    server.close().await;
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "requires a locally installed compatible Chromium browser"]
+async fn capture_writes_and_verifies_pdf_output() -> TestResult {
+    let server = FixtureServer::start().await?;
+    server
+        .register(
+            "/",
+            FixtureResponse::html(
+                r#"<title>CLI PDF fixture</title><main><h1>ready</h1>
+                <a href="/details">Details</a></main>"#,
+            ),
+        )
+        .await?;
+    let url = server.url("/")?;
+    let directory = tempfile::tempdir()?;
+    let destination = directory.path().join("capture.pdf");
+    std::fs::write(&destination, b"existing output")?;
+    let destination = destination
+        .to_str()
+        .ok_or_else(|| std::io::Error::other("artifact path is not UTF-8"))?;
+    let cli = Cli::try_parse_from([
+        "pageknot",
+        "capture",
+        url.as_str(),
+        "--format",
+        "pdf",
+        "--output",
+        destination,
+        "--quiet",
+    ])?;
+    let mut input = std::io::empty();
+    let mut output = Vec::new();
+    let mut diagnostics = Vec::new();
+
+    let exit = run(cli, &mut input, &mut output, &mut diagnostics).await;
+
+    assert_eq!(exit, CommandExit::Success);
+    assert_eq!(String::from_utf8_lossy(&output), format!("{destination}\n"));
+    assert!(diagnostics.is_empty());
+    let pageknot = PageKnot::builder().build()?;
+    let verification = pageknot
+        .artifacts()
+        .verify_variant(PortablePath::new(destination), ArtifactVariantKind::Pdf)
+        .await?;
+    assert!(verification.passed);
+    pageknot.close().await?;
+    server.close().await;
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "requires a locally installed compatible Chromium browser"]
+async fn pdf_capture_json_returns_the_committed_representation() -> TestResult {
+    let server = FixtureServer::start().await?;
+    server
+        .register(
+            "/",
+            FixtureResponse::html("<title>CLI PDF JSON fixture</title><main>ready</main>"),
+        )
+        .await?;
+    let url = server.url("/")?;
+    let directory = tempfile::tempdir()?;
+    let destination = directory.path().join("capture.pdf");
+    let destination = destination
+        .to_str()
+        .ok_or_else(|| std::io::Error::other("artifact path is not UTF-8"))?;
+    let cli = Cli::try_parse_from([
+        "pageknot",
+        "capture",
+        url.as_str(),
+        "--format",
+        "pdf",
+        "--output",
+        destination,
+        "--json",
+        "--quiet",
+    ])?;
+    let mut input = std::io::empty();
+    let mut output = Vec::new();
+    let mut diagnostics = Vec::new();
+
+    let exit = run(cli, &mut input, &mut output, &mut diagnostics).await;
+
+    assert_eq!(exit, CommandExit::Success);
+    assert!(diagnostics.is_empty());
+    let result: ArtifactExportResult = serde_json::from_slice(&output)?;
+    assert_eq!(result.variants.len(), 1);
+    let pdf = &result.variants[0];
+    assert_eq!(pdf.kind, ArtifactVariantKind::Pdf);
+    assert_eq!(pdf.entrypoint, PortablePath::new(destination));
+    assert!(pdf.verification.passed);
     server.close().await;
     Ok(())
 }

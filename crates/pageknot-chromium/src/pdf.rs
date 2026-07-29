@@ -1,10 +1,54 @@
 use base64::Engine as _;
 use pageknot_model::{ErrorStage, PageKnotError, Result};
 use serde_json::{Value, json};
+use url::Url;
 
 use crate::CdpClient;
 
 const PDF_READ_BYTES: u64 = 64 * 1024;
+const PREPARE_PDF_LINKS: &str = r#"(sourceUrl) => {
+    let rewritten = 0;
+    let removed = 0;
+    const schemes = new Set(["http:", "https:", "mailto:", "tel:"]);
+    const visited = new Set();
+    const visit = (root) => {
+        if (!root || visited.has(root)) return;
+        visited.add(root);
+        for (const element of root.querySelectorAll("*")) {
+            if (
+                (element.localName === "a" || element.localName === "area") &&
+                element.hasAttribute("href")
+            ) {
+                try {
+                    const target = new URL(element.getAttribute("href"), sourceUrl);
+                    if (schemes.has(target.protocol)) {
+                        element.setAttribute("href", target.href);
+                        rewritten += 1;
+                    } else {
+                        element.removeAttribute("href");
+                        removed += 1;
+                    }
+                } catch {
+                    element.removeAttribute("href");
+                    removed += 1;
+                }
+            }
+            visit(element.shadowRoot);
+            if (element.localName === "iframe" || element.localName === "frame") {
+                try {
+                    visit(element.contentDocument);
+                } catch {}
+            }
+        }
+    };
+    visit(document);
+    return { rewritten, removed };
+}"#;
+
+pub(crate) fn prepare_pdf_links_expression(source_url: &Url) -> String {
+    let source_url = serde_json::Value::String(source_url.as_str().to_owned());
+    format!("({PREPARE_PDF_LINKS})({source_url})")
+}
 
 pub(crate) async fn print_to_pdf(
     client: CdpClient,

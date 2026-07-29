@@ -60,6 +60,19 @@ pageknot capture https://example.com \
 File outputs replace an existing destination after verification succeeds. A
 failed or cancelled capture leaves the existing file unchanged.
 
+Capture the verified HTML representation and commit its PDF rendering:
+
+```console
+pageknot capture https://example.com \
+  --format pdf \
+  --output artifacts/example.pdf
+```
+
+PDF capture reuses the offline verification record from the HTML capture,
+resolves printable links against the source URL, and verifies the PDF structure
+before replacing the destination. Use `--landscape` or
+`--prefer-css-page-size` to control printing.
+
 Wait for finite page requests to finish, then allow one additional second for
 client-side rendering:
 

@@ -70,7 +70,7 @@ pub(super) async fn execute_export(
         .await?;
         if arguments.output_options.json {
             write_json(&result, output)?;
-        } else if !arguments.output_options.quiet {
+        } else {
             for variant in &result.variants {
                 writeln!(output, "{}", variant.entrypoint).map_err(output_error)?;
             }

@@ -203,15 +203,28 @@ fn dictionary_is_passive(document: &PdfDocument, dictionary: &Dictionary, depth:
         || dictionary_kind_is_forbidden(dictionary, b"Type")
         || dictionary_kind_is_forbidden(dictionary, b"Subtype")
         || !action_dictionary_is_safe(dictionary)
-        || dictionary.get(b"A").is_ok_and(|action| {
-            !action_object_is_safe(document, action, &mut BTreeSet::new(), depth)
-        })
+        || dictionary
+            .get(b"A")
+            .is_ok_and(|entry| !a_entry_is_safe(document, dictionary, entry, depth))
     {
         return false;
     }
     dictionary
         .iter()
         .all(|(_, value)| object_is_passive(document, value, depth.saturating_add(1)))
+}
+
+fn a_entry_is_safe(
+    document: &PdfDocument,
+    owner: &Dictionary,
+    entry: &Object,
+    depth: usize,
+) -> bool {
+    if owner.has_type(b"StructElem") {
+        true
+    } else {
+        action_object_is_safe(document, entry, &mut BTreeSet::new(), depth)
+    }
 }
 
 fn dictionary_kind_is_forbidden(dictionary: &Dictionary, key: &[u8]) -> bool {
@@ -565,5 +578,31 @@ mod tests {
         );
 
         assert!(verify_pdf(&pdf).is_ok());
+    }
+
+    #[test]
+    fn pdf_verifier_allows_tagged_structure_attributes() {
+        let pdf = passive_pdf(
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /StructParents 0 >>",
+            &[
+                b"<< /Type /StructElem /S /Form /Pg 3 0 R /A [5 0 R] >>",
+                b"<< /O /PrintField /Role /pb >>",
+            ],
+        );
+
+        assert!(verify_pdf(&pdf).is_ok());
+    }
+
+    #[test]
+    fn pdf_verifier_rejects_local_file_navigation() {
+        let pdf = passive_pdf(
+            b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] /Annots [4 0 R] >>",
+            &[
+                b"<< /Type /Annot /Subtype /Link /A 5 0 R >>",
+                b"<< /Type /Action /S /URI /URI (file:///private/capture.html) >>",
+            ],
+        );
+
+        assert!(verify_pdf(&pdf).is_err());
     }
 }

@@ -11,8 +11,8 @@ use pageknot_artifact::portable_file_stem;
 use url::Url;
 
 use crate::command::{
-    ArtifactVariant as CliArtifactVariant, CaptureArguments, ColorScheme, ConflictMode,
-    ContentScope, MissingResources, NetworkPolicy, VerificationLevel, WaitUntil,
+    ArtifactVariant as CliArtifactVariant, CaptureArguments, CaptureFormat, ColorScheme,
+    ConflictMode, ContentScope, MissingResources, NetworkPolicy, VerificationLevel, WaitUntil,
 };
 use crate::config::ResolvedConfig;
 
@@ -22,6 +22,30 @@ pub(super) fn validate_capture_combinations(arguments: &CaptureArguments) -> Res
             "pageknot.input.output",
             ErrorStage::Validation,
             "`--json` cannot be combined with `--output -`",
+        ));
+    }
+    if arguments.format == CaptureFormat::Html
+        && (arguments.landscape || arguments.prefer_css_page_size)
+    {
+        return Err(PageKnotError::new(
+            "pageknot.input.export_option",
+            ErrorStage::Validation,
+            "PDF print options require `--format pdf`",
+        ));
+    }
+    if arguments.format == CaptureFormat::Pdf
+        && arguments.output.as_deref().is_some_and(|output| {
+            output != "-"
+                && Path::new(output)
+                    .extension()
+                    .and_then(std::ffi::OsStr::to_str)
+                    .is_none_or(|extension| extension != "pdf")
+        })
+    {
+        return Err(PageKnotError::new(
+            "pageknot.input.output",
+            ErrorStage::Validation,
+            "PDF capture output must use a .pdf extension",
         ));
     }
     Ok(())
@@ -45,7 +69,9 @@ pub(super) fn apply_capture_arguments(
     request: &mut CaptureRequest,
     arguments: &CaptureArguments,
 ) -> Result<()> {
-    if let Some(output) = &arguments.output {
+    if arguments.format == CaptureFormat::Pdf {
+        request.artifact = ArtifactSpec::html_bytes(request.limits.artifact_bytes);
+    } else if let Some(output) = &arguments.output {
         let ArtifactSpec::Html(spec) = &mut request.artifact;
         spec.target = if output == "-" {
             ArtifactTarget::Bytes {

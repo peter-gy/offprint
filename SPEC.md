@@ -912,6 +912,11 @@ impl ArtifactService {
         input: ArtifactInput,
         request: ArtifactExportRequest,
     ) -> Result<ArtifactExportResult>;
+    pub async fn export_capture(
+        &self,
+        capture: &CaptureResult,
+        request: ArtifactExportRequest,
+    ) -> Result<ArtifactExportResult>;
     pub async fn verify_variant(
         &self,
         path: PortablePath,
@@ -923,8 +928,9 @@ impl ArtifactService {
 Static inspection can run without Chromium. Offline verification acquires a
 browser context through `BrowserService`. `export` derives each requested
 format from one offline-verified HTML artifact and verifies every format before
-commit. `verify_variant` applies the format-specific verifier to an exported
-path.
+commit. `export_capture` revalidates the safe-static HTML and reuses matching
+offline evidence from a completed `CaptureResult`. `verify_variant` applies the
+format-specific verifier to an exported path.
 
 ### 12.6 `BrowserService`
 
@@ -1160,6 +1166,9 @@ Synopsis:
 ```text
 pageknot capture <URL>
   [-o, --output <PATH|->]
+  [--format <html|pdf>]
+  [--landscape]
+  [--prefer-css-page-size]
   [--profile <NAME>]
   [--config <PATH>]
   [--browser-path <PATH> | --cdp-url <URL>]
@@ -1192,7 +1201,10 @@ pageknot capture <URL>
 | Input | Contract |
 | --- | --- |
 | `URL` | Absolute `http`, `https`, or explicitly permitted `file` URL |
-| `--output` | Destination file, or `-` for verified HTML on stdout |
+| `--output` | Destination file, or `-` for the selected representation on stdout |
+| `--format` | Committed representation. Defaults to `html` |
+| `--landscape` | Print PDF pages in landscape orientation |
+| `--prefer-css-page-size` | Honor the captured document's CSS page size when printing PDF |
 | `--profile` | Named configuration profile |
 | `--config` | Explicit TOML configuration |
 | `--browser-path` | Local Chrome or Chromium executable |
@@ -1215,7 +1227,7 @@ pageknot capture <URL>
 | `--headers` | Protected JSON file containing request headers |
 | `--cookies` | Protected JSON file containing browser cookies |
 | `--network-policy` | Address and redirect policy |
-| `--json` | Emit one `CaptureResult` JSON object |
+| `--json` | Emit one `CaptureResult` for HTML or one `ArtifactExportResult` for PDF |
 | `--quiet` | Suppress non-error human diagnostics |
 | `--color` | Human diagnostic color behavior |
 | `--diagnostics` | Directory for sanitized failure artifacts |
@@ -1228,6 +1240,8 @@ Incompatible combinations:
 - `--browser-path` with `--cdp-url`
 - `--json` with `--output -`
 - `--selector` with `--scope`
+- PDF print options with `--format html`
+- A PDF output path whose extension is not `.pdf`
 - Header or cookie input from stdin with `--output -`
 - `file:` URL outside an allowed root
 - `--verify offline` when the selected browser lacks the required capability
@@ -1238,6 +1252,11 @@ Selector capture preserves the document head and the matched element's ancestor
 chain. It prunes sibling content before frame mapping and resource
 materialization. Invalid selector syntax returns `pageknot.selector.invalid`.
 A valid selector with no match returns `pageknot.selector.not_found`.
+
+PDF capture produces and verifies the canonical HTML representation in memory.
+The PDF renderer opens that HTML with network access denied, resolves printable
+links against the captured source URL, prints through Chromium, applies the PDF
+verifier, and atomically replaces the requested destination.
 
 ### 14.3 `pageknot export`
 

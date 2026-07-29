@@ -4,10 +4,8 @@ use std::path::Path;
 use pageknot_export::MarkdownBundle;
 use pageknot_model::{ErrorStage, PortablePath, Result};
 
-use super::{
-    BoundedFileReadError, MAXIMUM_EXPORT_BYTES, MAXIMUM_MARKDOWN_ASSETS, export_error,
-    read_bounded_file,
-};
+use super::export::{MAXIMUM_EXPORT_BYTES, MAXIMUM_MARKDOWN_ASSETS, export_error};
+use super::{BoundedFileReadError, read_bounded_file};
 use crate::export_transaction::{
     markdown_byte_limit_error, markdown_file_limit_error, validate_markdown_bundle_limits,
 };

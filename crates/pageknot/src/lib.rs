@@ -37,6 +37,7 @@ mod export_transaction;
 mod pipeline;
 mod runtime;
 mod scheduler;
+mod verified_html;
 
 use std::collections::BTreeMap;
 use std::sync::Arc;

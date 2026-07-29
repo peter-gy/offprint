@@ -15,7 +15,7 @@ pub struct Cli {
 pub enum Command {
     /// Capture a rendered page and verify the saved artifact.
     #[command(
-        after_help = "Examples:\n  pageknot capture https://example.com\n  pageknot capture https://example.com --wait-until network-idle --delay 1s\n  pageknot capture https://example.com --selector 'main article' -o article.html\n  pageknot capture https://example.com -o example.html --verify offline\n  pageknot capture https://example.com --json"
+        after_help = "Examples:\n  pageknot capture https://example.com\n  pageknot capture https://example.com --wait-until network-idle --delay 1s\n  pageknot capture https://example.com --selector 'main article' -o article.html\n  pageknot capture https://example.com --format pdf -o example.pdf\n  pageknot capture https://example.com -o example.html --verify offline\n  pageknot capture https://example.com --json"
     )]
     Capture(Box<CaptureArguments>),
     /// Derive independently verified formats from one PageKnot HTML artifact.
@@ -122,6 +122,18 @@ pub struct CaptureArguments {
     /// Write the artifact to this path. Use `-` for stdout.
     #[arg(short, long, value_name = "PATH")]
     pub output: Option<String>,
+
+    /// Select the committed capture representation.
+    #[arg(long, value_enum, default_value_t = CaptureFormat::Html)]
+    pub format: CaptureFormat,
+
+    /// Print PDF pages in landscape orientation.
+    #[arg(long)]
+    pub landscape: bool,
+
+    /// Honor the captured document's CSS page size when printing PDF.
+    #[arg(long)]
+    pub prefer_css_page_size: bool,
 
     /// Apply a named configuration profile.
     #[arg(long, value_name = "NAME")]
@@ -420,6 +432,13 @@ pub enum VerificationLevel {
     Offline,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, ValueEnum)]
+pub enum CaptureFormat {
+    #[default]
+    Html,
+    Pdf,
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, ValueEnum)]
 pub enum ArtifactVariant {
     Pdf,
@@ -504,7 +523,7 @@ impl std::str::FromStr for ArtifactArgument {
 mod tests {
     use clap::Parser as _;
 
-    use super::{ArtifactVariant, Cli, Command, ConflictMode};
+    use super::{ArtifactVariant, CaptureFormat, Cli, Command, ConflictMode};
 
     #[test]
     fn capture_rejects_two_browser_ownership_modes() {
@@ -561,6 +580,32 @@ mod tests {
         assert!(arguments.is_some_and(|arguments| arguments.remove_unused_css));
         assert!(arguments.is_some_and(|arguments| arguments.remove_unused_fonts));
         assert!(arguments.is_some_and(|arguments| arguments.remove_hidden_elements));
+    }
+
+    #[test]
+    fn capture_accepts_pdf_print_options() {
+        let parsed = Cli::try_parse_from([
+            "pageknot",
+            "capture",
+            "https://example.com",
+            "--format",
+            "pdf",
+            "--output",
+            "capture.pdf",
+            "--landscape",
+            "--prefer-css-page-size",
+        ]);
+        let arguments = parsed.as_ref().ok().and_then(|cli| match &cli.command {
+            Command::Capture(arguments) => Some(arguments),
+            _ => None,
+        });
+
+        assert_eq!(
+            arguments.map(|arguments| arguments.format),
+            Some(CaptureFormat::Pdf)
+        );
+        assert!(arguments.is_some_and(|arguments| arguments.landscape));
+        assert!(arguments.is_some_and(|arguments| arguments.prefer_css_page_size));
     }
 
     #[test]

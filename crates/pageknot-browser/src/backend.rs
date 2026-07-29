@@ -316,9 +316,10 @@ pub trait PageSession: fmt::Debug + Send + Sync {
         deadline: std::time::Duration,
     ) -> Result<OfflineBrowserObservation>;
 
-    /// Renders the currently loaded document as a bounded PDF.
+    /// Resolves printable links against `source_url` and renders a bounded PDF.
     async fn print_to_pdf(
         &self,
+        _source_url: &Url,
         _landscape: bool,
         _prefer_css_page_size: bool,
         _maximum_bytes: u64,

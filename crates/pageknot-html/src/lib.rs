@@ -28,7 +28,9 @@ pub use state::{
     STATE_RESTORATION_SCRIPT, STATE_SCRIPT_ELEMENT_ID, apply_state_restoration,
     state_restoration_script_digest,
 };
-pub use verify::{inspect_html, verify_static, verify_static_sandboxed};
+pub use verify::{
+    inspect_html, verify_static, verify_static_sandboxed, verify_static_with_manifest,
+};
 
 pub const MANIFEST_ELEMENT_ID: &str = "pageknot-manifest";
 pub const MANIFEST_MEDIA_TYPE: &str = "application/vnd.pageknot.manifest+json";

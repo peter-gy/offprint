@@ -631,10 +631,13 @@ impl ChromiumPage {
 
     pub async fn print_to_pdf(
         &self,
+        source_url: &Url,
         landscape: bool,
         prefer_css_page_size: bool,
         maximum_bytes: u64,
     ) -> Result<Vec<u8>> {
+        self.evaluate(&crate::pdf::prepare_pdf_links_expression(source_url))
+            .await?;
         crate::pdf::print_to_pdf(
             self.client.clone(),
             self.session_id.clone(),
@@ -761,11 +764,19 @@ impl PageSession for ChromiumPage {
 
     async fn print_to_pdf(
         &self,
+        source_url: &Url,
         landscape: bool,
         prefer_css_page_size: bool,
         maximum_bytes: u64,
     ) -> Result<Vec<u8>> {
-        ChromiumPage::print_to_pdf(self, landscape, prefer_css_page_size, maximum_bytes).await
+        ChromiumPage::print_to_pdf(
+            self,
+            source_url,
+            landscape,
+            prefer_css_page_size,
+            maximum_bytes,
+        )
+        .await
     }
 
     async fn close(self: Box<Self>) -> Result<()> {

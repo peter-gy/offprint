@@ -19,17 +19,24 @@ use resource::validate_embedded_resource;
 use structure::{validate_artifact_documents, validate_csp};
 
 pub fn verify_static(bytes: &[u8]) -> Result<VerificationResult> {
+    verify_static_with_manifest(bytes).map(|(verification, _)| verification)
+}
+
+/// Verifies a safe-static HTML artifact and returns its validated manifest.
+pub fn verify_static_with_manifest(
+    bytes: &[u8],
+) -> Result<(VerificationResult, pageknot_model::ArtifactManifest)> {
     verify_static_with_state_restoration(bytes, true)
 }
 
 pub fn verify_static_sandboxed(bytes: &[u8]) -> Result<VerificationResult> {
-    verify_static_with_state_restoration(bytes, false)
+    verify_static_with_state_restoration(bytes, false).map(|(verification, _)| verification)
 }
 
 fn verify_static_with_state_restoration(
     bytes: &[u8],
     restore_state: bool,
-) -> Result<VerificationResult> {
+) -> Result<(VerificationResult, pageknot_model::ArtifactManifest)> {
     let manifest = inspect_html(bytes)?;
     if !restore_state && manifest.structural_repair.applied {
         return Err(verification_error(
@@ -46,18 +53,21 @@ fn verify_static_with_state_restoration(
             format!("artifact byte count exceeds the supported range: {error}"),
         )
     })?;
-    Ok(VerificationResult {
-        schema_version: pageknot_model::PUBLIC_SCHEMA_VERSION,
-        level: VerificationPolicy::Static,
-        passed: true,
-        artifact_sha256: ContentDigest::sha256(bytes),
-        bytes: byte_count,
-        network_requests: 0,
-        attempted_urls: Vec::new(),
-        page_errors: Vec::new(),
-        frame_failures: Vec::new(),
-        stable: true,
-    })
+    Ok((
+        VerificationResult {
+            schema_version: pageknot_model::PUBLIC_SCHEMA_VERSION,
+            level: VerificationPolicy::Static,
+            passed: true,
+            artifact_sha256: ContentDigest::sha256(bytes),
+            bytes: byte_count,
+            network_requests: 0,
+            attempted_urls: Vec::new(),
+            page_errors: Vec::new(),
+            frame_failures: Vec::new(),
+            stable: true,
+        },
+        manifest,
+    ))
 }
 
 fn text_contents(document: &Document, parent: pageknot_model::NodeId) -> String {

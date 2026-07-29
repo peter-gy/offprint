@@ -14,7 +14,8 @@ mod output;
 mod runner;
 
 pub use command::{
-    ArtifactArgument, ArtifactVariant, BrowserCommand, CaptureArguments, Cli, Command,
-    CompletionShell, ExportArguments, InspectArguments, VerificationLevel, VerifyArguments,
+    ArtifactArgument, ArtifactVariant, BrowserCommand, CaptureArguments, CaptureFormat, Cli,
+    Command, CompletionShell, ExportArguments, InspectArguments, VerificationLevel,
+    VerifyArguments,
 };
 pub use runner::{CommandExit, run, run_with_terminal_diagnostics};

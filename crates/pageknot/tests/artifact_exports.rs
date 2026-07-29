@@ -2,14 +2,160 @@ use std::error::Error;
 use std::time::Duration;
 
 use pageknot::{
-    ArtifactExportRequest, ArtifactInput, ArtifactVariant, ArtifactVariantKind, ConflictPolicy,
-    MarkdownOptions, PageKnot, PdfOptions, PortablePath,
+    ArtifactExportRequest, ArtifactInput, ArtifactResult, ArtifactVariant, ArtifactVariantKind,
+    CaptureResult, ConflictPolicy, ContentDigest, MarkdownOptions, PageKnot, PdfOptions,
+    PortablePath,
 };
 use pageknot_chromium::{ChromiumDiscovery, ChromiumLaunchOptions, ChromiumProcess};
 use pageknot_test_support::{FixtureResponse, FixtureServer};
 use url::Url;
 
 type TestResult<T = ()> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
+
+fn capture_with_bytes(
+    content: Vec<u8>,
+    verification: pageknot::VerificationResult,
+) -> TestResult<CaptureResult> {
+    let bytes = u64::try_from(content.len())?;
+    let digest = ContentDigest::sha256(&content);
+    let mut capture: CaptureResult = serde_json::from_str(include_str!(
+        "../../../schemas/examples/capture-result.json"
+    ))?;
+    capture.artifact = ArtifactResult::Bytes {
+        content,
+        bytes,
+        sha256: digest,
+    };
+    capture.verification = verification;
+    Ok(capture)
+}
+
+#[tokio::test]
+async fn invalid_source_does_not_create_the_export_destination() -> TestResult {
+    let directory = tempfile::tempdir()?;
+    let output_path = directory.path().join("variants");
+    let output = PortablePath::from_path_buf(output_path.clone())?;
+    let pageknot = PageKnot::builder().build()?;
+
+    let result = pageknot
+        .artifacts()
+        .export(
+            ArtifactInput::Bytes(b"not a PageKnot artifact".to_vec()),
+            ArtifactExportRequest {
+                output_directory: output,
+                base_name: "capture".to_owned(),
+                variants: vec![ArtifactVariant::Zip],
+                conflict: ConflictPolicy::Replace,
+            },
+        )
+        .await;
+
+    assert_eq!(
+        result.as_ref().map_err(|error| error.code.as_str()),
+        Err("pageknot.verification.manifest")
+    );
+    assert!(!output_path.exists());
+    pageknot.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn export_capture_revalidates_html_before_reusing_offline_evidence() -> TestResult {
+    let manifest: pageknot::ArtifactManifest = serde_json::from_str(include_str!(
+        "../../../schemas/examples/artifact-manifest.json"
+    ))?;
+    let transformed = pageknot_transform::transform_document(
+        b"<!doctype html><html><body><main>capture</main></body></html>",
+    )?;
+    let encoded = pageknot_transform::encode_artifact(&transformed, manifest)?;
+    let html = String::from_utf8(encoded.bytes)?
+        .replacen(
+            "</body>",
+            "<script>globalThis.injected = true</script></body>",
+            1,
+        )
+        .into_bytes();
+    let bytes = u64::try_from(html.len())?;
+    let digest = ContentDigest::sha256(&html);
+    let fixture: CaptureResult = serde_json::from_str(include_str!(
+        "../../../schemas/examples/capture-result.json"
+    ))?;
+    let mut verification = fixture.verification;
+    verification.artifact_sha256 = digest;
+    verification.bytes = bytes;
+    let capture = capture_with_bytes(html, verification)?;
+    let directory = tempfile::tempdir()?;
+    let output_path = directory.path().join("variants");
+    let pageknot = PageKnot::builder().build()?;
+
+    let result = pageknot
+        .artifacts()
+        .export_capture(
+            &capture,
+            ArtifactExportRequest {
+                output_directory: PortablePath::from_path_buf(output_path.clone())?,
+                base_name: "capture".to_owned(),
+                variants: vec![ArtifactVariant::Markdown(MarkdownOptions::default())],
+                conflict: ConflictPolicy::Replace,
+            },
+        )
+        .await;
+
+    assert_eq!(
+        result.as_ref().map_err(|error| error.code.as_str()),
+        Err("pageknot.verification.active_content")
+    );
+    assert!(!output_path.exists());
+    pageknot.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn export_capture_requires_matching_offline_evidence() -> TestResult {
+    let manifest: pageknot::ArtifactManifest = serde_json::from_str(include_str!(
+        "../../../schemas/examples/artifact-manifest.json"
+    ))?;
+    let transformed = pageknot_transform::transform_document(
+        b"<!doctype html><html><body><main>capture</main></body></html>",
+    )?;
+    let encoded = pageknot_transform::encode_artifact(&transformed, manifest)?;
+    let mut offline = encoded.verification.clone();
+    offline.level = pageknot::VerificationPolicy::Offline;
+    let mut mismatched = offline.clone();
+    mismatched.artifact_sha256 = ContentDigest::sha256(b"different artifact");
+    let directory = tempfile::tempdir()?;
+    let pageknot = PageKnot::builder().build()?;
+
+    for (name, verification) in [
+        ("static", encoded.verification.clone()),
+        ("mismatched", mismatched),
+    ] {
+        let output_path = directory.path().join(name);
+        let capture = capture_with_bytes(encoded.bytes.clone(), verification)?;
+        let result = pageknot
+            .artifacts()
+            .export_capture(
+                &capture,
+                ArtifactExportRequest {
+                    output_directory: PortablePath::from_path_buf(output_path.clone())?,
+                    base_name: "capture".to_owned(),
+                    variants: vec![ArtifactVariant::Zip],
+                    conflict: ConflictPolicy::Replace,
+                },
+            )
+            .await;
+
+        assert_eq!(
+            result.as_ref().map_err(|error| error.code.as_str()),
+            Err("pageknot.verification.record"),
+            "{name}"
+        );
+        assert!(!output_path.exists(), "{name}");
+    }
+
+    pageknot.close().await?;
+    Ok(())
+}
 
 #[tokio::test]
 #[ignore = "requires a locally installed compatible Chromium browser"]
@@ -36,22 +182,22 @@ async fn every_artifact_variant_encodes_and_verifies() -> TestResult {
                 r#"<!doctype html><html><head><title>Artifact variants</title>
                 <style>body{font-family:system-ui}h1{color:rgb(20,40,80)}</style></head>
                 <body><article><h1>Artifact variants</h1><p>portable output</p>
+                <a href="/details">Details</a>
                 <img src="/pixel.svg" alt="blue pixel"></article></body></html>"#,
             ),
         )
         .await?;
     let directory = tempfile::tempdir()?;
-    let source = PortablePath::from_path_buf(directory.path().join("source.html"))?;
     let output = PortablePath::from_path_buf(directory.path().join("variants"))?;
     let pageknot = PageKnot::builder().build()?;
     let captured = pageknot
         .capture(server.url("/")?.as_str())?
-        .save(source.clone())
+        .to_bytes(64 * 1024 * 1024)
         .await?;
     let exported = pageknot
         .artifacts()
-        .export(
-            ArtifactInput::File(source),
+        .export_capture(
+            &captured,
             ArtifactExportRequest {
                 output_directory: output,
                 base_name: "artifact-variants".to_owned(),
@@ -69,8 +215,10 @@ async fn every_artifact_variant_encodes_and_verifies() -> TestResult {
 
     assert_eq!(exported.variants.len(), 5);
     assert_eq!(exported.policy_sha256, {
-        let bytes = std::fs::read(captured.artifact.path().ok_or("missing source path")?)?;
-        pageknot_html::inspect_html(&bytes)?.policy_sha256
+        let pageknot::ArtifactResult::Bytes { content, .. } = &captured.artifact else {
+            return Err("missing source bytes".into());
+        };
+        pageknot_html::inspect_html(content)?.policy_sha256
     });
     assert_eq!(exported.resources, captured.resources);
     for variant in &exported.variants {
@@ -170,17 +318,4 @@ async fn verify_mhtml_browser_import(path: &std::path::Path) -> TestResult {
     page_close?;
     process_close?;
     Ok(())
-}
-
-trait ArtifactResultPath {
-    fn path(&self) -> Option<&PortablePath>;
-}
-
-impl ArtifactResultPath for pageknot::ArtifactResult {
-    fn path(&self) -> Option<&PortablePath> {
-        match self {
-            Self::File { path, .. } => Some(path),
-            Self::Bytes { .. } => None,
-        }
-    }
 }
