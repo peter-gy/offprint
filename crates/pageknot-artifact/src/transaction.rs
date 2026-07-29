@@ -318,21 +318,33 @@ fn sync_parent_directory(destination: &Utf8Path) -> Result<()> {
         .parent()
         .filter(|path| !path.as_str().is_empty())
         .unwrap_or(Utf8Path::new("."));
-    File::open(parent)
-        .and_then(|directory| directory.sync_all())
-        .map_err(|error| {
-            output_io_error(
-                "pageknot.output.sync",
-                ErrorStage::Commit,
-                "failed to synchronize the output directory",
-                error,
-            )
-        })
+    match File::open(parent).and_then(|directory| directory.sync_all()) {
+        Ok(()) => Ok(()),
+        Err(error) if directory_sync_is_unavailable(&error) => Ok(()),
+        Err(error) => Err(output_io_error(
+            "pageknot.output.sync",
+            ErrorStage::Commit,
+            "failed to synchronize the output directory",
+            error,
+        )),
+    }
 }
 
 #[cfg(not(unix))]
 fn sync_parent_directory(_destination: &Utf8Path) -> Result<()> {
     Ok(())
+}
+
+#[cfg(target_os = "macos")]
+fn directory_sync_is_unavailable(error: &std::io::Error) -> bool {
+    // macOS protected folders can permit atomic rename while rejecting the
+    // read handle needed for directory fsync with EPERM.
+    error.raw_os_error() == Some(1)
+}
+
+#[cfg(not(target_os = "macos"))]
+fn directory_sync_is_unavailable(_error: &std::io::Error) -> bool {
+    false
 }
 
 fn validate_destination(destination: &Utf8Path, conflict: ConflictPolicy) -> Result<()> {
@@ -511,6 +523,17 @@ mod tests {
     use pageknot_model::{ConflictPolicy, ERROR_CODE_REGISTRY, ErrorStage};
 
     use super::{FileArtifactWriter, registered_output_io_error};
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_protected_folder_sync_is_treated_as_unavailable() {
+        assert!(super::directory_sync_is_unavailable(
+            &std::io::Error::from_raw_os_error(1)
+        ));
+        assert!(!super::directory_sync_is_unavailable(
+            &std::io::Error::from_raw_os_error(13)
+        ));
+    }
 
     fn utf8_path(path: &std::path::Path) -> std::io::Result<Utf8PathBuf> {
         Utf8PathBuf::from_path_buf(path.to_owned()).map_err(|path| {
