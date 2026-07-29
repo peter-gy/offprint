@@ -104,6 +104,10 @@ after each terminal page.
 PDF, Markdown, ZIP, compressed HTML, and MHTML variants, then runs each
 format-specific verifier before commit.
 
+PDF export preserves Chromium's selectable text, links, tagged structure, and
+outline. It adds document properties and XMP metadata derived from the source
+HTML and capture manifest.
+
 `ArtifactService::verify_variant` checks an exported path through the verifier
 owned by its `ArtifactVariantKind`.
 

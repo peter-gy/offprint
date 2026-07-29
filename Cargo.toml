@@ -129,6 +129,7 @@ pageknot-transform = { version = "0.1.0", path = "crates/pageknot-transform" }
 processkit = "3.0.2"
 proptest = "1.9.0"
 pulldown-cmark = { version = "0.13.4", default-features = false }
+quick-xml = "0.41.0"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

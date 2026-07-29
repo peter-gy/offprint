@@ -9,6 +9,10 @@ use crate::support::{
     MAXIMUM_DECODED_HTML_BYTES, ensure_verified, rfind_bytes, trim_ascii, trim_ascii_end,
 };
 
+mod metadata;
+
+pub use metadata::{embed_pdf_metadata, verify_pageknot_pdf};
+
 const FORBIDDEN_KEYS: &[&[u8]] = &[
     b"AA",
     b"AcroForm",
@@ -122,9 +126,9 @@ fn pdf_envelope_valid(bytes: &[u8]) -> bool {
     };
     xref.starts_with(b"xref")
         || xref.get(..xref.len().min(1024)).is_some_and(|header| {
-            header
-                .windows(b"/Type /XRef".len())
-                .any(|window| window == b"/Type /XRef")
+            [b"/Type /XRef".as_slice(), b"/Type/XRef"]
+                .iter()
+                .any(|marker| header.windows(marker.len()).any(|window| window == *marker))
         })
 }
 

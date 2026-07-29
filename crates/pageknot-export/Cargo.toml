@@ -18,6 +18,7 @@ pageknot-document.workspace = true
 pageknot-html.workspace = true
 pageknot-model.workspace = true
 pulldown-cmark.workspace = true
+quick-xml.workspace = true
 serde_json.workspace = true
 zip.workspace = true
 

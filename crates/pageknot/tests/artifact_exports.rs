@@ -179,7 +179,12 @@ async fn every_artifact_variant_encodes_and_verifies() -> TestResult {
         .register(
             "/",
             FixtureResponse::html(
-                r#"<!doctype html><html><head><title>Artifact variants</title>
+                r#"<!doctype html><html lang="en-GB"><head><title>Artifact variants</title>
+                <meta name="author" content="Ada Lovelace">
+                <meta name="description" content="Portable artifact representations">
+                <meta name="keywords" content="capture, metadata, accessibility">
+                <meta property="og:site_name" content="PageKnot fixtures">
+                <meta property="article:published_time" content="2026-07-29">
                 <style>body{font-family:system-ui}h1{color:rgb(20,40,80)}</style></head>
                 <body><article><h1>Artifact variants</h1><p>portable output</p>
                 <a href="/details">Details</a>
@@ -231,6 +236,14 @@ async fn every_artifact_variant_encodes_and_verifies() -> TestResult {
         assert_eq!(verified.sha256, variant.sha256);
     }
 
+    let pdf = exported
+        .variants
+        .iter()
+        .find(|variant| variant.kind == ArtifactVariantKind::Pdf)
+        .map(|variant| variant.path.as_ref() as &std::path::Path)
+        .ok_or("missing PDF variant")?;
+    verify_pdf_semantics(pdf, exported.source_artifact_sha256)?;
+
     let self_extracting = exported
         .variants
         .iter()
@@ -252,6 +265,56 @@ async fn every_artifact_variant_encodes_and_verifies() -> TestResult {
 
     pageknot.close().await?;
     server.close().await;
+    Ok(())
+}
+
+fn verify_pdf_semantics(path: &std::path::Path, source_digest: ContentDigest) -> TestResult {
+    let bytes = std::fs::read(path)?;
+    let metadata = lopdf::Document::load_metadata_mem(&bytes)?;
+    assert_eq!(metadata.title.as_deref(), Some("Artifact variants"));
+    assert_eq!(metadata.author.as_deref(), Some("Ada Lovelace"));
+    assert_eq!(
+        metadata.subject.as_deref(),
+        Some("Portable artifact representations")
+    );
+    assert_eq!(
+        metadata.keywords.as_deref(),
+        Some("capture, metadata, accessibility")
+    );
+    assert!(
+        metadata
+            .creator
+            .as_deref()
+            .is_some_and(|creator| creator.starts_with("PageKnot "))
+    );
+    assert!(metadata.creation_date.is_some());
+
+    let document = lopdf::Document::load_mem(&bytes)?;
+    let page_numbers = document.get_pages().keys().copied().collect::<Vec<_>>();
+    let text = document.extract_text_with_limit(&page_numbers, 8 * 1024 * 1024)?;
+    assert!(!text.trim().is_empty());
+    let catalog = document.catalog()?;
+    assert!(catalog.get(b"StructTreeRoot").is_ok());
+    assert!(catalog.get(b"Outlines").is_ok());
+    assert_eq!(
+        catalog
+            .get(b"Lang")
+            .and_then(lopdf::decode_text_string)?
+            .as_str(),
+        "en-GB"
+    );
+    let metadata_stream = catalog
+        .get(b"Metadata")
+        .and_then(lopdf::Object::as_reference)
+        .and_then(|id| document.get_object(id))
+        .and_then(lopdf::Object::as_stream)?
+        .get_plain_content()?;
+    let xmp = String::from_utf8(metadata_stream)?;
+    assert!(xmp.contains("Portable artifact representations"));
+    assert!(xmp.contains("Ada Lovelace"));
+    assert!(xmp.contains("<pageknot:SourceFinalURL>"));
+    assert!(xmp.contains("<pageknot:HasTextStructure>true</pageknot:HasTextStructure>"));
+    assert!(xmp.contains(&source_digest.to_hex()));
     Ok(())
 }
 

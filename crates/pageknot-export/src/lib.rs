@@ -19,7 +19,7 @@ mod zip;
 
 pub use markdown::{encode_markdown, verify_markdown};
 pub use mhtml::{encode_mhtml, verify_mhtml};
-pub use pdf::verify_pdf;
+pub use pdf::{embed_pdf_metadata, verify_pageknot_pdf, verify_pdf};
 pub use self_extracting::{encode_self_extracting, verify_self_extracting};
 pub use zip::{encode_zip, verify_zip};
 

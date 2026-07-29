@@ -39,6 +39,7 @@ url.workspace = true
 [dev-dependencies]
 async-trait.workspace = true
 image.workspace = true
+lopdf.workspace = true
 pageknot-test-support = { path = "../pageknot-test-support" }
 sysinfo.workspace = true
 

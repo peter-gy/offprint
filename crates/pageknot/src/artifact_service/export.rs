@@ -89,12 +89,20 @@ impl ArtifactService {
         mut rendered_pdf: Option<Vec<u8>>,
     ) -> Result<ArtifactExportResult> {
         let (html, manifest, verification) = source.into_parts();
+        let source_artifact_sha256 = verification.artifact_sha256;
         let stem = pageknot_artifact::portable_file_stem(&request.base_name);
         let mut prepared = Vec::with_capacity(request.variants.len());
         for variant in request.variants {
             prepared.push(
-                self.prepare_variant(html, &manifest, &stem, variant, &mut rendered_pdf)
-                    .await?,
+                self.prepare_variant(
+                    html,
+                    &manifest,
+                    source_artifact_sha256,
+                    &stem,
+                    variant,
+                    &mut rendered_pdf,
+                )
+                .await?,
             );
         }
         prepare_export_directory(&request.output_directory).await?;
@@ -119,17 +127,25 @@ impl ArtifactService {
         &self,
         html: &[u8],
         manifest: &ArtifactManifest,
+        source_artifact_sha256: ContentDigest,
         stem: &str,
         variant: ArtifactVariant,
         rendered_pdf: &mut Option<Vec<u8>>,
     ) -> Result<PreparedVariant> {
         match variant {
             ArtifactVariant::Pdf(options) => {
-                let encoded = match rendered_pdf.take() {
+                let rendered = match rendered_pdf.take() {
                     Some(encoded) => encoded,
                     None => self.render_pdf(html, manifest, options).await?.bytes,
                 };
-                let evidence = pageknot_export::verify_pdf(&encoded)?;
+                let encoded = pageknot_export::embed_pdf_metadata(
+                    &rendered,
+                    html,
+                    manifest,
+                    source_artifact_sha256,
+                    MAXIMUM_EXPORT_BYTES,
+                )?;
+                let evidence = pageknot_export::verify_pageknot_pdf(&encoded)?;
                 PreparedVariant::file(
                     format!("{stem}.pdf"),
                     ArtifactVariantKind::Pdf,
@@ -363,7 +379,7 @@ async fn read_export_file(path: &PortablePath) -> Result<Vec<u8>> {
 
 fn verify_file_variant(kind: ArtifactVariantKind, bytes: &[u8]) -> Result<VariantEvidence> {
     match kind {
-        ArtifactVariantKind::Pdf => pageknot_export::verify_pdf(bytes),
+        ArtifactVariantKind::Pdf => pageknot_export::verify_pageknot_pdf(bytes),
         ArtifactVariantKind::Zip => pageknot_export::verify_zip(bytes),
         ArtifactVariantKind::SelfExtracting => pageknot_export::verify_self_extracting(bytes),
         ArtifactVariantKind::Mhtml => pageknot_export::verify_mhtml(bytes),

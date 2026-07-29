@@ -1255,8 +1255,13 @@ A valid selector with no match returns `pageknot.selector.not_found`.
 
 PDF capture produces and verifies the canonical HTML representation in memory.
 The PDF renderer opens that HTML with network access denied, resolves printable
-links against the captured source URL, prints through Chromium, applies the PDF
-verifier, and atomically replaces the requested destination.
+links against the captured source URL, and prints a tagged PDF through Chromium.
+The encoder adds standard document properties and UTF-8 XMP for source HTML
+metadata, capture provenance, policy and artifact digests, browser identity,
+resource totals, page count, structure count, and tagged text-structure
+evidence. The PDF verifier requires the passive file structure, tagged
+structure tree, language, display title preference, document properties, and
+PageKnot XMP packet before the requested destination is atomically replaced.
 
 ### 14.3 `pageknot export`
 

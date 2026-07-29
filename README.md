@@ -69,9 +69,13 @@ pageknot capture https://example.com \
 ```
 
 PDF capture reuses the offline verification record from the HTML capture,
-resolves printable links against the source URL, and verifies the PDF structure
-before replacing the destination. Use `--landscape` or
-`--prefer-css-page-size` to control printing.
+resolves printable links against the source URL, and preserves Chromium's
+selectable text, tagged structure, and document outline. The PDF carries the
+HTML title, language, author, description, keywords, source URL, capture time,
+and PageKnot provenance in standard document properties and XMP metadata.
+PageKnot verifies that metadata and the passive PDF structure before replacing
+the destination. Use `--landscape` or `--prefer-css-page-size` to control
+printing.
 
 Wait for finite page requests to finish, then allow one additional second for
 client-side rendering:
