@@ -18,7 +18,7 @@ use pageknot::PageKnot;
 use pageknot_capture::ContentStore;
 use pageknot_document::{
     Document, RenderingRole, ResourceGraph, ResourceLocationKind, ResourceReference,
-    discover_css_resources, discover_document_resources, serialize_document,
+    discover_css_resources, discover_document_resources, serialize_document, serialize_document_to,
 };
 use pageknot_model::{
     ArtifactManifest, ArtifactSpec, FrameId, NodeId, OmissionReason, ResourceOutcome,
@@ -291,6 +291,25 @@ async fn micro_cases(iterations: usize) -> BenchResult<Vec<CaseResult>> {
         },
     )?;
 
+    let inline_resource = inline_resource_corpus(4 * MIB);
+    let inline_resource_bytes = inline_resource.len();
+    let inline_resource_document = Document::parse(inline_resource.as_bytes());
+    let inline_resource_path =
+        std::env::temp_dir().join(format!("pageknot-bench-inline-{}.html", std::process::id()));
+    let inline_resource_case = measure_sync(
+        "html-inline-resource-file-serialize",
+        "document",
+        inline_resource_bytes,
+        iterations,
+        || {
+            let mut output = fs::File::create(&inline_resource_path)?;
+            serialize_document_to(black_box(&inline_resource_document), &mut output)?;
+            output.sync_all()?;
+            Ok(())
+        },
+    )?;
+    fs::remove_file(inline_resource_path)?;
+
     let css = css_corpus(1_000);
     let css_base = Url::parse("https://fixture.invalid/styles/main.css")?;
     let css_bytes = css.len();
@@ -408,6 +427,7 @@ async fn micro_cases(iterations: usize) -> BenchResult<Vec<CaseResult>> {
 
     Ok(vec![
         html,
+        inline_resource_case,
         css_case,
         srcset_case,
         data_case,
@@ -745,6 +765,13 @@ fn article_corpus(paragraphs: usize) -> String {
     }
     html.push_str("</main></body></html>");
     html
+}
+
+fn inline_resource_corpus(bytes: usize) -> String {
+    format!(
+        "<!doctype html><html><head></head><body><img src=\"data:image/png;base64,{}\"></body></html>",
+        "A".repeat(bytes)
+    )
 }
 
 fn css_corpus(rules: usize) -> String {

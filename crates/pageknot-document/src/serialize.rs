@@ -156,20 +156,14 @@ fn write_attribute(output: &mut (impl Write + ?Sized), attribute: &Attribute) ->
 }
 
 fn write_escaped_attribute(output: &mut (impl Write + ?Sized), value: &str) -> io::Result<()> {
-    for character in value.chars() {
-        match character {
-            '&' => output.write_all(b"&amp;")?,
-            '"' => output.write_all(b"&quot;")?,
-            '\u{00a0}' => output.write_all(b"&nbsp;")?,
-            '<' => output.write_all(b"&lt;")?,
-            '>' => output.write_all(b"&gt;")?,
-            character => {
-                let mut buffer = [0_u8; 4];
-                output.write_all(character.encode_utf8(&mut buffer).as_bytes())?;
-            }
-        }
-    }
-    Ok(())
+    write_escaped(output, value, |character| match character {
+        '&' => Some("&amp;"),
+        '"' => Some("&quot;"),
+        '\u{00a0}' => Some("&nbsp;"),
+        '<' => Some("&lt;"),
+        '>' => Some("&gt;"),
+        _ => None,
+    })
 }
 
 fn write_text(
@@ -191,22 +185,34 @@ fn write_text(
             )
     });
     if raw {
-        output.write_all(value.as_bytes())?;
+        output.write_all(value.as_bytes())
     } else {
-        for character in value.chars() {
-            match character {
-                '&' => output.write_all(b"&amp;")?,
-                '\u{00a0}' => output.write_all(b"&nbsp;")?,
-                '<' => output.write_all(b"&lt;")?,
-                '>' => output.write_all(b"&gt;")?,
-                character => {
-                    let mut buffer = [0_u8; 4];
-                    output.write_all(character.encode_utf8(&mut buffer).as_bytes())?;
-                }
-            }
-        }
+        write_escaped(output, value, |character| match character {
+            '&' => Some("&amp;"),
+            '\u{00a0}' => Some("&nbsp;"),
+            '<' => Some("&lt;"),
+            '>' => Some("&gt;"),
+            _ => None,
+        })
     }
-    Ok(())
+}
+
+fn write_escaped(
+    output: &mut (impl Write + ?Sized),
+    value: &str,
+    replacement: impl Fn(char) -> Option<&'static str>,
+) -> io::Result<()> {
+    let mut unescaped_start = 0;
+    let bytes = value.as_bytes();
+    for (index, character) in value.char_indices() {
+        let Some(replacement) = replacement(character) else {
+            continue;
+        };
+        output.write_all(&bytes[unescaped_start..index])?;
+        output.write_all(replacement.as_bytes())?;
+        unescaped_start = index + character.len_utf8();
+    }
+    output.write_all(&bytes[unescaped_start..])
 }
 
 fn is_void_element(name: &QualName) -> bool {
@@ -246,19 +252,17 @@ mod tests {
     use super::{serialize_document, serialize_document_to, serialize_subtree};
 
     #[test]
-    fn serialization_is_stable_for_a_fixed_document() {
+    fn serialization_escapes_text_and_attributes_without_changing_unicode()
+    -> Result<(), Box<dyn std::error::Error>> {
         let document = Document::parse(
-            b"<!doctype html><html><head><title>A &amp; B</title></head><body><input disabled></body></html>",
+            "<html><body><p title='A &amp; &quot; &lt; &gt;\u{00a0}café'>A &amp; &lt; &gt;\u{00a0}café</p></body></html>"
+                .as_bytes(),
         );
-        let first = serialize_document(&document);
-        let second = serialize_document(&document);
+        let serialized = String::from_utf8(serialize_document(&document)?)?;
 
-        assert_eq!(first.as_ref().ok(), second.as_ref().ok());
-        assert!(
-            first.as_ref().is_ok_and(|html| {
-                String::from_utf8_lossy(html).contains("<input disabled=\"\">")
-            })
-        );
+        assert!(serialized.contains("title=\"A &amp; &quot; &lt; &gt;&nbsp;café\""));
+        assert!(serialized.contains(">A &amp; &lt; &gt;&nbsp;café</p>"));
+        Ok(())
     }
 
     #[test]
