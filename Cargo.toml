@@ -82,7 +82,7 @@ serde_json = "1.0.151"
 sha2 = "0.11.0"
 sha1 = "0.11.0"
 tempfile = "3.27.0"
-sysinfo = { version = "0.38.4", default-features = false, features = [
+sysinfo = { version = "0.39.6", default-features = false, features = [
   "system",
 ] }
 tar = "0.4.44"
@@ -107,7 +107,7 @@ tokio-rustls = { version = "0.26.4", default-features = false, features = [
   "tls12",
 ] }
 tokio-util = { version = "0.7.18", features = ["rt"] }
-toml = "0.9.8"
+toml = "1.1.4"
 ulid = { version = "3.0.0", features = ["serde"] }
 url = { version = "2.5.8", features = ["serde"] }
 zeroize = "1.8.2"
