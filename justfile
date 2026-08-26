@@ -211,11 +211,11 @@ node-package-check:
 
 python-check:
     cd bindings/python && uv sync --frozen
-    cd bindings/python && uv run maturin develop \
+    cd bindings/python && uv run --frozen maturin develop \
       --features extension-module,binding-test-hooks
-    cd bindings/python && uv run pytest
-    cd bindings/python && uv run mypy
-    cd bindings/python && uv run mypy --strict \
+    cd bindings/python && uv run --frozen pytest
+    cd bindings/python && uv run --frozen mypy
+    cd bindings/python && uv run --frozen mypy --strict \
       python/pageknot/__init__.pyi python/pageknot/_contracts.pyi
 
 python-wheel-check:
@@ -225,8 +225,8 @@ python-wheel-check:
     wheel_tmp="$(mktemp -d)"
     trap 'rm -rf "$wheel_tmp"' EXIT
     cd bindings/python
-    uv run maturin build --release --sdist --out "$wheel_tmp/dist"
-    uv run python tests/package_contents.py \
+    uv run --frozen maturin build --release --sdist --out "$wheel_tmp/dist"
+    uv run --frozen python tests/package_contents.py \
       "$workspace/LICENSE" "$wheel_tmp"/dist/*
     uv venv "$wheel_tmp/venv"
     uv pip install --python "$wheel_tmp/venv/bin/python" "$wheel_tmp"/dist/*.whl

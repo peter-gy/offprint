@@ -229,7 +229,7 @@ jobs:
 
       - name: Build wheel
         working-directory: bindings/python
-        run: uv run maturin build --release --out dist
+        run: uv run --frozen maturin build --release --out dist
 
       - name: Install wheel in a clean environment
         shell: bash
