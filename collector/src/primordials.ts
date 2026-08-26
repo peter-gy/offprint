@@ -74,8 +74,7 @@ export function captureMethod<Receiver, Arguments extends unknown[], Value>(
   }
   const method = prototype
     ? (propertyDescriptor(prototype, name)?.value as
-        | ((...arguments_: Arguments) => Value)
-        | undefined)
+        ((...arguments_: Arguments) => Value) | undefined)
     : undefined;
   if (!method) {
     return () => {

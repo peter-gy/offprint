@@ -40,8 +40,8 @@
   // src/index.ts
   var exports_src = {};
   __export(exports_src, {
-    utf8LengthWithinLimit: () => utf8LengthWithinLimit,
-    sha256Fallback: () => sha256Fallback
+    sha256Fallback: () => sha256Fallback,
+    utf8LengthWithinLimit: () => utf8LengthWithinLimit
   });
 
   // src/identity.ts
@@ -80,7 +80,7 @@
   var cssBaseAttribute = "data-pageknot-css-base";
   var freezeAttribute = "data-pageknot-freeze";
   var freezeCss = "*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}";
-  var buildSha256 = "4232f4a93e90823e6e18068b7a0b035d3bb4bd5a989b4529645b93e9c2b5a797";
+  var buildSha256 = "d17946eeb776b2ad3a84c8ef02e4dd30e92f243c1e0a974cad3f82c3c5d0771f";
 
   // src/primordials.ts
   var reflectApply = Reflect.apply;
