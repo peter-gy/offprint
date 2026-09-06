@@ -15,11 +15,16 @@ clean:
     rm -rf -- \
       .cargo-deny \
       .nextest \
+      .mypy_cache \
+      .pytest_cache \
+      .ruff_cache \
       collector/.bun \
       collector/node_modules \
+      bindings/node/coverage \
       bindings/node/node_modules \
       bindings/python/.mypy_cache \
       bindings/python/.pytest_cache \
+      bindings/python/.ruff_cache \
       bindings/python/.venv \
       bindings/python/dist \
       bindings/python/target \
@@ -292,8 +297,13 @@ miri:
       -p offprint-protocol
 
 docs-check:
+    cargo run --locked -p xtask -- check-repository
     RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --no-deps --lib
     cargo test --locked --workspace --doc
+    cargo check --locked -p offprint --examples
+    cd bindings/node && bun run typecheck
+    cd bindings/python && uv run --frozen mypy --config-file=/dev/null \
+      --no-incremental --strict examples/capture_memory.py
 
 package target binary output="dist":
     cargo run --locked -p xtask -- package \

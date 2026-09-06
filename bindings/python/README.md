@@ -1,30 +1,24 @@
-# `offprint`
+# `offprint` for Python
 
-The `offprint` Python package captures rendered pages through the Offprint Rust
-engine and returns the canonical capture records as dictionaries.
+The `offprint` package captures rendered pages through the native Offprint
+service and returns canonical capture records as dictionaries.
 
-The current package is an alpha build from the Offprint source checkout. It
-requires Python 3.10 or newer, uv, the repository Rust toolchain, and a
-supported native build environment.
+It supports Python 3.10 through 3.14 on Linux x86-64 with glibc, macOS arm64
+and x86-64, and Windows x86-64.
 
-## Build and capture
+Linux hosts also need Chromium's
+[shared runtime libraries](https://github.com/peter-gy/offprint/blob/main/docs/start/install.md#linux-runtime-libraries).
 
-From the repository root:
+## Install and capture
+
+After release 0.1.0 is published, install its explicit version:
 
 ```console
-cd bindings/python
-uv sync --frozen
-uv run maturin develop
-uv run python examples/capture.py
+python -m pip install offprint==0.1.0
 ```
 
-The example writes and prints:
-
-```text
-example.html
-```
-
-Its complete source is [`examples/capture.py`](./examples/capture.py):
+Use the [source-checkout steps](https://github.com/peter-gy/offprint/blob/main/docs/start/install.md)
+when working before publication.
 
 ```python
 import asyncio
@@ -34,61 +28,57 @@ from offprint import Offprint
 
 async def main() -> None:
     async with Offprint() as offprint:
-        result = await offprint.capture(
+        receipt = await offprint.capture(
             "https://example.com",
             output="example.html",
         )
-        print(result["artifact"]["path"])
+        print(receipt["artifact"]["path"])
 
 
 asyncio.run(main())
 ```
 
-The first capture discovers a compatible local browser. When discovery and the
-managed cache are empty, Offprint downloads and verifies its pinned Chrome for
-Testing build.
+The first capture discovers a compatible Chrome, Chromium, or Microsoft Edge
+installation. When discovery and the managed cache are empty, Offprint
+downloads and verifies its pinned
+[Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/)
+build.
 
-## Capture options
+## Services and lifecycle
 
-`capture(url, **options)` requires an output path. It accepts profile, timeout,
-readiness, viewport, strict resource handling, browser visibility, conflict
-policy, network policy, verification mode, scope, CSS selector, and
-optimization options. The public method signatures in
-[`python/offprint/_api.py`](./python/offprint/_api.py) define the current names.
+`Offprint` exposes:
 
-Wait for finite requests, then allow one second for worker rendering:
+- `captures` for jobs, events, cancellation, batches, and crawls
+- `artifacts` for manifest inspection, HTML verification, export, and
+  format-specific verification
+- `browsers` for discovery, managed installation, inventory, removal,
+  diagnosis, and idle close
 
-```python
-result = await offprint.capture(
-    "https://example.com",
-    output="application.html",
-    wait_until="network-idle",
-    delay_ms=1000,
-    timeout_ms=120_000,
-)
-```
+The shorthand `capture` method writes one file. Pass a complete
+`CaptureRequest` dictionary to `captures.start` for memory output, credentials,
+a custom network policy, complete environment control, diagnostics, or exact
+limits.
 
-## Jobs and lifecycle
+Use `async with` for a bounded service lifetime. A long-running service can
+reuse one instance and await `close()` during shutdown.
 
-Call `offprint.captures.start(request)` when the caller needs progress events or
-cancellation. Each call to `job.events()` creates an independent asynchronous
-event subscription. `await job.result()` returns a successful `CaptureReceipt`.
-Failure and cancellation raise `OffprintError`.
+## Naming and errors
 
-Use `async with Offprint()` for one bounded service lifetime. Long-running
-callers can reuse one instance and await `offprint.close()` during shutdown.
+Python methods and keyword arguments use snake_case. Canonical request, event,
+result, manifest, browser, batch, crawl, and error dictionaries remain
+camelCase.
 
-`offprint.browsers` exposes `ensure`, `list`, `install`, `remove`, `doctor`, and
-`close_idle` for browser setup and administration.
+Python maps failure stages to subclasses of `OffprintError`. Every exception
+also exposes the stable code, stage, retryability, details, optional diagnostics
+path, and nested source.
 
-## Errors and records
+Read the complete [Python integration guide](https://github.com/peter-gy/offprint/blob/main/docs/integrations/python.md),
+[record reference](https://github.com/peter-gy/offprint/blob/main/docs/reference/records.md),
+and [troubleshooting guide](https://github.com/peter-gy/offprint/blob/main/docs/operations/troubleshooting.md).
 
-Failures derive from `OffprintError`. Stage-specific subclasses let callers
-handle validation, browser, navigation, resource, verification, and shutdown
-failures independently. Each error carries a stable code, stage, retryability,
-details, and an optional diagnostics path.
+[`python/offprint/__init__.pyi`](./python/offprint/__init__.pyi) owns exact host
+signatures. [`python/offprint/contracts.py`](./python/offprint/contracts.py)
+owns importable generated canonical dictionary shapes.
 
-Capture results and requests follow the versioned contracts in
-[`schemas/`](../../schemas). See the [feature matrix](../../docs/feature-matrix.md)
-for interface parity and [troubleshooting](../../docs/troubleshooting.md) for
-browser, readiness, verification, and resource recovery.
+Source contributors can follow the
+[contributor setup](https://github.com/peter-gy/offprint/blob/main/development_docs/setup.md).

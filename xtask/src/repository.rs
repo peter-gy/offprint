@@ -36,6 +36,7 @@ pub fn check(root: &Path) -> Result<(), String> {
 
     let mut violations = Vec::new();
     structure::check(root, &files, &mut violations)?;
+    check_documentation_inventory(root, &files, &mut violations)?;
     for path in &files {
         check_text_file(path, &mut violations)?;
         if path.extension().and_then(|value| value.to_str()) == Some("md") {
@@ -65,6 +66,47 @@ pub fn check(root: &Path) -> Result<(), String> {
                 .join("\n")
         ))
     }
+}
+
+fn check_documentation_inventory(
+    root: &Path,
+    files: &[std::path::PathBuf],
+    violations: &mut Vec<String>,
+) -> Result<(), String> {
+    for documentation_root in ["docs", "development_docs"] {
+        let index_path = root.join(documentation_root).join("README.md");
+        let index = fs::read_to_string(&index_path)
+            .map_err(|error| format!("failed to read {}: {error}", index_path.display()))?;
+        for path in files {
+            let Ok(relative) = path.strip_prefix(root) else {
+                continue;
+            };
+            if !relative.starts_with(documentation_root)
+                || relative == Path::new(documentation_root).join("README.md")
+                || relative.extension().and_then(|value| value.to_str()) != Some("md")
+            {
+                continue;
+            }
+            let target = relative
+                .strip_prefix(documentation_root)
+                .map_err(|error| {
+                    format!(
+                        "failed to resolve documentation path {}: {error}",
+                        relative.display()
+                    )
+                })?
+                .to_string_lossy()
+                .replace(std::path::MAIN_SEPARATOR, "/");
+            let link_target = format!("(./{target})");
+            if !index.contains(&link_target) {
+                violations.push(format!(
+                    "{} does not route to documentation page `{target}`",
+                    index_path.display()
+                ));
+            }
+        }
+    }
+    Ok(())
 }
 
 fn check_binding_contract_wiring(root: &Path, violations: &mut Vec<String>) -> Result<(), String> {
@@ -396,14 +438,13 @@ fn check_markdown_links(path: &Path, violations: &mut Vec<String>) -> Result<(),
         };
         let raw_target = rest[..end].trim();
         rest = &rest[end + 1..];
-        let target = raw_target
+        let (target, anchor) = raw_target
             .split_once('#')
-            .map_or(raw_target, |(target, _)| target)
-            .trim_start_matches('<')
-            .trim_end_matches('>');
-        if target.is_empty()
-            || target.starts_with('#')
-            || target.starts_with("http://")
+            .map_or((raw_target, None), |(target, anchor)| {
+                (target, Some(anchor))
+            });
+        let target = target.trim_start_matches('<').trim_end_matches('>');
+        if target.starts_with("http://")
             || target.starts_with("https://")
             || target.starts_with("mailto:")
         {
@@ -412,14 +453,58 @@ fn check_markdown_links(path: &Path, violations: &mut Vec<String>) -> Result<(),
         let Some(parent) = path.parent() else {
             continue;
         };
-        if !parent.join(target).exists() {
+        let linked_path = if target.is_empty() {
+            path.to_path_buf()
+        } else {
+            parent.join(target)
+        };
+        if !linked_path.exists() {
             violations.push(format!(
                 "{} references missing local target `{raw_target}`",
+                path.display()
+            ));
+            continue;
+        }
+        if let Some(anchor) = anchor
+            && linked_path.extension().and_then(|value| value.to_str()) == Some("md")
+            && !markdown_has_anchor(&linked_path, anchor)?
+        {
+            violations.push(format!(
+                "{} references missing Markdown anchor `{raw_target}`",
                 path.display()
             ));
         }
     }
     Ok(())
+}
+
+fn markdown_has_anchor(path: &Path, expected: &str) -> Result<bool, String> {
+    let text = fs::read_to_string(path)
+        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
+    Ok(text.lines().filter_map(markdown_heading).any(|heading| {
+        let anchor = heading
+            .chars()
+            .filter_map(|character| {
+                if character.is_alphanumeric() || matches!(character, '-' | '_') {
+                    Some(character.to_ascii_lowercase())
+                } else if character.is_whitespace() {
+                    Some('-')
+                } else {
+                    None
+                }
+            })
+            .collect::<String>();
+        anchor == expected
+    }))
+}
+
+fn markdown_heading(line: &str) -> Option<&str> {
+    let trimmed = line.trim_start();
+    let hashes = trimmed.bytes().take_while(|byte| *byte == b'#').count();
+    (1..=6)
+        .contains(&hashes)
+        .then(|| trimmed.get(hashes..)?.strip_prefix(' ').map(str::trim))
+        .flatten()
 }
 
 fn check_version_alignment(root: &Path, violations: &mut Vec<String>) -> Result<(), String> {

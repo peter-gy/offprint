@@ -1,67 +1,82 @@
 # Offprint documentation
 
-Offprint captures rendered pages as verified, self-contained artifacts. Start
-with the [project quickstart](../README.md#quickstart) to build the CLI and
-produce a verified HTML file.
+Offprint captures a rendered page as verified, self-contained HTML. Start with
+the product model, complete one capture, then follow the path that matches your
+next task.
 
-The guides below cover the current alpha source checkout. The installed
-`offprint <command> --help` output is the exact reference for available flags
-and accepted values.
+## Start
 
-## Capture and operate
+1. [What is Offprint?](./start/what-is-offprint.md) defines the product, result,
+   and preservation boundary.
+2. [Why Offprint?](./start/why-offprint.md) explains why rendered pages need
+   browser observation, resource resolution, verification, and transactional
+   output.
+3. [Install Offprint](./start/install.md) compares the CLI, Rust, Node.js, and
+   Python distribution paths.
+4. [Capture and verify one page](./start/quickstart.md) builds the CLI and
+   produces an inspectable artifact.
 
-| Goal | Guide |
+## Concepts
+
+- [The capture model](./concepts/capture-model.md) connects request, job,
+  observation, artifact, verification, delivery, and receipt.
+- [Artifacts and verification](./concepts/artifacts-and-verification.md) defines
+  safe-static HTML, artifact manifests, and verification evidence.
+- [Resources and fidelity](./concepts/resources-and-fidelity.md) explains
+  references, records, outcomes, warnings, and retrieval provenance.
+- [Browsers and ownership](./concepts/browsers.md) distinguishes browser
+  selection, source, discovery, installation, process, and context ownership.
+
+## Guides
+
+| Task | Guide |
 | --- | --- |
-| Capture and verify one page | [Capture and verify](./cli.md#capture-and-verify-a-page) |
-| Derive another artifact format | [Export another format](./cli.md#export-another-format) |
-| Wait for client-side rendering | [Capture readiness](./cli.md#select-capture-readiness) |
-| Capture one matching element | [Selector capture](./cli.md#capture-one-element) |
-| Consume a versioned JSON result | [Machine-readable output](./cli.md#write-machine-readable-output) |
-| Capture a batch or bounded link graph | [Batch and crawl](./cli.md#run-bounded-capture-sets) |
-| Reuse browser, readiness, and resource settings | [Configuration](./configuration.md) |
-| Pass request headers or cookies | [Credential inputs](./configuration.md#credential-inputs) |
-| Recover from setup or capture failure | [Troubleshooting](./troubleshooting.md) |
+| Choose readiness, selection, resource handling, optimizations, or local files | [Control capture](./guides/control-capture.md) |
+| Pass headers or cookies safely | [Authenticated pages](./guides/authenticated-pages.md) |
+| Run known requests or discover a link graph | [Batch and crawl](./guides/batch-and-crawl.md) |
+| Read manifests, repeat verification, or derive another representation | [Inspect, verify, and export](./guides/inspect-verify-export.md) |
+| Install, select, list, or remove local browsers | [Manage browsers](./guides/manage-browsers.md) |
+| Attach to caller-owned Chromium | [Remote browser](./guides/remote-browser.md) |
+| Consume JSON, events, failures, and exit status | [Automation](./guides/automation.md) |
 
-## Use an API
+## Examples
 
-| Interface | Guide |
-| --- | --- |
-| Rust | [Rust public API](./public-api.md) |
-| Node.js | [`offprint`](../bindings/node/README.md) |
-| Python | [`offprint`](../bindings/python/README.md) |
-| All interfaces | [Feature and parity matrix](./feature-matrix.md) |
+[Executable capture scenarios](./examples/README.md) connect rendered inputs to
+artifact state, receipt evidence, and the browser fixtures that enforce each
+claim.
 
-The versioned request, result, error, and binding contracts live in
-[`schemas/`](../schemas). Build the Rust reference from the current checkout
-with `cargo doc --open -p offprint`.
+## Integrations
 
-## Understand the system
+- [Rust](./integrations/rust.md)
+- [Node.js](./integrations/node.md)
+- [Python](./integrations/python.md)
 
-- [Concepts](./concepts.md) defines the product vocabulary and the path from a
-  live page to a verified artifact.
-- [Architecture](./architecture.md) maps the ports, adapters, composition root,
-  capture flow, format flow, and dependency checks.
-- [Security threat model](./threat-model.md) defines host, browser, network,
-  credential, and artifact boundaries.
-- [Performance baseline](./performance-baseline.md) defines the benchmark
-  corpus and repeated-capture lifecycle reference.
-- [Source provenance ledger](./provenance.md) records inspected sources,
-  generated inputs, and managed browser archives.
+The three language APIs call the same native service and share canonical
+serialized records. Their construction, naming, type, and error ergonomics
+differ by host language.
 
-## Maintain Offprint
+## Reference
 
-- [Architecture decisions](./architecture-decisions.md) records accepted
-  ownership and dependency choices.
-- [Dependency evaluation](./dependencies.md) defines the dependency policy.
-- [Release contract](./release.md) defines package contents and release gates.
-- [Review guide](../REVIEW.md) routes contract, lifecycle, security, and
-  generated-surface review.
-- [Product and engineering specification](../SPEC.md) is the normative design
-  and implementation record.
+- [CLI commands, output, and exit statuses](./reference/cli.md)
+- [Configuration, profiles, environment variables, and defaults](./reference/configuration.md)
+- [Requests, events, results, manifests, browser, batch, and crawl records](./reference/records.md)
+- [Service construction, methods, lifecycle, and host-language differences](./reference/service-api.md)
+- [Artifact format contracts and limits](./reference/formats.md)
+- [Errors, stages, code families, and recovery](./reference/errors.md)
+- [Platforms, versions, and interface parity](./reference/compatibility.md)
 
-Run the documentation checks from the repository root:
+Generated JSON Schemas in [`schemas/`](../schemas) own exhaustive serialized
+field shapes. Rustdoc, TypeScript declarations, and Python stubs own exact host
+signatures.
 
-```console
-just repo-check
-just docs-check
-```
+## Operate
+
+- [Security and trust boundaries](./operations/security.md)
+- [Troubleshooting](./operations/troubleshooting.md)
+- [Limits and performance](./operations/limits-and-performance.md)
+
+## Develop Offprint
+
+Contributor architecture, generated-file ownership, validation, dependency,
+performance, provenance, decision, and release material lives in
+[`development_docs/`](../development_docs/README.md).

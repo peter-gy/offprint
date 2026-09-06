@@ -1,8 +1,8 @@
 # Offprint contributor contract
 
 Offprint captures a rendered page through Chromium, transforms the observation
-into safe-static HTML, verifies it with network access denied, and commits the
-artifact through an atomic transaction.
+into safe-static HTML, applies static or offline verification, and delivers a
+file or bounded memory value. Offline verification is the default.
 
 ## Architecture
 
@@ -12,16 +12,16 @@ artifact through an atomic transaction.
 | `crates/offprint-browser` | Browser seam | Backend traits, sessions, network policy, and readiness observations |
 | `crates/offprint-chromium` | Chromium adapter | Discovery, managed installs, process ownership, CDP transport, targets, and collection |
 | `crates/offprint-protocol` | Collector protocol | Handshake, version negotiation, chunk envelopes, checksums, and message records |
-| `crates/offprint-capture` | Capture mechanics | Validation, state transitions, cancellation, budgets, resource graph, and content store |
-| `crates/offprint-document` | Document model | Arena DOM, discovery, CSS rewriting, state materialization, and sanitization |
-| `crates/offprint-html` | HTML artifact | Encoding, manifest embedding, structural repair, static verification, and fallbacks |
-| `crates/offprint-transform` | Safe-static transform | Rendering freeze, sanitization, structural repair, manifest encoding, and static verification |
+| `crates/offprint-capture` | Capture primitives | Validation, reusable state and cancellation types, budgets, and content store |
+| `crates/offprint-document` | Document model | Arena DOM, reference discovery, CSS rewriting, state materialization, and sanitization |
+| `crates/offprint-html` | HTML artifact | Encoding, manifest embedding, owned restoration programs, content policy, structural repair, static verification, and fallbacks |
+| `crates/offprint-transform` | Safe-static transform | Document freeze, sanitization, repair, and HTML format orchestration |
 | `crates/offprint-export` | Alternate representations | Format encoders, source metadata preservation, and representation-specific verification |
 | `crates/offprint-artifact` | Delivery | Bounded memory output and transactional file output |
-| `crates/offprint` | Service API | Runtime ownership, capture jobs, pipeline, diagnostics, browser service, inspect, and verify |
+| `crates/offprint` | Service API | Runtime ownership, production job control, resource materialization, pipeline, diagnostics, browser service, inspect, and verify |
 | `crates/offprint-cli` | Command boundary | Commands, configuration precedence, output routing, diagnostics, and exit status |
 | `collector` | Page observation | Document-start hooks and bounded pull-based collection |
-| `bindings/node` | Node.js binding | ESM, CommonJS, async jobs, events, errors, and platform addon selection |
+| `bindings/node` | Node.js binding | ESM, CommonJS, async jobs, events, errors, and packaged native addon selection |
 | `bindings/python` | Python binding | Async context manager, jobs, events, errors, and wheel module |
 | `benches` | Performance evidence | Microbenchmarks, browser corpora, normalized comparison, and recorded baseline |
 | `xtask` | Repository automation | Schema generation, CDP generation, fixture selection, and release checks |
@@ -65,19 +65,28 @@ Parse and serialize at I/O boundaries. A representation encoder returns its
 verified value after one verification pass. Standalone verification handles
 artifacts loaded from storage.
 
-Every browser adapter runs the shared backend conformance suite. Every artifact
-representation runs the shared representation conformance suite.
+Browser adapter changes run the Chromium and custom-backend contract suites.
+Artifact representation changes run their encoder, verifier, service, and
+browser integration tests. The reusable conformance harnesses are tracked as a
+development gap in [`development_docs/testing.md`](./development_docs/testing.md).
 
 ## Domain vocabulary
 
-- A **capture** is one request and one terminal result.
-- A **job** is the cancellable handle for an active capture.
+- A **capture** is one request execution and one terminal result.
+- A **capture job** is the cancellable handle for an active or completed
+  capture.
 - An **observation** is browser state collected before transformation.
 - A **resource reference** is one render-affecting URL at one document
   location.
-- A **resource outcome** is `embedded`, `external`, `omitted`, or `failed`.
-- An **artifact** is encoded output plus its embedded manifest.
-- A **verification** is static validation or a network-denied browser reopen.
+- A **resource outcome** is the terminal record for one reference. Production
+  capture emits `embedded` or `failed`. The schema reserves `external` and
+  `omitted` for future policies.
+- An **Offprint HTML artifact** is the canonical encoded capture and its
+  embedded artifact manifest.
+- An **artifact delivery** is a committed file or bounded memory value.
+- An **export format** is PDF, Markdown, ZIP, self-extracting HTML, or MHTML.
+- A **verification mode** is static validation or a network-denied browser
+  reopen.
 - A **managed browser** is a catalog entry whose revision and archive digest
   are pinned in `versions.toml`.
 
@@ -112,14 +121,17 @@ capture path.
 
 - `schemas/**` comes from `cargo run -p xtask -- codegen`.
 - `fixtures/manifest/**` comes from the same schema command.
+- `bindings/node/contracts.generated.d.ts` and
+  `bindings/python/python/offprint/contracts.py` come from the same schema
+  command.
 - `crates/offprint-chromium/src/cdp/generated/*.rs` comes from
   `cargo run -p xtask -- codegen-cdp`.
-- `collector/dist/collector.js` and `collector.sha256` come from
+- `collector/dist/collector.js` and `collector/dist/collector.sha256` come from
   `bun run build` in `collector`.
 - `crates/offprint-chromium/generated/collector.js` and
   `collector.sha256` are the packaged copies from the same collector build.
-- `benches/baseline.json` comes from `just benchmark
-  benches/baseline.json`.
+- `benches/baseline.json` comes from the benchmark recipe with that file as its
+  output.
 
 Edit the source model, generator, collector source, or benchmark corpus.
 `just codegen-check` must report byte-for-byte freshness.
@@ -172,3 +184,7 @@ Write contract-shaped prose with project nouns. Put the working command or API
 example near the behavior it demonstrates. Comments explain lifecycle order,
 security boundaries, generated ownership, compatibility constraints, or the
 reason for a bailout.
+
+User documentation lives in [`docs/`](./docs/README.md). Current architecture,
+pipeline, generation, validation, dependency, provenance, and release contracts
+live in [`development_docs/`](./development_docs/README.md).

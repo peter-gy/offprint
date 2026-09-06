@@ -1,104 +1,80 @@
-# `offprint`
+# `offprint` for Node.js
 
-`offprint` captures rendered pages through the Offprint Rust engine and
-returns the canonical capture records as JavaScript objects.
+The `offprint` package captures rendered pages through the native Offprint
+service and returns canonical capture records as JavaScript objects.
 
-The package requires Node.js 22 or newer. Building it from source also requires
-Bun 1.3.14, the repository Rust toolchain, and a supported native build
-environment.
+It requires Node.js 22 or newer and supports Linux x86-64 with glibc, macOS
+arm64 and x86-64, and Windows x86-64.
+
+Linux hosts also need Chromium's
+[shared runtime libraries](https://github.com/peter-gy/offprint/blob/main/docs/start/install.md#linux-runtime-libraries).
 
 ## Install and capture
 
-```console
-npm install offprint
-```
-
-```ts
-import { Offprint } from "offprint";
-
-await using offprint = new Offprint();
-const result = await offprint.capture("https://example.com", {
-  output: "example.html",
-});
-console.log(result.artifact);
-```
-
-## Build from source
-
-From the repository root:
+After release 0.1.0 is published, install its explicit version:
 
 ```console
-cd bindings/node
-bun install --frozen-lockfile
-bun run build
-bun run examples/capture.ts
+npm install offprint@0.1.0
 ```
 
-The example writes and prints:
+Use the [source-checkout steps](https://github.com/peter-gy/offprint/blob/main/docs/start/install.md)
+when working before publication.
 
-```text
-example.html
-```
-
-Its complete source is [`examples/capture.ts`](./examples/capture.ts):
-
-```ts
+```js
 import { Offprint } from "offprint";
 
-await using offprint = new Offprint();
-const result = await offprint.capture("https://example.com", {
-  output: "example.html",
-});
-if (result.artifact.kind !== "file") {
-  throw new Error("expected a file artifact");
+const offprint = new Offprint();
+try {
+  const receipt = await offprint.capture("https://example.com", {
+    output: "example.html",
+  });
+  console.log(receipt.artifact.path);
+} finally {
+  await offprint.close();
 }
-console.log(result.artifact.path);
 ```
 
-The first capture discovers a compatible local browser. When discovery and the
-managed cache are empty, Offprint downloads and verifies its pinned Chrome for
-Testing build.
+The first capture discovers a compatible Chrome, Chromium, or Microsoft Edge
+installation. When discovery and the managed cache are empty, Offprint
+downloads and verifies its pinned
+[Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/)
+build.
 
-## Capture options
+## Services and lifecycle
 
-`capture(url, options)` requires an output path. It accepts profile, timeout,
-readiness, viewport, strict resource handling, browser visibility, conflict
-policy, network policy, verification mode, scope, CSS selector, and
-optimization options. The generated TypeScript declarations in
-[`index.d.ts`](./index.d.ts) define the current names and shapes.
+`Offprint` exposes:
 
-Wait for finite requests, then allow one second for worker rendering:
+- `captures` for jobs, events, cancellation, batches, and crawls
+- `artifacts` for manifest inspection, HTML verification, export, and
+  format-specific verification
+- `browsers` for discovery, managed installation, inventory, removal,
+  diagnosis, and idle close
 
-```ts
-const result = await offprint.capture("https://example.com", {
-  output: "application.html",
-  waitUntil: "network-idle",
-  delayMs: 1000,
-  timeoutMs: 120_000,
-});
-```
+The shorthand `capture` method writes one file. Pass a complete
+`CaptureRequest` to `captures.start` for memory output, credentials, a custom
+network policy, complete environment control, diagnostics, or exact limits.
 
-## Jobs and lifecycle
+Every `job.events()` call creates an independent asynchronous iterator.
+`job.cancel()` is idempotent. `job.result()` resolves once with a
+`CaptureReceipt` or rejects with `OffprintError`.
 
-Call `offprint.captures.start(request)` when the caller needs progress events or
-cancellation. Each call to `job.events()` creates an independent asynchronous
-event subscription. `job.result()` resolves once with a successful
-`CaptureReceipt`. Failure and cancellation reject with `OffprintError`.
+Always await `close()` or use `Symbol.asyncDispose` during orderly shutdown.
+Finalization and process-exit handling are fallback safeguards.
 
-One `Offprint` instance can serve repeated captures. Always await
-`offprint.close()` during shutdown so Offprint can cancel active jobs and
-release its owned browser processes.
+## Records and errors
 
-`offprint.browsers` exposes `ensure`, `list`, `install`, `remove`, `doctor`, and
-`closeIdle` for browser setup and administration.
+Host options and methods use camelCase. Canonical request, event, result,
+manifest, browser, batch, crawl, and error records also use camelCase.
 
-## Errors and records
+`OffprintError` exposes `code`, `stage`, `retryable`, `details`,
+`diagnosticsPath`, and an optional nested `source`.
 
-Native failures reject with `OffprintError`. Inspect `code`, `stage`,
-`retryable`, `details`, and `diagnosticsPath` to choose a retry or recovery
-action.
+Read the complete [Node.js integration guide](https://github.com/peter-gy/offprint/blob/main/docs/integrations/node.md),
+[record reference](https://github.com/peter-gy/offprint/blob/main/docs/reference/records.md),
+and [troubleshooting guide](https://github.com/peter-gy/offprint/blob/main/docs/operations/troubleshooting.md).
 
-Capture results and requests follow the versioned contracts in
-[`schemas/`](../../schemas). See the [feature matrix](../../docs/feature-matrix.md)
-for interface parity and [troubleshooting](../../docs/troubleshooting.md) for
-browser, readiness, verification, and resource recovery.
+[`index.d.ts`](./index.d.ts) owns exact TypeScript signatures and exported
+record aliases.
+
+Source contributors can follow the
+[contributor setup](https://github.com/peter-gy/offprint/blob/main/development_docs/setup.md).
