@@ -1,15 +1,15 @@
 {
-  "name": "@pageknot/node",
+  "name": "@offprint/node",
   "version": "0.1.0",
   "description": "Capture rendered web pages as verified self-contained artifacts",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/peter-gy/pageknot.git",
+    "url": "git+https://github.com/peter-gy/offprint.git",
     "directory": "bindings/node"
   },
   "bugs": {
-    "url": "https://github.com/peter-gy/pageknot/issues"
+    "url": "https://github.com/peter-gy/offprint/issues"
   },
   "type": "module",
   "main": "./index.cjs",
@@ -34,14 +34,14 @@
     "README.md"
   ],
   "optionalDependencies": {
-    "@pageknot/node-darwin-arm64": "0.1.0",
-    "@pageknot/node-darwin-x64": "0.1.0",
-    "@pageknot/node-linux-x64-gnu": "0.1.0",
-    "@pageknot/node-win32-x64-msvc": "0.1.0"
+    "@offprint/node-darwin-arm64": "0.1.0",
+    "@offprint/node-darwin-x64": "0.1.0",
+    "@offprint/node-linux-x64-gnu": "0.1.0",
+    "@offprint/node-win32-x64-msvc": "0.1.0"
   },
   "napi": {
-    "packageName": "@pageknot/node",
-    "binaryName": "pageknot-native",
+    "packageName": "@offprint/node",
+    "binaryName": "offprint-native",
     "targets": [
       "x86_64-unknown-linux-gnu",
       "x86_64-apple-darwin",
@@ -52,7 +52,7 @@
   "scripts": {
     "build": "napi build --platform --release --no-js --dts native.d.ts",
     "build:debug": "napi build --platform --no-js --dts native.d.ts",
-    "build:test": "napi build --platform --no-js --dts ../../target/pageknot-node-test.d.ts --features binding-test-hooks",
+    "build:test": "napi build --platform --no-js --dts ../../target/offprint-node-test.d.ts --features binding-test-hooks",
     "artifacts": "napi artifacts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",

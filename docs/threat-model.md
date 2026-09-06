@@ -1,6 +1,6 @@
 # Security threat model
 
-PageKnot executes a web page in Chromium, reads browser state through CDP,
+Offprint executes a web page in Chromium, reads browser state through CDP,
 retrieves render-affecting resources, and writes a portable artifact. The
 default workflow assumes the page and every value derived from it are
 untrusted.
@@ -11,9 +11,9 @@ Use the default `standard` network policy and `offline` verification for public
 web pages:
 
 ```console
-pageknot capture https://example.com \
+offprint capture https://example.com \
   --network-policy standard \
-  --verify offline \
+  --verification offline \
   --output example.html
 ```
 
@@ -71,7 +71,7 @@ retention and sharing controls to the output. See
 
 The Chromium sandbox, operating-system process isolation, and TLS stack remain
 part of the trusted computing base. A caller that supplies a remote CDP
-endpoint grants PageKnot control of that browser and owns its network controls,
+endpoint grants Offprint control of that browser and owns its network controls,
 process lifecycle, and browser-side state. Remote capture requires an
 unrestricted network policy and static verification. A locally modified
 browser binary outside the managed catalog inherits the trust decision of the
@@ -83,8 +83,8 @@ truth or safety of the captured page.
 
 ## Security response
 
-Security-sensitive failures use stable `pageknot.*` error codes and avoid
+Security-sensitive failures use stable `offprint.*` error codes and avoid
 embedding attacker-controlled secrets in diagnostics. Reports should include
-the PageKnot version, platform, managed browser revision, error code, and a
+the Offprint version, platform, managed browser revision, error code, and a
 minimal local fixture. Follow [Troubleshooting](./troubleshooting.md) to collect
 the doctor report and a sanitized diagnostic bundle.

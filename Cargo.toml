@@ -4,19 +4,19 @@ members = [
   "benches",
   "bindings/node",
   "bindings/python",
-  "crates/pageknot",
-  "crates/pageknot-artifact",
-  "crates/pageknot-browser",
-  "crates/pageknot-capture",
-  "crates/pageknot-chromium",
-  "crates/pageknot-cli",
-  "crates/pageknot-document",
-  "crates/pageknot-export",
-  "crates/pageknot-html",
-  "crates/pageknot-model",
-  "crates/pageknot-protocol",
-  "crates/pageknot-test-support",
-  "crates/pageknot-transform",
+  "crates/offprint",
+  "crates/offprint-artifact",
+  "crates/offprint-browser",
+  "crates/offprint-capture",
+  "crates/offprint-chromium",
+  "crates/offprint-cli",
+  "crates/offprint-document",
+  "crates/offprint-export",
+  "crates/offprint-html",
+  "crates/offprint-model",
+  "crates/offprint-protocol",
+  "crates/offprint-test-support",
+  "crates/offprint-transform",
   "xtask",
 ]
 resolver = "3"
@@ -26,7 +26,7 @@ version = "0.1.0"
 edition = "2024"
 rust-version = "1.97"
 license = "AGPL-3.0-or-later"
-repository = "https://github.com/peter-gy/pageknot"
+repository = "https://github.com/peter-gy/offprint"
 readme = "README.md"
 
 [workspace.dependencies]
@@ -113,19 +113,19 @@ url = { version = "2.5.8", features = ["serde"] }
 zeroize = "1.8.2"
 zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
 
-pageknot = { version = "0.1.0", path = "crates/pageknot" }
-pageknot-artifact = { version = "0.1.0", path = "crates/pageknot-artifact" }
-pageknot-browser = { version = "0.1.0", path = "crates/pageknot-browser" }
-pageknot-capture = { version = "0.1.0", path = "crates/pageknot-capture" }
-pageknot-chromium = { version = "0.1.0", path = "crates/pageknot-chromium" }
-pageknot-cli = { version = "0.1.0", path = "crates/pageknot-cli" }
-pageknot-document = { version = "0.1.0", path = "crates/pageknot-document" }
-pageknot-export = { version = "0.1.0", path = "crates/pageknot-export" }
-pageknot-html = { version = "0.1.0", path = "crates/pageknot-html" }
-pageknot-model = { version = "0.1.0", path = "crates/pageknot-model" }
-pageknot-protocol = { version = "0.1.0", path = "crates/pageknot-protocol" }
-pageknot-test-support = { version = "0.1.0", path = "crates/pageknot-test-support" }
-pageknot-transform = { version = "0.1.0", path = "crates/pageknot-transform" }
+offprint = { version = "0.1.0", path = "crates/offprint" }
+offprint-artifact = { version = "0.1.0", path = "crates/offprint-artifact" }
+offprint-browser = { version = "0.1.0", path = "crates/offprint-browser" }
+offprint-capture = { version = "0.1.0", path = "crates/offprint-capture" }
+offprint-chromium = { version = "0.1.0", path = "crates/offprint-chromium" }
+offprint-cli = { version = "0.1.0", path = "crates/offprint-cli" }
+offprint-document = { version = "0.1.0", path = "crates/offprint-document" }
+offprint-export = { version = "0.1.0", path = "crates/offprint-export" }
+offprint-html = { version = "0.1.0", path = "crates/offprint-html" }
+offprint-model = { version = "0.1.0", path = "crates/offprint-model" }
+offprint-protocol = { version = "0.1.0", path = "crates/offprint-protocol" }
+offprint-test-support = { version = "0.1.0", path = "crates/offprint-test-support" }
+offprint-transform = { version = "0.1.0", path = "crates/offprint-transform" }
 processkit = "3.0.2"
 proptest = "1.9.0"
 pulldown-cmark = { version = "0.13.4", default-features = false }

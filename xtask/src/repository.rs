@@ -75,14 +75,14 @@ fn check_binding_contract_wiring(root: &Path, violations: &mut Vec<String>) -> R
     for required in [
         "from \"./contracts.generated.js\"",
         "events(): AsyncIterableIterator<CaptureEvent>",
-        "result(): Promise<CaptureResult>",
+        "result(): Promise<CaptureReceipt>",
         "start(request: CaptureRequest): Promise<CaptureJob>",
         "batch(request: BatchRequest): Promise<BatchResult>",
         "crawl(request: CrawlRequest): Promise<CrawlResult>",
         "inspect(path: string): Promise<ArtifactManifest>",
-        "Promise<VerificationResult>",
-        "Promise<ArtifactExportResult>",
-        "Promise<ArtifactVariantVerification>",
+        "Promise<VerificationReport>",
+        "Promise<ExportResult>",
+        "Promise<FormatVerification>",
         "ensure(): Promise<BrowserInfo>",
     ] {
         if !node.contains(required) {
@@ -93,22 +93,22 @@ fn check_binding_contract_wiring(root: &Path, violations: &mut Vec<String>) -> R
         }
     }
 
-    let python_path = root.join("bindings/python/python/pageknot/__init__.pyi");
+    let python_path = root.join("bindings/python/python/offprint/__init__.pyi");
     let python = fs::read_to_string(&python_path)
         .map_err(|error| format!("failed to read {}: {error}", python_path.display()))?;
     for required in [
         "from ._contracts import (",
         "class CaptureEvents(AsyncIterator[_CaptureEvent])",
-        "async def result(self) -> _CaptureResult",
+        "async def result(self) -> _CaptureReceipt",
         "request: _CaptureRequest",
         "request: _BatchRequest",
         "request: _CrawlRequest",
         ") -> _ArtifactManifest",
-        ") -> _VerificationResult",
-        ") -> _ArtifactExportResult",
-        ") -> _ArtifactVariantVerification",
+        ") -> _VerificationReport",
+        ") -> _ExportResult",
+        ") -> _FormatVerification",
         "async def ensure(self) -> _BrowserInfo",
-        ") -> _CaptureResult",
+        ") -> _CaptureReceipt",
     ] {
         if !python.contains(required) {
             violations.push(format!(
@@ -195,7 +195,7 @@ fn check_crate_package_metadata(root: &Path, violations: &mut Vec<String>) -> Re
         }
     }
 
-    let test_support_path = root.join("crates/pageknot-test-support/Cargo.toml");
+    let test_support_path = root.join("crates/offprint-test-support/Cargo.toml");
     let test_support = fs::read_to_string(&test_support_path)
         .map_err(|error| format!("failed to read {}: {error}", test_support_path.display()))?;
     let test_support: toml::Value = toml::from_str(&test_support)
@@ -217,22 +217,22 @@ fn check_crate_package_metadata(root: &Path, violations: &mut Vec<String>) -> Re
         .is_some_and(|members| {
             members
                 .iter()
-                .any(|member| member.as_str() == Some("crates/pageknot-test-support"))
+                .any(|member| member.as_str() == Some("crates/offprint-test-support"))
         });
     if !test_support_member {
         violations.push(
-            "Cargo.toml must keep crates/pageknot-test-support as a workspace member".to_owned(),
+            "Cargo.toml must keep crates/offprint-test-support as a workspace member".to_owned(),
         );
     }
     let test_support_dependency = workspace_table
         .get("dependencies")
-        .and_then(|dependencies| dependencies.get("pageknot-test-support"))
+        .and_then(|dependencies| dependencies.get("offprint-test-support"))
         .and_then(toml::Value::as_table)
         .and_then(|dependency| dependency.get("path"))
         .and_then(toml::Value::as_str);
-    if test_support_dependency != Some("crates/pageknot-test-support") {
+    if test_support_dependency != Some("crates/offprint-test-support") {
         violations.push(
-            "Cargo.toml must keep pageknot-test-support as a workspace path dependency".to_owned(),
+            "Cargo.toml must keep offprint-test-support as a workspace path dependency".to_owned(),
         );
     }
     Ok(())
@@ -428,11 +428,11 @@ fn check_version_alignment(root: &Path, violations: &mut Vec<String>) -> Result<
         .map_err(|error| format!("failed to read versions.toml: {error}"))?;
     let versions: VersionManifest =
         toml::from_str(&versions).map_err(|error| format!("invalid versions.toml: {error}"))?;
-    if versions.collector_protocol != pageknot_protocol::COLLECTOR_PROTOCOL_VERSION_STRING {
+    if versions.collector_protocol != offprint_protocol::COLLECTOR_PROTOCOL_VERSION_STRING {
         violations.push(format!(
             "collector protocol {} differs from host protocol {}",
             versions.collector_protocol,
-            pageknot_protocol::COLLECTOR_PROTOCOL_VERSION_STRING,
+            offprint_protocol::COLLECTOR_PROTOCOL_VERSION_STRING,
         ));
     }
     check_collector_protocol_source(root, &versions.collector_protocol, violations)?;
@@ -598,22 +598,22 @@ fn check_collector_protocol_source(
 
 fn check_managed_browser_versions(versions: &VersionManifest, violations: &mut Vec<String>) {
     let chromium = &versions.chromium;
-    if chromium.managed_catalog != pageknot_chromium::MANAGED_BROWSER_CATALOG_VERSION {
+    if chromium.managed_catalog != offprint_chromium::MANAGED_BROWSER_CATALOG_VERSION {
         violations.push(format!(
             "managed browser catalog {} differs from runtime catalog {}",
             chromium.managed_catalog,
-            pageknot_chromium::MANAGED_BROWSER_CATALOG_VERSION
+            offprint_chromium::MANAGED_BROWSER_CATALOG_VERSION
         ));
     }
-    if chromium.managed_revision != pageknot_chromium::DEFAULT_MANAGED_BROWSER_REVISION {
+    if chromium.managed_revision != offprint_chromium::DEFAULT_MANAGED_BROWSER_REVISION {
         violations.push(format!(
             "managed browser revision {} differs from runtime revision {}",
             chromium.managed_revision,
-            pageknot_chromium::DEFAULT_MANAGED_BROWSER_REVISION
+            offprint_chromium::DEFAULT_MANAGED_BROWSER_REVISION
         ));
     }
     let mut runtime_digests = BTreeMap::new();
-    for entry in pageknot_chromium::managed_browser_catalog() {
+    for entry in offprint_chromium::managed_browser_catalog() {
         if entry.revision != chromium.managed_revision {
             violations.push(format!(
                 "managed browser {} revision {} differs from version manifest revision {}",
@@ -705,13 +705,13 @@ mod tests {
         fs::write(
             temporary.path().join("Cargo.toml"),
             r#"[workspace]
-members = ["crates/pageknot-test-support"]
+members = ["crates/offprint-test-support"]
 
 [workspace.package]
 license = "AGPL-3.0-or-later"
 
 [workspace.dependencies]
-pageknot-test-support = { path = "crates/pageknot-test-support" }
+offprint-test-support = { path = "crates/offprint-test-support" }
 "#,
         )
         .map_err(|error| error.to_string())?;
@@ -728,11 +728,11 @@ pageknot-test-support = { path = "crates/pageknot-test-support" }
             fs::write(directory.join("LICENSE"), b"canonical license\n")
                 .map_err(|error| error.to_string())?;
         }
-        let test_support = temporary.path().join("crates/pageknot-test-support");
+        let test_support = temporary.path().join("crates/offprint-test-support");
         fs::create_dir_all(&test_support).map_err(|error| error.to_string())?;
         fs::write(
             test_support.join("Cargo.toml"),
-            "[package]\nname = \"pageknot-test-support\"\npublish = false\n",
+            "[package]\nname = \"offprint-test-support\"\npublish = false\n",
         )
         .map_err(|error| error.to_string())?;
 
@@ -741,7 +741,7 @@ pageknot-test-support = { path = "crates/pageknot-test-support" }
         assert!(violations.is_empty(), "{violations:?}");
 
         fs::write(
-            temporary.path().join("crates/pageknot-model/LICENSE"),
+            temporary.path().join("crates/offprint-model/LICENSE"),
             b"different license\n",
         )
         .map_err(|error| error.to_string())?;
@@ -750,13 +750,13 @@ pageknot-test-support = { path = "crates/pageknot-test-support" }
         assert!(violations[0].contains("differs from the repository root LICENSE"));
 
         fs::write(
-            temporary.path().join("crates/pageknot-model/LICENSE"),
+            temporary.path().join("crates/offprint-model/LICENSE"),
             b"canonical license\n",
         )
         .map_err(|error| error.to_string())?;
         fs::write(
             test_support.join("Cargo.toml"),
-            "[package]\nname = \"pageknot-test-support\"\n",
+            "[package]\nname = \"offprint-test-support\"\n",
         )
         .map_err(|error| error.to_string())?;
         violations.clear();
@@ -766,14 +766,14 @@ pageknot-test-support = { path = "crates/pageknot-test-support" }
 
         fs::write(
             test_support.join("Cargo.toml"),
-            "[package]\nname = \"pageknot-test-support\"\npublish = false\n",
+            "[package]\nname = \"offprint-test-support\"\npublish = false\n",
         )
         .map_err(|error| error.to_string())?;
         fs::write(
             temporary
                 .path()
-                .join("crates/pageknot-model/Cargo.toml"),
-            "[package]\nname = \"pageknot-model\"\nlicense.workspace = true\nlicense-file.workspace = true\n",
+                .join("crates/offprint-model/Cargo.toml"),
+            "[package]\nname = \"offprint-model\"\nlicense.workspace = true\nlicense-file.workspace = true\n",
         )
         .map_err(|error| error.to_string())?;
         violations.clear();

@@ -1,13 +1,14 @@
-# PageKnot
+# Offprint
 
-**Capture a rendered web page as a verified, self-contained HTML or PDF file.**
+**Freeze a rendered web page into verified, self-contained HTML.**
 
-PageKnot opens a URL in headless Chromium, waits for the page to settle,
-collects the rendered document and its resources, and commits one portable
-artifact. The default HTML workflow reopens the staged file with network access
-denied before it reaches the requested output path.
+Offprint opens a URL in headless Chromium, waits for the page to settle,
+collects the rendered document and its resources, removes active page code,
+reopens the staged artifact with network access denied, and commits the verified
+file. PDF, Markdown, ZIP, self-extracting HTML, and MHTML are exports derived
+from that canonical capture artifact.
 
-> **Status:** PageKnot is an alpha project before its first tagged release.
+> **Status:** Offprint is an alpha project before its first tagged release.
 > Build it from this repository. Public APIs, JSON schemas, and artifact formats
 > may change.
 
@@ -23,17 +24,17 @@ The repository selects Rust 1.97 through `rust-toolchain.toml`. Build the native
 CLI:
 
 ```console
-cargo build --release --locked -p pageknot-cli
+cargo build --release --locked -p offprint-cli
 ```
 
-PageKnot uses a compatible Chrome or Chromium installation when one is
+Offprint uses a compatible Chrome or Chromium installation when one is
 available. Otherwise, the first capture downloads its pinned Chrome for Testing
 build, verifies the archive, and stores the browser in the managed cache.
 
 Capture a page:
 
 ```console
-./target/release/pageknot capture https://example.com \
+./target/release/offprint capture https://example.com \
   --output example.html \
   --quiet
 ```
@@ -47,27 +48,27 @@ example.html
 Open `example.html` in a browser, or repeat the offline verification:
 
 ```console
-./target/release/pageknot verify example.html --level offline
+./target/release/offprint artifact verify example.html --verification offline
 ```
 
 A successful verification reports `0 network requests`. Verification proves
 self-containment and structural policy compliance. It does not certify the
 truth or safety of the captured page.
 
-File outputs replace an existing destination after the staged artifact passes
-verification. A failed or cancelled capture leaves the existing file
-unchanged.
+An explicit output path fails when the destination already exists. Pass
+`--on-exists replace` to replace it after the staged artifact passes
+verification. A failed or cancelled capture leaves the existing file unchanged.
 
-PageKnot executes page scripts and fetches page resources inside an isolated
+Offprint executes page scripts and fetches page resources inside an isolated
 browser context. Treat the URL, page, and resulting artifact as untrusted
 input.
 
-The guides use `pageknot` as the executable name. From a source checkout, run
-`./target/release/pageknot` in its place.
+The guides use `offprint` as the executable name. From a source checkout, run
+`./target/release/offprint` in its place.
 
 ## What an HTML capture preserves
 
-PageKnot captures the browser state that produced the visible page:
+Offprint captures the browser state that produced the visible page:
 
 - Rendered HTML after page scripts have run
 - Stylesheets, fonts, images, and responsive image selections
@@ -80,28 +81,32 @@ PageKnot captures the browser state that produced the visible page:
 
 The saved document removes captured page scripts and carries a content security
 policy that blocks external connections. Its embedded manifest records the
-source, capture policy, browser, resource outcomes, warnings, and verification
-result.
+source, capture policy, browser, resource outcomes, warnings, format version,
+and requested verification mode. The capture receipt contains the verification
+report produced after the artifact bytes are complete.
 
-## Choose a representation
+## Export another format
 
-HTML is the source representation for inspection, offline verification, and
-later export. Pass `--format pdf` when the committed result should be a PDF:
+Offprint HTML is the source for inspection, offline verification, and export.
+Capture it first, then derive a PDF:
 
 ```console
-pageknot capture https://example.com \
-  --format pdf \
-  --output example.pdf
+offprint capture https://example.com \
+  --output example.html
+
+offprint artifact export example.html \
+  --output exports \
+  --format pdf
 ```
 
 PDF output preserves selectable text, printable links, tagged structure,
 document outline, and source metadata. The
-[CLI guide](./docs/cli.md#choose-a-representation) covers print options and
-formats derived from an existing HTML capture.
+[CLI guide](./docs/cli.md#export-another-format) covers print options and every
+supported artifact format.
 
 ## How a capture reaches the output path
 
-PageKnot treats the requested output path as a commit boundary:
+Offprint treats the requested output path as a commit boundary:
 
 1. Validate the request and destination.
 2. Collect the rendered page into bounded temporary storage.
@@ -110,7 +115,7 @@ PageKnot treats the requested output path as a commit boundary:
 5. Run the selected static or offline verification policy.
 6. Atomically commit the verified file.
 
-The capture result records every embedded, failed, omitted, and external
+The capture receipt records every embedded, failed, omitted, and external
 resource. Use `--missing-resources fail` when an unresolved resource should
 fail the capture.
 
@@ -127,10 +132,10 @@ fail the capture.
 | Recover from a failed command | [Troubleshooting](./docs/troubleshooting.md) |
 | Review network, credential, and artifact boundaries | [Security threat model](./docs/threat-model.md) |
 
-The installed executable is the exact flag reference. Run `pageknot --help` or
-`pageknot <command> --help` for the current command surface.
+The installed executable is the exact flag reference. Run `offprint --help` or
+`offprint <command> --help` for the current command surface.
 
-## Use PageKnot as a service
+## Use Offprint as a service
 
 The CLI and language bindings call the same Rust service and share capture
 records, defaults, errors, and artifact formats.
@@ -139,16 +144,17 @@ records, defaults, errors, and artifact formats.
 | --- | --- |
 | CLI | [CLI guide](./docs/cli.md) |
 | Rust | [Rust public API](./docs/public-api.md) |
-| Node.js | [`@pageknot/node`](./bindings/node/README.md) |
-| Python | [`pageknot`](./bindings/python/README.md) |
+| Node.js | [`@offprint/node`](./bindings/node/README.md) |
+| Python | [`offprint`](./bindings/python/README.md) |
 
-Long-running callers can share one `PageKnot` service, start typed
-`CaptureJob` values, consume progress events, cancel by job ID, and close the
+Long-running callers can share one `Offprint` service, start typed
+`CaptureJob` values, consume progress events, cancel through the job handle, and close the
 service to release owned browser processes.
 
 ## Project references
 
 - [Documentation](./docs/README.md) routes user, API, and maintainer tasks.
+- [Concepts](./docs/concepts.md) defines the product vocabulary and lifecycle.
 - [Feature and parity matrix](./docs/feature-matrix.md) maps capabilities to
   implementation and release evidence.
 - [`schemas/`](./schemas) contains versioned request, result, error, and binding
@@ -156,5 +162,5 @@ service to release owned browser processes.
 - [`SPEC.md`](./SPEC.md) defines the product contract, capture pipeline,
   workspace, and release gates.
 
-PageKnot is licensed under
+Offprint is licensed under
 [`AGPL-3.0-or-later`](./LICENSE).

@@ -23,83 +23,37 @@ Normalized medians divide each sample by the SHA-256 calibration measured in
 the same process. Scheduled CI permits cross-environment comparison with a
 wider regression threshold and records whether the OS and architecture match.
 
-## Benchmark corpus
+## Recorded evidence
 
-The recorded macOS arm64 baseline uses Rust 1.97.0 and Chrome for Testing
-151.0.7922.47 revision 1654411.
+[`benches/baseline.json`](../benches/baseline.json) is the canonical recorded
+benchmark. It contains the environment, browser identity, samples, medians, 95th
+percentiles, throughput, and normalized measurements used by
+`benchmark-compare`.
 
-| Case | Median | 95th percentile |
-| --- | ---: | ---: |
-| HTML parse and serialize | 4.968 ms | 5.284 ms |
-| CSS parse and URL rewrite | 3.167 ms | 3.259 ms |
-| `srcset` parse | 0.481 ms | 0.499 ms |
-| Data URL encode and decode | 1.797 ms | 1.826 ms |
-| Resource graph creation and resolution | 1.246 ms | 1.276 ms |
-| Content store hashing | 9.786 ms | 13.085 ms |
-| Frame embedding | 0.119 ms | 0.129 ms |
-| Manifest serialization | 0.001 ms | 0.001 ms |
-| Static article capture | 3,288.584 ms | 3,321.236 ms |
-| Frame-heavy capture | 3,084.543 ms | 3,148.295 ms |
-| Image-heavy capture | 4,820.028 ms | 4,880.507 ms |
-| Repeated capture through one service | 3,243.518 ms | 3,256.275 ms |
-
-The complete samples and input sizes are stored in
-[`benches/baseline.json`](../benches/baseline.json).
+Keep numerical results in the JSON artifact so benchmark and documentation
+values cannot drift apart.
 
 ## Repeated-capture lifecycle
 
-The repeated-capture suite runs 32 captures through one `PageKnot` service and
-one managed browser. Each result must reopen with zero network requests, produce
-the same artifact size, and release every owned Chromium process when the
+The repeated-capture suite runs 32 captures through one `Offprint` service and
+one managed browser. Each result must reopen with zero network requests, preserve
+a stable artifact size, and release every owned Chromium process when the
 service closes.
 
-Run the baseline with the pinned toolchain:
+Run the lifecycle check with the pinned repository toolchain:
 
 ```console
-rustup run 1.97.0 cargo test --release --locked \
-  -p pageknot --test repeated_capture \
+cargo test --release --locked \
+  -p offprint --test repeated_capture \
   -- --ignored --test-threads=1
 ```
 
-The test writes the complete sample series to
-`target/benchmark-evidence/repeated-capture.json`.
+The test writes its complete sample series and environment record to
+`target/benchmark-evidence/repeated-capture.json`. The release guard permits at
+most 256 MiB of Rust resident-memory growth after the first capture and at most
+3 GiB of aggregate Chromium resident memory. It also requires zero owned
+Chromium processes after service shutdown.
 
-### Reference environment
-
-| Component | Value |
-| --- | --- |
-| Recorded | 2026-07-27 |
-| Host | macOS 26.5.2, build 25F84 |
-| Processor | Apple M3 Max |
-| Physical memory | 38,654,705,664 bytes |
-| Rust | 1.97.0 |
-| Browser | Chrome for Testing 151.0.7922.47 |
-| Browser revision | 1654411 |
-| CDP protocol | 1.3 |
-| Captures | 32 |
-
-### Result
-
-| Measure | Result |
-| --- | ---: |
-| Median capture | 2,424 ms |
-| 95th percentile capture | 2,723 ms |
-| Minimum capture | 2,393 ms |
-| Maximum capture | 4,122 ms |
-| Mean capture | 2,489.875 ms |
-| Artifact size | 2,860 bytes for every capture |
-| Warm Rust RSS | 12,107,776 bytes |
-| Peak Rust RSS during capture | 13,795,328 bytes |
-| Final Rust RSS | 13,926,400 bytes |
-| Peak aggregate Chromium RSS | 1,689,468,928 bytes |
-| Peak Chromium process count | 15 |
-| Chromium processes after close | 0 |
-
-The release guard allows at most 256 MiB of Rust RSS growth after the first
-capture and at most 3 GiB of aggregate Chromium RSS. The recorded run remained
-inside both bounds. The final process sample found no owned Chromium process.
-
-Treat this file as the comparison point for changes to navigation, collection,
-resource acquisition, transformation, encoding, verification, or browser
-lifecycle behavior. Record the same environment fields and input fixture before
-claiming a performance change.
+Record a new baseline through `just benchmark benches/baseline.json` after a
+reviewed change to navigation, collection, resource acquisition,
+transformation, encoding, verification, or browser lifecycle behavior.

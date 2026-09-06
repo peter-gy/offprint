@@ -1,7 +1,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use pageknot_document::{Document, serialize_document};
+use offprint_document::{Document, serialize_document};
 
 fuzz_target!(|data: &[u8]| {
     let document = Document::parse(data);

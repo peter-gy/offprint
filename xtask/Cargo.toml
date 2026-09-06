@@ -1,6 +1,6 @@
 [package]
 name = "xtask"
-description = "Repository code generation and contract checks for PageKnot"
+description = "Repository code generation and contract checks for Offprint"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -13,12 +13,13 @@ clap.workspace = true
 clap_complete.workspace = true
 flate2.workspace = true
 hex.workspace = true
-pageknot.workspace = true
-pageknot-chromium.workspace = true
-pageknot-model.workspace = true
-pageknot-protocol.workspace = true
-pageknot-test-support.workspace = true
-pageknot-cli.workspace = true
+offprint.workspace = true
+offprint-browser.workspace = true
+offprint-chromium.workspace = true
+offprint-model.workspace = true
+offprint-protocol.workspace = true
+offprint-test-support.workspace = true
+offprint-cli.workspace = true
 reqwest.workspace = true
 schemars.workspace = true
 serde.workspace = true

@@ -7,11 +7,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use futures_util::{FutureExt as _, StreamExt as _};
-use pageknot::{
-    ArtifactExportRequest, ArtifactInput, ArtifactVariantKind, BatchRequest, BrowserChannel,
+use offprint::{
+    ArtifactFormat, ArtifactSource, BatchRequest, BrowserChannel, BrowserInstallRequest,
     BrowserInstallationPolicy, CaptureJob, CaptureRequest, CaptureScope, CaptureStatus,
-    ConflictPolicy, CrawlRequest, ErrorStage, PageKnot, PageKnotError, PortablePath, ReadinessMode,
-    VerificationPolicy, Viewport,
+    ConflictPolicy, CrawlRequest, ErrorStage, ExportRequest, Offprint, OffprintError, PortablePath,
+    ReadinessMode, VerificationMode, Viewport,
 };
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
@@ -19,11 +19,11 @@ use serde::Deserialize;
 use serde::Serialize;
 use tokio::sync::Mutex;
 
-const ERROR_MARKER: &str = "__PAGEKNOT_ERROR__";
+const ERROR_MARKER: &str = "__OFFPRINT_ERROR__";
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "camelCase")]
-struct PageKnotOptions {
+struct OffprintOptions {
     browser_path: Option<String>,
     cdp_url: Option<String>,
     cache_dir: Option<String>,
@@ -38,7 +38,6 @@ struct PageKnotOptions {
 #[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 struct CaptureOptions {
     output: Option<String>,
-    max_bytes: Option<u64>,
     profile: Option<String>,
     timeout_ms: Option<u64>,
     wait_until: Option<ReadinessMode>,
@@ -47,6 +46,8 @@ struct CaptureOptions {
     strict: bool,
     headed: Option<bool>,
     conflict: Option<ConflictPolicy>,
+    network_policy: Option<offprint::NetworkPolicy>,
+    verification: Option<VerificationMode>,
     scope: Option<CaptureScope>,
     selector: Option<String>,
     remove_unused_css: bool,
@@ -57,21 +58,21 @@ struct CaptureOptions {
 #[derive(Debug, Default, Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "camelCase")]
 struct VerifyOptions {
-    level: Option<VerificationPolicy>,
+    verification: Option<VerificationMode>,
 }
 
-#[pyclass(module = "pageknot._native", name = "NativePageKnot")]
+#[pyclass(module = "offprint._native", name = "NativeOffprint")]
 #[derive(Debug)]
-struct NativePageKnot {
-    inner: PageKnot,
+struct NativeOffprint {
+    inner: Offprint,
 }
 
 #[pymethods]
-impl NativePageKnot {
+impl NativeOffprint {
     #[new]
     #[pyo3(signature = (options_json=None))]
     fn new(options_json: Option<&str>) -> PyResult<Self> {
-        contained_sync(|| build_pageknot(options_json)).map(|inner| Self { inner })
+        contained_sync(|| build_offprint(options_json)).map(|inner| Self { inner })
     }
 
     #[pyo3(signature = (url, options_json=None))]
@@ -81,25 +82,25 @@ impl NativePageKnot {
         url: String,
         options_json: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
                 let options =
                     decode_options::<CaptureOptions>(options_json.as_deref(), "capture options")?;
-                run_capture(pageknot, url, options).await
+                run_capture(offprint, url, options).await
             })
             .await
         })
     }
 
     fn start<'py>(&self, py: Python<'py>, request_json: String) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
                 let request: CaptureRequest = serde_json::from_str(&request_json)
                     .map_err(|error| invalid_input("capture request", error))?;
                 request.validate()?;
-                let job = pageknot.captures().start(request).await?;
+                let job = offprint.captures().start(request).await?;
                 Ok(NativeCaptureJob { inner: job })
             })
             .await
@@ -111,12 +112,12 @@ impl NativePageKnot {
         py: Python<'py>,
         request_json: String,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
                 let request: BatchRequest = serde_json::from_str(&request_json)
                     .map_err(|error| invalid_input("batch request", error))?;
-                let result = pageknot.captures().batch(request).await?;
+                let result = offprint.captures().batch(request).await?;
                 to_json(result)
             })
             .await
@@ -128,12 +129,12 @@ impl NativePageKnot {
         py: Python<'py>,
         request_json: String,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
                 let request: CrawlRequest = serde_json::from_str(&request_json)
                     .map_err(|error| invalid_input("crawl request", error))?;
-                let result = pageknot.captures().crawl(request).await?;
+                let result = offprint.captures().crawl(request).await?;
                 to_json(result)
             })
             .await
@@ -141,12 +142,12 @@ impl NativePageKnot {
     }
 
     fn inspect_json<'py>(&self, py: Python<'py>, path: String) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
-                let manifest = pageknot
+                let manifest = offprint
                     .artifacts()
-                    .inspect(ArtifactInput::File(PortablePath::from(path)))
+                    .inspect(ArtifactSource::File(PortablePath::from(path)))
                     .await?;
                 to_json(manifest)
             })
@@ -161,16 +162,16 @@ impl NativePageKnot {
         path: String,
         options_json: Option<String>,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
                 let options =
                     decode_options::<VerifyOptions>(options_json.as_deref(), "verify options")?;
-                let result = pageknot
+                let result = offprint
                     .artifacts()
                     .verify(
-                        ArtifactInput::File(PortablePath::from(path)),
-                        options.level.unwrap_or(VerificationPolicy::Offline),
+                        ArtifactSource::File(PortablePath::from(path)),
+                        options.verification.unwrap_or(VerificationMode::Offline),
                     )
                     .await?;
                 to_json(result)
@@ -185,14 +186,14 @@ impl NativePageKnot {
         path: String,
         request_json: String,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
-                let request: ArtifactExportRequest = serde_json::from_str(&request_json)
+                let request: ExportRequest = serde_json::from_str(&request_json)
                     .map_err(|error| invalid_input("artifact export request", error))?;
-                let result = pageknot
+                let result = offprint
                     .artifacts()
-                    .export(ArtifactInput::File(PortablePath::from(path)), request)
+                    .export(ArtifactSource::File(PortablePath::from(path)), request)
                     .await?;
                 to_json(result)
             })
@@ -200,21 +201,21 @@ impl NativePageKnot {
         })
     }
 
-    fn verify_variant_json<'py>(
+    fn verify_format_json<'py>(
         &self,
         py: Python<'py>,
         path: String,
-        kind: String,
+        format: String,
     ) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
-                let kind: ArtifactVariantKind =
-                    serde_json::from_value(serde_json::Value::String(kind))
-                        .map_err(|error| invalid_input("artifact variant kind", error))?;
-                let result = pageknot
+                let format: ArtifactFormat =
+                    serde_json::from_value(serde_json::Value::String(format))
+                        .map_err(|error| invalid_input("artifact format", error))?;
+                let result = offprint
                     .artifacts()
-                    .verify_variant(PortablePath::from(path), kind)
+                    .verify_format(PortablePath::from(path), format)
                     .await?;
                 to_json(result)
             })
@@ -223,41 +224,94 @@ impl NativePageKnot {
     }
 
     fn ensure_browser_json<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
-                let browser = pageknot.browsers().ensure().await?;
+                let browser = offprint.browsers().ensure().await?;
                 to_json(browser)
             })
             .await
         })
     }
 
-    fn close<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
-        let pageknot = self.inner.clone();
+    fn list_browsers_json<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
-            contained(async move { pageknot.close().await }).await
+            contained(async move { to_json(offprint.browsers().list().await?) }).await
+        })
+    }
+
+    fn install_browser_json<'py>(
+        &self,
+        py: Python<'py>,
+        revision: Option<String>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let offprint = self.inner.clone();
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            contained(async move {
+                to_json(
+                    offprint
+                        .browsers()
+                        .install(BrowserInstallRequest { revision })
+                        .await?,
+                )
+            })
+            .await
+        })
+    }
+
+    fn remove_browser_json<'py>(
+        &self,
+        py: Python<'py>,
+        revision: String,
+        force: bool,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        let offprint = self.inner.clone();
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            contained(async move { to_json(offprint.browsers().remove(&revision, force).await?) })
+                .await
+        })
+    }
+
+    fn doctor_json<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let offprint = self.inner.clone();
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            contained(async move { to_json(offprint.browsers().doctor().await) }).await
+        })
+    }
+
+    fn close_idle_browser<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let offprint = self.inner.clone();
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            contained(async move { offprint.browsers().close_idle().await }).await
+        })
+    }
+
+    fn close<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        let offprint = self.inner.clone();
+        pyo3_async_runtimes::tokio::future_into_py(py, async move {
+            contained(async move { offprint.close().await }).await
         })
     }
 
     fn close_blocking(&self) -> PyResult<()> {
-        let pageknot = self.inner.clone();
+        let offprint = self.inner.clone();
         let (sender, receiver) = std::sync::mpsc::sync_channel(1);
         std::thread::Builder::new()
-            .name("pageknot-python-shutdown".to_owned())
+            .name("offprint-python-shutdown".to_owned())
             .spawn(move || {
                 let result = match catch_unwind(AssertUnwindSafe(|| {
                     let runtime = tokio::runtime::Builder::new_current_thread()
                         .enable_all()
                         .build()
                         .map_err(|error| {
-                            PageKnotError::new(
-                                "pageknot.binding.runtime",
+                            OffprintError::new(
+                                "offprint.binding.runtime",
                                 ErrorStage::Internal,
                                 format!("failed to start the binding shutdown runtime: {error}"),
                             )
                         })?;
-                    runtime.block_on(pageknot.close())
+                    runtime.block_on(offprint.close())
                 })) {
                     Ok(result) => result,
                     Err(_) => Err(panic_error()),
@@ -265,8 +319,8 @@ impl NativePageKnot {
                 let _ = sender.send(result);
             })
             .map_err(|error| {
-                native_error(PageKnotError::new(
-                    "pageknot.binding.runtime",
+                native_error(OffprintError::new(
+                    "offprint.binding.runtime",
                     ErrorStage::Internal,
                     format!("failed to start the binding shutdown thread: {error}"),
                 ))
@@ -274,15 +328,15 @@ impl NativePageKnot {
         match receiver.recv_timeout(Duration::from_secs(15)) {
             Ok(result) => result.map_err(native_error),
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                Err(native_error(PageKnotError::new(
-                    "pageknot.binding.shutdown_timeout",
+                Err(native_error(OffprintError::new(
+                    "offprint.binding.shutdown_timeout",
                     ErrorStage::Shutdown,
                     "binding shutdown exceeded 15 seconds",
                 )))
             }
             Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                Err(native_error(PageKnotError::new(
-                    "pageknot.binding.shutdown",
+                Err(native_error(OffprintError::new(
+                    "offprint.binding.shutdown",
                     ErrorStage::Shutdown,
                     "binding shutdown ended before reporting its result",
                 )))
@@ -294,7 +348,7 @@ impl NativePageKnot {
     fn test_panic<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
-                std::panic::resume_unwind(Box::new("PageKnot binding fault injection"));
+                std::panic::resume_unwind(Box::new("Offprint binding fault injection"));
                 #[allow(unreachable_code)]
                 Ok(())
             })
@@ -304,7 +358,7 @@ impl NativePageKnot {
 }
 
 #[pyclass(
-    module = "pageknot._native",
+    module = "offprint._native",
     name = "NativeCaptureJob",
     skip_from_py_object
 )]
@@ -339,7 +393,7 @@ impl NativeCaptureJob {
         let job = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
-                let result = job.wait().await?;
+                let result = job.result().await?;
                 to_json(result)
             })
             .await
@@ -348,13 +402,13 @@ impl NativeCaptureJob {
 }
 
 #[pyclass(
-    module = "pageknot._native",
+    module = "offprint._native",
     name = "NativeCaptureEvents",
     skip_from_py_object
 )]
 #[derive(Clone, Debug)]
 struct NativeCaptureEvents {
-    inner: Arc<Mutex<pageknot::CaptureEvents>>,
+    inner: Arc<Mutex<offprint::CaptureEvents>>,
 }
 
 #[pymethods]
@@ -371,16 +425,16 @@ impl NativeCaptureEvents {
     }
 }
 
-fn build_pageknot(options_json: Option<&str>) -> pageknot::Result<PageKnot> {
-    let options = decode_options::<PageKnotOptions>(options_json, "PageKnot options")?;
-    let mut builder = PageKnot::builder();
+fn build_offprint(options_json: Option<&str>) -> offprint::Result<Offprint> {
+    let options = decode_options::<OffprintOptions>(options_json, "Offprint options")?;
+    let mut builder = Offprint::builder();
     if let Some(path) = options.browser_path {
         builder = builder.browser_path(path);
     }
     if let Some(endpoint) = options.cdp_url {
         let endpoint = url::Url::parse(&endpoint).map_err(|error| {
-            PageKnotError::new(
-                "pageknot.input.cdp_url",
+            OffprintError::new(
+                "offprint.input.cdp_url",
                 ErrorStage::Validation,
                 format!("invalid remote browser endpoint: {error}"),
             )
@@ -409,18 +463,18 @@ fn build_pageknot(options_json: Option<&str>) -> pageknot::Result<PageKnot> {
 }
 
 async fn run_capture(
-    pageknot: PageKnot,
+    offprint: Offprint,
     url: String,
     options: CaptureOptions,
-) -> pageknot::Result<String> {
-    if options.output.is_some() && options.max_bytes.is_some() {
-        return Err(PageKnotError::new(
-            "pageknot.input.output",
+) -> offprint::Result<String> {
+    let mut capture = offprint.capture(url)?;
+    let output = options.output.ok_or_else(|| {
+        OffprintError::new(
+            "offprint.input.output",
             ErrorStage::Validation,
-            "capture options must select one output target",
-        ));
-    }
-    let mut capture = pageknot.capture(url)?;
+            "capture requires an output path",
+        )
+    })?;
     if let Some(profile) = options.profile {
         capture = capture.profile(profile)?;
     }
@@ -442,6 +496,12 @@ async fn run_capture(
     if let Some(headed) = options.headed {
         capture = capture.headed(headed);
     }
+    if let Some(network) = options.network_policy {
+        capture = capture.network(network);
+    }
+    if let Some(verification) = options.verification {
+        capture = capture.verification(verification);
+    }
     if let Some(conflict) = options.conflict {
         capture = capture.conflict(conflict);
     }
@@ -460,22 +520,11 @@ async fn run_capture(
     if options.remove_hidden_elements {
         capture = capture.remove_hidden_elements();
     }
-    let result = match (options.output, options.max_bytes) {
-        (Some(path), None) => capture.save(path).await?,
-        (None, Some(maximum)) => capture.to_bytes(maximum).await?,
-        (None, None) => capture.run().await?,
-        (Some(_), Some(_)) => {
-            return Err(PageKnotError::new(
-                "pageknot.input.output",
-                ErrorStage::Validation,
-                "capture options must select one output target",
-            ));
-        }
-    };
+    let result = capture.save(output).await?;
     to_json(result)
 }
 
-fn decode_options<T>(json: Option<&str>, label: &str) -> pageknot::Result<T>
+fn decode_options<T>(json: Option<&str>, label: &str) -> offprint::Result<T>
 where
     T: Default + for<'de> Deserialize<'de>,
 {
@@ -485,18 +534,18 @@ where
     )
 }
 
-fn invalid_input(label: &str, error: serde_json::Error) -> PageKnotError {
-    PageKnotError::new(
-        "pageknot.input.value",
+fn invalid_input(label: &str, error: serde_json::Error) -> OffprintError {
+    OffprintError::new(
+        "offprint.input.value",
         ErrorStage::Validation,
         format!("invalid {label}: {error}"),
     )
 }
 
-fn to_json(value: impl Serialize) -> pageknot::Result<String> {
+fn to_json(value: impl Serialize) -> offprint::Result<String> {
     serde_json::to_string(&value).map_err(|error| {
-        PageKnotError::new(
-            "pageknot.binding.serialization",
+        OffprintError::new(
+            "offprint.binding.serialization",
             ErrorStage::Internal,
             format!("failed to serialize a binding result: {error}"),
         )
@@ -506,7 +555,7 @@ fn to_json(value: impl Serialize) -> pageknot::Result<String> {
 async fn contained<T, F>(future: F) -> PyResult<T>
 where
     T: Send + 'static,
-    F: Future<Output = pageknot::Result<T>> + Send + 'static,
+    F: Future<Output = offprint::Result<T>> + Send + 'static,
 {
     match AssertUnwindSafe(future).catch_unwind().await {
         Ok(Ok(value)) => Ok(value),
@@ -515,7 +564,7 @@ where
     }
 }
 
-fn contained_sync<T>(operation: impl FnOnce() -> pageknot::Result<T>) -> PyResult<T> {
+fn contained_sync<T>(operation: impl FnOnce() -> offprint::Result<T>) -> PyResult<T> {
     match catch_unwind(AssertUnwindSafe(operation)) {
         Ok(Ok(value)) => Ok(value),
         Ok(Err(error)) => Err(native_error(error)),
@@ -523,18 +572,18 @@ fn contained_sync<T>(operation: impl FnOnce() -> pageknot::Result<T>) -> PyResul
     }
 }
 
-fn native_error(error: PageKnotError) -> PyErr {
+fn native_error(error: OffprintError) -> PyErr {
     let encoded = serde_json::to_string(&error).unwrap_or_else(|_| {
-        "{\"code\":\"pageknot.binding.serialization\",\"message\":\"failed to serialize a native error\",\"stage\":\"internal\",\"retryable\":false}".to_owned()
+        "{\"code\":\"offprint.binding.serialization\",\"message\":\"failed to serialize a native error\",\"stage\":\"internal\",\"retryable\":false}".to_owned()
     });
     PyRuntimeError::new_err(format!("{ERROR_MARKER}{encoded}"))
 }
 
-fn panic_error() -> PageKnotError {
-    PageKnotError::new(
-        "pageknot.internal.panic",
+fn panic_error() -> OffprintError {
+    OffprintError::new(
+        "offprint.internal.panic",
         ErrorStage::Internal,
-        "PageKnot encountered an unexpected internal failure",
+        "Offprint encountered an unexpected internal failure",
     )
 }
 
@@ -544,7 +593,7 @@ const fn capture_status_name(status: CaptureStatus) -> &'static str {
         CaptureStatus::Validating => "validating",
         CaptureStatus::WaitingForBrowser => "waitingForBrowser",
         CaptureStatus::Navigating => "navigating",
-        CaptureStatus::Settling => "settling",
+        CaptureStatus::WaitingForReadiness => "waitingForReadiness",
         CaptureStatus::Collecting => "collecting",
         CaptureStatus::ResolvingResources => "resolvingResources",
         CaptureStatus::Transforming => "transforming",
@@ -560,7 +609,7 @@ const fn capture_status_name(status: CaptureStatus) -> &'static str {
 
 #[pymodule]
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
-    module.add_class::<NativePageKnot>()?;
+    module.add_class::<NativeOffprint>()?;
     module.add_class::<NativeCaptureJob>()?;
     module.add_class::<NativeCaptureEvents>()?;
     Ok(())
@@ -572,9 +621,9 @@ mod tests {
 
     #[test]
     fn python_options_use_the_same_camel_case_contract() {
-        let options = decode_options::<PageKnotOptions>(
+        let options = decode_options::<OffprintOptions>(
             Some(r#"{"maximumContexts":2,"headed":true}"#),
-            "PageKnot options",
+            "Offprint options",
         );
 
         assert_eq!(

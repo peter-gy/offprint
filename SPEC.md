@@ -1,26 +1,26 @@
-# PageKnot Product and Engineering Specification
+# Offprint Product and Engineering Specification
 
 | Field | Value |
 | --- | --- |
 | Status | Normative design baseline |
-| Product target | PageKnot 1.0 |
+| Product target | Offprint 1.0 |
 | Document version | 1 |
 | Last revised | 2026-07-27 |
 | Primary interface | Headless CLI and Rust service API |
 | Initial artifact | Verified self-contained HTML |
 | Initial browser backend | Chromium through the Chrome DevTools Protocol |
 
-This document defines PageKnot's user contract, public service API, command-line
+This document defines Offprint's user contract, public service API, command-line
 interface, workspace architecture, capture model, security boundaries, language
 binding strategy, validation system, implementation program, and release gates.
 
-The terms MUST, SHOULD, and MAY describe requirements for PageKnot 1.0. A
+The terms MUST, SHOULD, and MAY describe requirements for Offprint 1.0. A
 requirement can change through an accepted architecture decision record that
 updates this specification and every affected public contract.
 
 ## 1. Executive decision
 
-PageKnot is a headless web capture engine with a native CLI and an importable
+Offprint is a headless web capture engine with a native CLI and an importable
 Rust service API. It loads a URL in Chromium, observes the rendered page,
 collects the browser state and render-affecting resources, creates a
 self-contained artifact, verifies the artifact under a denied-network policy,
@@ -29,7 +29,7 @@ and commits the requested output atomically.
 The architecture has one public execution seam:
 
 ```text
-CaptureRequest -> CaptureService -> CaptureJob -> CaptureResult
+CaptureRequest -> CaptureService -> CaptureJob -> CaptureReceipt
 ```
 
 The CLI, Node.js binding, Python binding, and future hosts call this seam. They
@@ -38,21 +38,20 @@ directly.
 
 SingleFile supplies a behavior inventory and a differential reference. Its
 module structure, option surface, and JavaScript execution model do not define
-PageKnot's architecture. PageKnot starts from its own domain model and exposes a
+Offprint's architecture. Offprint starts from its own domain model and exposes a
 smaller headless product:
 
 - A capture is an explicit job.
 - A job has a typed lifecycle.
-- A rendered page becomes a typed internal snapshot.
+- A rendered page becomes a typed internal captured page.
 - Every discovered resource has a typed outcome.
 - An artifact is written through a transaction.
 - Verification is part of successful capture.
 - CLI and SDK behavior share one implementation.
 - Language bindings map stable records and service methods.
 
-PageKnot 1.0 ships the CLI and Rust API. Node.js and Python bindings use the
-same model and are developed after the Rust contract reaches release-candidate
-stability.
+Offprint 1.0 ships the CLI, Rust API, Node.js binding, and Python binding from
+one canonical model and service implementation.
 
 ## 2. Research basis
 
@@ -70,7 +69,7 @@ The design is informed by direct inspection of these sources:
 The Bun article describes a mechanical rewrite whose safety depended on
 preparation, a language-independent test suite, compiler-driven work queues,
 independent review, complete cross-platform CI, and continued fuzzing after the
-merge. PageKnot adopts the process controls that apply to a greenfield system:
+merge. Offprint adopts the process controls that apply to a greenfield system:
 
 1. Write the domain and lifetime contracts before implementation.
 2. Keep behavioral fixtures independent of the implementation language.
@@ -89,20 +88,19 @@ merge. PageKnot adopts the process controls that apply to a greenfield system:
 12. Separate merge confidence from release confidence.
 
 The inspected Bun workspace contains 101 Cargo workspace packages and extensive
-cross-language integration. PageKnot begins with approximately eleven crates.
-Crate boundaries follow ownership and dependency direction, not a crate-count
-target.
+cross-language integration. Offprint crate boundaries follow ownership and
+dependency direction, not a crate-count target.
 
 Bun also encodes engineering knowledge in repository instructions, review
 rules, command guards, generated schemas, and reproducible build commands.
-PageKnot adopts those repository-native controls at a scale appropriate to its
+Offprint adopts those repository-native controls at a scale appropriate to its
 capture engine.
 
 ### 2.2 Lessons adapted for a greenfield product
 
 Bun preserved architecture and behavior during a high-risk mechanical port.
-PageKnot has a different starting condition. SingleFile continues to exist
-while PageKnot is developed, so PageKnot can use vertical product slices and
+Offprint has a different starting condition. SingleFile continues to exist
+while Offprint is developed, so Offprint can use vertical product slices and
 idiomatic Rust boundaries from the first commit.
 
 The implementation program therefore uses:
@@ -118,7 +116,7 @@ The implementation program therefore uses:
 
 ### 2.3 Lessons adopted from agent-browser and Codex
 
-PageKnot adopts these patterns:
+Offprint adopts these patterns:
 
 - Direct, asynchronous Chromium control over a typed Chrome DevTools Protocol
   transport
@@ -127,11 +125,11 @@ PageKnot adopts these patterns:
 - Central workspace dependencies and lints
 - A pinned Rust toolchain
 - `just` as the documented contributor interface
-- `cargo nextest` groups for resource-heavy tests
+- Explicit fixture groups for resource-heavy tests
 - Cross-platform binary release tests
 - Small public APIs that keep transport types private
 
-PageKnot uses Clap for its CLI, limits module size, and keeps browser actions out
+Offprint uses Clap for its CLI, limits module size, and keeps browser actions out
 of one large command module.
 
 ## 3. Problem statement
@@ -153,14 +151,14 @@ Existing page-saving systems commonly expose one or more of these problems:
 - A successful exit status says little about artifact integrity.
 - Browser and transformation responsibilities are intertwined.
 
-PageKnot gives users one inspectable result for one explicit capture request.
+Offprint gives users one inspectable result for one explicit capture request.
 The result contains the artifact and evidence describing how it was produced.
 
 ## 4. Product goals
 
 ### 4.1 Primary goals
 
-PageKnot 1.0 MUST:
+Offprint 1.0 MUST:
 
 1. Capture a rendered page from Chromium in headless mode.
 2. Preserve the visible document state required by the 1.0 fixture matrix.
@@ -175,7 +173,7 @@ PageKnot 1.0 MUST:
 11. Keep public request, event, result, and error records binding-friendly.
 12. Produce stable machine-readable output.
 13. Run on Linux, macOS, and Windows.
-14. Remain deterministic under a fixed snapshot, policy, environment, and
+14. Remain deterministic under fixed observations, policy, environment, and
     injected clock.
 15. Bound time, bytes, nodes, frames, requests, redirects, and concurrency.
 
@@ -193,7 +191,7 @@ The architecture SHOULD:
 
 ### 4.3 Success measures
 
-PageKnot 1.0 is successful when:
+Offprint 1.0 is successful when:
 
 - Every required browser fixture reopens with zero external network requests.
 - Every required state invariant survives capture.
@@ -208,11 +206,11 @@ PageKnot 1.0 is successful when:
 
 ## 5. Product boundaries
 
-PageKnot 1.0 focuses on one rendered page and one verified HTML artifact.
+Offprint 1.0 captures individual rendered pages and schedules bounded batches
+and breadth-first crawls as sets of independent captures.
 
 The following capabilities have their own later milestones:
 
-- Recursive crawling
 - Multi-page site archives
 - WARC production
 - Annotation and editing
@@ -230,98 +228,98 @@ rendered-page document with provenance, not a network-traffic archive.
 
 ### 6.1 CLI users
 
-- **PK-US-001:** As a researcher, I want to capture a rendered article into one
+- **OF-US-001:** As a researcher, I want to capture a rendered article into one
   file so that I can reopen the article after the source changes.
-- **PK-US-002:** As a developer, I want one short command so that a capture does
+- **OF-US-002:** As a developer, I want one short command so that a capture does
   not require writing browser automation code.
-- **PK-US-003:** As a developer, I want headless operation by default so that
+- **OF-US-003:** As a developer, I want headless operation by default so that
   the same command works locally and in continuous integration.
-- **PK-US-004:** As a developer, I want a headed diagnostic mode so that I can
+- **OF-US-004:** As a developer, I want a headed diagnostic mode so that I can
   observe pages with unusual readiness behavior.
-- **PK-US-005:** As an archivist, I want offline verification so that success
+- **OF-US-005:** As an archivist, I want offline verification so that success
   means the saved file can render independently.
-- **PK-US-006:** As an archivist, I want every missing resource listed so that
+- **OF-US-006:** As an archivist, I want every missing resource listed so that
   fidelity gaps remain reviewable.
-- **PK-US-007:** As a shell user, I want the artifact path on stdout so that I
+- **OF-US-007:** As a shell user, I want the artifact path on stdout so that I
   can pass it to another command.
-- **PK-US-008:** As an automation author, I want progress on stderr so that
+- **OF-US-008:** As an automation author, I want progress on stderr so that
   stdout remains parseable.
-- **PK-US-009:** As an automation author, I want one stable JSON object so that
+- **OF-US-009:** As an automation author, I want one stable JSON object so that
   I can record digests, warnings, and timings.
-- **PK-US-010:** As an operator, I want verified reruns to atomically replace
+- **OF-US-010:** As an operator, I want verified reruns to atomically replace
   their destination so repeated capture commands remain idempotent.
-- **PK-US-011:** As an operator, I want a bounded timeout so that a page with
+- **OF-US-011:** As an operator, I want a bounded timeout so that a page with
   permanent network activity cannot occupy a worker forever.
-- **PK-US-012:** As an operator, I want Ctrl+C to stop browser and resource work
+- **OF-US-012:** As an operator, I want Ctrl+C to stop browser and resource work
   so that interruption leaves no orphan process.
-- **PK-US-013:** As a user with an authenticated page, I want cookies and
+- **OF-US-013:** As a user with an authenticated page, I want cookies and
   headers loaded from protected files so that secrets stay out of process
   listings.
-- **PK-US-014:** As a user capturing localhost, I want the standard network
+- **OF-US-014:** As a user capturing localhost, I want the standard network
   policy to permit an explicitly requested loopback origin.
-- **PK-US-015:** As a server operator, I want a restrictive network profile so
+- **OF-US-015:** As a server operator, I want a restrictive network profile so
   that untrusted URLs cannot reach private services.
-- **PK-US-016:** As a user, I want `pageknot doctor` to explain browser and
+- **OF-US-016:** As a user, I want `offprint doctor` to explain browser and
   configuration readiness before I run an expensive capture.
 
 ### 6.2 Rust SDK users
 
-- **PK-US-017:** As a Rust developer, I want a `PageKnot` handle so that I can
+- **OF-US-017:** As a Rust developer, I want a `Offprint` handle so that I can
   reuse browser resources across captures.
-- **PK-US-018:** As a Rust developer, I want a one-shot builder so that the
+- **OF-US-018:** As a Rust developer, I want a one-shot builder so that the
   common capture fits in a few lines.
-- **PK-US-019:** As a service developer, I want a `CaptureJob` so that I can
+- **OF-US-019:** As a service developer, I want a `CaptureJob` so that I can
   subscribe to progress, cancel work, and await the result.
-- **PK-US-020:** As a service developer, I want an explicit `close` method so
+- **OF-US-020:** As a service developer, I want an explicit `close` method so
   that shutdown can be awaited before my process exits.
-- **PK-US-021:** As a test author, I want browser and clock dependencies
+- **OF-US-021:** As a test author, I want browser and clock dependencies
   injected behind narrow traits so that service behavior can be tested
   deterministically.
-- **PK-US-022:** As an integrator, I want errors with stable codes and details
+- **OF-US-022:** As an integrator, I want errors with stable codes and details
   so that I can implement recovery without matching prose.
-- **PK-US-023:** As an integrator, I want plain request and result records so
+- **OF-US-023:** As an integrator, I want plain request and result records so
   that I can serialize jobs across a queue.
-- **PK-US-024:** As an integrator, I want byte and file output targets so that I
+- **OF-US-024:** As an integrator, I want byte and file output targets so that I
   can choose memory or transactional filesystem delivery.
-- **PK-US-025:** As an integrator, I want a strict missing-resource policy so
+- **OF-US-025:** As an integrator, I want a strict missing-resource policy so
   that my job can fail when archival completeness is required.
 
 ### 6.3 Binding users
 
-- **PK-US-026:** As a Node.js developer, I want a Promise-based class API so
-  that PageKnot fits existing asynchronous applications.
-- **PK-US-027:** As a Node.js developer, I want prebuilt native packages so that
+- **OF-US-026:** As a Node.js developer, I want a Promise-based class API so
+  that Offprint fits existing asynchronous applications.
+- **OF-US-027:** As a Node.js developer, I want prebuilt native packages so that
   installation does not require a Rust toolchain.
-- **PK-US-028:** As a Python developer, I want an asynchronous context manager
+- **OF-US-028:** As a Python developer, I want an asynchronous context manager
   so that browser resources close on scope exit.
-- **PK-US-029:** As a Python developer, I want typed exceptions so that browser,
+- **OF-US-029:** As a Python developer, I want typed exceptions so that browser,
   policy, and verification failures are distinguishable.
-- **PK-US-030:** As a binding user, I want the same option names and defaults as
+- **OF-US-030:** As a binding user, I want the same option names and defaults as
   the CLI and Rust API so that examples transfer across environments.
-- **PK-US-031:** As a binding user, I want typed progress events so that I can
+- **OF-US-031:** As a binding user, I want typed progress events so that I can
   update a job UI without parsing logs.
-- **PK-US-032:** As a binding maintainer, I want generated contract fixtures so
+- **OF-US-032:** As a binding maintainer, I want generated contract fixtures so
   that a language wrapper cannot drift from the Rust model silently.
 
 ### 6.4 Maintainers
 
-- **PK-US-033:** As a maintainer, I want crate ownership boundaries so that
+- **OF-US-033:** As a maintainer, I want crate ownership boundaries so that
   browser, document, artifact, and interface changes can be reviewed
   independently.
-- **PK-US-034:** As a maintainer, I want generated CDP and schema outputs
+- **OF-US-034:** As a maintainer, I want generated CDP and schema outputs
   checked for freshness so that build inputs remain reproducible.
-- **PK-US-035:** As a maintainer, I want hermetic fixture servers so that
+- **OF-US-035:** As a maintainer, I want hermetic fixture servers so that
   browser tests do not depend on the public internet.
-- **PK-US-036:** As a maintainer, I want high-level behavior tests shared across
+- **OF-US-036:** As a maintainer, I want high-level behavior tests shared across
   hosts so that CLI and SDK fixes protect the same contract.
-- **PK-US-037:** As a maintainer, I want Miri and fuzz coverage on parsers and
+- **OF-US-037:** As a maintainer, I want Miri and fuzz coverage on parsers and
   state machines so that malformed inputs are exercised continuously.
-- **PK-US-038:** As a maintainer, I want review guidance beside the repository
+- **OF-US-038:** As a maintainer, I want review guidance beside the repository
   so that agents and humans apply the same lifecycle, security, and test rules.
-- **PK-US-039:** As a release engineer, I want one version manifest so that
+- **OF-US-039:** As a release engineer, I want one version manifest so that
   binaries, crates, bindings, schemas, and artifact versions cannot drift
   unnoticed.
-- **PK-US-040:** As a release engineer, I want install tests on every published
+- **OF-US-040:** As a release engineer, I want install tests on every published
   package so that a successful build is not mistaken for a usable release.
 
 ## 7. Domain vocabulary
@@ -331,21 +329,22 @@ rendered-page document with provenance, not a network-traffic archive.
 | Capture | One attempt to observe a URL and produce an artifact |
 | Capture request | Validated input containing URL, environment, policy, limits, and output |
 | Capture job | Cancellable asynchronous execution of a capture request |
-| Capture result | Terminal success record containing artifact metadata, verification, warnings, and timings |
+| Capture receipt | Successful capture record containing artifact metadata, verification, warnings, and timings |
 | Observation | Browser-originated facts collected before document transformation |
-| Snapshot | Typed internal representation of the observed frame tree and live page state |
+| Document | Parsed internal page model used during safe-static transformation |
 | Frame graph | Parent and child relationships among captured documents |
 | Resource reference | One HTML or CSS location that refers to a render-affecting resource |
 | Resource record | Retrieval metadata, bytes, digest, provenance, and outcome for a resource |
 | Captured page | Internal document, frame, and resource graphs ready for encoding |
 | Artifact | User-visible encoded output |
+| Artifact format | Encoded contract such as HTML, PDF, Markdown, ZIP, self-extracting HTML, or MHTML |
 | Manifest | Versioned provenance and summary record embedded in the artifact |
 | Policy | Explicit choices that change capture or output behavior |
 | Limits | Resource ceilings that stop unbounded work |
 | Collector | Small injected program that observes live browser state |
 | Browser backend | Runtime implementation that navigates, evaluates, observes, and retrieves browser resources |
 | Encoder | Component that converts a captured page into an artifact format |
-| Verification | Static and browser checks applied before artifact commit |
+| Verification report | Digest-bound evidence produced after verification succeeds |
 | Service | Long-lived public object that owns one product capability |
 
 These nouns MUST be used consistently in source, tests, schemas, CLI help,
@@ -381,24 +380,24 @@ diagnostics, and bindings.
 
 ### 8.3 API invariants
 
-1. The CLI calls public PageKnot services.
-2. Binding crates call public PageKnot services.
+1. The CLI calls public Offprint services.
+2. Binding crates call public Offprint services.
 3. Core services do not read terminal globals.
 4. Public request and result records avoid Rust lifetimes and generic type
    parameters.
 5. Public enums serialize as tagged values with stable spellings.
 6. Unknown schema fields are tolerated within a compatible major version.
-7. Unknown enum variants fail with an explicit compatibility error.
+7. Unknown enum formats fail with an explicit compatibility error.
 8. User-reachable failures return typed errors.
 9. Panics do not cross a language binding boundary.
 10. Rust, Node.js, Python, and CLI defaults are generated or tested from one
     canonical source.
 
-## 9. PageKnot 1.0 capability contract
+## 9. Offprint 1.0 capability contract
 
 ### 9.1 Required capture state
 
-PageKnot 1.0 captures:
+Offprint 1.0 captures:
 
 - Final rendered HTML
 - Doctype, title, base URL, and document encoding
@@ -426,7 +425,7 @@ The default artifact:
 - Is one HTML file
 - Contains embedded render-affecting resources
 - Contains a restrictive content security policy
-- Contains a versioned PageKnot manifest
+- Contains a versioned Offprint manifest
 - Removes executable captured page scripts
 - Preserves non-executable structured metadata
 - Reopens from a local file URL
@@ -435,7 +434,7 @@ The default artifact:
 
 ### 9.3 Policy tiers
 
-PageKnot exposes three named policy profiles:
+Offprint exposes three named policy profiles:
 
 | Profile | Intended use | Missing resources | Verification | Network |
 | --- | --- | --- | --- | --- |
@@ -452,13 +451,13 @@ fields.
 CLI          Node.js          Python          Rust caller
  │              │                │                │
  └──────────────┴────────────────┴────────────────┘
-                         PageKnot
+                         Offprint
              ┌──────────────┼──────────────┐
              │              │              │
       CaptureService  ArtifactService  BrowserService
              │              │              │
              └──────────────┼──────────────┘
-                     CaptureCoordinator
+                    Capture pipeline
              ┌──────────────┼──────────────┐
              │              │              │
        BrowserBackend  Document pipeline  Artifact pipeline
@@ -470,7 +469,7 @@ CLI          Node.js          Python          Rust caller
 
 ### 10.1 Public application boundary
 
-`PageKnot` constructs and owns service dependencies. It is a cloneable handle
+`Offprint` constructs and owns service dependencies. It is a cloneable handle
 over shared runtime state. Cloning the handle does not launch another browser.
 
 The public services are:
@@ -484,8 +483,10 @@ in Rust.
 
 ### 10.2 Internal ownership
 
-`CaptureCoordinator` owns one job execution. It receives immutable validated
-configuration and creates stage-owned values.
+`CaptureService` owns job registration, cancellation, events, and the terminal
+result. `pipeline::run_capture_job` receives one validated request and creates
+stage-owned values for browser, document, resource, verification, and commit
+work.
 
 Internal transformation code uses pure functions or focused stateful types.
 The implementation should not create a `Service` type for a pure operation
@@ -502,7 +503,7 @@ concurrency, persistence, and partial failure policy outside page capture.
 ### 11.1 Proposed tree
 
 ```text
-pageknot/
+offprint/
 ├── Cargo.toml
 ├── Cargo.lock
 ├── rust-toolchain.toml
@@ -515,19 +516,19 @@ pageknot/
 ├── README.md
 ├── SPEC.md
 ├── crates/
-│   ├── pageknot/
-│   ├── pageknot-model/
-│   ├── pageknot-protocol/
-│   ├── pageknot-browser/
-│   ├── pageknot-chromium/
-│   ├── pageknot-document/
-│   ├── pageknot-capture/
-│   ├── pageknot-artifact/
-│   ├── pageknot-html/
-│   ├── pageknot-transform/
-│   ├── pageknot-export/
-│   ├── pageknot-cli/
-│   └── pageknot-test-support/
+│   ├── offprint/
+│   ├── offprint-model/
+│   ├── offprint-protocol/
+│   ├── offprint-browser/
+│   ├── offprint-chromium/
+│   ├── offprint-document/
+│   ├── offprint-capture/
+│   ├── offprint-artifact/
+│   ├── offprint-html/
+│   ├── offprint-transform/
+│   ├── offprint-export/
+│   ├── offprint-cli/
+│   └── offprint-test-support/
 ├── bindings/
 │   ├── node/
 │   └── python/
@@ -548,7 +549,7 @@ pageknot/
 
 ### 11.2 Crate ownership
 
-#### `pageknot-model`
+#### `offprint-model`
 
 Owns public and shared domain records:
 
@@ -564,37 +565,36 @@ Owns public and shared domain records:
 
 The crate performs no browser, terminal, or filesystem I/O.
 
-#### `pageknot-protocol`
+#### `offprint-protocol`
 
 Owns the host-to-collector protocol:
 
 - Handshake
 - Capabilities
-- Frame observation payloads
 - Chunk envelopes
-- Collector diagnostics
+- Collector commands and diagnostics
 - Protocol version negotiation
 - Shared Rust and TypeScript fixtures
 
 The collector protocol is internal and versioned independently from the public
 SDK schema.
 
-#### `pageknot-browser`
+#### `offprint-browser`
 
-Owns browser-independent traits and values:
+Owns browser ports and provider-neutral observation records:
 
 - `BrowserBackend`
-- `BrowserSession`
+- `BrowserLease`
 - `BrowserContext`
 - `PageSession`
-- Navigation requests
-- Browser events
+- `FrameObservation`
+- Navigation and readiness evidence
 - Resource body streams
 - Browser capabilities
 
-Public PageKnot DTOs contain no CDP concepts.
+The crate has no collector-protocol or CDP dependency.
 
-#### `pageknot-chromium`
+#### `offprint-chromium`
 
 Owns:
 
@@ -609,7 +609,7 @@ Owns:
 - Browser resource access
 - Network-denied verification contexts
 
-#### `pageknot-document`
+#### `offprint-document`
 
 Owns:
 
@@ -624,33 +624,27 @@ Owns:
 - Script sanitization
 - Deterministic serialization primitives
 
-#### `pageknot-capture`
+#### `offprint-capture`
 
 Owns:
 
 - Capture stage state machine
-- Readiness policy
-- Capture epoch
-- Snapshot collection
-- Resource discovery and retrieval
 - Limits and budgets
 - Cancellation propagation
-- Capture diagnostics
-- `CapturedPage`
+- Validated capture requests
+- Content-addressed temporary storage
 
-#### `pageknot-artifact`
+#### `offprint-artifact`
 
 Owns:
 
-- Artifact encoder interface
-- Output targets
-- Staging transactions
-- Artifact metadata
-- Commit policy
-- Verification result model
-- Digest calculation
+- Bounded memory output
+- Single-file staging and commit
+- Multi-output staging, recovery, and commit
+- Conflict policy application
+- Output digests and transaction records
 
-#### `pageknot-html`
+#### `offprint-html`
 
 Owns:
 
@@ -661,22 +655,21 @@ Owns:
 - Static HTML verifier
 - HTML artifact inspector
 
-#### `pageknot-transform`
+#### `offprint-transform`
 
 Owns the shared safe-static transformation boundary:
 
 - Rendering freeze
 - Active-content sanitization
 - Structural repair
-- Manifest embedding
-- Static verification after encoding
+- HTML encoding through the format boundary
 
 The native capture pipeline calls this crate after browser state and resources
 have been collected.
 
-#### `pageknot-export`
+#### `offprint-export`
 
-Owns alternate artifact representations:
+Owns alternate artifact formats:
 
 - PDF format verification
 - Markdown and relative asset encoding
@@ -685,21 +678,21 @@ Owns alternate artifact representations:
 - MHTML encoding
 - Format-specific structural verification
 
-#### `pageknot`
+#### `offprint`
 
 Owns the public service API:
 
-- `PageKnot`
-- `PageKnotBuilder`
+- `Offprint`
+- `OffprintBuilder`
 - `CaptureService`
-- `CaptureBuilder`
+- `Capture`
 - `CaptureJob`
 - `ArtifactService`
 - `BrowserService`
 - Dependency composition
 - One-shot convenience functions
 
-#### `pageknot-cli`
+#### `offprint-cli`
 
 Owns:
 
@@ -712,37 +705,33 @@ Owns:
 - Signal handling
 - Shell completion
 
-#### `pageknot-test-support`
+#### `offprint-test-support`
 
 Owns:
 
 - Fixture server
 - Multiple origins
 - HTTPS test authority
-- Browser test harness
-- Capture assertions
-- Temporary artifact helpers
-- Screenshot comparison
-- Process-leak checks
+- Explicit fixture-to-test ownership
 
 Workspace test targets resolve it through path development dependencies.
 Registry packages contain the runtime dependency graph, while
-`pageknot-test-support` remains workspace-local.
+`offprint-test-support` remains workspace-local.
 
 ### 11.3 Dependency direction
 
 ```text
-pageknot-cli, bindings/node, bindings/python
-  -> pageknot
+offprint-cli, bindings/node, bindings/python
+  -> offprint
 
-pageknot
+offprint
   -> artifact, browser, capture, chromium, document, export, html,
      model, protocol, transform
 
 chromium
   -> browser, model, protocol
 browser
-  -> model, protocol
+  -> model
 transform, export
   -> document, html, model
 html
@@ -764,11 +753,11 @@ Cargo metadata tests MUST reject dependency cycles and forbidden upward edges.
 - Complete registry metadata for crates published from the workspace
 - `publish = false` for bindings, benchmarks, and maintenance binaries released
   through another channel or kept local
-- Supported public Rust APIs limited to `pageknot`, `pageknot-model`, and
-  `pageknot-cli` for 1.0
+- Supported public Rust APIs limited to `offprint`, `offprint-model`, and
+  `offprint-cli` for 1.0
 - Artifact, browser, capture, Chromium, document, export, HTML, protocol, and
-  transform crates published as registry dependency units for `pageknot`
-- `pageknot-test-support` kept workspace-local with `publish = false`
+  transform crates published as registry dependency units for `offprint`
+- `offprint-test-support` kept workspace-local with `publish = false`
 - No generic `core`, `common`, `shared`, `helpers`, or `utils` crate
 - First-party production crates use `unsafe_code = "forbid"`
 - Binding crates contain documented boundary exceptions when required
@@ -778,21 +767,21 @@ Cargo metadata tests MUST reject dependency cycles and forbidden upward edges.
 
 ## 12. Public service API
 
-### 12.1 `PageKnot`
+### 12.1 `Offprint`
 
-`PageKnot` owns shared services and lazily acquires browser resources.
+`Offprint` owns shared services and lazily acquires browser resources.
 
 ```rust
-pub struct PageKnot {
+pub struct Offprint {
     state: Arc<RuntimeState>,
 }
 
-impl PageKnot {
-    pub fn builder() -> PageKnotBuilder;
+impl Offprint {
+    pub fn builder() -> OffprintBuilder;
     pub fn captures(&self) -> CaptureService;
     pub fn artifacts(&self) -> ArtifactService;
     pub fn browsers(&self) -> BrowserService;
-    pub fn capture(&self, url: impl AsRef<str>) -> Result<CaptureBuilder>;
+    pub fn capture(&self, url: impl AsRef<str>) -> Result<Capture>;
     pub async fn close(&self) -> Result<()>;
 }
 ```
@@ -800,11 +789,11 @@ impl PageKnot {
 Contract:
 
 - `build` validates configuration and initializes local state.
-- `PageKnotBuilder` configures profiles, browser selection, installation policy,
+- `OffprintBuilder` configures profiles, browser selection, installation policy,
   network policy, concurrency, cache paths, and diagnostics.
 - Browser launch occurs when a browser capability is first requested.
 - `close` cancels active jobs, waits for cleanup, and is idempotent.
-- Operations other than `close` return `pageknot.runtime.closed` after
+- Operations other than `close` return `offprint.runtime.closed` after
   successful close.
 - `Drop` requests best-effort cleanup.
 - Language binding finalizers provide best-effort cleanup.
@@ -832,12 +821,12 @@ It returns after the job has a stable ID and event channel.
 outcome per job. `crawl` follows a deterministic breadth-first URL frontier.
 Both operations can persist atomic resume state after each terminal outcome.
 
-### 12.3 `CaptureBuilder`
+### 12.3 `Capture`
 
 The one-shot API is optimized for the common path:
 
 ```rust
-let result = pageknot
+let result = offprint
     .capture("https://example.com")?
     .save("example.html")
     .await?;
@@ -846,25 +835,25 @@ let result = pageknot
 Builder methods include:
 
 ```rust
-CaptureBuilder::output(path)
-CaptureBuilder::profile(name)
-CaptureBuilder::timeout(duration)
-CaptureBuilder::wait_until(mode)
-CaptureBuilder::delay(duration)
-CaptureBuilder::viewport(viewport)
-CaptureBuilder::strict()
-CaptureBuilder::headed(bool)
-CaptureBuilder::save(path)
-CaptureBuilder::to_bytes(max_bytes)
-CaptureBuilder::start()
-CaptureBuilder::run()
+Capture::output(path)
+Capture::profile(name)
+Capture::timeout(duration)
+Capture::wait_until(mode)
+Capture::delay(duration)
+Capture::viewport(viewport)
+Capture::strict()
+Capture::headed(bool)
+Capture::save(path)
+Capture::bytes(max_bytes)
+Capture::start()
+Capture::run()
 ```
 
 Builder methods consume or return `Self`. They use domain enums in place of
 boolean parameters where two states need names.
 
 - `save(path)` sets a file target, starts the job, and awaits its result.
-- `to_bytes(max_bytes)` sets a bounded memory target, starts the job, and awaits
+- `bytes(max_bytes)` sets a bounded memory target, starts the job, and awaits
   its result.
 - `start()` returns a `CaptureJob`.
 - `run()` starts the configured job and awaits its result.
@@ -882,7 +871,7 @@ impl CaptureJob {
     pub fn status(&self) -> CaptureStatus;
     pub fn events(&self) -> impl Stream<Item = CaptureEvent>;
     pub fn cancel(&self);
-    pub async fn wait(&self) -> Result<CaptureResult>;
+    pub async fn result(&self) -> Result<CaptureReceipt>;
 }
 ```
 
@@ -891,7 +880,7 @@ Contract:
 - `cancel` is non-blocking and idempotent.
 - `wait` returns after cleanup and output rollback or commit.
 - Dropping one cloned job handle does not cancel the job.
-- `PageKnot::close` cancels jobs still owned by the runtime.
+- `Offprint::close` cancels jobs still owned by the runtime.
 - Every event subscriber receives events from its subscription point.
 - Slow subscribers receive coalesced progress records.
 - Warning and terminal events are retained.
@@ -901,27 +890,27 @@ Contract:
 
 ```rust
 impl ArtifactService {
-    pub async fn inspect(&self, input: ArtifactInput) -> Result<ArtifactManifest>;
+    pub async fn inspect(&self, input: ArtifactSource) -> Result<ArtifactManifest>;
     pub async fn verify(
         &self,
-        input: ArtifactInput,
-        policy: VerificationPolicy,
-    ) -> Result<VerificationResult>;
+        input: ArtifactSource,
+        policy: VerificationMode,
+    ) -> Result<VerificationReport>;
     pub async fn export(
         &self,
-        input: ArtifactInput,
-        request: ArtifactExportRequest,
-    ) -> Result<ArtifactExportResult>;
+        input: ArtifactSource,
+        request: ExportRequest,
+    ) -> Result<ExportResult>;
     pub async fn export_capture(
         &self,
-        capture: &CaptureResult,
-        request: ArtifactExportRequest,
-    ) -> Result<ArtifactExportResult>;
-    pub async fn verify_variant(
+        capture: &CaptureReceipt,
+        request: ExportRequest,
+    ) -> Result<ExportResult>;
+    pub async fn verify_format(
         &self,
         path: PortablePath,
-        kind: ArtifactVariantKind,
-    ) -> Result<ArtifactVariantVerification>;
+        kind: ArtifactFormat,
+    ) -> Result<FormatVerification>;
 }
 ```
 
@@ -929,7 +918,7 @@ Static inspection can run without Chromium. Offline verification acquires a
 browser context through `BrowserService`. `export` derives each requested
 format from one offline-verified HTML artifact and verifies every format before
 commit. `export_capture` revalidates the safe-static HTML and reuses matching
-offline evidence from a completed `CaptureResult`. `verify_variant` applies the
+offline evidence from a completed `CaptureReceipt`. `verify_format` applies the
 format-specific verifier to an exported path.
 
 ### 12.6 `BrowserService`
@@ -937,7 +926,9 @@ format-specific verifier to an exported path.
 ```rust
 impl BrowserService {
     pub async fn ensure(&self) -> Result<BrowserInfo>;
-    pub async fn install(&self, request: BrowserInstallRequest) -> Result<BrowserInfo>;
+    pub async fn install(&self, request: BrowserInstallRequest) -> Result<BrowserOperationResult>;
+    pub async fn list(&self) -> Result<BrowserOperationResult>;
+    pub async fn remove(&self, revision: &str, force: bool) -> Result<BrowserOperationResult>;
     pub async fn doctor(&self) -> BrowserDoctorReport;
     pub async fn close_idle(&self) -> Result<()>;
 }
@@ -959,7 +950,7 @@ x86-64 and arm64, and Windows x86-64. Other builds use a compatible
 caller-selected system browser.
 
 A remote CDP endpoint supports capture requests that explicitly select
-`NetworkPolicy::Unrestricted` and `VerificationPolicy::Static`. The caller owns
+`NetworkPolicy::Unrestricted` and `VerificationMode::Static`. The caller owns
 endpoint trust, browser lifecycle, network controls, and browser-side state.
 `BrowserDoctorReport` marks restricted network policies and offline
 verification unavailable for remote endpoints.
@@ -987,18 +978,18 @@ temporary store handles stay outside public records.
 
 The CLI validates native paths as UTF-8 before browser work. This keeps path
 values identical across Rust, JSON, Node.js, and Python. An invalid path returns
-`pageknot.input.path_encoding`.
+`offprint.input.path_encoding`.
 
 ## 13. Language bindings
 
 ### 13.1 Binding architecture
 
 ```text
-pageknot-model  -> canonical DTOs and JSON Schema
-pageknot        -> canonical service behavior
+offprint-model  -> canonical DTOs and JSON Schema
+offprint        -> canonical service behavior
        │
-       ├── pageknot-node   -> napi-rs adapter
-       └── pageknot-python -> PyO3 adapter
+       ├── offprint-node   -> napi-rs adapter
+       └── offprint-python -> PyO3 adapter
 ```
 
 The Node.js binding uses [napi-rs](https://napi.rs/). Node-API gives the native
@@ -1010,27 +1001,27 @@ The Python binding uses [PyO3](https://pyo3.rs/) and
 selected async integration supports the target Python matrix.
 
 Binding crates contain mapping code. Capture policy and behavior remain in
-`pageknot`.
+`offprint`.
 
 ### 13.2 Canonical schema
 
-`pageknot-model` is the canonical definition of:
+`offprint-model` is the canonical definition of:
 
 - `CaptureRequest`
-- `CapturePolicy`
+- `ContentPolicy`
 - `CaptureLimits`
 - `CaptureEvent`
-- `CaptureResult`
+- `CaptureReceipt`
 - `BatchRequest`
 - `BatchResult`
 - `CrawlRequest`
 - `CrawlResult`
-- `PageKnotError`
+- `OffprintError`
 - `ArtifactManifest`
-- `ArtifactExportRequest`
-- `ArtifactExportResult`
-- `ArtifactVariantVerification`
-- `VerificationResult`
+- `ExportRequest`
+- `ExportResult`
+- `FormatVerification`
+- `VerificationReport`
 - `BrowserDoctorReport`
 - `BrowserOperationResult`
 
@@ -1049,14 +1040,14 @@ optional behavior, or defaults drift.
 ### 13.3 Node.js API
 
 ```ts
-const pageknot = new PageKnot(options?)
+const offprint = new Offprint(options?)
 
-await pageknot.capture(url, options?)
-await pageknot.captures.start(request)
-await pageknot.artifacts.inspect(path)
-await pageknot.artifacts.verify(path, options?)
-await pageknot.browsers.ensure()
-await pageknot.close()
+await offprint.capture(url, options?)
+await offprint.captures.start(request)
+await offprint.artifacts.inspect(path)
+await offprint.artifacts.verify(path, options?)
+await offprint.browsers.ensure()
+await offprint.close()
 ```
 
 `CaptureJob` exposes:
@@ -1073,7 +1064,7 @@ job.result()
 a bounded channel and schedules delivery on the JavaScript thread. Callback
 latency cannot stall the Rust capture pipeline.
 
-Errors extend `PageKnotError` and expose:
+Errors extend `OffprintError` and expose:
 
 ```ts
 error.code
@@ -1086,20 +1077,20 @@ error.diagnosticsPath
 ### 13.4 Python API
 
 ```python
-pageknot = PageKnot(options=None)
+offprint = Offprint(options=None)
 
-await pageknot.capture(url, **options)
-await pageknot.captures.start(request)
-await pageknot.artifacts.inspect(path)
-await pageknot.artifacts.verify(path, **options)
-await pageknot.browsers.ensure()
-await pageknot.close()
+await offprint.capture(url, **options)
+await offprint.captures.start(request)
+await offprint.artifacts.inspect(path)
+await offprint.artifacts.verify(path, **options)
+await offprint.browsers.ensure()
+await offprint.close()
 ```
 
-`PageKnot` implements an asynchronous context manager. `CaptureJob.events()` is
+`Offprint` implements an asynchronous context manager. `CaptureJob.events()` is
 an asynchronous iterator.
 
-Python exceptions share a base `PageKnotError` and expose the same structured
+Python exceptions share a base `OffprintError` and expose the same structured
 fields as Node.js.
 
 ### 13.5 Async runtime ownership
@@ -1112,13 +1103,13 @@ fields as Node.js.
 - Rust callbacks enter the host runtime through the binding's supported
   scheduling primitive.
 - No binding starts a Tokio runtime inside an existing Tokio runtime.
-- `PageKnot::close` waits for job and browser cleanup in every host.
+- `Offprint::close` waits for job and browser cleanup in every host.
 
 ### 13.6 Panic boundary
 
 Public services return errors for user-controlled input and external failures.
 Binding entry points also catch unexpected Rust panics, convert them to
-`pageknot.internal.panic`, record a sanitized diagnostic, and keep unwind state
+`offprint.internal.panic`, record a sanitized diagnostic, and keep unwind state
 inside the native boundary.
 
 The panic conversion is a containment measure. A reachable panic remains a
@@ -1140,17 +1131,17 @@ release-blocking defect.
 ### 14.1 Command tree
 
 ```text
-pageknot capture <URL> [OPTIONS]
-pageknot export <ARTIFACT> [OPTIONS]
-pageknot batch <MANIFEST|-> [OPTIONS]
-pageknot crawl <URL> [OPTIONS]
-pageknot verify <ARTIFACT> [OPTIONS]
-pageknot inspect <ARTIFACT> [OPTIONS]
-pageknot doctor [OPTIONS]
-pageknot browser install [OPTIONS]
-pageknot browser list [OPTIONS]
-pageknot browser remove <REVISION> [OPTIONS]
-pageknot completion <SHELL>
+offprint capture <URL> [OPTIONS]
+offprint artifact export <ARTIFACT> [OPTIONS]
+offprint batch <MANIFEST|-> [OPTIONS]
+offprint crawl <URL> [OPTIONS]
+offprint artifact verify <ARTIFACT> [OPTIONS]
+offprint artifact inspect <ARTIFACT> [OPTIONS]
+offprint doctor [OPTIONS]
+offprint browser install [OPTIONS]
+offprint browser list [OPTIONS]
+offprint browser remove <REVISION> [OPTIONS]
+offprint completion <SHELL>
 ```
 
 The canonical verb is `capture`.
@@ -1159,16 +1150,14 @@ The canonical verb is `capture`.
 allows removal of the selected idle revision after another compatible browser
 has been resolved. The command never removes an active browser lease.
 
-### 14.2 `pageknot capture`
+### 14.2 `offprint capture`
 
 Synopsis:
 
 ```text
-pageknot capture <URL>
-  [-o, --output <PATH|->]
-  [--format <html|pdf>]
-  [--landscape]
-  [--prefer-css-page-size]
+offprint capture <URL>
+  -o, --output <PATH|->
+  [--on-exists <fail|replace|uniquify>]
   [--profile <NAME>]
   [--config <PATH>]
   [--browser-path <PATH> | --cdp-url <URL>]
@@ -1186,7 +1175,7 @@ pageknot capture <URL>
   [--remove-unused-css]
   [--remove-unused-fonts]
   [--remove-hidden-elements]
-  [--verify <static|offline>]
+  [--verification <static|offline>]
   [--headers <PATH>]
   [--cookies <PATH>]
   [--network-policy <standard|server|unrestricted>]
@@ -1201,10 +1190,8 @@ pageknot capture <URL>
 | Input | Contract |
 | --- | --- |
 | `URL` | Absolute `http`, `https`, or explicitly permitted `file` URL |
-| `--output` | Destination file, or `-` for the selected representation on stdout |
-| `--format` | Committed representation. Defaults to `html` |
-| `--landscape` | Print PDF pages in landscape orientation |
-| `--prefer-css-page-size` | Honor the captured document's CSS page size when printing PDF |
+| `--output` | Required capture artifact path, or `-` for artifact bytes on stdout |
+| `--on-exists` | Destination conflict behavior. Defaults to `fail` |
 | `--profile` | Named configuration profile |
 | `--config` | Explicit TOML configuration |
 | `--browser-path` | Local Chrome or Chromium executable |
@@ -1223,11 +1210,11 @@ pageknot capture <URL>
 | `--remove-unused-css` | Remove CSS rules that cannot match the captured state |
 | `--remove-unused-fonts` | Remove font faces unused by the captured state |
 | `--remove-hidden-elements` | Remove elements with computed `display: none` |
-| `--verify` | Required verification level |
+| `--verification` | Required verification mode |
 | `--headers` | Protected JSON file containing request headers |
 | `--cookies` | Protected JSON file containing browser cookies |
 | `--network-policy` | Address and redirect policy |
-| `--json` | Emit one `CaptureResult` for HTML or one `ArtifactExportResult` for PDF |
+| `--json` | Emit one `CaptureReceipt` |
 | `--quiet` | Suppress non-error human diagnostics |
 | `--color` | Human diagnostic color behavior |
 | `--diagnostics` | Directory for sanitized failure artifacts |
@@ -1240,42 +1227,33 @@ Incompatible combinations:
 - `--browser-path` with `--cdp-url`
 - `--json` with `--output -`
 - `--selector` with `--scope`
-- PDF print options with `--format html`
-- A PDF output path whose extension is not `.pdf`
 - Header or cookie input from stdin with `--output -`
 - `file:` URL outside an allowed root
-- `--verify offline` when the selected browser lacks the required capability
+- `--verification offline` when the selected browser lacks the required capability
 - Remote CDP with an effective network policy other than `unrestricted`
 - Remote CDP with an effective verification policy other than `static`
 
 Selector capture preserves the document head and the matched element's ancestor
 chain. It prunes sibling content before frame mapping and resource
-materialization. Invalid selector syntax returns `pageknot.selector.invalid`.
-A valid selector with no match returns `pageknot.selector.not_found`.
+materialization. Invalid selector syntax returns `offprint.selector.invalid`.
+A valid selector with no match returns `offprint.selector.not_found`.
 
-PDF capture produces and verifies the canonical HTML representation in memory.
-The PDF renderer opens that HTML with network access denied, resolves printable
-links against the captured source URL, and prints a tagged PDF through Chromium.
-The encoder adds standard document properties and UTF-8 XMP for source HTML
-metadata, capture provenance, policy and artifact digests, browser identity,
-resource totals, page count, structure count, and tagged text-structure
-evidence. The PDF verifier requires the passive file structure, tagged
-structure tree, language, display title preference, document properties, and
-PageKnot XMP packet before the requested destination is atomically replaced.
+`capture` produces the canonical Offprint HTML artifact. PDF and the other
+artifact formats are derived through `export`.
 
-### 14.3 `pageknot export`
+### 14.3 `offprint artifact export`
 
 Synopsis:
 
 ```text
-pageknot export <ARTIFACT|->
+offprint artifact export <ARTIFACT|->
   --output <DIR>
-  --variant <pdf|markdown|zip|self-extracting|mhtml>...
+  --format <pdf|markdown|zip|self-extracting-html|mhtml>...
   [--base-name <NAME>]
   [--landscape]
   [--prefer-css-page-size]
   [--no-front-matter]
-  [--conflict <fail|replace|uniquify>]
+  [--on-exists <fail|replace|uniquify>]
   [--config <PATH>]
   [--browser-path <PATH>]
   [--json]
@@ -1283,21 +1261,21 @@ pageknot export <ARTIFACT|->
   [--color <auto|always|never>]
 ```
 
-`export` reopens one PageKnot HTML artifact with network access denied, then
+`export` reopens one Offprint HTML artifact with network access denied, then
 derives and verifies each requested format before committing it. Repeat
-`--variant` or pass a comma-separated list. Human output writes one committed
-entrypoint per line. `--json` emits one `ArtifactExportResult`.
+`--format` or pass a comma-separated list. Human output writes one committed
+entrypoint per line. `--json` emits one `ExportResult`.
 
-PDF options require the `pdf` variant. `--no-front-matter` requires the
-`markdown` variant. The conflict policy defaults to `replace` and applies
+PDF options require the `pdf` format. `--no-front-matter` requires the
+`markdown` format. The conflict policy defaults to `fail` and applies
 independently to each output.
 
-### 14.4 `pageknot batch`
+### 14.4 `offprint batch`
 
 Synopsis:
 
 ```text
-pageknot batch <MANIFEST|->
+offprint batch <MANIFEST|->
   [--config <PATH>]
   [--browser-path <PATH> | --cdp-url <URL>]
   [--json]
@@ -1314,14 +1292,14 @@ Human output reports succeeded, failed, and resumed counts. `--json` emits one
 returns status `1`.
 
 When `--cdp-url` selects a remote browser, every capture request in the batch
-must select `NetworkPolicy::Unrestricted` and `VerificationPolicy::Static`.
+must select `NetworkPolicy::Unrestricted` and `VerificationMode::Static`.
 
-### 14.5 `pageknot crawl`
+### 14.5 `offprint crawl`
 
 Synopsis:
 
 ```text
-pageknot crawl <URL>
+offprint crawl <URL>
   --output <DIR>
   [--profile <NAME>]
   [--config <PATH>]
@@ -1348,14 +1326,14 @@ path and schedules prior failed outcomes again. Human output reports page
 counts. `--json` emits one `CrawlResult`. A result with failed pages is written
 before the command returns status `1`.
 
-### 14.6 `pageknot verify`
+### 14.6 `offprint artifact verify`
 
 Synopsis:
 
 ```text
-pageknot verify <ARTIFACT|->
-  [--format <pdf|markdown|zip|self-extracting|mhtml>]
-  [--level <static|offline>]
+offprint artifact verify <ARTIFACT|->
+  [--format <pdf|markdown|zip|self-extracting-html|mhtml>]
+  [--verification <static|offline>]
   [--config <PATH>]
   [--browser-path <PATH>]
   [--timeout <DURATION>]
@@ -1365,7 +1343,7 @@ pageknot verify <ARTIFACT|->
   [--diagnostics <DIR>]
 ```
 
-`verify` validates an existing PageKnot artifact. Its default level is
+`verify` validates an existing Offprint artifact. Its default level is
 `offline`.
 
 `static` checks:
@@ -1389,18 +1367,18 @@ offline verification.
 `--format` applies the verifier for an exported artifact and requires a
 filesystem path. HTML verification options apply when `--format` is absent.
 
-Human success output names the artifact, verification level or format, digest,
-byte count, and zero-network result. `--json` emits one `VerificationResult`
-for HTML or one `ArtifactVariantVerification` for an exported format.
+Human success output names the artifact, verification mode or format, digest,
+byte count, and zero-network result. `--json` emits one `VerificationReport`
+for HTML or one `FormatVerification` for an exported format.
 Verification failure returns exit status `3`. An unreadable input or browser
 runtime failure returns `1`.
 
-### 14.7 `pageknot inspect`
+### 14.7 `offprint artifact inspect`
 
 Synopsis:
 
 ```text
-pageknot inspect <ARTIFACT|->
+offprint artifact inspect <ARTIFACT|->
   [--json]
   [--quiet]
   [--color <auto|always|never>]
@@ -1417,12 +1395,12 @@ the artifact envelope before rendering the manifest.
 - Secret URL components remain redacted in every renderer.
 - A missing, malformed, unsupported, or inconsistent manifest returns `1`.
 
-### 14.8 `pageknot doctor`
+### 14.8 `offprint doctor`
 
 Synopsis:
 
 ```text
-pageknot doctor
+offprint doctor
   [--config <PATH>]
   [--browser-path <PATH> | --cdp-url <URL>]
   [--json]
@@ -1442,12 +1420,12 @@ value. The report excludes secrets.
 Exit status `0` means the default capture path is ready. Status `1` means a
 runtime capability is unavailable. Invalid configuration returns `2`.
 
-### 14.9 `pageknot browser`
+### 14.9 `offprint browser`
 
 Install:
 
 ```text
-pageknot browser install
+offprint browser install
   [--revision <REVISION>]
   [--cache-dir <DIR>]
   [--json]
@@ -1455,7 +1433,7 @@ pageknot browser install
   [--color <auto|always|never>]
 ```
 
-The default revision comes from PageKnot's version manifest. An explicit
+The default revision comes from Offprint's version manifest. An explicit
 revision must exist in the trusted browser catalog with a known archive digest.
 The command downloads into bounded temporary storage, verifies the digest,
 validates the archive, extracts into staging, probes the executable, and commits
@@ -1465,7 +1443,7 @@ reuse a valid completed installation.
 List:
 
 ```text
-pageknot browser list
+offprint browser list
   [--cache-dir <DIR>]
   [--json]
   [--quiet]
@@ -1479,7 +1457,7 @@ priority, and active lease count.
 Remove:
 
 ```text
-pageknot browser remove <REVISION>
+offprint browser remove <REVISION>
   [--cache-dir <DIR>]
   [--force]
   [--json]
@@ -1497,12 +1475,12 @@ Browser commands never prompt. Human success output names the installed,
 listed, or removed revision. `--json` emits one versioned browser operation
 result.
 
-### 14.10 `pageknot completion`
+### 14.10 `offprint completion`
 
 Synopsis:
 
 ```text
-pageknot completion <bash|elvish|fish|powershell|zsh>
+offprint completion <bash|elvish|fish|powershell|zsh>
 ```
 
 The command writes the generated completion script to stdout and diagnostics to
@@ -1513,7 +1491,7 @@ command tree in the running binary.
 
 When `--output` is absent:
 
-1. PageKnot captures the title.
+1. Offprint captures the title.
 2. It normalizes the title into a portable filename.
 3. It falls back to the final hostname when the title is empty.
 4. It appends `.html`.
@@ -1541,7 +1519,7 @@ Normal successful capture:
 
 `--output -`:
 
-- PageKnot captures and verifies into temporary storage.
+- Offprint captures and verifies into temporary storage.
 - stdout receives the complete artifact after verification.
 - stderr receives diagnostics.
 - A stdout write failure returns a runtime failure status.
@@ -1580,18 +1558,18 @@ Configuration precedence:
 
 ```text
 CLI flags
-PAGEKNOT_* environment variables
+OFFPRINT_* environment variables
 explicit --config file
 selected profile
 user configuration
 built-in defaults
 ```
 
-PageKnot does not automatically load project-directory configuration. This
+Offprint does not automatically load project-directory configuration. This
 prevents an untrusted checkout from changing browser or network policy.
 
 Platform user configuration paths are resolved through native platform
-conventions. `pageknot doctor --json` reports the effective configuration with
+conventions. `offprint doctor --json` reports the effective configuration with
 secrets redacted.
 
 Secrets are referenced by file or environment variable. Human and JSON
@@ -1604,22 +1582,20 @@ Example:
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "captureId": "cap_01J...",
-  "status": "succeeded",
   "source": {
     "requestedUrl": "https://example.com",
     "finalUrl": "https://example.com/"
   },
   "artifact": {
-    "kind": "html",
+    "kind": "file",
     "path": "example.html",
     "bytes": 43821,
     "sha256": "..."
   },
   "verification": {
     "level": "offline",
-    "passed": true,
     "networkRequests": 0
   },
   "resources": {
@@ -1660,58 +1636,51 @@ String representations include a type prefix where users or logs see the ID.
 ```rust
 pub struct CaptureRequest {
     pub url: Url,
-    pub artifact: ArtifactSpec,
+    pub output: CaptureOutput,
     pub browser: BrowserSpec,
     pub environment: BrowserEnvironment,
     pub readiness: ReadinessPolicy,
-    pub capture: CapturePolicy,
+    pub content: ContentPolicy,
     pub network: NetworkPolicy,
     pub limits: CaptureLimits,
-    pub verification: VerificationPolicy,
+    pub verification: VerificationMode,
     pub diagnostics: DiagnosticsPolicy,
 }
 ```
 
-#### Artifact request
+#### Capture output
 
 ```rust
-pub enum ArtifactSpec {
-    Html(HtmlArtifactSpec),
-}
-
-pub struct HtmlArtifactSpec {
-    pub target: ArtifactTarget,
-    pub conflict: ConflictPolicy,
-}
-
-pub enum ArtifactTarget {
-    File(PortablePath),
-    Bytes {
+pub enum CaptureOutput {
+    File {
+        path: PortablePath,
+        conflict: ConflictPolicy,
+    },
+    Memory {
         max_bytes: u64,
     },
 }
 ```
 
-`ArtifactSpec` is tagged in serialized requests. Future encoders add explicit
-variants with their own option records.
+`CaptureOutput` selects bounded bytes or a transactional file for the canonical
+HTML capture. Alternate artifact formats are derived through `ArtifactService`.
 
-#### Capture result
+#### Capture receipt
 
 ```rust
-pub struct CaptureResult {
+pub struct CaptureReceipt {
     pub schema_version: u32,
     pub capture_id: CaptureId,
-    pub status: CaptureTerminalStatus,
     pub source: SourceSummary,
-    pub artifact: ArtifactResult,
-    pub verification: VerificationResult,
+    pub artifact: CaptureArtifact,
+    pub verification: VerificationReport,
     pub resources: ResourceSummary,
     pub warnings: Vec<CaptureWarning>,
     pub timings: CaptureTimings,
 }
 ```
 
-`ArtifactResult` is tagged as file or bytes. Byte artifacts remain subject to
+`CaptureArtifact` is tagged as file or bytes. Memory artifacts remain subject to
 the request's memory ceiling.
 
 ```rust
@@ -1759,7 +1728,7 @@ pub enum MissingResourcePolicy {
     Fail,
 }
 
-pub enum VerificationPolicy {
+pub enum VerificationMode {
     Static,
     Offline,
 }
@@ -1794,7 +1763,7 @@ Created
   -> Validating
   -> WaitingForBrowser
   -> Navigating
-  -> Settling
+  -> WaitingForReadiness
   -> Collecting
   -> ResolvingResources
   -> Transforming
@@ -1881,11 +1850,12 @@ pub struct BrowserOperationResult {
     pub browser: Option<BrowserInfo>,
     pub revision: Option<String>,
     pub cache_dir: PortablePath,
+    pub candidates: Vec<BrowserCandidate>,
 }
 ```
 
-Candidate records explain compatible, incompatible, selected, and shadowed
-states with stable reason codes. Effective configuration records contain the
+Candidate records explain compatible, selected, and shadowed states with
+stable reason codes. Effective configuration records contain the
 field, redacted value, and provenance tier. Recovery actions contain a stable
 code, human description, and structured command arguments.
 
@@ -2033,7 +2003,7 @@ The collector obtains:
 
 Output:
 
-- `PageObservation`
+- `FrameObservation`
 
 ### 16.7 Stage 7: construct graphs
 
@@ -2050,7 +2020,7 @@ Actions:
 
 Output:
 
-- `DocumentSnapshot`
+- `Document`
 - `FrameGraph`
 - `ResourceGraph`
 
@@ -2076,7 +2046,7 @@ Actions:
 
 Output:
 
-- `ResolvedResourceGraph`
+- `ResourceGraph`
 - Content-addressed store
 
 URL equality does not determine content identity. Authentication, cookies,
@@ -2097,13 +2067,13 @@ Transformation order:
 9. Remove meta refresh.
 10. Remove the base element after URL resolution.
 11. Add restoration data for structurally unstable HTML when required.
-12. Add PageKnot metadata.
+12. Add Offprint metadata.
 13. Add content security policy.
 14. Produce the encoder input.
 
 Output:
 
-- `CapturedPage`
+- `SafeStaticDocument`
 
 ### 16.10 Stage 10: encode
 
@@ -2142,7 +2112,7 @@ Offline verification:
 5. Wait for mutation quiet.
 6. Record attempted requests and load failures.
 7. Check DOM and state invariants.
-8. Produce `VerificationResult`.
+8. Produce `VerificationReport`.
 
 ### 16.12 Stage 12: commit
 
@@ -2158,13 +2128,13 @@ Actions:
 
 Output:
 
-- `CaptureResult`
+- `CaptureReceipt`
 
 ## 17. Chromium backend
 
 ### 17.1 Protocol client
 
-PageKnot uses a narrow generated CDP client over `tokio-tungstenite`.
+Offprint uses a narrow generated CDP client over `tokio-tungstenite`.
 
 The workspace pins the official
 [Chrome DevTools Protocol](https://github.com/ChromeDevTools/devtools-protocol)
@@ -2209,7 +2179,7 @@ Connection closure fails every pending command immediately.
 
 ### 17.3 Frames and targets
 
-PageKnot uses flattened target sessions and recursive automatic attachment.
+Offprint uses flattened target sessions and recursive automatic attachment.
 The CDP
 [Target domain](https://chromedevtools.github.io/devtools-protocol/tot/Target/)
 provides the auto-attach and flat-session behavior required for
@@ -2243,7 +2213,7 @@ The launcher reads `DevToolsActivePort` instead of reserving a TCP port itself.
 
 Default service behavior:
 
-- One Chromium process per `PageKnot` instance
+- One Chromium process per `Offprint` instance
 - One isolated browser context per capture
 - Bounded concurrent contexts
 - Context teardown after every job
@@ -2258,9 +2228,9 @@ from an earlier context.
 
 The experimental
 [DOMSnapshot domain](https://chromedevtools.github.io/devtools-protocol/tot/DOMSnapshot/)
-can supply layout and flattened DOM information. PageKnot uses it as an
+can supply layout and flattened DOM information. Offprint uses it as an
 auxiliary oracle for diagnostics, layout bounds, and canvas fallback. The
-collector's structured frame snapshot remains canonical because PageKnot must
+collector's structured frame observation remains canonical because Offprint must
 preserve shadow and frame ownership.
 
 ## 18. Collector
@@ -2282,7 +2252,7 @@ The collector observes browser-only state. It does not own:
 - TypeScript source
 - Bundled with Bun during development
 - One checked generated JavaScript artifact
-- Embedded in `pageknot-chromium`
+- Embedded in `offprint-chromium`
 - No production Bun dependency
 - No third-party runtime dependency in the injected bundle
 - Strict TypeScript configuration
@@ -2296,9 +2266,9 @@ are torn down.
 
 The hook version participates in capability negotiation.
 
-### 18.4 Snapshot purity
+### 18.4 Collector purity
 
-The collector creates a detached clone and applies PageKnot marker identities
+The collector creates a detached clone and applies Offprint marker identities
 to that clone.
 
 Reads from the live page transfer:
@@ -2352,7 +2322,7 @@ encoding requires measured evidence and a protocol version.
 
 ### 19.1 HTML model
 
-PageKnot uses [html5ever](https://github.com/servo/html5ever) with a custom arena
+Offprint uses [html5ever](https://github.com/servo/html5ever) with a custom arena
 tree. The arena provides stable node IDs, deterministic traversal, and explicit
 ownership.
 
@@ -2364,11 +2334,11 @@ pub struct Document {
 ```
 
 The implementation provides the traversal and selector operations required by
-PageKnot transforms. It is not a general browser DOM.
+Offprint transforms. It is not a general browser DOM.
 
 ### 19.2 CSS model
 
-PageKnot evaluates
+Offprint evaluates
 [Lightning CSS](https://github.com/parcel-bundler/lightningcss) as the typed CSS
 parser and visitor implementation. Preservation tests must confirm that unknown
 syntax and source ordering survive when transformations and minification are
@@ -2377,7 +2347,7 @@ disabled.
 A token-preserving `cssparser` path is the fallback for URL rewriting when a
 typed parse cannot preserve an input.
 
-PageKnot 1.0 retains all captured CSS. Unused CSS and font elimination are
+Offprint 1.0 retains all captured CSS. Unused CSS and font elimination are
 separate optimization passes with visual evidence.
 
 ### 19.3 Resource locations
@@ -2435,7 +2405,7 @@ The frame graph contains:
 - Terminal outcome
 
 Frames are encoded leaf first into `srcdoc` or another browser-verified
-representation selected by the HTML encoder.
+encoding selected by the HTML encoder.
 
 ### 19.7 Shadow DOM
 
@@ -2457,7 +2427,7 @@ provenance.
 
 ### 19.9 Forms
 
-PageKnot materializes:
+Offprint materializes:
 
 - Text values
 - Textarea contents
@@ -2486,7 +2456,7 @@ recognized.
 
 The serializer reparses its output and compares structural invariants.
 Documents whose browser-corrected tree would change after serialization receive
-minimal restoration data and a PageKnot-owned restoration script.
+minimal restoration data and an Offprint-owned restoration script.
 
 The script digest is included in content security policy. The repair is recorded
 in the manifest.
@@ -2499,8 +2469,8 @@ The HTML contains:
 
 ```html
 <script
-  id="pageknot-manifest"
-  type="application/vnd.pageknot.manifest+json"
+  id="offprint-manifest"
+  type="application/vnd.offprint.manifest+json"
 >
 {...}
 </script>
@@ -2556,7 +2526,7 @@ The staging file is created in the destination directory. This keeps commit on
 one filesystem.
 
 `ConflictPolicy::Replace` uses the platform's atomic replacement primitive when
-available. PageKnot reports a capability error when the requested guarantee
+available. Offprint reports a capability error when the requested guarantee
 cannot be provided.
 
 ## 21. Errors and diagnostics
@@ -2564,14 +2534,14 @@ cannot be provided.
 ### 21.1 Error record
 
 ```rust
-pub struct PageKnotError {
+pub struct OffprintError {
     pub code: ErrorCode,
     pub message: String,
     pub stage: ErrorStage,
     pub retryable: bool,
     pub details: BTreeMap<String, JsonValue>,
     pub diagnostics_path: Option<PortablePath>,
-    pub source: Option<Box<PageKnotError>>,
+    pub source: Option<Box<OffprintError>>,
 }
 ```
 
@@ -2593,20 +2563,20 @@ pub struct PageKnotError {
 ### 21.3 Stable code families
 
 ```text
-pageknot.input.*
-pageknot.config.*
-pageknot.browser.*
-pageknot.navigation.*
-pageknot.readiness.*
-pageknot.collector.*
-pageknot.frame.*
-pageknot.resource.*
-pageknot.transform.*
-pageknot.artifact.*
-pageknot.verification.*
-pageknot.output.*
-pageknot.runtime.*
-pageknot.internal.*
+offprint.input.*
+offprint.config.*
+offprint.browser.*
+offprint.navigation.*
+offprint.readiness.*
+offprint.collector.*
+offprint.frame.*
+offprint.resource.*
+offprint.transform.*
+offprint.artifact.*
+offprint.verification.*
+offprint.output.*
+offprint.runtime.*
+offprint.internal.*
 ```
 
 ### 21.4 Diagnostic bundle
@@ -2705,7 +2675,7 @@ needs an explicit destination allowlist.
 
 ### 22.6 Telemetry
 
-PageKnot performs no product telemetry by default. Managed browser installation
+Offprint performs no product telemetry by default. Managed browser installation
 contacts the configured browser distribution source. Capture network traffic is
 limited to the requested page and its permitted resources.
 
@@ -2772,7 +2742,7 @@ input corpus, and before-and-after result.
 The primary behavior seam is:
 
 ```text
-CaptureService::start -> CaptureJob::wait -> CaptureResult + artifact
+CaptureService::start -> CaptureJob::result -> CaptureReceipt + artifact
 ```
 
 CLI and binding tests reuse the same fixtures and add interface-boundary checks.
@@ -2879,7 +2849,7 @@ Required fixtures:
 
 ### 24.7 Differential suite
 
-The same fixture URL is captured by SingleFile CLI and PageKnot under the same
+The same fixture URL is captured by SingleFile CLI and Offprint under the same
 pinned Chromium environment.
 
 The suite compares:
@@ -2905,7 +2875,7 @@ Small synthetic fixtures own release gates.
 
 Rust, Node.js, and Python each run:
 
-1. Construct `PageKnot`.
+1. Construct `Offprint`.
 2. Capture the same fixture.
 3. Consume at least one event.
 4. Verify the result schema.
@@ -2931,7 +2901,7 @@ and platform process code where supported.
 
 ## 25. Agent-native repository
 
-PageKnot treats agents and humans as first-class contributors to the same
+Offprint treats agents and humans as first-class contributors to the same
 workflow.
 
 ### 25.1 Repository instructions
@@ -3001,13 +2971,15 @@ Agents can inspect these records without inferring state from prose.
 
 Repository scripts reject:
 
-- Direct edits to generated files
-- Snapshot updates combined with a test-name filter
-- Full browser suite execution when a fixture target is expected
-- Release commands from a dirty worktree
-- Schema publication with stale generated output
-- Unbounded browser-test concurrency
-- `todo!` and `unimplemented!` in production crates
+- Stale schemas, binding contracts, fixture manifests, selected CDP types, and
+  collector bundles
+- Production files above the authored line limit
+- Cargo dependency edges outside the explicit ownership matrix
+- Missing package metadata and mismatched license files
+- Unpinned workflow actions
+- Broken relative Markdown links
+- `todo!`, `unimplemented!`, and repository-private helper names in shipped
+  source
 
 ### 25.5 Review process
 
@@ -3061,9 +3033,11 @@ Fast lane:
 Platform lane:
 
 - Linux x86-64
+- Linux arm64
 - macOS arm64
 - macOS x86-64
 - Windows x86-64
+- Windows arm64
 
 Browser lane:
 
@@ -3097,7 +3071,7 @@ Initial native archives:
 
 Every archive includes:
 
-- `pageknot`
+- `offprint`
 - README
 - License
 - Checksums
@@ -3112,7 +3086,7 @@ points. CI imports the published package shape in each supported Node.js major.
 ### 26.5 Python wheels
 
 Maturin builds wheels for the supported platform matrix. CI installs each wheel
-into a clean environment, imports `pageknot`, performs a fixture capture, and
+into a clean environment, imports `offprint`, performs a fixture capture, and
 closes the service.
 
 ### 26.6 Supply chain
@@ -3123,7 +3097,6 @@ Releases include:
 - Software bill of materials
 - Build provenance
 - Signed tags
-- Signed native artifacts where platform support exists
 - Managed browser revision and digest
 - Dependency license report
 
@@ -3193,7 +3166,7 @@ Deliverables:
 - `just` commands
 - `AGENTS.md`
 - `REVIEW.md`
-- `pageknot-model`
+- `offprint-model`
 - Schema generator
 - Error code registry
 - CLI help skeleton
@@ -3314,7 +3287,7 @@ Exit gate:
 - Every controlled reference has an outcome.
 - Resource limits apply before unbounded allocation.
 - Property and fuzz tests pass.
-- Authentication-sensitive resources retain correct variants.
+- Authentication-sensitive resources retain correct formats.
 
 ### Phase 7: transformation
 
@@ -3471,15 +3444,15 @@ Exit gate:
 
 - Every encoder has an independent verifier.
 - Multi-output APIs preserve one capture policy and one resource report.
-- Node.js and Python expose the same artifact variants.
+- Node.js and Python expose the same artifact formats.
 
 ## 28. Source provenance and licensing
 
-The inspected SingleFile source is licensed under AGPL-3.0-or-later. PageKnot
+The inspected SingleFile source is licensed under AGPL-3.0-or-later. Offprint
 has been designed after direct source inspection, so the project does not claim
 a clean-room process.
 
-Initial PageKnot source SHOULD use AGPL-3.0-or-later unless a qualified legal
+Initial Offprint source SHOULD use AGPL-3.0-or-later unless a qualified legal
 review approves another licensing structure. Language bindings and distributed
 packages follow the accepted project license or an approved dual-license plan.
 
@@ -3542,11 +3515,11 @@ The implementation begins with these accepted decisions:
 Each decision record states context, decision, consequences, rejected options,
 and the evidence that could trigger reconsideration.
 
-## 31. PageKnot 1.0 definition of done
+## 31. Offprint 1.0 definition of done
 
-PageKnot 1.0 is complete when:
+Offprint 1.0 is complete when:
 
-- `pageknot capture URL -o FILE` produces a verified HTML artifact.
+- `offprint capture URL -o FILE` produces a verified HTML artifact.
 - The default artifact reopens with zero network requests.
 - Required frame, shadow, form, canvas, media, image, font, and CSS fixtures
   pass.
@@ -3566,11 +3539,11 @@ PageKnot 1.0 is complete when:
 ## Appendix A: canonical Rust workflow
 
 ```rust
-use pageknot::{CaptureRequest, PageKnot};
+use offprint::{CaptureRequest, Offprint};
 
 #[tokio::main]
-async fn main() -> pageknot::Result<()> {
-    let pageknot = PageKnot::builder()
+async fn main() -> offprint::Result<()> {
+    let offprint = Offprint::builder()
         .profile("strict")
         .build()?;
 
@@ -3578,11 +3551,11 @@ async fn main() -> pageknot::Result<()> {
         .output("example.html")
         .build()?;
 
-    let job = pageknot.captures().start(request).await?;
-    let result = job.wait().await?;
+    let job = offprint.captures().start(request).await?;
+    let result = job.result().await?;
 
-    assert!(result.verification.passed);
-    pageknot.close().await?;
+    assert_eq!(result.verification.mode, VerificationMode::Offline);
+    offprint.close().await?;
     Ok(())
 }
 ```

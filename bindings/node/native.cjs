@@ -27,13 +27,13 @@ function targetSuffix() {
     return "linux-x64-gnu";
   }
   throw new Error(
-    `PageKnot has no native package for ${platform}-${arch}`,
+    `Offprint has no native package for ${platform}-${arch}`,
   );
 }
 
 function loadNative() {
   const suffix = targetSuffix();
-  const filename = `pageknot-native.${suffix}.node`;
+  const filename = `offprint-native.${suffix}.node`;
   const local = path.join(__dirname, filename);
   const failures = [];
 
@@ -43,7 +43,7 @@ function loadNative() {
     failures.push(`${filename}: ${error.message}`);
   }
 
-  const packageName = `@pageknot/node-${suffix}`;
+  const packageName = `@offprint/node-${suffix}`;
   try {
     return require(packageName);
   } catch (error) {
@@ -52,7 +52,7 @@ function loadNative() {
 
   const details = failures.map((failure) => `  ${failure}`).join("\n");
   throw new Error(
-    `Failed to load the PageKnot native addon for ${suffix}.\n${details}`,
+    `Failed to load the Offprint native addon for ${suffix}.\n${details}`,
   );
 }
 

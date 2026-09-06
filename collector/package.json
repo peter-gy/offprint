@@ -1,5 +1,5 @@
 {
-  "name": "@pageknot/collector",
+  "name": "@offprint/collector",
   "version": "0.1.0",
   "private": true,
   "type": "module",

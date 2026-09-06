@@ -67,17 +67,17 @@ describe("collector source", () => {
   test("dispatches the shared versioned wire contract", async () => {
     const fixture = (await Bun.file(
       new URL(
-        "../../crates/pageknot-protocol/fixtures/collector-responses.json",
+        "../../crates/offprint-protocol/fixtures/collector-responses.json",
         import.meta.url,
       ),
     ).json()) as Record<string, unknown>;
-    const handshake = globalThis.__pageknotCollector.call("handshake", [
+    const handshake = globalThis.__offprintCollector.call("handshake", [
       "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
       "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       ["form-state", "frame-owner-mapping"],
       65536,
     ]) as Record<string, unknown>;
-    const released = globalThis.__pageknotCollector.call("release", [
+    const released = globalThis.__offprintCollector.call("release", [
       "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
       7,
     ]);
@@ -108,7 +108,7 @@ describe("collector source", () => {
   });
 
   test("returns a structured error for an invalid payload limit", async () => {
-    const response = await globalThis.__pageknotCollector.prepare({
+    const response = await globalThis.__offprintCollector.prepare({
       type: "prepare",
       captureScope: "page",
       captureId: "capture-budget",
@@ -130,7 +130,7 @@ describe("collector source", () => {
       type: "error",
       payload: {
         captureId: "capture-budget",
-        code: "pageknot.collector.payload_limit",
+        code: "offprint.collector.payload_limit",
         message: "collector payload exceeds the configured observation limit",
         details: {
           limit: 0,
@@ -220,7 +220,7 @@ describe("collector source", () => {
       throw new Error("expected the frame reservation to fail");
     } catch (error) {
       expect(frameBudget.limitResponse(error)?.payload).toMatchObject({
-        code: "pageknot.frame.limit",
+        code: "offprint.frame.limit",
         details: { attempted: 2, limit: 1 },
       });
     }
@@ -237,7 +237,7 @@ describe("collector source", () => {
       throw new Error("expected the depth reservation to fail");
     } catch (error) {
       expect(depthBudget.limitResponse(error)?.payload).toMatchObject({
-        code: "pageknot.frame.depth",
+        code: "offprint.frame.depth",
         details: { attempted: 1, limit: 0 },
       });
     }
@@ -254,7 +254,7 @@ describe("collector source", () => {
       throw new Error("expected the payload reservation to fail");
     } catch (error) {
       expect(payloadBudget.limitResponse(error)?.payload).toMatchObject({
-        code: "pageknot.collector.payload_limit",
+        code: "offprint.collector.payload_limit",
         details: { attempted: 5, limit: 4 },
       });
     }
@@ -305,7 +305,7 @@ describe("collector source", () => {
       throw new Error("expected attribute preflight to exceed the payload");
     } catch (error) {
       expect(budget.limitResponse(error)?.payload.code).toBe(
-        "pageknot.collector.payload_limit",
+        "offprint.collector.payload_limit",
       );
     }
     expect(attributeValuesRead).toBe(1);
@@ -337,7 +337,7 @@ describe("collector source", () => {
       throw new Error("expected the held allocation to enforce the payload");
     } catch (error) {
       expect(budget.limitResponse(error)?.payload).toMatchObject({
-        code: "pageknot.collector.payload_limit",
+        code: "offprint.collector.payload_limit",
         details: { limit: 32 },
       });
     }
@@ -509,7 +509,7 @@ describe("collector source", () => {
       throw new Error("expected CSS rule serialization to exceed the payload");
     } catch (error) {
       expect(budget.limitResponse(error)?.payload).toMatchObject({
-        code: "pageknot.collector.payload_limit",
+        code: "offprint.collector.payload_limit",
         details: { attempted: 5, limit: 4 },
       });
     }
@@ -571,7 +571,7 @@ describe("collector source", () => {
       throw new Error("expected replacement CSS to exceed the document");
     } catch (error) {
       expect(budget.limitResponse(error)?.payload).toMatchObject({
-        code: "pageknot.collector.payload_limit",
+        code: "offprint.collector.payload_limit",
         details: { attempted: 9, limit: 8 },
       });
     }

@@ -1,9 +1,9 @@
-import { PageKnot } from "@pageknot/node";
+import { Offprint } from "@offprint/node";
 
-const pageknot = new PageKnot();
+const offprint = new Offprint();
 
 try {
-  const result = await pageknot.capture("https://example.com", {
+  const result = await offprint.capture("https://example.com", {
     output: "example.html",
   });
   if (result.artifact.kind !== "file") {
@@ -11,5 +11,5 @@ try {
   }
   console.log(result.artifact.path);
 } finally {
-  await pageknot.close();
+  await offprint.close();
 }

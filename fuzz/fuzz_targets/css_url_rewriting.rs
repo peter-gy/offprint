@@ -3,7 +3,7 @@
 use std::collections::BTreeMap;
 
 use libfuzzer_sys::fuzz_target;
-use pageknot_document::discover_css_resources;
+use offprint_document::discover_css_resources;
 use url::Url;
 
 fuzz_target!(|data: &[u8]| {

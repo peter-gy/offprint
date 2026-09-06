@@ -22,7 +22,7 @@ def test_owned_browser_processes_include_the_profile_tree(
             parent_pid=1,
             name="chrome.exe",
             command_line=(
-                f"chrome --user-data-dir={tmp_path}/pageknot-browser-fixture"
+                f"chrome --user-data-dir={tmp_path}/offprint-browser-fixture"
             ),
         ),
         ProcessRecord(

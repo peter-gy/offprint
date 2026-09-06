@@ -1,18 +1,8 @@
 {
-  "artifact": {
-    "kind": "html",
-    "options": {
-      "conflict": "replace",
-      "target": {
-        "kind": "file",
-        "value": "example.html"
-      }
-    }
-  },
   "browser": {
     "kind": "auto"
   },
-  "capture": {
+  "content": {
     "allowedFileRoots": [],
     "missingResources": "warn",
     "optimizations": {
@@ -57,6 +47,11 @@
   "network": {
     "kind": "standard"
   },
+  "output": {
+    "conflict": "fail",
+    "kind": "file",
+    "path": "example.html"
+  },
   "readiness": {
     "delay": 0,
     "lazyLoad": {
@@ -71,6 +66,7 @@
     "mutationQuiet": 300,
     "networkQuiet": 500
   },
+  "schemaVersion": 2,
   "url": "https://example.com/",
   "verification": "offline"
 }

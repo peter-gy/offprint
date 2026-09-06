@@ -3,17 +3,17 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@pageknot/node",
+      "name": "@offprint/node",
       "devDependencies": {
         "@napi-rs/cli": "3.8.6",
         "@types/node": "24.10.3",
         "typescript": "5.9.3",
       },
       "optionalDependencies": {
-        "@pageknot/node-darwin-arm64": "0.1.0",
-        "@pageknot/node-darwin-x64": "0.1.0",
-        "@pageknot/node-linux-x64-gnu": "0.1.0",
-        "@pageknot/node-win32-x64-msvc": "0.1.0",
+        "@offprint/node-darwin-arm64": "0.1.0",
+        "@offprint/node-darwin-x64": "0.1.0",
+        "@offprint/node-linux-x64-gnu": "0.1.0",
+        "@offprint/node-win32-x64-msvc": "0.1.0",
       },
     },
   },

@@ -2,29 +2,29 @@
 
 const native = require("./native.cjs");
 
-const ERROR_MARKER = "__PAGEKNOT_ERROR__";
+const ERROR_MARKER = "__OFFPRINT_ERROR__";
 
-class PageKnotError extends Error {
+class OffprintError extends Error {
   constructor(record) {
     super(record.message);
-    this.name = "PageKnotError";
+    this.name = "OffprintError";
     this.code = record.code;
     this.stage = record.stage;
     this.retryable = Boolean(record.retryable);
     this.details = record.details ?? {};
     this.diagnosticsPath = record.diagnosticsPath;
     this.source = record.source
-      ? PageKnotError.fromRecord(record.source)
+      ? OffprintError.fromRecord(record.source)
       : undefined;
   }
 
   static fromRecord(record) {
-    return new PageKnotError(record);
+    return new OffprintError(record);
   }
 }
 
 function translateError(error) {
-  if (error instanceof PageKnotError) {
+  if (error instanceof OffprintError) {
     return error;
   }
   const message =
@@ -34,7 +34,7 @@ function translateError(error) {
   const marker = message.indexOf(ERROR_MARKER);
   if (marker >= 0) {
     try {
-      return PageKnotError.fromRecord(
+      return OffprintError.fromRecord(
         JSON.parse(message.slice(marker + ERROR_MARKER.length)),
       );
     } catch {
@@ -56,9 +56,9 @@ let nextServiceToken = 0;
 const liveNativeServices = new Map();
 
 function closeLiveNativeServices() {
-  for (const [serviceToken, nativePageKnot] of liveNativeServices) {
+  for (const [serviceToken, nativeOffprint] of liveNativeServices) {
     try {
-      nativePageKnot.closeBlocking();
+      nativeOffprint.closeBlocking();
     } catch {
     } finally {
       liveNativeServices.delete(serviceToken);
@@ -69,8 +69,8 @@ function closeLiveNativeServices() {
 process.once("exit", closeLiveNativeServices);
 
 const finalizer = new FinalizationRegistry(
-  ({ nativePageKnot, serviceToken }) => {
-    Promise.resolve(nativePageKnot.close())
+  ({ nativeOffprint, serviceToken }) => {
+    Promise.resolve(nativeOffprint.close())
       .catch(() => {})
       .finally(() => liveNativeServices.delete(serviceToken));
   },
@@ -131,8 +131,8 @@ class CaptureService {
   #native;
   #owner;
 
-  constructor(nativePageKnot, owner) {
-    this.#native = nativePageKnot;
+  constructor(nativeOffprint, owner) {
+    this.#native = nativeOffprint;
     this.#owner = owner;
   }
 
@@ -154,8 +154,8 @@ class ArtifactService {
   #native;
   #owner;
 
-  constructor(nativePageKnot, owner) {
-    this.#native = nativePageKnot;
+  constructor(nativeOffprint, owner) {
+    this.#native = nativeOffprint;
     this.#owner = owner;
   }
 
@@ -171,8 +171,8 @@ class ArtifactService {
     return invoke(() => this.#native.exportArtifacts(path, request));
   }
 
-  verifyVariant(path, kind) {
-    return invoke(() => this.#native.verifyVariant(path, kind));
+  verifyFormat(path, format) {
+    return invoke(() => this.#native.verifyFormat(path, format));
   }
 }
 
@@ -180,26 +180,46 @@ class BrowserService {
   #native;
   #owner;
 
-  constructor(nativePageKnot, owner) {
-    this.#native = nativePageKnot;
+  constructor(nativeOffprint, owner) {
+    this.#native = nativeOffprint;
     this.#owner = owner;
   }
 
   ensure() {
     return invoke(() => this.#native.ensureBrowser());
   }
+
+  list() {
+    return invoke(() => this.#native.listBrowsers());
+  }
+
+  install(revision) {
+    return invoke(() => this.#native.installBrowser(revision));
+  }
+
+  remove(revision, options = {}) {
+    return invoke(() => this.#native.removeBrowser(revision, options.force ?? false));
+  }
+
+  doctor() {
+    return invoke(() => this.#native.doctor());
+  }
+
+  closeIdle() {
+    return invoke(() => this.#native.closeIdleBrowser());
+  }
 }
 
-class PageKnot {
+class Offprint {
   #native;
   #closed = false;
   #serviceToken;
 
   constructor(options) {
     try {
-      this.#native = native.NativePageKnot.create(options);
+      this.#native = native.NativeOffprint.create(options);
       if (this.#native.initializationError) {
-        throw PageKnotError.fromRecord(
+        throw OffprintError.fromRecord(
           this.#native.initializationError,
         );
       }
@@ -224,7 +244,7 @@ class PageKnot {
     finalizer.register(
       this,
       {
-        nativePageKnot: this.#native,
+        nativeOffprint: this.#native,
         serviceToken: this.#serviceToken,
       },
       this,
@@ -244,6 +264,10 @@ class PageKnot {
     finalizer.unregister(this);
     liveNativeServices.delete(this.#serviceToken);
   }
+
+  async [Symbol.asyncDispose]() {
+    await this.close();
+  }
 }
 
 module.exports = {
@@ -251,6 +275,6 @@ module.exports = {
   BrowserService,
   CaptureJob,
   CaptureService,
-  PageKnot,
-  PageKnotError,
+  Offprint,
+  OffprintError,
 };

@@ -1,33 +1,35 @@
 import type {
-  ArtifactExportRequest,
-  ArtifactExportResult,
+  ExportRequest,
+  ExportResult,
   ArtifactManifest,
-  ArtifactVariantKind,
-  ArtifactVariantVerification,
+  ArtifactFormat,
+  FormatVerification,
   BatchRequest,
   BatchResult,
   BrowserInfo,
+  BrowserDoctorReport,
+  BrowserOperationResult,
   CaptureEvent,
   CaptureRequest,
-  CaptureResult,
+  CaptureReceipt,
   CaptureScope,
   ConflictPolicy,
   CrawlRequest,
   CrawlResult,
   ErrorStage,
-  PageKnotErrorRecord,
-  VerificationPolicy,
-  VerificationResult,
+  OffprintErrorRecord,
+  VerificationMode,
+  VerificationReport,
   Viewport,
 } from "./contracts.generated.js";
 
 export type {
-  ArtifactExportRequest,
-  ArtifactExportResult,
+  ExportRequest,
+  ExportResult,
   ArtifactManifest,
-  ArtifactVariant,
-  ArtifactVariantKind,
-  ArtifactVariantVerification,
+  FormatSpec,
+  ArtifactFormat,
+  FormatVerification,
   BatchJob,
   BatchRequest,
   BatchResult,
@@ -36,9 +38,9 @@ export type {
   BrowserOperationResult,
   CaptureEvent,
   CaptureLimits,
-  CapturePolicy,
+  ContentPolicy,
   CaptureRequest,
-  CaptureResult,
+  CaptureReceipt,
   CaptureScope,
   ConflictPolicy,
   CrawlPageOutcome,
@@ -47,26 +49,27 @@ export type {
   ErrorStage,
   ExportedArtifact,
   MarkdownOptions,
-  PageKnotErrorRecord,
+  OffprintErrorRecord,
   PdfOptions,
   ResumeManifest,
   ResumeOptions,
   ScheduledCaptureOutcome,
-  VerificationPolicy,
-  VerificationResult,
+  VerificationMode,
+  VerificationReport,
   Viewport,
 } from "./contracts.generated.js";
 
 export type BrowserChannel = "auto" | "managed" | "system";
 export type BrowserInstallationPolicy = "explicit" | "install-managed";
 export type ReadinessMode = CaptureRequest["readiness"]["mode"];
+export type NetworkPolicyName = "standard" | "server" | "unrestricted";
 
 export type CaptureStatus =
   | "created"
   | "validating"
   | "waitingForBrowser"
   | "navigating"
-  | "settling"
+  | "waitingForReadiness"
   | "collecting"
   | "resolvingResources"
   | "transforming"
@@ -78,7 +81,7 @@ export type CaptureStatus =
   | "cancelled"
   | "failed";
 
-export interface PageKnotOptions {
+export interface OffprintOptions {
   browserPath?: string;
   cdpUrl?: string;
   cacheDir?: string;
@@ -90,8 +93,7 @@ export interface PageKnotOptions {
 }
 
 export interface CaptureOptions {
-  output?: string;
-  maxBytes?: number;
+  output: string;
   profile?: string;
   timeoutMs?: number;
   waitUntil?: ReadinessMode;
@@ -100,6 +102,8 @@ export interface CaptureOptions {
   strict?: boolean;
   headed?: boolean;
   conflict?: ConflictPolicy;
+  networkPolicy?: NetworkPolicyName;
+  verification?: VerificationMode;
   scope?: CaptureScope;
   selector?: string;
   removeUnusedCss?: boolean;
@@ -108,18 +112,18 @@ export interface CaptureOptions {
 }
 
 export interface VerifyOptions {
-  level?: VerificationPolicy;
+  verification?: VerificationMode;
 }
 
-export declare class PageKnotError extends Error {
+export declare class OffprintError extends Error {
   readonly code: string;
   readonly stage: ErrorStage;
   readonly retryable: boolean;
   readonly details: Record<string, unknown>;
   readonly diagnosticsPath?: string;
-  readonly source?: PageKnotError;
+  readonly source?: OffprintError;
 
-  constructor(record: PageKnotErrorRecord);
+  constructor(record: OffprintErrorRecord);
 }
 
 export declare class CaptureJob {
@@ -129,7 +133,7 @@ export declare class CaptureJob {
   get status(): CaptureStatus;
   events(): AsyncIterableIterator<CaptureEvent>;
   cancel(): void;
-  result(): Promise<CaptureResult>;
+  result(): Promise<CaptureReceipt>;
 }
 
 export declare class CaptureService {
@@ -147,32 +151,38 @@ export declare class ArtifactService {
   verify(
     path: string,
     options?: VerifyOptions,
-  ): Promise<VerificationResult>;
+  ): Promise<VerificationReport>;
   export(
     path: string,
-    request: ArtifactExportRequest,
-  ): Promise<ArtifactExportResult>;
-  verifyVariant(
+    request: ExportRequest,
+  ): Promise<ExportResult>;
+  verifyFormat(
     path: string,
-    kind: ArtifactVariantKind,
-  ): Promise<ArtifactVariantVerification>;
+    format: ArtifactFormat,
+  ): Promise<FormatVerification>;
 }
 
 export declare class BrowserService {
   private constructor();
 
   ensure(): Promise<BrowserInfo>;
+  list(): Promise<BrowserOperationResult>;
+  install(revision?: string): Promise<BrowserOperationResult>;
+  remove(revision: string, options?: { force?: boolean }): Promise<BrowserOperationResult>;
+  doctor(): Promise<BrowserDoctorReport>;
+  closeIdle(): Promise<void>;
 }
 
-export declare class PageKnot {
+export declare class Offprint {
   readonly captures: CaptureService;
   readonly artifacts: ArtifactService;
   readonly browsers: BrowserService;
 
-  constructor(options?: PageKnotOptions);
+  constructor(options?: OffprintOptions);
   capture(
     url: string,
     options?: CaptureOptions,
-  ): Promise<CaptureResult>;
+  ): Promise<CaptureReceipt>;
   close(): Promise<void>;
+  [Symbol.asyncDispose](): Promise<void>;
 }

@@ -1,6 +1,6 @@
 [package]
-name = "pageknot-python"
-description = "Python native binding for PageKnot"
+name = "offprint-python"
+description = "Python native binding for Offprint"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -18,7 +18,7 @@ extension-module = ["pyo3/extension-module", "pyo3/abi3-py310"]
 
 [dependencies]
 futures-util.workspace = true
-pageknot.workspace = true
+offprint.workspace = true
 pyo3.workspace = true
 pyo3-async-runtimes.workspace = true
 serde.workspace = true

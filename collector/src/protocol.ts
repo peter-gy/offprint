@@ -53,7 +53,7 @@ export function payloadLimitError(
     type: "error",
     payload: {
       captureId,
-      code: "pageknot.collector.payload_limit",
+      code: "offprint.collector.payload_limit",
       message: "collector payload exceeds the configured observation limit",
       details: {
         ...(attempted === undefined ? {} : { attempted }),
@@ -72,7 +72,7 @@ export function nodeLimitError(
     type: "error",
     payload: {
       captureId,
-      code: "pageknot.frame.nodes",
+      code: "offprint.frame.nodes",
       message: "captured frame exceeds the configured DOM node limit",
       details: { attempted, limit },
     },
@@ -88,7 +88,7 @@ export function frameLimitError(
     type: "error",
     payload: {
       captureId,
-      code: "pageknot.frame.limit",
+      code: "offprint.frame.limit",
       message: "captured frame graph exceeds the configured frame limit",
       details: { attempted, limit },
     },
@@ -104,7 +104,7 @@ export function frameDepthError(
     type: "error",
     payload: {
       captureId,
-      code: "pageknot.frame.depth",
+      code: "offprint.frame.depth",
       message: "captured frame graph exceeds the configured depth",
       details: { attempted, limit },
     },
@@ -118,7 +118,7 @@ export function selectorInvalidError(
     type: "error",
     payload: {
       captureId,
-      code: "pageknot.selector.invalid",
+      code: "offprint.selector.invalid",
       message: "DOM selector is not valid CSS selector syntax",
     },
   };
@@ -131,7 +131,7 @@ export function selectorNotFoundError(
     type: "error",
     payload: {
       captureId,
-      code: "pageknot.selector.not_found",
+      code: "offprint.selector.not_found",
       message: "top-level document has no element matching the DOM selector",
     },
   };

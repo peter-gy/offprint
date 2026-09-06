@@ -1,11 +1,11 @@
 import asyncio
 
-from pageknot import PageKnot
+from offprint import Offprint
 
 
 async def main() -> None:
-    async with PageKnot() as pageknot:
-        result = await pageknot.capture(
+    async with Offprint() as offprint:
+        result = await offprint.capture(
             "https://example.com",
             output="example.html",
         )

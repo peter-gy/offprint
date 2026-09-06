@@ -4,10 +4,10 @@
     "browser-doctor-report.json",
     "browser-operation-result.json",
     "capture-event.json",
+    "capture-receipt.json",
     "capture-request.json",
-    "capture-result.json",
     "error.json",
-    "verification-result.json"
+    "verification-report.json"
   ],
-  "schemaVersion": 1
+  "schemaVersion": 2
 }

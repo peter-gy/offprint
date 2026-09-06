@@ -349,7 +349,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pageknot"
+name = "offprint"
 version = "0.1.0"
 source = { editable = "." }
 

@@ -1,0 +1,20 @@
+[package]
+name = "offprint-transform"
+description = "Shared safe-static Offprint document transformation"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[dependencies]
+offprint-document.workspace = true
+offprint-html.workspace = true
+offprint-model.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

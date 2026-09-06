@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExportRequest",
+  "type": "object",
+  "properties": {
+    "baseName": {
+      "type": "string"
+    },
+    "conflict": {
+      "$ref": "#/$defs/ConflictPolicy"
+    },
+    "formats": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FormatSpec"
+      }
+    },
+    "outputDirectory": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "outputDirectory",
+    "baseName",
+    "formats",
+    "conflict"
+  ],
+  "$defs": {
+    "ConflictPolicy": {
+      "type": "string",
+      "enum": [
+        "fail",
+        "replace",
+        "uniquify"
+      ]
+    },
+    "FormatSpec": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "pdf"
+            },
+            "options": {
+              "$ref": "#/$defs/PdfOptions"
+            }
+          },
+          "required": [
+            "format",
+            "options"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "markdown"
+            },
+            "options": {
+              "$ref": "#/$defs/MarkdownOptions"
+            }
+          },
+          "required": [
+            "format",
+            "options"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "zip"
+            }
+          },
+          "required": [
+            "format"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "self-extracting-html"
+            }
+          },
+          "required": [
+            "format"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "mhtml"
+            }
+          },
+          "required": [
+            "format"
+          ]
+        }
+      ]
+    },
+    "MarkdownOptions": {
+      "type": "object",
+      "properties": {
+        "frontMatter": {
+          "type": "boolean",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "PdfOptions": {
+      "type": "object",
+      "properties": {
+        "landscape": {
+          "type": "boolean",
+          "default": false
+        },
+        "preferCssPageSize": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

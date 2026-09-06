@@ -19,7 +19,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 
 #[derive(Debug, Parser)]
-#[command(name = "xtask", about = "PageKnot repository tasks")]
+#[command(name = "xtask", about = "Offprint repository tasks")]
 struct Arguments {
     #[command(subcommand)]
     command: Command,
@@ -118,13 +118,13 @@ async fn run(arguments: Arguments) -> Result<(), String> {
 }
 
 fn test_fixture(id: &str) -> Result<(), String> {
-    let fixture = pageknot_test_support::fixture_definition(id)
+    let fixture = offprint_test_support::fixture_definition(id)
         .ok_or_else(|| format!("unknown fixture ID `{id}`"))?;
     run_fixture(&fixture.runner)
 }
 
 fn test_fixture_group(group: &str) -> Result<(), String> {
-    let manifest = pageknot_test_support::fixture_manifest();
+    let manifest = offprint_test_support::fixture_manifest();
     let mut runners = manifest
         .fixtures
         .iter()
@@ -152,12 +152,12 @@ fn test_fixture_group(group: &str) -> Result<(), String> {
     Ok(())
 }
 
-fn run_fixture(runner: &pageknot_test_support::FixtureRunner) -> Result<(), String> {
+fn run_fixture(runner: &offprint_test_support::FixtureRunner) -> Result<(), String> {
     validate_fixture_runner(runner)?;
     execute_fixture_runner(runner)
 }
 
-fn validate_fixture_runner(runner: &pageknot_test_support::FixtureRunner) -> Result<(), String> {
+fn validate_fixture_runner(runner: &offprint_test_support::FixtureRunner) -> Result<(), String> {
     let listing = fixture_command(runner)
         .arg("--list")
         .output()
@@ -173,7 +173,7 @@ fn validate_fixture_runner(runner: &pageknot_test_support::FixtureRunner) -> Res
     validate_fixture_listing(&listing, &runner.filter)
 }
 
-fn execute_fixture_runner(runner: &pageknot_test_support::FixtureRunner) -> Result<(), String> {
+fn execute_fixture_runner(runner: &offprint_test_support::FixtureRunner) -> Result<(), String> {
     let status = fixture_command(runner)
         .status()
         .map_err(|error| format!("failed to start fixture test: {error}"))?;
@@ -187,7 +187,7 @@ fn execute_fixture_runner(runner: &pageknot_test_support::FixtureRunner) -> Resu
     }
 }
 
-fn fixture_command(runner: &pageknot_test_support::FixtureRunner) -> ProcessCommand {
+fn fixture_command(runner: &offprint_test_support::FixtureRunner) -> ProcessCommand {
     let mut command = ProcessCommand::new("cargo");
     command
         .current_dir(workspace_root())
@@ -258,7 +258,7 @@ fn generate_contracts(check: bool) -> Result<(), String> {
         let path = schemas.join("examples").join(name);
         update_file(&path, &content, check, &mut changed)?;
     }
-    let fixture_manifest = pageknot_test_support::fixture_manifest();
+    let fixture_manifest = offprint_test_support::fixture_manifest();
     update_file(
         &root.join("fixtures/manifest/fixtures.json"),
         &pretty_json(&fixture_manifest)?,
@@ -267,7 +267,7 @@ fn generate_contracts(check: bool) -> Result<(), String> {
     )?;
     update_file(
         &root.join("fixtures/manifest/fixtures.schema.json"),
-        &pretty_json(&schema_for!(pageknot_test_support::FixtureManifest))?,
+        &pretty_json(&schema_for!(offprint_test_support::FixtureManifest))?,
         check,
         &mut changed,
     )?;
@@ -286,7 +286,7 @@ fn generate_contracts(check: bool) -> Result<(), String> {
 
 fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
     let mut documents = BTreeMap::new();
-    let request = pageknot_model::CaptureRequest::builder("https://example.com/")
+    let request = offprint_model::CaptureRequest::builder("https://example.com/")
         .map_err(|error| error.to_string())?
         .output("example.html")
         .build()
@@ -295,7 +295,7 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
         &mut documents,
         "capture-request.json",
         serde_json::to_value(request).map_err(|error| error.to_string())?,
-        canonical::<pageknot_model::CaptureRequest>,
+        canonical::<offprint_model::CaptureRequest>,
     )?;
 
     let capture_id = "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV";
@@ -304,7 +304,7 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
         "product": "chrome",
         "version": "151.0.7922.47",
         "source": "managed",
-        "executablePath": "/opt/pageknot/chrome",
+        "executablePath": "/opt/offprint/chrome",
         "revision": "1654411",
         "protocolVersion": "1.3"
     });
@@ -325,16 +325,11 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
         "embeddedBytes": 0
     });
     let verification = json!({
-        "schemaVersion": 1,
-        "level": "offline",
-        "passed": true,
+        "schemaVersion": offprint_model::PUBLIC_SCHEMA_VERSION,
+        "mode": "offline",
         "artifactSha256": digest,
         "bytes": 1234,
-        "networkRequests": 0,
-        "attemptedUrls": [],
-        "pageErrors": [],
-        "frameFailures": [],
-        "stable": true
+        "networkRequests": 0
     });
     let source = json!({
         "requestedUrl": "https://example.com/",
@@ -353,21 +348,20 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
             "discovered": 3,
             "bytes": 1024
         }),
-        canonical::<pageknot_model::CaptureEvent>,
+        canonical::<offprint_model::CaptureEvent>,
     )?;
     insert_example(
         &mut documents,
-        "verification-result.json",
+        "verification-report.json",
         verification.clone(),
-        canonical::<pageknot_model::VerificationResult>,
+        canonical::<offprint_model::VerificationReport>,
     )?;
     insert_example(
         &mut documents,
-        "capture-result.json",
+        "capture-receipt.json",
         json!({
-            "schemaVersion": 1,
+            "schemaVersion": offprint_model::PUBLIC_SCHEMA_VERSION,
             "captureId": capture_id,
-            "status": "succeeded",
             "source": source,
             "artifact": {
                 "kind": "file",
@@ -383,7 +377,7 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
                 "validation": 1,
                 "browser": 100,
                 "navigation": 200,
-                "settle": 200,
+                "readiness": 200,
                 "collection": 200,
                 "resources": 100,
                 "transform": 50,
@@ -392,66 +386,62 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
                 "commit": 0
             }
         }),
-        canonical::<pageknot_model::CaptureResult>,
+        canonical::<offprint_model::CaptureReceipt>,
     )?;
     insert_example(
         &mut documents,
         "error.json",
         json!({
-            "code": "pageknot.browser.unavailable",
+            "code": "offprint.browser.unavailable",
             "message": "no compatible browser is available",
             "stage": "browser",
             "retryable": false,
-            "details": {"recoveryCommand": "pageknot browser install"}
+            "details": {"recoveryCommand": "offprint browser install"}
         }),
-        canonical::<pageknot_model::PageKnotError>,
+        canonical::<offprint_model::OffprintError>,
     )?;
     insert_example(
         &mut documents,
         "artifact-manifest.json",
         json!({
-            "schemaVersion": 1,
-            "format": {"kind": "html", "version": 1},
-            "generator": {"name": "PageKnot", "version": "0.1.0"},
+            "schemaVersion": offprint_model::PUBLIC_SCHEMA_VERSION,
+            "formatVersion": offprint_model::ARTIFACT_FORMAT_VERSION,
+            "generator": {"name": "Offprint", "version": "0.1.0"},
             "source": source,
             "capturedAt": "2026-07-27T12:00:00Z",
             "browser": browser,
             "environment": environment,
             "viewState": {"scrollX": "0", "scrollY": "0"},
-            "policySha256": digest,
+            "capturePolicySha256": digest,
             "frames": 1,
             "resources": resources,
             "resourceRecords": [],
             "warningCodes": [],
             "structuralRepair": {"applied": false},
-            "verification": {
-                "level": "offline",
-                "passed": true,
-                "networkRequests": 0
-            }
+            "verificationMode": "offline"
         }),
-        canonical::<pageknot_model::ArtifactManifest>,
+        canonical::<offprint_model::ArtifactManifest>,
     )?;
     insert_example(
         &mut documents,
         "browser-doctor-report.json",
         json!({
-            "schemaVersion": 1,
+            "schemaVersion": offprint_model::PUBLIC_SCHEMA_VERSION,
             "ready": true,
             "selected": browser,
             "candidates": [],
             "managedCache": {
-                "cacheDir": "/var/cache/pageknot",
+                "cacheDir": "/var/cache/offprint",
                 "installedRevisions": ["1654411"],
                 "selectedRevision": "1654411",
                 "catalogVersion": "2026-07-27"
             },
             "collector": {
                 "compatible": true,
-                "hostVersion": pageknot_protocol::COLLECTOR_PROTOCOL_VERSION_STRING,
-                "peerVersion": pageknot_protocol::COLLECTOR_PROTOCOL_VERSION_STRING,
-                "capabilities": pageknot_protocol::CollectorCapability::ALL
-                    .map(pageknot_protocol::CollectorCapability::as_str),
+                "hostVersion": offprint_protocol::COLLECTOR_PROTOCOL_VERSION_STRING,
+                "peerVersion": offprint_protocol::COLLECTOR_PROTOCOL_VERSION_STRING,
+                "capabilities": offprint_protocol::CollectorCapability::ALL
+                    .map(offprint_protocol::CollectorCapability::as_str),
                 "missingCapabilities": []
             },
             "output": {
@@ -469,27 +459,27 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
             },
             "recovery": []
         }),
-        canonical::<pageknot_model::BrowserDoctorReport>,
+        canonical::<offprint_model::BrowserDoctorReport>,
     )?;
     insert_example(
         &mut documents,
         "browser-operation-result.json",
         json!({
-            "schemaVersion": 1,
+            "schemaVersion": offprint_model::PUBLIC_SCHEMA_VERSION,
             "action": "install",
             "browser": browser,
             "revision": "1654411",
-            "cacheDir": "/var/cache/pageknot",
+            "cacheDir": "/var/cache/offprint",
             "candidates": []
         }),
-        canonical::<pageknot_model::BrowserOperationResult>,
+        canonical::<offprint_model::BrowserOperationResult>,
     )?;
 
     let files = documents.keys().copied().collect::<Vec<_>>();
     documents.insert(
         "index.json",
         pretty_json(&json!({
-            "schemaVersion": pageknot_model::PUBLIC_SCHEMA_VERSION,
+            "schemaVersion": offprint_model::PUBLIC_SCHEMA_VERSION,
             "files": files
         }))?,
     );
@@ -516,51 +506,49 @@ fn insert_example(
 
 fn schema_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
     let mut documents = BTreeMap::new();
-    insert_schema::<pageknot_model::CaptureRequest>(&mut documents, "capture-request.schema.json")?;
-    insert_schema::<pageknot_model::CapturePolicy>(&mut documents, "capture-policy.schema.json")?;
-    insert_schema::<pageknot_model::CaptureEvent>(&mut documents, "capture-event.schema.json")?;
-    insert_schema::<pageknot_model::CaptureResult>(&mut documents, "capture-result.schema.json")?;
-    insert_schema::<pageknot_model::BatchRequest>(&mut documents, "batch-request.schema.json")?;
-    insert_schema::<pageknot_model::BatchResult>(&mut documents, "batch-result.schema.json")?;
-    insert_schema::<pageknot_model::CrawlRequest>(&mut documents, "crawl-request.schema.json")?;
-    insert_schema::<pageknot_model::CrawlResult>(&mut documents, "crawl-result.schema.json")?;
-    insert_schema::<pageknot_model::ResumeManifest>(&mut documents, "resume-manifest.schema.json")?;
-    insert_schema::<pageknot_model::PageKnotError>(&mut documents, "error.schema.json")?;
-    insert_schema::<pageknot_model::ArtifactManifest>(
+    insert_schema::<offprint_model::CaptureRequest>(&mut documents, "capture-request.schema.json")?;
+    insert_schema::<offprint_model::ContentPolicy>(&mut documents, "content-policy.schema.json")?;
+    insert_schema::<offprint_model::CaptureEvent>(&mut documents, "capture-event.schema.json")?;
+    insert_schema::<offprint_model::CaptureReceipt>(&mut documents, "capture-receipt.schema.json")?;
+    insert_schema::<offprint_model::BatchRequest>(&mut documents, "batch-request.schema.json")?;
+    insert_schema::<offprint_model::BatchResult>(&mut documents, "batch-result.schema.json")?;
+    insert_schema::<offprint_model::CrawlRequest>(&mut documents, "crawl-request.schema.json")?;
+    insert_schema::<offprint_model::CrawlResult>(&mut documents, "crawl-result.schema.json")?;
+    insert_schema::<offprint_model::ResumeManifest>(&mut documents, "resume-manifest.schema.json")?;
+    insert_schema::<offprint_model::OffprintError>(&mut documents, "error.schema.json")?;
+    insert_schema::<offprint_model::ArtifactManifest>(
         &mut documents,
         "artifact-manifest.schema.json",
     )?;
-    insert_schema::<pageknot_model::VerificationResult>(
+    insert_schema::<offprint_model::ArtifactVerification>(
         &mut documents,
-        "verification-result.schema.json",
+        "artifact-verification.schema.json",
     )?;
-    insert_schema::<pageknot_model::ArtifactExportRequest>(
+    insert_schema::<offprint_model::VerificationReport>(
         &mut documents,
-        "artifact-export-request.schema.json",
+        "verification-report.schema.json",
     )?;
-    insert_schema::<pageknot_model::ArtifactExportResult>(
+    insert_schema::<offprint_model::ExportRequest>(&mut documents, "export-request.schema.json")?;
+    insert_schema::<offprint_model::ExportResult>(&mut documents, "export-result.schema.json")?;
+    insert_schema::<offprint_model::FormatVerification>(
         &mut documents,
-        "artifact-export-result.schema.json",
+        "format-verification.schema.json",
     )?;
-    insert_schema::<pageknot_model::ArtifactVariantVerification>(
-        &mut documents,
-        "artifact-variant-verification.schema.json",
-    )?;
-    insert_schema::<pageknot_model::BrowserDoctorReport>(
+    insert_schema::<offprint_model::BrowserDoctorReport>(
         &mut documents,
         "browser-doctor-report.schema.json",
     )?;
-    insert_schema::<pageknot_model::BrowserOperationResult>(
+    insert_schema::<offprint_model::BrowserOperationResult>(
         &mut documents,
         "browser-operation-result.schema.json",
     )?;
-    insert_schema::<pageknot_protocol::CollectorMessage>(
+    insert_schema::<offprint_protocol::CollectorMessage>(
         &mut documents,
         "collector-message.schema.json",
     )?;
-    insert_schema::<pageknot_protocol::PageObservation>(
+    insert_schema::<offprint_browser::FrameObservation>(
         &mut documents,
-        "page-observation.schema.json",
+        "frame-observation.schema.json",
     )?;
     documents.insert("error-codes.json", error_code_registry()?);
     documents.insert(
@@ -584,13 +572,13 @@ fn insert_schema<T: JsonSchema>(
 #[serde(rename_all = "camelCase")]
 struct ErrorCodeRecord {
     code: &'static str,
-    stage: pageknot_model::ErrorStage,
+    stage: offprint_model::ErrorStage,
     retryable: bool,
     description: &'static str,
 }
 
 fn error_code_registry() -> Result<Vec<u8>, String> {
-    let records = pageknot_model::ERROR_CODE_REGISTRY
+    let records = offprint_model::ERROR_CODE_REGISTRY
         .iter()
         .map(|definition| ErrorCodeRecord {
             code: definition.code,
@@ -607,15 +595,15 @@ fn error_code_registry() -> Result<Vec<u8>, String> {
 struct SchemaIndex<'a> {
     schema_version: u32,
     artifact_format_version: u32,
-    collector_protocol: pageknot_protocol::ProtocolVersion,
+    collector_protocol: offprint_protocol::ProtocolVersion,
     files: Vec<&'a str>,
 }
 
 fn schema_index(documents: &BTreeMap<&'static str, Vec<u8>>) -> Result<Vec<u8>, String> {
     let index = SchemaIndex {
-        schema_version: pageknot_model::PUBLIC_SCHEMA_VERSION,
-        artifact_format_version: pageknot_model::ARTIFACT_FORMAT_VERSION,
-        collector_protocol: pageknot_protocol::COLLECTOR_PROTOCOL_VERSION,
+        schema_version: offprint_model::PUBLIC_SCHEMA_VERSION,
+        artifact_format_version: offprint_model::ARTIFACT_FORMAT_VERSION,
+        collector_protocol: offprint_protocol::COLLECTOR_PROTOCOL_VERSION,
         files: documents.keys().copied().collect(),
     };
     pretty_json(&index)

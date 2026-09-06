@@ -87,7 +87,6 @@
       "enum": [
         "selected",
         "compatible",
-        "incompatible",
         "shadowed"
       ]
     },

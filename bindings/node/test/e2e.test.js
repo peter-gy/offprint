@@ -9,7 +9,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { PageKnot, PageKnotError } from "../index.js";
+import { Offprint, OffprintError } from "../index.js";
 
 const requestFixture = new URL(
   "../../../schemas/examples/capture-request.json",
@@ -21,7 +21,7 @@ let server;
 let sourceUrl;
 
 beforeAll(async () => {
-  directory = await mkdtemp(join(tmpdir(), "pageknot-node-"));
+  directory = await mkdtemp(join(tmpdir(), "offprint-node-"));
   server = Bun.serve({
     hostname: "127.0.0.1",
     port: 0,
@@ -56,7 +56,7 @@ afterAll(async () => {
 async function request(output) {
   const value = JSON.parse(await readFile(requestFixture, "utf8"));
   value.url = sourceUrl;
-  value.artifact.options.target.value = output;
+  value.output = { kind: "file", path: output, conflict: "replace" };
   return value;
 }
 
@@ -74,20 +74,19 @@ test(
   async () => {
     const output = join(directory, "node-binding.html");
     const cancelledOutput = join(directory, "node-cancelled.html");
-    const pageknot = new PageKnot();
+    const offprint = new Offprint();
 
     try {
       await writeFile(output, "stale artifact");
-      const result = await pageknot.capture(sourceUrl, {
+      const result = await offprint.capture(sourceUrl, {
         output,
         selector: "#capture",
+        conflict: "replace",
       });
 
-      expect(result.schemaVersion).toBe(1);
-      expect(result.status).toBe("succeeded");
+      expect(result.schemaVersion).toBe(2);
       expect(result.artifact.kind).toBe("file");
       expect(result.artifact.path).toBe(output);
-      expect(result.verification.passed).toBe(true);
       expect(result.verification.networkRequests).toBe(0);
       const content = await readFile(output, "utf8");
       expect(content).toContain("binding rendered");
@@ -95,44 +94,44 @@ test(
       expect(content).not.toContain("outside selector");
       expect(content).not.toContain("stale artifact");
 
-      const manifest = await pageknot.artifacts.inspect(output);
-      expect(manifest.schemaVersion).toBe(1);
+      const manifest = await offprint.artifacts.inspect(output);
+      expect(manifest.schemaVersion).toBe(2);
       expect(manifest.source.finalUrl).toBe(sourceUrl);
       expect(manifest.resources.embedded).toBeGreaterThanOrEqual(1);
 
-      const exported = await pageknot.artifacts.export(output, {
-        outputDirectory: join(directory, "node-variants"),
+      const exported = await offprint.artifacts.export(output, {
+        schemaVersion: 2,
+        outputDirectory: join(directory, "node-formats"),
         baseName: "node-binding",
         conflict: "fail",
-        variants: [
-          { kind: "pdf", options: {} },
-          { kind: "markdown", options: { frontMatter: true } },
-          { kind: "zip" },
-          { kind: "self-extracting" },
-          { kind: "mhtml" },
+        formats: [
+          { format: "pdf", options: {} },
+          { format: "markdown", options: { frontMatter: true } },
+          { format: "zip" },
+          { format: "self-extracting-html" },
+          { format: "mhtml" },
         ],
       });
-      expect(exported.policySha256).toBe(manifest.policySha256);
+      expect(exported.capturePolicySha256).toBe(manifest.capturePolicySha256);
       expect(exported.resources).toEqual(manifest.resources);
-      expect(exported.variants.map((variant) => variant.kind)).toEqual([
+      expect(exported.artifacts.map((artifact) => artifact.format)).toEqual([
         "pdf",
         "markdown",
         "zip",
-        "self-extracting",
+        "self-extracting-html",
         "mhtml",
       ]);
-      for (const variant of exported.variants) {
-        const verified = await pageknot.artifacts.verifyVariant(
-          variant.path,
-          variant.kind,
+      for (const artifact of exported.artifacts) {
+        const verified = await offprint.artifacts.verifyFormat(
+          artifact.path,
+          artifact.format,
         );
-        expect(verified.passed).toBe(true);
-        expect(verified.sha256).toBe(variant.sha256);
+        expect(verified.sha256).toBe(artifact.sha256);
       }
 
       const captureRequest = await request(cancelledOutput);
       captureRequest.readiness.delay = 30_000;
-      const job = await pageknot.captures.start(captureRequest);
+      const job = await offprint.captures.start(captureRequest);
       const events = job.events();
       let sawStarted = false;
       while (true) {
@@ -146,7 +145,7 @@ test(
       }
       expect(sawStarted).toBe(true);
       await expect(job.result()).rejects.toMatchObject({
-        code: "pageknot.runtime.cancelled",
+        code: "offprint.runtime.cancelled",
         stage: "shutdown",
       });
 
@@ -165,26 +164,26 @@ test(
         code: "ENOENT",
       });
     } finally {
-      await pageknot.close();
-      await pageknot.close();
+      await offprint.close();
+      await offprint.close();
     }
   },
   60_000,
 );
 
 test("validation errors keep the typed binding contract", async () => {
-  const pageknot = new PageKnot();
+  const offprint = new Offprint();
   try {
-    await pageknot.capture("javascript:alert(1)");
+    await offprint.capture("javascript:alert(1)");
     throw new Error("capture unexpectedly succeeded");
   } catch (error) {
-    expect(error).toBeInstanceOf(PageKnotError);
+    expect(error).toBeInstanceOf(OffprintError);
     expect(error).toMatchObject({
-      code: "pageknot.input.url_scheme",
+      code: "offprint.input.url_scheme",
       stage: "validation",
       retryable: false,
     });
   } finally {
-    await pageknot.close();
+    await offprint.close();
   }
 });

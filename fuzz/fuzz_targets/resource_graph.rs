@@ -1,10 +1,10 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use pageknot_document::{
+use offprint_document::{
     RenderingRole, ResourceGraph, ResourceLocationKind, ResourceReference,
 };
-use pageknot_model::{FrameId, NodeId};
+use offprint_model::{FrameId, NodeId};
 use url::Url;
 
 fuzz_target!(|data: &[u8]| {

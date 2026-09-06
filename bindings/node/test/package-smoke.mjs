@@ -4,9 +4,9 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { PageKnot } from "@pageknot/node";
+import { Offprint } from "@offprint/node";
 
-const directory = await mkdtemp(join(tmpdir(), "pageknot-node-package-"));
+const directory = await mkdtemp(join(tmpdir(), "offprint-node-package-"));
 const server = createServer((request, response) => {
   if (request.url === "/asset.svg") {
     const body =
@@ -34,22 +34,20 @@ await new Promise((resolve, reject) => {
 const address = server.address();
 assert(address && typeof address === "object");
 const output = join(directory, "capture.html");
-const browserPath = process.env.PAGEKNOT_PACKAGE_BROWSER_PATH;
-const pageknot = new PageKnot(browserPath ? { browserPath } : undefined);
+const browserPath = process.env.OFFPRINT_PACKAGE_BROWSER_PATH;
+const offprint = new Offprint(browserPath ? { browserPath } : undefined);
 
 try {
-  assert.equal("_testPanic" in pageknot, false);
-  const result = await pageknot.capture(`http://127.0.0.1:${address.port}/`, {
+  assert.equal("_testPanic" in offprint, false);
+  const result = await offprint.capture(`http://127.0.0.1:${address.port}/`, {
     output,
   });
-  assert.equal(result.status, "succeeded");
-  assert.equal(result.verification.passed, true);
   assert.equal(result.verification.networkRequests, 0);
   const artifact = await readFile(output, "utf8");
   assert.match(artifact, /installed package rendered/);
   assert.match(artifact, /data:image\/svg\+xml;base64,/);
 } finally {
-  await pageknot.close();
+  await offprint.close();
   await new Promise((resolve, reject) => {
     server.close((error) => (error ? reject(error) : resolve()));
   });

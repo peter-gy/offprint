@@ -3,47 +3,63 @@
     {
       "command": "capture",
       "errorSchema": "error.schema.json",
-      "successSchema": "capture-result.schema.json"
+      "successSchemas": [
+        "capture-receipt.schema.json"
+      ]
     },
     {
       "command": "batch",
       "errorSchema": "error.schema.json",
-      "successSchema": "batch-result.schema.json"
+      "successSchemas": [
+        "batch-result.schema.json"
+      ]
     },
     {
       "command": "crawl",
       "errorSchema": "error.schema.json",
-      "successSchema": "crawl-result.schema.json"
+      "successSchemas": [
+        "crawl-result.schema.json"
+      ]
     },
     {
-      "command": "export",
+      "command": "artifact export",
       "errorSchema": "error.schema.json",
-      "successSchema": "artifact-export-result.schema.json"
+      "successSchemas": [
+        "export-result.schema.json"
+      ]
     },
     {
-      "command": "verify",
+      "command": "artifact verify",
       "errorSchema": "error.schema.json",
-      "successSchema": "verification-result.schema.json"
+      "successSchemas": [
+        "artifact-verification.schema.json"
+      ]
     },
     {
-      "command": "inspect",
+      "command": "artifact inspect",
       "errorSchema": "error.schema.json",
-      "successSchema": "artifact-manifest.schema.json"
+      "successSchemas": [
+        "artifact-manifest.schema.json"
+      ]
     },
     {
       "command": "doctor",
       "errorSchema": "error.schema.json",
-      "successSchema": "browser-doctor-report.schema.json"
+      "successSchemas": [
+        "browser-doctor-report.schema.json"
+      ]
     },
     {
       "command": "browser",
       "errorSchema": "error.schema.json",
-      "successSchema": "browser-operation-result.schema.json"
+      "successSchemas": [
+        "browser-operation-result.schema.json"
+      ]
     }
   ],
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "streams": {
-    "stderr": "diagnostics",
+    "stderr": "diagnostics or OffprintError in JSON mode",
     "stdout": "result"
   }
 }

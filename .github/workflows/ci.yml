@@ -139,7 +139,7 @@ jobs:
         run: cargo test --workspace --locked
 
       - name: Build release CLI
-        run: cargo build --release --locked -p pageknot-cli
+        run: cargo build --release --locked -p offprint-cli
 
   node:
     name: Node.js ${{ matrix.node }}
@@ -184,8 +184,8 @@ jobs:
       - name: Import ESM and CommonJS package surfaces
         working-directory: bindings/node
         run: |
-          node -e "import('./index.js').then(m => { if (!m.PageKnot) process.exit(1) })"
-          node -e "if (!require('./index.cjs').PageKnot) process.exit(1)"
+          node -e "import('./index.js').then(m => { if (!m.Offprint) process.exit(1) })"
+          node -e "if (!require('./index.cjs').Offprint) process.exit(1)"
 
       - name: Inspect npm package
         working-directory: bindings/node
@@ -237,5 +237,5 @@ jobs:
         run: |
           uv venv --python "${{ matrix.python }}" .wheel-test
           uv pip install --python .wheel-test/bin/python dist/*.whl
-          .wheel-test/bin/python -c "import pageknot; assert pageknot.PageKnot"
+          .wheel-test/bin/python -c "import offprint; assert offprint.Offprint"
           .wheel-test/bin/python tests/wheel_smoke.py

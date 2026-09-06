@@ -3,7 +3,7 @@ requires = ["maturin>=1.14,<2"]
 build-backend = "maturin"
 
 [project]
-name = "pageknot"
+name = "offprint"
 version = "0.1.0"
 description = "Capture rendered web pages as verified self-contained artifacts"
 readme = "README.md"
@@ -23,8 +23,8 @@ classifiers = [
 ]
 
 [project.urls]
-Source = "https://github.com/peter-gy/pageknot"
-Issues = "https://github.com/peter-gy/pageknot/issues"
+Source = "https://github.com/peter-gy/offprint"
+Issues = "https://github.com/peter-gy/offprint/issues"
 
 [dependency-groups]
 dev = [
@@ -39,7 +39,7 @@ features = ["extension-module"]
 include = [
   { path = "LICENSE", format = "sdist" },
 ]
-module-name = "pageknot._native"
+module-name = "offprint._native"
 python-source = "python"
 strip = false
 
@@ -49,5 +49,5 @@ testpaths = ["tests"]
 
 [tool.mypy]
 strict = true
-packages = ["pageknot"]
+packages = ["offprint"]
 mypy_path = "python"

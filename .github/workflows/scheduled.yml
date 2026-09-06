@@ -182,7 +182,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ env.XDG_CACHE_HOME }}
-          key: pageknot-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
+          key: offprint-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
 
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
@@ -190,16 +190,16 @@ jobs:
           tool: just
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        run: cargo run --locked -p offprint-cli -- browser install
 
       - name: Run repeated capture suite
-        run: cargo test --release --locked -p pageknot repeated_capture -- --ignored --test-threads=1
+        run: cargo test --release --locked -p offprint repeated_capture -- --ignored --test-threads=1
 
       - name: Audit browser process cleanup
         if: always()
         run: |
           if pgrep -af '[c]hrome.*--remote-debugging-port'; then
-            echo "PageKnot Chromium process survived repeated capture"
+            echo "Offprint Chromium process survived repeated capture"
             exit 1
           fi
 
@@ -217,7 +217,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
-      - name: Checkout PageKnot
+      - name: Checkout Offprint
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
@@ -244,7 +244,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ env.XDG_CACHE_HOME }}
-          key: pageknot-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
+          key: offprint-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
 
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
@@ -252,7 +252,7 @@ jobs:
           tool: just
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        run: cargo run --locked -p offprint-cli -- browser install
 
       - name: Run differential fixture
         run: just differential "$GITHUB_WORKSPACE/.differential/single-file-cli/single-file"
@@ -287,7 +287,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ env.XDG_CACHE_HOME }}
-          key: pageknot-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
+          key: offprint-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
 
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
@@ -295,7 +295,7 @@ jobs:
           tool: just
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        run: cargo run --locked -p offprint-cli -- browser install
 
       - name: Capture exploratory corpus
         run: just exploratory-corpus
@@ -349,15 +349,15 @@ jobs:
           unzip -q "$archive" -d "$destination"
           browser="$destination/chrome-linux64/chrome"
           test -x "$browser"
-          echo "PAGEKNOT_CANARY_PATH=$browser" >> "$GITHUB_ENV"
-          echo "PAGEKNOT_CANARY_VERSION=$version" >> "$GITHUB_ENV"
+          echo "OFFPRINT_CANARY_PATH=$browser" >> "$GITHUB_ENV"
+          echo "OFFPRINT_CANARY_VERSION=$version" >> "$GITHUB_ENV"
 
       - name: Run browser benchmark corpus on canary
         run: |
           just benchmark-browser \
             target/benchmark-evidence/chromium-canary.json \
-            "$PAGEKNOT_CANARY_PATH"
-          test "$(jq -r '.environment.browserVersion' target/benchmark-evidence/chromium-canary.json)" = "$PAGEKNOT_CANARY_VERSION"
+            "$OFFPRINT_CANARY_PATH"
+          test "$(jq -r '.environment.browserVersion' target/benchmark-evidence/chromium-canary.json)" = "$OFFPRINT_CANARY_VERSION"
 
       - name: Upload canary evidence
         if: always()
@@ -389,7 +389,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ env.XDG_CACHE_HOME }}
-          key: pageknot-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
+          key: offprint-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
 
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
@@ -397,7 +397,7 @@ jobs:
           tool: just
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        run: cargo run --locked -p offprint-cli -- browser install
 
       - name: Compare benchmark corpus
         run: |

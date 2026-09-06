@@ -6,6 +6,9 @@
     "browser": {
       "$ref": "#/$defs/BrowserInfo"
     },
+    "capturePolicySha256": {
+      "type": "string"
+    },
     "capturedAt": {
       "type": "string",
       "format": "date-time"
@@ -13,8 +16,10 @@
     "environment": {
       "$ref": "#/$defs/BrowserEnvironment"
     },
-    "format": {
-      "$ref": "#/$defs/ArtifactFormat"
+    "formatVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
     },
     "frames": {
       "type": "integer",
@@ -23,9 +28,6 @@
     },
     "generator": {
       "$ref": "#/$defs/ManifestGenerator"
-    },
-    "policySha256": {
-      "type": "string"
     },
     "resourceRecords": {
       "type": "array",
@@ -48,8 +50,8 @@
     "structuralRepair": {
       "$ref": "#/$defs/StructuralRepair"
     },
-    "verification": {
-      "$ref": "#/$defs/ManifestVerification"
+    "verificationMode": {
+      "$ref": "#/$defs/VerificationMode"
     },
     "viewState": {
       "$ref": "#/$defs/ViewState"
@@ -62,45 +64,23 @@
       }
     }
   },
+  "additionalProperties": false,
   "required": [
     "schemaVersion",
-    "format",
+    "formatVersion",
     "generator",
     "source",
     "capturedAt",
     "browser",
     "environment",
     "viewState",
-    "policySha256",
+    "capturePolicySha256",
     "frames",
     "resources",
     "structuralRepair",
-    "verification"
+    "verificationMode"
   ],
   "$defs": {
-    "ArtifactFormat": {
-      "type": "object",
-      "properties": {
-        "kind": {
-          "$ref": "#/$defs/ArtifactKind"
-        },
-        "version": {
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        }
-      },
-      "required": [
-        "kind",
-        "version"
-      ]
-    },
-    "ArtifactKind": {
-      "type": "string",
-      "enum": [
-        "html"
-      ]
-    },
     "BrowserEnvironment": {
       "type": "object",
       "properties": {
@@ -123,6 +103,7 @@
           "$ref": "#/$defs/Viewport"
         }
       },
+      "additionalProperties": false,
       "required": [
         "viewport",
         "locale",
@@ -215,6 +196,7 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
         "name",
         "version"
@@ -236,32 +218,12 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
         "requestedUrl",
         "requestedUrlSha256",
         "finalUrl",
         "finalUrlSha256"
-      ]
-    },
-    "ManifestVerification": {
-      "type": "object",
-      "properties": {
-        "level": {
-          "$ref": "#/$defs/VerificationPolicy"
-        },
-        "networkRequests": {
-          "type": "integer",
-          "format": "uint32",
-          "minimum": 0
-        },
-        "passed": {
-          "type": "boolean"
-        }
-      },
-      "required": [
-        "level",
-        "passed",
-        "networkRequests"
       ]
     },
     "OmissionReason": {
@@ -533,6 +495,7 @@
           ]
         }
       },
+      "additionalProperties": false,
       "required": [
         "applied"
       ]
@@ -569,7 +532,7 @@
         }
       ]
     },
-    "VerificationPolicy": {
+    "VerificationMode": {
       "type": "string",
       "enum": [
         "static",
@@ -586,6 +549,7 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
         "scrollX",
         "scrollY"
@@ -611,6 +575,7 @@
           "minimum": 0
         }
       },
+      "additionalProperties": false,
       "required": [
         "width",
         "height",

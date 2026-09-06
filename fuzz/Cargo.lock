@@ -92,9 +92,9 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "chacha20"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d524456ba66e72eb8b115ff89e01e497f8e6d11d78b70b1aa13c0fbd97540a81"
+checksum = "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -679,18 +679,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "once_cell"
-version = "1.21.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
-
-[[package]]
-name = "pageknot-artifact"
+name = "offprint-artifact"
 version = "0.1.0"
 dependencies = [
  "camino",
  "fs2",
- "pageknot-model",
+ "offprint-model",
  "serde",
  "serde_json",
  "sha2",
@@ -698,49 +692,49 @@ dependencies = [
 ]
 
 [[package]]
-name = "pageknot-document"
+name = "offprint-document"
 version = "0.1.0"
 dependencies = [
  "cssparser",
  "html5ever",
  "lightningcss",
  "markup5ever",
- "pageknot-model",
+ "offprint-model",
  "serde_json",
  "url",
 ]
 
 [[package]]
-name = "pageknot-fuzz"
+name = "offprint-fuzz"
 version = "0.0.0"
 dependencies = [
  "data-url",
  "libfuzzer-sys",
- "pageknot-artifact",
- "pageknot-document",
- "pageknot-html",
- "pageknot-model",
- "pageknot-protocol",
+ "offprint-artifact",
+ "offprint-document",
+ "offprint-html",
+ "offprint-model",
+ "offprint-protocol",
  "serde_json",
  "url",
 ]
 
 [[package]]
-name = "pageknot-html"
+name = "offprint-html"
 version = "0.1.0"
 dependencies = [
  "base64",
  "data-url",
  "html5ever",
  "markup5ever",
- "pageknot-document",
- "pageknot-model",
+ "offprint-document",
+ "offprint-model",
  "serde_json",
  "url",
 ]
 
 [[package]]
-name = "pageknot-model"
+name = "offprint-model"
 version = "0.1.0"
 dependencies = [
  "camino",
@@ -756,14 +750,20 @@ dependencies = [
 ]
 
 [[package]]
-name = "pageknot-protocol"
+name = "offprint-protocol"
 version = "0.1.0"
 dependencies = [
  "crc32fast",
- "pageknot-model",
+ "offprint-model",
  "schemars",
  "serde",
 ]
+
+[[package]]
+name = "once_cell"
+version = "1.21.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "parcel_selectors"

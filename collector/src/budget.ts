@@ -59,7 +59,7 @@ export class SnapshotLimitError extends Error {
 
   constructor(response: CollectorProtocolError) {
     super(response.payload.message);
-    this.name = "PageKnotSnapshotLimitError";
+    this.name = "OffprintSnapshotLimitError";
     this.response = response;
     weakSetAdd(snapshotLimitErrors, this);
   }

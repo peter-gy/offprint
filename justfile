@@ -7,6 +7,30 @@ setup:
     rustup show active-toolchain
     cargo fetch --locked
 
+clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cargo clean
+    cargo clean --manifest-path fuzz/Cargo.toml
+    rm -rf -- \
+      .cargo-deny \
+      .nextest \
+      collector/.bun \
+      collector/node_modules \
+      bindings/node/node_modules \
+      bindings/python/.mypy_cache \
+      bindings/python/.pytest_cache \
+      bindings/python/.venv \
+      bindings/python/dist \
+      bindings/python/target \
+      dist
+    find bindings/node -maxdepth 1 -type f -name '*.node' -delete
+    find bindings/node/npm -type f -name '*.node' -delete
+    find bindings/python/python/offprint -maxdepth 1 -type f \
+      \( -name '_native*.so' -o -name '_native*.dylib' -o -name '_native*.pyd' \) \
+      -delete
+    find bindings/python -type d -name '__pycache__' -prune -exec rm -rf -- {} +
+
 fmt:
     cargo fmt --all
     taplo format Cargo.toml rust-toolchain.toml deny.toml versions.toml
@@ -45,7 +69,7 @@ e2e group:
     cargo run --locked -p xtask -- e2e "{{group}}"
 
 differential singlefile:
-    PAGEKNOT_SINGLEFILE_EXECUTABLE="{{singlefile}}" cargo test --release --locked -p pageknot --test differential -- --ignored --test-threads=1
+    OFFPRINT_SINGLEFILE_EXECUTABLE="{{singlefile}}" cargo test --release --locked -p offprint --test differential -- --ignored --test-threads=1
 
 exploratory-corpus manifest="fixtures/corpora/datawrapper.json" output="target/benchmark-evidence/datawrapper-corpus.json":
     cargo run --release --locked -p xtask -- exploratory-corpus \
@@ -53,7 +77,7 @@ exploratory-corpus manifest="fixtures/corpora/datawrapper.json" output="target/b
       --output "{{output}}"
 
 benchmark-micro output="target/benchmark-evidence/performance-micro.json":
-    cargo run --release --locked -p pageknot-bench -- \
+    cargo run --release --locked -p offprint-bench -- \
       --suite micro \
       --output "{{output}}"
 
@@ -64,10 +88,10 @@ benchmark-browser output="target/benchmark-evidence/performance-browser.json" br
     if [[ -n "{{browser_path}}" ]]; then
       arguments+=(--browser-path "{{browser_path}}")
     fi
-    cargo run --release --locked -p pageknot-bench -- "${arguments[@]}"
+    cargo run --release --locked -p offprint-bench -- "${arguments[@]}"
 
 benchmark output="target/benchmark-evidence/performance.json":
-    cargo run --release --locked -p pageknot-bench -- \
+    cargo run --release --locked -p offprint-bench -- \
       --suite all \
       --output "{{output}}"
 
@@ -82,7 +106,7 @@ benchmark-compare baseline output="target/benchmark-evidence/performance.json" a
     if [[ "{{allow_environment_mismatch}}" == "true" ]]; then
       arguments+=(--allow-environment-mismatch)
     fi
-    cargo run --release --locked -p pageknot-bench -- "${arguments[@]}"
+    cargo run --release --locked -p offprint-bench -- "${arguments[@]}"
 
 codegen:
     cargo run --locked -p xtask -- codegen
@@ -131,8 +155,8 @@ semver-check:
     fi
     cargo semver-checks check-release \
       --workspace \
-      --exclude pageknot-node \
-      --exclude pageknot-python \
+      --exclude offprint-node \
+      --exclude offprint-python \
       --exclude xtask \
       --baseline-rev "$baseline"
 
@@ -180,7 +204,7 @@ node-package-check:
       if (!suffix) process.exit(1);
       process.stdout.write(suffix);
     ')"
-    root_addon="pageknot-native.$suffix.node"
+    root_addon="offprint-native.$suffix.node"
     platform_addon="npm/$suffix/$root_addon"
     test -f "$root_addon"
     cp "$root_addon" "$platform_addon"
@@ -203,9 +227,9 @@ node-package-check:
     npm init --yes >/dev/null
     npm install --ignore-scripts --no-audit --no-fund \
       "$root_package" "$platform_package"
-    node -e "if (!require('@pageknot/node').PageKnot) process.exit(1)"
+    node -e "if (!require('@offprint/node').Offprint) process.exit(1)"
     node --input-type=module -e \
-      "import { PageKnot } from '@pageknot/node'; if (!PageKnot) process.exit(1)"
+      "import { Offprint } from '@offprint/node'; if (!Offprint) process.exit(1)"
     cp "$workspace/bindings/node/test/package-smoke.mjs" smoke.mjs
     node smoke.mjs
 
@@ -216,7 +240,7 @@ python-check:
     cd bindings/python && uv run --frozen pytest
     cd bindings/python && uv run --frozen mypy
     cd bindings/python && uv run --frozen mypy --strict \
-      python/pageknot/__init__.pyi python/pageknot/_contracts.pyi
+      python/offprint/__init__.pyi python/offprint/_contracts.pyi
 
 python-wheel-check:
     #!/usr/bin/env bash
@@ -231,7 +255,7 @@ python-wheel-check:
     uv venv "$wheel_tmp/venv"
     uv pip install --python "$wheel_tmp/venv/bin/python" "$wheel_tmp"/dist/*.whl
     "$wheel_tmp/venv/bin/python" -c \
-      "import pageknot; assert pageknot.PageKnot"
+      "import offprint; assert offprint.Offprint"
     "$wheel_tmp/venv/bin/python" tests/wheel_smoke.py
 
 fuzz-check:
@@ -271,11 +295,11 @@ miri:
     export PROPTEST_CASES="${PROPTEST_CASES:-16}"
     rustup run nightly "$nightly_cargo" miri setup
     rustup run nightly "$nightly_cargo" miri test --locked \
-      -p pageknot-artifact \
-      -p pageknot-browser \
-      -p pageknot-capture \
-      -p pageknot-model \
-      -p pageknot-protocol
+      -p offprint-artifact \
+      -p offprint-browser \
+      -p offprint-capture \
+      -p offprint-model \
+      -p offprint-protocol
 
 docs-check:
     RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --no-deps --lib
@@ -293,18 +317,18 @@ package-check:
     package_tmp="$(mktemp -d)"
     trap 'rm -rf "$package_tmp"' EXIT
     target="$(rustc -vV | sed -n 's/^host: //p')"
-    cargo build --release --locked -p pageknot-cli
+    cargo build --release --locked -p offprint-cli
     cargo run --locked -p xtask -- package \
       --target "$target" \
-      --binary target/release/pageknot \
+      --binary target/release/offprint \
       --output "$package_tmp"
     archive="$(find "$package_tmp" -maxdepth 1 -name '*.tar.gz' -print -quit)"
     tar -xzf "$archive" -C "$package_tmp"
-    root="$(find "$package_tmp" -mindepth 1 -maxdepth 1 -type d -name 'pageknot-*' -print -quit)"
+    root="$(find "$package_tmp" -mindepth 1 -maxdepth 1 -type d -name 'offprint-*' -print -quit)"
     (cd "$root" && shasum -a 256 -c SHA256SUMS)
-    "$root/pageknot" --version
-    test -s "$root/completions/pageknot.bash"
-    test -s "$root/completions/_pageknot"
+    "$root/offprint" --version
+    test -s "$root/completions/offprint.bash"
+    test -s "$root/completions/_offprint"
 
 crate-package-check:
     #!/usr/bin/env bash
@@ -313,10 +337,10 @@ crate-package-check:
     trap 'rm -rf "$package_target"' EXIT
     package_selection=(
       --workspace
-      --exclude pageknot-bench
-      --exclude pageknot-node
-      --exclude pageknot-python
-      --exclude pageknot-test-support
+      --exclude offprint-bench
+      --exclude offprint-node
+      --exclude offprint-python
+      --exclude offprint-test-support
       --exclude xtask
     )
     CARGO_TARGET_DIR="$package_target" \

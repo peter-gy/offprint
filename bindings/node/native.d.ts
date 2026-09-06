@@ -12,8 +12,8 @@ export declare class NativeCaptureJob {
   result(): Promise<any>
 }
 
-export declare class NativePageKnot {
-  static create(options?: any | undefined | null): NativePageKnot
+export declare class NativeOffprint {
+  static create(options?: any | undefined | null): NativeOffprint
   get initializationError(): any | null
   capture(url: string, options?: any | undefined | null): Promise<any>
   start(request: any): Promise<NativeCaptureJob>
@@ -22,8 +22,13 @@ export declare class NativePageKnot {
   inspect(path: string): Promise<any>
   verify(path: string, options?: any | undefined | null): Promise<any>
   exportArtifacts(path: string, request: any): Promise<any>
-  verifyVariant(path: string, kind: string): Promise<any>
+  verifyFormat(path: string, format: string): Promise<any>
   ensureBrowser(): Promise<any>
+  listBrowsers(): Promise<any>
+  installBrowser(revision?: string | undefined | null): Promise<any>
+  removeBrowser(revision: string, force: boolean): Promise<any>
+  doctor(): Promise<any>
+  closeIdleBrowser(): Promise<void>
   close(): Promise<void>
   closeBlocking(): void
 }

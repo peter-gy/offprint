@@ -1,0 +1,47 @@
+{
+  "acknowledged": true,
+  "chunk": {
+    "captureId": "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "frameId": 7,
+    "payload": [111, 107],
+    "payloadCrc32": 2044517703,
+    "payloadLength": 2,
+    "sequence": 0,
+    "total": 1
+  },
+  "description": {
+    "captureId": "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "chunks": 1,
+    "encodedBytes": 2,
+    "frameId": 7,
+    "payloadSha256": "2689367b205c16ce32ed4200942b8b1e9a6f1f8b33d0f7e827cb960b10f7302f"
+  },
+  "error": {
+    "payload": {
+      "captureId": "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "code": "offprint.collector.payload_limit",
+      "details": {
+        "attempted": 3,
+        "limit": 2
+      },
+      "message": "collector payload exceeds the configured frame limit"
+    },
+    "type": "error"
+  },
+  "handshake": {
+    "availableCapabilities": ["form-state", "frame-owner-mapping"],
+    "captureId": "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "collectorBuildSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "hostBuildSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "maximumChunkBytes": 65536,
+    "protocol": {
+      "major": 1,
+      "minor": 5
+    },
+    "requestedCapabilities": ["form-state", "frame-owner-mapping"]
+  },
+  "released": {
+    "captureId": "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "frameId": 7
+  }
+}

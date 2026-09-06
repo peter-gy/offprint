@@ -1,14 +1,14 @@
 {
   "action": "install",
   "browser": {
-    "executablePath": "/opt/pageknot/chrome",
+    "executablePath": "/opt/offprint/chrome",
     "product": "chrome",
     "protocolVersion": "1.3",
     "revision": "1654411",
     "source": "managed",
     "version": "151.0.7922.47"
   },
-  "cacheDir": "/var/cache/pageknot",
+  "cacheDir": "/var/cache/offprint",
   "revision": "1654411",
-  "schemaVersion": 1
+  "schemaVersion": 2
 }

@@ -8,16 +8,11 @@ mod python;
 mod typescript;
 
 const CONTRACTS: &[(&str, &str)] = &[
-    (
-        "artifact-export-request.schema.json",
-        "ArtifactExportRequest",
-    ),
-    ("artifact-export-result.schema.json", "ArtifactExportResult"),
+    ("export-request.schema.json", "ExportRequest"),
+    ("export-result.schema.json", "ExportResult"),
     ("artifact-manifest.schema.json", "ArtifactManifest"),
-    (
-        "artifact-variant-verification.schema.json",
-        "ArtifactVariantVerification",
-    ),
+    ("artifact-verification.schema.json", "ArtifactVerification"),
+    ("format-verification.schema.json", "FormatVerification"),
     ("batch-request.schema.json", "BatchRequest"),
     ("batch-result.schema.json", "BatchResult"),
     ("browser-doctor-report.schema.json", "BrowserDoctorReport"),
@@ -26,56 +21,36 @@ const CONTRACTS: &[(&str, &str)] = &[
         "BrowserOperationResult",
     ),
     ("capture-event.schema.json", "CaptureEvent"),
-    ("capture-policy.schema.json", "CapturePolicy"),
+    ("content-policy.schema.json", "ContentPolicy"),
     ("capture-request.schema.json", "CaptureRequest"),
-    ("capture-result.schema.json", "CaptureResult"),
+    ("capture-receipt.schema.json", "CaptureReceipt"),
     ("crawl-request.schema.json", "CrawlRequest"),
     ("crawl-result.schema.json", "CrawlResult"),
-    ("error.schema.json", "PageKnotErrorRecord"),
+    ("error.schema.json", "OffprintErrorRecord"),
     ("resume-manifest.schema.json", "ResumeManifest"),
-    ("verification-result.schema.json", "VerificationResult"),
+    ("verification-report.schema.json", "VerificationReport"),
 ];
 
 pub(super) const PUBLIC_ALIASES: &[(&str, &str, &str)] = &[
-    (
-        "ArtifactVariant",
-        "ArtifactExportRequest",
-        "ArtifactVariant",
-    ),
-    (
-        "ArtifactVariantKind",
-        "ArtifactVariantVerification",
-        "ArtifactVariantKind",
-    ),
+    ("FormatSpec", "ExportRequest", "FormatSpec"),
+    ("ArtifactFormat", "FormatVerification", "ArtifactFormat"),
     ("BatchJob", "BatchRequest", "BatchJob"),
     ("BrowserInfo", "ArtifactManifest", "BrowserInfo"),
     ("CaptureLimits", "CaptureRequest", "CaptureLimits"),
-    ("CaptureScope", "CapturePolicy", "CaptureScope"),
-    ("ConflictPolicy", "ArtifactExportRequest", "ConflictPolicy"),
+    ("CaptureScope", "ContentPolicy", "CaptureScope"),
+    ("ConflictPolicy", "ExportRequest", "ConflictPolicy"),
     ("CrawlPageOutcome", "CrawlResult", "CrawlPageOutcome"),
-    ("ErrorStage", "PageKnotErrorRecord", "ErrorStage"),
-    (
-        "ExportedArtifact",
-        "ArtifactExportResult",
-        "ExportedArtifact",
-    ),
-    (
-        "MarkdownOptions",
-        "ArtifactExportRequest",
-        "MarkdownOptions",
-    ),
-    ("PdfOptions", "ArtifactExportRequest", "PdfOptions"),
+    ("ErrorStage", "OffprintErrorRecord", "ErrorStage"),
+    ("ExportedArtifact", "ExportResult", "ExportedArtifact"),
+    ("MarkdownOptions", "ExportRequest", "MarkdownOptions"),
+    ("PdfOptions", "ExportRequest", "PdfOptions"),
     ("ResumeOptions", "BatchRequest", "ResumeOptions"),
     (
         "ScheduledCaptureOutcome",
         "BatchResult",
         "ScheduledCaptureOutcome",
     ),
-    (
-        "VerificationPolicy",
-        "VerificationResult",
-        "VerificationPolicy",
-    ),
+    ("VerificationMode", "VerificationReport", "VerificationMode"),
     ("Viewport", "CaptureRequest", "Viewport"),
 ];
 
@@ -102,7 +77,7 @@ pub fn binding_files(
             content: typescript::generate(&schemas).into_bytes(),
         },
         GeneratedFile {
-            path: PathBuf::from("bindings/python/python/pageknot/_contracts.pyi"),
+            path: PathBuf::from("bindings/python/python/offprint/_contracts.pyi"),
             content: python::generate(&schemas)?.into_bytes(),
         },
     ])

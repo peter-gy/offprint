@@ -3,14 +3,11 @@
   "title": "CaptureRequest",
   "type": "object",
   "properties": {
-    "artifact": {
-      "$ref": "#/$defs/ArtifactSpec"
-    },
     "browser": {
       "$ref": "#/$defs/BrowserSpec"
     },
-    "capture": {
-      "$ref": "#/$defs/CapturePolicy"
+    "content": {
+      "$ref": "#/$defs/ContentPolicy"
     },
     "credentials": {
       "$ref": "#/$defs/CaptureCredentials"
@@ -33,96 +30,40 @@
     "network": {
       "$ref": "#/$defs/NetworkPolicy"
     },
+    "output": {
+      "$ref": "#/$defs/CaptureOutput"
+    },
     "readiness": {
       "$ref": "#/$defs/ReadinessPolicy"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
     },
     "url": {
       "type": "string",
       "format": "uri"
     },
     "verification": {
-      "$ref": "#/$defs/VerificationPolicy"
+      "$ref": "#/$defs/VerificationMode"
     }
   },
+  "additionalProperties": false,
   "required": [
+    "schemaVersion",
     "url",
-    "artifact",
+    "output",
     "browser",
     "environment",
     "readiness",
-    "capture",
+    "content",
     "network",
     "limits",
     "verification",
     "diagnostics"
   ],
   "$defs": {
-    "ArtifactSpec": {
-      "oneOf": [
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "const": "html"
-            },
-            "options": {
-              "$ref": "#/$defs/HtmlArtifactSpec"
-            }
-          },
-          "required": [
-            "kind",
-            "options"
-          ]
-        }
-      ]
-    },
-    "ArtifactTarget": {
-      "oneOf": [
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "const": "file"
-            },
-            "value": {
-              "type": "string"
-            }
-          },
-          "required": [
-            "kind",
-            "value"
-          ]
-        },
-        {
-          "type": "object",
-          "properties": {
-            "kind": {
-              "type": "string",
-              "const": "bytes"
-            },
-            "value": {
-              "type": "object",
-              "properties": {
-                "maxBytes": {
-                  "type": "integer",
-                  "format": "uint64",
-                  "minimum": 0
-                }
-              },
-              "required": [
-                "maxBytes"
-              ]
-            }
-          },
-          "required": [
-            "kind",
-            "value"
-          ]
-        }
-      ]
-    },
     "BrowserCookie": {
       "type": "object",
       "properties": {
@@ -181,6 +122,7 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
         "name",
         "value"
@@ -208,6 +150,7 @@
           "$ref": "#/$defs/Viewport"
         }
       },
+      "additionalProperties": false,
       "required": [
         "viewport",
         "locale",
@@ -281,7 +224,8 @@
             "$ref": "#/$defs/RequestHeader"
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "CaptureLimits": {
       "type": "object",
@@ -351,6 +295,7 @@
           "minimum": 0
         }
       },
+      "additionalProperties": false,
       "required": [
         "duration",
         "redirects",
@@ -366,7 +311,71 @@
         "frameDepth"
       ]
     },
-    "CapturePolicy": {
+    "CaptureOutput": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "conflict": {
+              "$ref": "#/$defs/ConflictPolicy"
+            },
+            "kind": {
+              "type": "string",
+              "const": "file"
+            },
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "path",
+            "conflict"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "const": "memory"
+            },
+            "maxBytes": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "kind",
+            "maxBytes"
+          ]
+        }
+      ]
+    },
+    "CaptureScope": {
+      "type": "string",
+      "enum": [
+        "page",
+        "selection"
+      ]
+    },
+    "ColorScheme": {
+      "type": "string",
+      "enum": [
+        "light",
+        "dark"
+      ]
+    },
+    "ConflictPolicy": {
+      "type": "string",
+      "enum": [
+        "fail",
+        "replace",
+        "uniquify"
+      ]
+    },
+    "ContentPolicy": {
       "type": "object",
       "properties": {
         "allowedFileRoots": {
@@ -401,31 +410,10 @@
           ]
         }
       },
+      "additionalProperties": false,
       "required": [
         "missingResources",
         "preservePasswordValues"
-      ]
-    },
-    "CaptureScope": {
-      "type": "string",
-      "enum": [
-        "page",
-        "selection"
-      ]
-    },
-    "ColorScheme": {
-      "type": "string",
-      "enum": [
-        "light",
-        "dark"
-      ]
-    },
-    "ConflictPolicy": {
-      "type": "string",
-      "enum": [
-        "fail",
-        "replace",
-        "uniquify"
       ]
     },
     "CookieSameSite": {
@@ -449,22 +437,8 @@
           "type": "boolean",
           "default": false
         }
-      }
-    },
-    "HtmlArtifactSpec": {
-      "type": "object",
-      "properties": {
-        "conflict": {
-          "$ref": "#/$defs/ConflictPolicy"
-        },
-        "target": {
-          "$ref": "#/$defs/ArtifactTarget"
-        }
       },
-      "required": [
-        "target",
-        "conflict"
-      ]
+      "additionalProperties": false
     },
     "LazyLoadPolicy": {
       "oneOf": [
@@ -592,7 +566,8 @@
           },
           "uniqueItems": true
         }
-      }
+      },
+      "additionalProperties": false
     },
     "OptimizationPolicy": {
       "type": "object",
@@ -645,6 +620,7 @@
           "minimum": 0
         }
       },
+      "additionalProperties": false,
       "required": [
         "mode",
         "networkQuiet",
@@ -670,6 +646,7 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
         "name",
         "value"
@@ -707,7 +684,7 @@
         }
       ]
     },
-    "VerificationPolicy": {
+    "VerificationMode": {
       "type": "string",
       "enum": [
         "static",
@@ -734,6 +711,7 @@
           "minimum": 0
         }
       },
+      "additionalProperties": false,
       "required": [
         "width",
         "height",
@@ -759,6 +737,7 @@
           "minimum": 0
         }
       },
+      "additionalProperties": false,
       "required": [
         "stepPixels",
         "settle",

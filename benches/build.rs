@@ -23,6 +23,6 @@ fn main() {
         .unwrap_or_else(|| "unknown".to_owned());
     let _ignored = writeln!(
         stdout,
-        "cargo:rustc-env=PAGEKNOT_BENCH_RUSTC_VERSION={version}"
+        "cargo:rustc-env=OFFPRINT_BENCH_RUSTC_VERSION={version}"
     );
 }

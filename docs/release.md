@@ -1,6 +1,6 @@
 # Release contract
 
-PageKnot publishes Rust crates, native CLI archives, a root npm package with
+Offprint publishes Rust crates, native CLI archives, a root npm package with
 platform addon packages, and Python distributions from one signed version tag.
 The tag version must match `versions.toml`, the Cargo workspace, every npm
 package, and Python package metadata.
@@ -17,8 +17,8 @@ just release-check
 
 ## Rust crates
 
-The supported Rust API surface is `pageknot`, `pageknot-model`, and
-`pageknot-cli`. The `pageknot` dependency graph also publishes its artifact,
+The supported Rust API surface is `offprint`, `offprint-model`, and
+`offprint-cli`. The `offprint` dependency graph also publishes its artifact,
 browser, capture, Chromium, document, export, HTML, protocol, and transform
 crates so Cargo can resolve the public packages from crates.io.
 
@@ -34,7 +34,7 @@ the workspace maintenance, binding, benchmark, and test-support packages.
 | `aarch64-apple-darwin` | `.tar.gz` |
 | `x86_64-pc-windows-msvc` | `.zip` |
 
-Each archive contains `pageknot`, `README.md`, `LICENSE`,
+Each archive contains `offprint`, `README.md`, `LICENSE`,
 `build-metadata.json`, and `SHA256SUMS`. CI publishes an outer SHA-256 digest,
 an SBOM, `dependency-licenses.json`, and GitHub build provenance.
 

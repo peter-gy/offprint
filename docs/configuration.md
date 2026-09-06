@@ -1,6 +1,6 @@
-# Configure PageKnot
+# Configure Offprint
 
-PageKnot combines built-in defaults, TOML configuration, environment
+Offprint combines built-in defaults, TOML configuration, environment
 variables, and command flags into one capture profile. Use an explicit
 configuration file when a repository or service owns the settings.
 
@@ -44,9 +44,9 @@ artifact_bytes = "64MiB"
 Apply and inspect the profile:
 
 ```console
-pageknot doctor --config pageknot.toml
-pageknot capture https://example.com \
-  --config pageknot.toml \
+offprint doctor --config offprint.toml
+offprint capture https://example.com \
+  --config offprint.toml \
   --profile research \
   --output example.html
 ```
@@ -58,13 +58,13 @@ pageknot capture https://example.com \
 Later sources override earlier sources:
 
 1. Built-in defaults and built-in profile
-2. User configuration at `pageknot/config.toml` in the platform configuration
+2. User configuration at `offprint/config.toml` in the platform configuration
    directory
-3. The file selected by `--config` or `PAGEKNOT_CONFIG`
-4. `PAGEKNOT_*` environment variables
+3. The file selected by `--config` or `OFFPRINT_CONFIG`
+4. `OFFPRINT_*` environment variables
 5. Command flags
 
-Profile selection follows `--profile`, `PAGEKNOT_PROFILE`, the explicit
+Profile selection follows `--profile`, `OFFPRINT_PROFILE`, the explicit
 configuration `default_profile`, the user configuration `default_profile`,
 then `default`.
 
@@ -178,15 +178,19 @@ descriptor budget.
 
 | Area | Variables |
 | --- | --- |
-| Config and profile | `PAGEKNOT_CONFIG`, `PAGEKNOT_PROFILE` |
-| Browser | `PAGEKNOT_BROWSER_PATH`, `PAGEKNOT_CDP_URL`, `PAGEKNOT_CACHE_DIR`, `PAGEKNOT_BROWSER_CHANNEL`, `PAGEKNOT_BROWSER_INSTALLATION`, `PAGEKNOT_HEADLESS` |
-| Environment | `PAGEKNOT_VIEWPORT`, `PAGEKNOT_LOCALE`, `PAGEKNOT_TIMEZONE`, `PAGEKNOT_COLOR_SCHEME` |
-| Readiness | `PAGEKNOT_TIMEOUT`, `PAGEKNOT_WAIT_UNTIL`, `PAGEKNOT_DELAY` |
-| Capture | `PAGEKNOT_MISSING_RESOURCES`, `PAGEKNOT_SCOPE`, `PAGEKNOT_SELECTOR`, `PAGEKNOT_REMOVE_UNUSED_CSS`, `PAGEKNOT_REMOVE_UNUSED_FONTS`, `PAGEKNOT_REMOVE_HIDDEN_ELEMENTS` |
-| Security and verification | `PAGEKNOT_VERIFY`, `PAGEKNOT_NETWORK_POLICY`, `PAGEKNOT_HEADERS`, `PAGEKNOT_COOKIES` |
+| Config and profile | `OFFPRINT_CONFIG`, `OFFPRINT_PROFILE` |
+| Browser | `OFFPRINT_BROWSER_PATH`, `OFFPRINT_CDP_URL`, `OFFPRINT_CACHE_DIR`, `OFFPRINT_BROWSER_CHANNEL`, `OFFPRINT_BROWSER_INSTALLATION`, `OFFPRINT_HEADLESS` |
+| Environment | `OFFPRINT_VIEWPORT`, `OFFPRINT_LOCALE`, `OFFPRINT_TIMEZONE`, `OFFPRINT_COLOR_SCHEME` |
+| Readiness | `OFFPRINT_TIMEOUT`, `OFFPRINT_WAIT_UNTIL`, `OFFPRINT_DELAY` |
+| Capture | `OFFPRINT_MISSING_RESOURCES`, `OFFPRINT_SCOPE`, `OFFPRINT_SELECTOR`, `OFFPRINT_REMOVE_UNUSED_CSS`, `OFFPRINT_REMOVE_UNUSED_FONTS`, `OFFPRINT_REMOVE_HIDDEN_ELEMENTS` |
+| Security and verification | `OFFPRINT_VERIFY`, `OFFPRINT_NETWORK_POLICY`, `OFFPRINT_HEADERS`, `OFFPRINT_COOKIES` |
 
 Boolean environment values accept `1`, `true`, or `yes` and `0`, `false`, or
 `no`.
+
+Offprint validates every `OFFPRINT_*` name before command dispatch. A misspelled
+or unknown name returns `offprint.config.field` so automation cannot silently
+fall back to a default.
 
 ## Credential inputs
 
@@ -213,7 +217,7 @@ before capture:
 
 ```console
 chmod 600 cookies.json
-pageknot capture https://example.com/account \
+offprint capture https://example.com/account \
   --cookies cookies.json \
   --output account.html
 ```

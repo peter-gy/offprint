@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "@pageknot/collector",
+      "name": "@offprint/collector",
       "devDependencies": {
         "@types/bun": "1.3.10",
         "prettier": "3.9.6",

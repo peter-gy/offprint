@@ -1,7 +1,7 @@
 #![no_main]
 
 use libfuzzer_sys::fuzz_target;
-use pageknot_document::{Document, discover_document_resources};
+use offprint_document::{Document, discover_document_resources};
 use url::Url;
 
 fuzz_target!(|data: &[u8]| {

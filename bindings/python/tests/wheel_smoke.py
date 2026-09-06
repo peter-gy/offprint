@@ -7,7 +7,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from pageknot import PageKnot
+from offprint import Offprint
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -41,18 +41,16 @@ async def run() -> None:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        with tempfile.TemporaryDirectory(prefix="pageknot-wheel-") as directory:
+        with tempfile.TemporaryDirectory(prefix="offprint-wheel-") as directory:
             output = Path(directory) / "capture.html"
-            browser_path = os.environ.get("PAGEKNOT_PACKAGE_BROWSER_PATH")
+            browser_path = os.environ.get("OFFPRINT_PACKAGE_BROWSER_PATH")
             options = {"browser_path": browser_path} if browser_path else None
-            async with PageKnot(options) as pageknot:
-                assert not hasattr(pageknot, "_test_panic")
-                result = await pageknot.capture(
+            async with Offprint(options) as offprint:
+                assert not hasattr(offprint, "_test_panic")
+                result = await offprint.capture(
                     f"http://127.0.0.1:{server.server_port}/",
                     output=output,
                 )
-            assert result["status"] == "succeeded"
-            assert result["verification"]["passed"] is True
             assert result["verification"]["networkRequests"] == 0
             artifact = output.read_text(encoding="utf-8")
             assert "installed wheel rendered" in artifact

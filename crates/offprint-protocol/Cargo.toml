@@ -1,0 +1,21 @@
+[package]
+name = "offprint-protocol"
+description = "Versioned host and collector protocol for Offprint browser observations"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+[dependencies]
+crc32fast.workspace = true
+offprint-model.workspace = true
+schemars.workspace = true
+serde.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

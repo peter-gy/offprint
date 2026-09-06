@@ -1,11 +1,11 @@
-# PageKnot documentation
+# Offprint documentation
 
-PageKnot captures rendered pages as verified, self-contained artifacts. Start
+Offprint captures rendered pages as verified, self-contained artifacts. Start
 with the [project quickstart](../README.md#quickstart) to build the CLI and
 produce a verified HTML file.
 
 The guides below cover the current alpha source checkout. The installed
-`pageknot <command> --help` output is the exact reference for available flags
+`offprint <command> --help` output is the exact reference for available flags
 and accepted values.
 
 ## Capture and operate
@@ -13,7 +13,7 @@ and accepted values.
 | Goal | Guide |
 | --- | --- |
 | Capture and verify one page | [Capture and verify](./cli.md#capture-and-verify-a-page) |
-| Commit PDF or derive another format | [Choose a representation](./cli.md#choose-a-representation) |
+| Derive another artifact format | [Export another format](./cli.md#export-another-format) |
 | Wait for client-side rendering | [Capture readiness](./cli.md#select-capture-readiness) |
 | Capture one matching element | [Selector capture](./cli.md#capture-one-element) |
 | Consume a versioned JSON result | [Machine-readable output](./cli.md#write-machine-readable-output) |
@@ -27,16 +27,20 @@ and accepted values.
 | Interface | Guide |
 | --- | --- |
 | Rust | [Rust public API](./public-api.md) |
-| Node.js | [`@pageknot/node`](../bindings/node/README.md) |
-| Python | [`pageknot`](../bindings/python/README.md) |
+| Node.js | [`@offprint/node`](../bindings/node/README.md) |
+| Python | [`offprint`](../bindings/python/README.md) |
 | All interfaces | [Feature and parity matrix](./feature-matrix.md) |
 
 The versioned request, result, error, and binding contracts live in
 [`schemas/`](../schemas). Build the Rust reference from the current checkout
-with `cargo doc --open -p pageknot`.
+with `cargo doc --open -p offprint`.
 
 ## Understand the system
 
+- [Concepts](./concepts.md) defines the product vocabulary and the path from a
+  live page to a verified artifact.
+- [Architecture](./architecture.md) maps the ports, adapters, composition root,
+  capture flow, format flow, and dependency checks.
 - [Security threat model](./threat-model.md) defines host, browser, network,
   credential, and artifact boundaries.
 - [Performance baseline](./performance-baseline.md) defines the benchmark
@@ -44,7 +48,7 @@ with `cargo doc --open -p pageknot`.
 - [Source provenance ledger](./provenance.md) records inspected sources,
   generated inputs, and managed browser archives.
 
-## Maintain PageKnot
+## Maintain Offprint
 
 - [Architecture decisions](./architecture-decisions.md) records accepted
   ownership and dependency choices.

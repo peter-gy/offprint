@@ -14,16 +14,16 @@ use base64::Engine as _;
 use chrono::{DateTime, Utc};
 use clap::{Parser, ValueEnum};
 use data_url::DataUrl;
-use pageknot::PageKnot;
-use pageknot_capture::ContentStore;
-use pageknot_document::{
+use offprint::Offprint;
+use offprint_capture::ContentStore;
+use offprint_document::{
     Document, RenderingRole, ResourceGraph, ResourceLocationKind, ResourceReference,
     discover_css_resources, discover_document_resources, serialize_document, serialize_document_to,
 };
-use pageknot_model::{
-    ArtifactManifest, ArtifactSpec, FrameId, NodeId, OmissionReason, ResourceOutcome,
+use offprint_model::{
+    ArtifactManifest, CaptureOutput, FrameId, NodeId, OmissionReason, ResourceOutcome,
 };
-use pageknot_test_support::{FixtureResponse, FixtureServer};
+use offprint_test_support::{FixtureResponse, FixtureServer};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest as _, Sha256};
 use url::Url;
@@ -39,8 +39,8 @@ const MIB: usize = 1024 * 1024;
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "pageknot-bench",
-    about = "Measure PageKnot contracts and write a machine-readable report"
+    name = "offprint-bench",
+    about = "Measure Offprint contracts and write a machine-readable report"
 )]
 struct Arguments {
     /// Select the benchmark corpus.
@@ -192,7 +192,7 @@ async fn run(arguments: Arguments) -> BenchResult {
     let mut environment = Environment {
         os: std::env::consts::OS.to_owned(),
         architecture: std::env::consts::ARCH.to_owned(),
-        rustc: env!("PAGEKNOT_BENCH_RUSTC_VERSION").to_owned(),
+        rustc: env!("OFFPRINT_BENCH_RUSTC_VERSION").to_owned(),
         logical_cpus: std::thread::available_parallelism().map_or(1, usize::from),
         browser_version: None,
         browser_revision: None,
@@ -297,7 +297,7 @@ async fn micro_cases(iterations: usize) -> BenchResult<Vec<CaseResult>> {
     let inline_resource_bytes = inline_resource.len();
     let inline_resource_document = Document::parse(inline_resource.as_bytes());
     let inline_resource_path =
-        std::env::temp_dir().join(format!("pageknot-bench-inline-{}.html", std::process::id()));
+        std::env::temp_dir().join(format!("offprint-bench-inline-{}.html", std::process::id()));
     let inline_resource_case = measure_sync(
         "html-inline-resource-file-serialize",
         "document",
@@ -325,7 +325,7 @@ async fn micro_cases(iterations: usize) -> BenchResult<Vec<CaseResult>> {
             let replacements = resources
                 .resources()
                 .iter()
-                .map(|resource| (resource.id, "data:image/png;base64,cGFnZWtub3Q=".to_owned()))
+                .map(|resource| (resource.id, "data:image/png;base64,b2ZmcHJpbnQ=".to_owned()))
                 .collect::<BTreeMap<_, _>>();
             black_box(resources.rewrite(&replacements)?);
             Ok(())
@@ -480,18 +480,18 @@ async fn browser_cases_with_server(
         .register("/images", FixtureResponse::html(browser_image_corpus(200)))
         .await?;
 
-    let mut builder = PageKnot::builder();
+    let mut builder = Offprint::builder();
     if let Some(path) = browser_path {
         let path = camino::Utf8PathBuf::from_path_buf(path.to_owned())
             .map_err(|path| format!("browser path is not UTF-8: {}", path.display()))?;
         builder = builder.browser_path(path);
     }
-    let pageknot = builder.build()?;
+    let offprint = builder.build()?;
     let result: BenchResult<_> = async {
-        let browser = pageknot.browsers().ensure().await?;
+        let browser = offprint.browsers().ensure().await?;
         let article_url = server.url("/article")?;
 
-        black_box(capture_once(&pageknot, article_url.as_str()).await?);
+        black_box(capture_once(&offprint, article_url.as_str()).await?);
         let browser_version = browser.version;
         let browser_revision = browser.revision;
 
@@ -515,10 +515,10 @@ async fn browser_cases_with_server(
         ] {
             let url = server.url(path)?;
             let case = measure_async(name, "browser", input_bytes, iterations, || {
-                let pageknot = pageknot.clone();
+                let offprint = offprint.clone();
                 let url = url.clone();
                 async move {
-                    black_box(capture_once(&pageknot, url.as_str()).await?);
+                    black_box(capture_once(&offprint, url.as_str()).await?);
                     Ok(())
                 }
             })
@@ -532,10 +532,10 @@ async fn browser_cases_with_server(
             browser_article_corpus(200).len(),
             iterations.saturating_mul(2),
             || {
-                let pageknot = pageknot.clone();
+                let offprint = offprint.clone();
                 let url = article_url.clone();
                 async move {
-                    black_box(capture_once(&pageknot, url.as_str()).await?);
+                    black_box(capture_once(&offprint, url.as_str()).await?);
                     Ok(())
                 }
             },
@@ -545,7 +545,7 @@ async fn browser_cases_with_server(
         Ok((cases, browser_version, browser_revision))
     }
     .await;
-    let close_result: BenchResult = pageknot.close().await.map_err(Into::into);
+    let close_result: BenchResult = offprint.close().await.map_err(Into::into);
     match (result, close_result) {
         (Err(error), _) => Err(error),
         (Ok(_), Err(error)) => Err(error),
@@ -554,13 +554,13 @@ async fn browser_cases_with_server(
 }
 
 async fn capture_once(
-    pageknot: &PageKnot,
+    offprint: &Offprint,
     url: &str,
-) -> BenchResult<pageknot_model::CaptureResult> {
-    let mut request = pageknot_model::CaptureRequest::builder(url)?.build()?;
-    request.artifact = ArtifactSpec::html_bytes(64 * MIB as u64);
-    let result = pageknot.captures().start(request).await?.wait().await?;
-    if !result.verification.passed || result.verification.network_requests != 0 {
+) -> BenchResult<offprint_model::CaptureReceipt> {
+    let mut request = offprint_model::CaptureRequest::builder(url)?.build()?;
+    request.output = CaptureOutput::memory(64 * MIB as u64);
+    let result = offprint.captures().start(request).await?.result().await?;
+    if result.verification.network_requests != 0 {
         return Err("browser benchmark capture did not pass offline verification".into());
     }
     Ok(result)

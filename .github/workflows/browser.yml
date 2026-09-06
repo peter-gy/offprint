@@ -69,7 +69,20 @@ jobs:
             libxkbcommon0
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        shell: bash
+        run: |
+          mkdir -p target
+          cargo run --locked -p offprint-cli -- browser install --json \
+            > target/managed-browser.json
+          node -e '
+            const fs = require("node:fs");
+            const result = JSON.parse(fs.readFileSync("target/managed-browser.json", "utf8"));
+            if (typeof result.browser?.executablePath !== "string") process.exit(1);
+            fs.appendFileSync(
+              process.env.GITHUB_ENV,
+              "OFFPRINT_BROWSER_PATH=" + result.browser.executablePath + "\n",
+            );
+          '
 
       - name: Run fixture group
         run: cargo run --locked -p xtask -- e2e "${{ matrix.group }}"
@@ -79,7 +92,7 @@ jobs:
         shell: bash
         run: |
           if pgrep -af '[c]hrome.*--remote-debugging-port'; then
-            echo "PageKnot Chromium process survived the fixture group"
+            echo "Offprint Chromium process survived the fixture group"
             exit 1
           fi
 
@@ -124,11 +137,24 @@ jobs:
             libxkbcommon0
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        shell: bash
+        run: |
+          mkdir -p target
+          cargo run --locked -p offprint-cli -- browser install --json \
+            > target/managed-browser.json
+          node -e '
+            const fs = require("node:fs");
+            const result = JSON.parse(fs.readFileSync("target/managed-browser.json", "utf8"));
+            if (typeof result.browser?.executablePath !== "string") process.exit(1);
+            fs.appendFileSync(
+              process.env.GITHUB_ENV,
+              "OFFPRINT_BROWSER_PATH=" + result.browser.executablePath + "\n",
+            );
+          '
 
       - name: Run ignored browser integration suites
         run: |
-          cargo test --locked -p pageknot \
+          cargo test --locked -p offprint \
             --test artifact_exports \
             --test diagnostics \
             --test capture_regressions \
@@ -139,7 +165,7 @@ jobs:
         if: always()
         run: |
           if pgrep -af '[c]hrome.*--remote-debugging-port'; then
-            echo "PageKnot Chromium process survived the integration suites"
+            echo "Offprint Chromium process survived the integration suites"
             exit 1
           fi
 
@@ -185,10 +211,23 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        shell: bash
+        run: |
+          mkdir -p target
+          cargo run --locked -p offprint-cli -- browser install --json \
+            > target/managed-browser.json
+          node -e '
+            const fs = require("node:fs");
+            const result = JSON.parse(fs.readFileSync("target/managed-browser.json", "utf8"));
+            if (typeof result.browser?.executablePath !== "string") process.exit(1);
+            fs.appendFileSync(
+              process.env.GITHUB_ENV,
+              "OFFPRINT_BROWSER_PATH=" + result.browser.executablePath + "\n",
+            );
+          '
 
       - name: Run managed browser smoke
-        run: cargo test --locked -p pageknot-chromium --test browser_smoke -- --ignored --test-threads=1
+        run: cargo test --locked -p offprint-chromium --test browser_smoke -- --ignored --test-threads=1
 
       - name: Run static capture fixture
         run: cargo run --locked -p xtask -- test-fixture static-article

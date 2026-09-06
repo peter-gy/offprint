@@ -1,9 +1,9 @@
 {
-  "name": "@pageknot/node-darwin-x64",
+  "name": "@offprint/node-darwin-x64",
   "version": "0.1.0",
   "license": "AGPL-3.0-or-later",
-  "main": "pageknot-native.darwin-x64.node",
-  "files": ["LICENSE", "pageknot-native.darwin-x64.node"],
+  "main": "offprint-native.darwin-x64.node",
+  "files": ["LICENSE", "offprint-native.darwin-x64.node"],
   "scripts": {
     "prepack": "node ../../scripts/package-license.mjs sync",
     "postpack": "node ../../scripts/package-license.mjs clean"

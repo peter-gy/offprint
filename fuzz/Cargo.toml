@@ -1,5 +1,5 @@
 [package]
-name = "pageknot-fuzz"
+name = "offprint-fuzz"
 version = "0.0.0"
 edition = "2024"
 publish = false
@@ -10,11 +10,11 @@ cargo-fuzz = true
 [dependencies]
 data-url = "0.3.2"
 libfuzzer-sys = "0.4.10"
-pageknot-artifact = { path = "../crates/pageknot-artifact" }
-pageknot-document = { path = "../crates/pageknot-document" }
-pageknot-html = { path = "../crates/pageknot-html" }
-pageknot-model = { path = "../crates/pageknot-model" }
-pageknot-protocol = { path = "../crates/pageknot-protocol" }
+offprint-artifact = { path = "../crates/offprint-artifact" }
+offprint-document = { path = "../crates/offprint-document" }
+offprint-html = { path = "../crates/offprint-html" }
+offprint-model = { path = "../crates/offprint-model" }
+offprint-protocol = { path = "../crates/offprint-protocol" }
 serde_json = "1.0.151"
 url = "2.5.8"
 

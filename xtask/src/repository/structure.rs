@@ -160,38 +160,60 @@ fn check_dependency_direction(root: &Path, violations: &mut Vec<String>) -> Resu
 }
 
 fn dependency_points_outward(package: &str, dependency: &str) -> bool {
-    if dependency == "pageknot-test-support" && dependency_rank(package).is_some() {
-        return true;
-    }
-    if is_frontend(package) && dependency.starts_with("pageknot-") && dependency != "pageknot" {
-        return true;
-    }
-    let (Some(package_rank), Some(dependency_rank)) =
-        (dependency_rank(package), dependency_rank(dependency))
-    else {
+    if !is_workspace_package(package) || !is_workspace_package(dependency) {
         return false;
-    };
-    dependency_rank >= package_rank
+    }
+    !allowed_workspace_dependencies(package).contains(&dependency)
 }
 
-fn is_frontend(package: &str) -> bool {
-    matches!(
-        package,
-        "pageknot-cli" | "pageknot-node" | "pageknot-python"
-    )
+fn is_workspace_package(package: &str) -> bool {
+    package == "xtask" || package.starts_with("offprint")
 }
 
-fn dependency_rank(package: &str) -> Option<u8> {
+fn allowed_workspace_dependencies(package: &str) -> &'static [&'static str] {
     match package {
-        "pageknot-model" => Some(0),
-        "pageknot-artifact" | "pageknot-capture" | "pageknot-document" | "pageknot-protocol" => {
-            Some(1)
+        "offprint-model" => &[],
+        "offprint-artifact"
+        | "offprint-capture"
+        | "offprint-document"
+        | "offprint-protocol"
+        | "offprint-test-support" => &["offprint-model"],
+        "offprint-browser" => &["offprint-model"],
+        "offprint-html" => &["offprint-document", "offprint-model"],
+        "offprint-chromium" => &["offprint-browser", "offprint-model", "offprint-protocol"],
+        "offprint-export" | "offprint-transform" => {
+            &["offprint-document", "offprint-html", "offprint-model"]
         }
-        "pageknot-browser" | "pageknot-html" => Some(2),
-        "pageknot-chromium" | "pageknot-export" | "pageknot-transform" => Some(3),
-        "pageknot" => Some(4),
-        "pageknot-cli" | "pageknot-node" | "pageknot-python" => Some(5),
-        _ => None,
+        "offprint" => &[
+            "offprint-artifact",
+            "offprint-browser",
+            "offprint-capture",
+            "offprint-chromium",
+            "offprint-document",
+            "offprint-export",
+            "offprint-html",
+            "offprint-model",
+            "offprint-protocol",
+            "offprint-transform",
+        ],
+        "offprint-cli" | "offprint-node" | "offprint-python" => &["offprint"],
+        "offprint-bench" => &[
+            "offprint",
+            "offprint-capture",
+            "offprint-document",
+            "offprint-model",
+            "offprint-test-support",
+        ],
+        "xtask" => &[
+            "offprint",
+            "offprint-browser",
+            "offprint-chromium",
+            "offprint-cli",
+            "offprint-model",
+            "offprint-protocol",
+            "offprint-test-support",
+        ],
+        _ => &[],
     }
 }
 
@@ -209,12 +231,12 @@ fn is_handwritten_production_source(path: &Path) -> bool {
 }
 
 fn is_generated(path: &Path) -> bool {
-    path == Path::new("crates/pageknot-chromium/src/cdp_generated.rs")
-        || path.starts_with("crates/pageknot-chromium/src/cdp/generated")
+    path == Path::new("crates/offprint-chromium/src/cdp_generated.rs")
+        || path.starts_with("crates/offprint-chromium/src/cdp/generated")
         || path.starts_with("collector/dist")
-        || path.starts_with("crates/pageknot-chromium/generated")
+        || path.starts_with("crates/offprint-chromium/generated")
         || path == Path::new("bindings/node/contracts.generated.d.ts")
-        || path == Path::new("bindings/python/python/pageknot/_contracts.pyi")
+        || path == Path::new("bindings/python/python/offprint/_contracts.pyi")
         || path.starts_with("schemas")
         || path.starts_with("fixtures/manifest")
 }
@@ -249,49 +271,61 @@ mod tests {
     #[test]
     fn dependency_direction_allows_inward_edges() {
         assert!(!dependency_points_outward(
-            "pageknot-chromium",
-            "pageknot-browser"
+            "offprint-chromium",
+            "offprint-browser"
         ));
-        assert!(!dependency_points_outward("pageknot", "pageknot-html"));
-        assert!(!dependency_points_outward("xtask", "pageknot"));
+        assert!(!dependency_points_outward("offprint", "offprint-html"));
+        assert!(!dependency_points_outward(
+            "offprint-browser",
+            "offprint-model"
+        ));
+        assert!(!dependency_points_outward("xtask", "offprint"));
     }
 
     #[test]
     fn dependency_direction_rejects_sideways_and_outward_edges() {
         assert!(dependency_points_outward(
-            "pageknot-browser",
-            "pageknot-html"
-        ));
-        assert!(dependency_points_outward("pageknot-document", "pageknot"));
-        assert!(dependency_points_outward(
-            "pageknot-chromium",
-            "pageknot-test-support"
+            "offprint-browser",
+            "offprint-protocol"
         ));
         assert!(dependency_points_outward(
-            "pageknot-cli",
-            "pageknot-artifact"
+            "offprint-html",
+            "offprint-browser"
         ));
-        assert!(!dependency_points_outward("pageknot-cli", "pageknot"));
+        assert!(dependency_points_outward(
+            "offprint-export",
+            "offprint-browser"
+        ));
+        assert!(dependency_points_outward("offprint-document", "offprint"));
+        assert!(dependency_points_outward(
+            "offprint-chromium",
+            "offprint-test-support"
+        ));
+        assert!(dependency_points_outward(
+            "offprint-cli",
+            "offprint-artifact"
+        ));
+        assert!(!dependency_points_outward("offprint-cli", "offprint"));
     }
 
     #[test]
     fn size_exemptions_are_explicit() {
         assert!(is_generated(Path::new(
-            "crates/pageknot-chromium/src/cdp_generated.rs"
+            "crates/offprint-chromium/src/cdp_generated.rs"
         )));
         assert!(is_generated(Path::new(
-            "bindings/python/python/pageknot/_contracts.pyi"
+            "bindings/python/python/offprint/_contracts.pyi"
         )));
         assert!(is_test(Path::new(
-            "crates/pageknot/tests/fixture_matrix.rs"
+            "crates/offprint/tests/fixture_matrix.rs"
         )));
         assert!(is_test(Path::new(
-            "crates/pageknot-cli/src/runner/tests.rs"
+            "crates/offprint-cli/src/runner/tests.rs"
         )));
-        assert!(!is_generated(Path::new("crates/pageknot/src/lib.rs")));
-        assert!(!is_test(Path::new("crates/pageknot/src/lib.rs")));
+        assert!(!is_generated(Path::new("crates/offprint/src/lib.rs")));
+        assert!(!is_test(Path::new("crates/offprint/src/lib.rs")));
         assert!(is_handwritten_production_source(Path::new(
-            "crates/pageknot/src/lib.rs"
+            "crates/offprint/src/lib.rs"
         )));
         assert!(!is_handwritten_production_source(Path::new("SPEC.md")));
         assert!(!is_handwritten_production_source(Path::new("Cargo.toml")));

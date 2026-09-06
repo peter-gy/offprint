@@ -8,35 +8,40 @@ import weakref
 
 import pytest
 
-from pageknot import _api
-from pageknot import PageKnot, ValidationError
+from offprint import _api
+from offprint import Offprint, ValidationError
 
 
 def test_exposes_the_three_canonical_services() -> None:
-    pageknot = PageKnot()
+    offprint = Offprint()
 
-    assert callable(pageknot.captures.start)
-    assert callable(pageknot.captures.batch)
-    assert callable(pageknot.captures.crawl)
-    assert callable(pageknot.artifacts.inspect)
-    assert callable(pageknot.artifacts.export)
-    assert callable(pageknot.artifacts.verify_variant)
-    assert callable(pageknot.browsers.ensure)
+    assert callable(offprint.captures.start)
+    assert callable(offprint.captures.batch)
+    assert callable(offprint.captures.crawl)
+    assert callable(offprint.artifacts.inspect)
+    assert callable(offprint.artifacts.export)
+    assert callable(offprint.artifacts.verify_format)
+    assert callable(offprint.browsers.ensure)
+    assert callable(offprint.browsers.list)
+    assert callable(offprint.browsers.install)
+    assert callable(offprint.browsers.remove)
+    assert callable(offprint.browsers.doctor)
+    assert callable(offprint.browsers.close_idle)
 
 
 def test_rejects_misspelled_constructor_options() -> None:
     with pytest.raises(TypeError, match="browser_pat"):
-        PageKnot({"browser_pat": "/tmp/chrome"})
+        Offprint({"browser_pat": "/tmp/chrome"})
 
 
 @pytest.mark.asyncio
 async def test_maps_validation_failures_to_typed_exceptions() -> None:
-    async with PageKnot() as pageknot:
+    async with Offprint() as offprint:
         with pytest.raises(ValidationError) as captured:
-            await pageknot.capture("javascript:alert(1)")
+            await offprint.capture("javascript:alert(1)")
 
     error = captured.value
-    assert error.code == "pageknot.input.url_scheme"
+    assert error.code == "offprint.input.url_scheme"
     assert error.stage == "validation"
     assert error.retryable is False
     assert error.details == {}
@@ -44,10 +49,10 @@ async def test_maps_validation_failures_to_typed_exceptions() -> None:
 
 @pytest.mark.asyncio
 async def test_close_is_idempotent() -> None:
-    pageknot = PageKnot()
+    offprint = Offprint()
 
-    await pageknot.close()
-    await pageknot.close()
+    await offprint.close()
+    await offprint.close()
 
 
 @pytest.mark.asyncio
@@ -63,10 +68,10 @@ async def test_finalizer_closes_an_abandoned_native_service(
         async def close(self) -> None:
             closed.set()
 
-    monkeypatch.setattr(_api, "NativePageKnot", NativeFixture)
-    pageknot = PageKnot()
-    reference = weakref.ref(pageknot)
-    del pageknot
+    monkeypatch.setattr(_api, "NativeOffprint", NativeFixture)
+    offprint = Offprint()
+    reference = weakref.ref(offprint)
+    del offprint
     gc.collect()
 
     await asyncio.wait_for(closed.wait(), timeout=1)
@@ -89,14 +94,14 @@ def test_finalizer_closes_after_the_event_loop_stops(
             nonlocal close_calls
             close_calls += 1
 
-    async def create_pageknot() -> PageKnot:
-        return PageKnot()
+    async def create_offprint() -> Offprint:
+        return Offprint()
 
-    monkeypatch.setattr(_api, "NativePageKnot", NativeFixture)
-    pageknot = asyncio.run(create_pageknot())
-    token = pageknot._service_token
-    reference = weakref.ref(pageknot)
-    del pageknot
+    monkeypatch.setattr(_api, "NativeOffprint", NativeFixture)
+    offprint = asyncio.run(create_offprint())
+    token = offprint._service_token
+    reference = weakref.ref(offprint)
+    del offprint
     gc.collect()
     gc.collect()
 
@@ -121,11 +126,11 @@ async def test_retained_child_service_keeps_root_service_alive(
         async def close(self) -> None:
             closed.set()
 
-    monkeypatch.setattr(_api, "NativePageKnot", NativeFixture)
-    pageknot = PageKnot()
-    captures = pageknot.captures
-    reference = weakref.ref(pageknot)
-    del pageknot
+    monkeypatch.setattr(_api, "NativeOffprint", NativeFixture)
+    offprint = Offprint()
+    captures = offprint.captures
+    reference = weakref.ref(offprint)
+    del offprint
     gc.collect()
 
     owner = reference()
@@ -143,7 +148,7 @@ async def test_pathlike_capture_output_uses_the_filesystem_protocol(
 
     class PathFixture(os.PathLike[str]):
         def __fspath__(self) -> str:
-            return "/tmp/pageknot-custom-path.html"
+            return "/tmp/offprint-custom-path.html"
 
     class NativeFixture:
         def __init__(self, options_json: str | None = None) -> None:
@@ -157,19 +162,19 @@ async def test_pathlike_capture_output_uses_the_filesystem_protocol(
             assert url == "https://example.com/"
             assert options_json is not None
             captured_options.update(json.loads(options_json))
-            return json.dumps({"status": "succeeded"})
+            return json.dumps({})
 
         async def close(self) -> None:
             return
 
-    monkeypatch.setattr(_api, "NativePageKnot", NativeFixture)
-    async with PageKnot() as pageknot:
-        await pageknot.capture(
+    monkeypatch.setattr(_api, "NativeOffprint", NativeFixture)
+    async with Offprint() as offprint:
+        await offprint.capture(
             "https://example.com/",
             output=PathFixture(),
         )
 
-    assert captured_options["output"] == "/tmp/pageknot-custom-path.html"
+    assert captured_options["output"] == "/tmp/offprint-custom-path.html"
 
 
 @pytest.mark.asyncio
@@ -190,15 +195,16 @@ async def test_capture_forwards_a_dom_selector(
             assert url == "https://example.com/"
             assert options_json is not None
             captured_options.update(json.loads(options_json))
-            return json.dumps({"status": "succeeded"})
+            return json.dumps({})
 
         async def close(self) -> None:
             return
 
-    monkeypatch.setattr(_api, "NativePageKnot", NativeFixture)
-    async with PageKnot() as pageknot:
-        await pageknot.capture(
+    monkeypatch.setattr(_api, "NativeOffprint", NativeFixture)
+    async with Offprint() as offprint:
+        await offprint.capture(
             "https://example.com/",
+            output="capture.html",
             selector="main article",
         )
 
@@ -223,15 +229,16 @@ async def test_capture_forwards_readiness_and_delay(
             assert url == "https://example.com/"
             assert options_json is not None
             captured_options.update(json.loads(options_json))
-            return json.dumps({"status": "succeeded"})
+            return json.dumps({})
 
         async def close(self) -> None:
             return
 
-    monkeypatch.setattr(_api, "NativePageKnot", NativeFixture)
-    async with PageKnot() as pageknot:
-        await pageknot.capture(
+    monkeypatch.setattr(_api, "NativeOffprint", NativeFixture)
+    async with Offprint() as offprint:
+        await offprint.capture(
             "https://example.com/",
+            output="capture.html",
             wait_until="network-idle",
             delay_ms=750,
         )
@@ -242,18 +249,18 @@ async def test_capture_forwards_readiness_and_delay(
 
 @pytest.mark.asyncio
 async def test_contains_native_panics_and_keeps_the_host_alive() -> None:
-    async with PageKnot() as pageknot:
-        with pytest.raises(_api.PageKnotError) as captured:
-            await pageknot._test_panic()
+    async with Offprint() as offprint:
+        with pytest.raises(_api.OffprintError) as captured:
+            await offprint._test_panic()
 
         error = captured.value
-        assert error.code == "pageknot.internal.panic"
+        assert error.code == "offprint.internal.panic"
         assert error.stage == "internal"
         assert error.retryable is False
         assert error.message == (
-            "PageKnot encountered an unexpected internal failure"
+            "Offprint encountered an unexpected internal failure"
         )
         assert "fault injection" not in error.message
 
         with pytest.raises(ValidationError):
-            await pageknot.capture("javascript:alert(1)")
+            await offprint.capture("javascript:alert(1)")

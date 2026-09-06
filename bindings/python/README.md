@@ -1,9 +1,9 @@
-# `pageknot`
+# `offprint`
 
-The `pageknot` Python package captures rendered pages through the PageKnot Rust
+The `offprint` Python package captures rendered pages through the Offprint Rust
 engine and returns the canonical capture records as dictionaries.
 
-The current package is an alpha build from the PageKnot source checkout. It
+The current package is an alpha build from the Offprint source checkout. It
 requires Python 3.10 or newer, uv, the repository Rust toolchain, and a
 supported native build environment.
 
@@ -29,12 +29,12 @@ Its complete source is [`examples/capture.py`](./examples/capture.py):
 ```python
 import asyncio
 
-from pageknot import PageKnot
+from offprint import Offprint
 
 
 async def main() -> None:
-    async with PageKnot() as pageknot:
-        result = await pageknot.capture(
+    async with Offprint() as offprint:
+        result = await offprint.capture(
             "https://example.com",
             output="example.html",
         )
@@ -45,20 +45,21 @@ asyncio.run(main())
 ```
 
 The first capture discovers a compatible local browser. When discovery and the
-managed cache are empty, PageKnot downloads and verifies its pinned Chrome for
+managed cache are empty, Offprint downloads and verifies its pinned Chrome for
 Testing build.
 
 ## Capture options
 
-`capture(url, **options)` accepts output, profile, timeout, readiness, viewport,
-strict resource handling, browser visibility, conflict policy, scope, CSS
-selector, and optimization options. The public method signatures in
-[`python/pageknot/_api.py`](./python/pageknot/_api.py) define the current names.
+`capture(url, **options)` requires an output path. It accepts profile, timeout,
+readiness, viewport, strict resource handling, browser visibility, conflict
+policy, network policy, verification mode, scope, CSS selector, and
+optimization options. The public method signatures in
+[`python/offprint/_api.py`](./python/offprint/_api.py) define the current names.
 
 Wait for finite requests, then allow one second for worker rendering:
 
 ```python
-result = await pageknot.capture(
+result = await offprint.capture(
     "https://example.com",
     output="application.html",
     wait_until="network-idle",
@@ -69,16 +70,20 @@ result = await pageknot.capture(
 
 ## Jobs and lifecycle
 
-Call `pageknot.captures.start(request)` when the caller needs progress events or
+Call `offprint.captures.start(request)` when the caller needs progress events or
 cancellation. Each call to `job.events()` creates an independent asynchronous
-event subscription. `await job.result()` returns the terminal capture record.
+event subscription. `await job.result()` returns a successful `CaptureReceipt`.
+Failure and cancellation raise `OffprintError`.
 
-Use `async with PageKnot()` for one bounded service lifetime. Long-running
-callers can reuse one instance and await `pageknot.close()` during shutdown.
+Use `async with Offprint()` for one bounded service lifetime. Long-running
+callers can reuse one instance and await `offprint.close()` during shutdown.
+
+`offprint.browsers` exposes `ensure`, `list`, `install`, `remove`, `doctor`, and
+`close_idle` for browser setup and administration.
 
 ## Errors and records
 
-Failures derive from `PageKnotError`. Stage-specific subclasses let callers
+Failures derive from `OffprintError`. Stage-specific subclasses let callers
 handle validation, browser, navigation, resource, verification, and shutdown
 failures independently. Each error carries a stable code, stage, retryability,
 details, and an optional diagnostics path.

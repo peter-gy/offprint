@@ -1,6 +1,6 @@
-# PageKnot review guide
+# Offprint review guide
 
-Review PageKnot from the user boundary toward the implementation.
+Review Offprint from the user boundary toward the implementation.
 
 ## Contract review
 

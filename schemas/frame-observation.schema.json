@@ -1,0 +1,263 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FrameObservation",
+  "description": "Provider-neutral state observed from one rendered browser frame.",
+  "type": "object",
+  "properties": {
+    "baseUrl": {
+      "description": "Base URL used to resolve document references.",
+      "type": "string"
+    },
+    "doctype": {
+      "description": "Serialized document type declaration.",
+      "type": "string"
+    },
+    "encoding": {
+      "description": "Browser-reported document encoding.",
+      "type": "string"
+    },
+    "finalUrl": {
+      "description": "Final frame URL after redirects.",
+      "type": "string"
+    },
+    "frameOwners": {
+      "description": "Embedded frame owner path mappings.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/FrameOwnerObservation"
+      }
+    },
+    "frames": {
+      "description": "Number of frames contained in this observation.",
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "html": {
+      "description": "Serialized rendered document element.",
+      "type": "string"
+    },
+    "nodes": {
+      "description": "Number of retained nodes in this frame.",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0
+    },
+    "requestedUrl": {
+      "description": "Requested frame URL.",
+      "type": "string"
+    },
+    "selection": {
+      "description": "Retained selection state.",
+      "$ref": "#/$defs/SelectionObservation",
+      "default": {
+        "nodes": 0,
+        "ranges": 0
+      }
+    },
+    "subtreeNodes": {
+      "description": "Number of retained nodes including inline descendants.",
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0
+    },
+    "title": {
+      "description": "Rendered document title.",
+      "type": "string"
+    },
+    "viewport": {
+      "description": "Viewport and scroll state.",
+      "$ref": "#/$defs/ObservationViewport"
+    },
+    "visualFallbacks": {
+      "description": "Pixel fallbacks required by browser-only rendering state.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/VisualFallback"
+      }
+    },
+    "warnings": {
+      "description": "Warnings produced while observing this frame.",
+      "type": "array",
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ObservationWarning"
+      }
+    }
+  },
+  "required": [
+    "doctype",
+    "html",
+    "requestedUrl",
+    "finalUrl",
+    "baseUrl",
+    "title",
+    "encoding",
+    "viewport",
+    "frames",
+    "nodes",
+    "subtreeNodes"
+  ],
+  "$defs": {
+    "FrameOwnerObservation": {
+      "description": "Original and retained paths for an embedded frame owner.",
+      "type": "object",
+      "properties": {
+        "originalPath": {
+          "description": "Owner path before page state was filtered.",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        },
+        "retainedPath": {
+          "description": "Owner path in the retained document.",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0
+          }
+        }
+      },
+      "required": [
+        "originalPath",
+        "retainedPath"
+      ]
+    },
+    "ObservationViewport": {
+      "description": "Viewport and scroll state observed for one rendered frame.",
+      "type": "object",
+      "properties": {
+        "deviceScaleFactor": {
+          "description": "Device pixel ratio as an exact decimal string.",
+          "type": "string"
+        },
+        "height": {
+          "description": "Viewport height in CSS pixels.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "scrollX": {
+          "description": "Horizontal scroll offset as an exact decimal string.",
+          "type": "string"
+        },
+        "scrollY": {
+          "description": "Vertical scroll offset as an exact decimal string.",
+          "type": "string"
+        },
+        "width": {
+          "description": "Viewport width in CSS pixels.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "width",
+        "height",
+        "deviceScaleFactor",
+        "scrollX",
+        "scrollY"
+      ]
+    },
+    "ObservationWarning": {
+      "description": "One warning emitted while observing browser state.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "description": "Stable warning identifier.",
+          "type": "string"
+        },
+        "message": {
+          "description": "Human-readable warning detail.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "message"
+      ]
+    },
+    "SelectionObservation": {
+      "description": "Selection state retained by one observed frame.",
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "description": "Number of nodes touched by the retained ranges.",
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "ranges": {
+          "description": "Number of retained selection ranges.",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "ranges",
+        "nodes"
+      ]
+    },
+    "VisualFallback": {
+      "description": "The browser-space rectangle for one pixel fallback.",
+      "type": "object",
+      "properties": {
+        "height": {
+          "description": "Height in CSS pixels.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Observation-local target identifier.",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Browser state represented by the fallback.",
+          "$ref": "#/$defs/VisualFallbackKind"
+        },
+        "width": {
+          "description": "Width in CSS pixels.",
+          "type": "string"
+        },
+        "x": {
+          "description": "Horizontal offset in CSS pixels.",
+          "type": "string"
+        },
+        "y": {
+          "description": "Vertical offset in CSS pixels.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "x",
+        "y",
+        "width",
+        "height"
+      ]
+    },
+    "VisualFallbackKind": {
+      "description": "Browser state that requires a pixel fallback.",
+      "oneOf": [
+        {
+          "description": "Canvas pixels captured as an image.",
+          "type": "string",
+          "const": "canvas"
+        },
+        {
+          "description": "A media frame captured as an image.",
+          "type": "string",
+          "const": "video"
+        }
+      ]
+    }
+  }
+}

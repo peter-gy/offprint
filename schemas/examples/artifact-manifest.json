@@ -1,12 +1,13 @@
 {
   "browser": {
-    "executablePath": "/opt/pageknot/chrome",
+    "executablePath": "/opt/offprint/chrome",
     "product": "chrome",
     "protocolVersion": "1.3",
     "revision": "1654411",
     "source": "managed",
     "version": "151.0.7922.47"
   },
+  "capturePolicySha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "capturedAt": "2026-07-27T12:00:00Z",
   "environment": {
     "colorScheme": "light",
@@ -22,16 +23,12 @@
       "width": 1440
     }
   },
-  "format": {
-    "kind": "html",
-    "version": 1
-  },
+  "formatVersion": 2,
   "frames": 1,
   "generator": {
-    "name": "PageKnot",
+    "name": "Offprint",
     "version": "0.1.0"
   },
-  "policySha256": "0000000000000000000000000000000000000000000000000000000000000000",
   "resourceRecords": [],
   "resources": {
     "discovered": 0,
@@ -41,7 +38,7 @@
     "failed": 0,
     "omitted": 0
   },
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "source": {
     "finalUrl": "https://example.com/",
     "finalUrlSha256": "0000000000000000000000000000000000000000000000000000000000000000",
@@ -51,11 +48,7 @@
   "structuralRepair": {
     "applied": false
   },
-  "verification": {
-    "level": "offline",
-    "networkRequests": 0,
-    "passed": true
-  },
+  "verificationMode": "offline",
   "viewState": {
     "scrollX": "0",
     "scrollY": "0"

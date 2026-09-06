@@ -10,7 +10,7 @@ import weakref
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from pageknot import PageKnot
+from offprint import Offprint
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -29,14 +29,14 @@ class Handler(BaseHTTPRequestHandler):
         return
 
 
-async def run(scenario: str) -> PageKnot | None:
+async def run(scenario: str) -> Offprint | None:
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
         fixture_path = Path(
             os.environ.get(
-                "PAGEKNOT_CAPTURE_REQUEST",
+                "OFFPRINT_CAPTURE_REQUEST",
                 Path(__file__).parents[3]
                 / "schemas"
                 / "examples"
@@ -45,29 +45,29 @@ async def run(scenario: str) -> PageKnot | None:
         )
         request = json.loads(fixture_path.read_text(encoding="utf-8"))
         request["url"] = f"http://127.0.0.1:{server.server_port}/"
-        request["artifact"]["options"]["target"]["value"] = str(
+        request["output"]["path"] = str(
             Path(os.environ["TMPDIR"]) / f"{scenario}.html"
         )
         request["readiness"]["delay"] = 30_000
-        browser_path = os.environ.get("PAGEKNOT_PACKAGE_BROWSER_PATH")
+        browser_path = os.environ.get("OFFPRINT_PACKAGE_BROWSER_PATH")
         options = {"browser_path": browser_path} if browser_path else None
-        pageknot: PageKnot | None = PageKnot(options)
-        job = await pageknot.captures.start(request)
+        offprint: Offprint | None = Offprint(options)
+        job = await offprint.captures.start(request)
         events = job.events()
         async for event in events:
             if event["type"] == "navigation.started":
                 break
 
-        ready_path = os.environ.get("PAGEKNOT_LIFECYCLE_READY")
-        continue_path = os.environ.get("PAGEKNOT_LIFECYCLE_CONTINUE")
+        ready_path = os.environ.get("OFFPRINT_LIFECYCLE_READY")
+        continue_path = os.environ.get("OFFPRINT_LIFECYCLE_CONTINUE")
         if ready_path is not None and continue_path is not None:
             Path(ready_path).write_text("ready\n", encoding="utf-8")
             while not Path(continue_path).exists():
                 await asyncio.sleep(0.01)
 
         if scenario == "retained-job":
-            reference = weakref.ref(pageknot)
-            pageknot = None
+            reference = weakref.ref(offprint)
+            offprint = None
             gc.collect()
             owner = reference()
             assert owner is not None
@@ -78,14 +78,14 @@ async def run(scenario: str) -> PageKnot | None:
                 pass
             await owner.close()
         elif scenario == "explicit-close":
-            await pageknot.close()
+            await offprint.close()
         elif scenario == "abandoned-close":
-            asyncio.create_task(pageknot.close())
-            pageknot = None
+            asyncio.create_task(offprint.close())
+            offprint = None
             gc.collect()
             await asyncio.sleep(0)
         elif scenario in {"host-exit", "collected-after-loop-stop"}:
-            return pageknot
+            return offprint
         return None
     finally:
         server.shutdown()
@@ -101,11 +101,11 @@ assert scenario in {
     "host-exit",
     "collected-after-loop-stop",
 }
-pageknot = asyncio.run(run(scenario))
+offprint = asyncio.run(run(scenario))
 if scenario == "collected-after-loop-stop":
-    reference = weakref.ref(pageknot)
-    pageknot = None
+    reference = weakref.ref(offprint)
+    offprint = None
     gc.collect()
     gc.collect()
     assert reference() is None
-    assert not list(Path(os.environ["TMPDIR"]).glob("pageknot-browser-*"))
+    assert not list(Path(os.environ["TMPDIR"]).glob("offprint-browser-*"))

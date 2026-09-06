@@ -27,8 +27,8 @@ export async function runLifecycleScenario({
   environment = {},
   timeout = 60_000,
 }) {
-  const ready = join(directory, ".pageknot-lifecycle-ready");
-  const proceed = join(directory, ".pageknot-lifecycle-continue");
+  const ready = join(directory, ".offprint-lifecycle-ready");
+  const proceed = join(directory, ".offprint-lifecycle-continue");
   const output = [];
   const child = spawn(
     process.execPath,
@@ -37,8 +37,8 @@ export async function runLifecycleScenario({
       env: {
         ...process.env,
         ...environment,
-        PAGEKNOT_LIFECYCLE_READY: ready,
-        PAGEKNOT_LIFECYCLE_CONTINUE: proceed,
+        OFFPRINT_LIFECYCLE_READY: ready,
+        OFFPRINT_LIFECYCLE_CONTINUE: proceed,
         TEMP: directory,
         TMP: directory,
         TMPDIR: directory,

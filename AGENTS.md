@@ -1,6 +1,6 @@
-# PageKnot contributor contract
+# Offprint contributor contract
 
-PageKnot captures a rendered page through Chromium, transforms the observation
+Offprint captures a rendered page through Chromium, transforms the observation
 into safe-static HTML, verifies it with network access denied, and commits the
 artifact through an atomic transaction.
 
@@ -8,18 +8,18 @@ artifact through an atomic transaction.
 
 | Area | Owner | Contract |
 | --- | --- | --- |
-| `crates/pageknot-model` | Canonical records | Public request, event, result, error, browser, resource, and artifact records |
-| `crates/pageknot-browser` | Browser seam | Backend traits, sessions, network policy, and readiness observations |
-| `crates/pageknot-chromium` | Chromium adapter | Discovery, managed installs, process ownership, CDP transport, targets, and collection |
-| `crates/pageknot-protocol` | Collector protocol | Handshake, version negotiation, chunk envelopes, checksums, and message records |
-| `crates/pageknot-capture` | Capture mechanics | Validation, state transitions, cancellation, budgets, resource graph, and content store |
-| `crates/pageknot-document` | Document model | Arena DOM, discovery, CSS rewriting, state materialization, and sanitization |
-| `crates/pageknot-html` | HTML artifact | Encoding, manifest embedding, structural repair, static verification, and fallbacks |
-| `crates/pageknot-transform` | Safe-static transform | Rendering freeze, sanitization, structural repair, manifest encoding, and static verification |
-| `crates/pageknot-export` | Alternate representations | Format encoders, source metadata preservation, and representation-specific verification |
-| `crates/pageknot-artifact` | Delivery | Bounded memory output and transactional file output |
-| `crates/pageknot` | Service API | Runtime ownership, capture jobs, pipeline, diagnostics, browser service, inspect, and verify |
-| `crates/pageknot-cli` | Command boundary | Commands, configuration precedence, output routing, diagnostics, and exit status |
+| `crates/offprint-model` | Canonical records | Public request, event, result, error, browser, resource, and artifact records |
+| `crates/offprint-browser` | Browser seam | Backend traits, sessions, network policy, and readiness observations |
+| `crates/offprint-chromium` | Chromium adapter | Discovery, managed installs, process ownership, CDP transport, targets, and collection |
+| `crates/offprint-protocol` | Collector protocol | Handshake, version negotiation, chunk envelopes, checksums, and message records |
+| `crates/offprint-capture` | Capture mechanics | Validation, state transitions, cancellation, budgets, resource graph, and content store |
+| `crates/offprint-document` | Document model | Arena DOM, discovery, CSS rewriting, state materialization, and sanitization |
+| `crates/offprint-html` | HTML artifact | Encoding, manifest embedding, structural repair, static verification, and fallbacks |
+| `crates/offprint-transform` | Safe-static transform | Rendering freeze, sanitization, structural repair, manifest encoding, and static verification |
+| `crates/offprint-export` | Alternate representations | Format encoders, source metadata preservation, and representation-specific verification |
+| `crates/offprint-artifact` | Delivery | Bounded memory output and transactional file output |
+| `crates/offprint` | Service API | Runtime ownership, capture jobs, pipeline, diagnostics, browser service, inspect, and verify |
+| `crates/offprint-cli` | Command boundary | Commands, configuration precedence, output routing, diagnostics, and exit status |
 | `collector` | Page observation | Document-start hooks and bounded pull-based collection |
 | `bindings/node` | Node.js binding | ESM, CommonJS, async jobs, events, errors, and platform addon selection |
 | `bindings/python` | Python binding | Async context manager, jobs, events, errors, and wheel module |
@@ -33,17 +33,17 @@ CDP types stay behind their owning crate boundaries.
 
 Dependencies point toward canonical records and interface seams.
 
-- `pageknot-model` imports no PageKnot crate.
-- `pageknot-browser` owns browser ports. `pageknot-chromium` implements them
+- `offprint-model` imports no Offprint crate.
+- `offprint-browser` owns browser ports. `offprint-chromium` implements them
   and owns CDP, process, target, and managed-browser details.
-- `pageknot-document`, `pageknot-html`, `pageknot-transform`, and
-  `pageknot-export` depend on document and model contracts. They do not select
+- `offprint-document`, `offprint-html`, `offprint-transform`, and
+  `offprint-export` depend on document and model contracts. They do not select
   runtime adapters.
-- `pageknot-artifact` stages, recovers, and commits generic payloads. Format
+- `offprint-artifact` stages, recovers, and commits generic payloads. Format
   encoders prepare payloads before delivery.
-- `pageknot` selects browser and format adapters and owns runtime
+- `offprint` selects browser and format adapters and owns runtime
   orchestration.
-- The CLI and language bindings call the `pageknot` service API.
+- The CLI and language bindings call the `offprint` service API.
 
 `xtask` validates the internal Cargo dependency graph. Reject changes that
 introduce an adapter dependency into a port, model, frontend, or
@@ -85,6 +85,7 @@ representation runs the shared representation conformance suite.
 
 ```console
 just fmt-check
+just clean
 just lint
 just test
 just e2e GROUP
@@ -111,11 +112,11 @@ capture path.
 
 - `schemas/**` comes from `cargo run -p xtask -- codegen`.
 - `fixtures/manifest/**` comes from the same schema command.
-- `crates/pageknot-chromium/src/cdp/generated/*.rs` comes from
+- `crates/offprint-chromium/src/cdp/generated/*.rs` comes from
   `cargo run -p xtask -- codegen-cdp`.
 - `collector/dist/collector.js` and `collector.sha256` come from
   `bun run build` in `collector`.
-- `crates/pageknot-chromium/generated/collector.js` and
+- `crates/offprint-chromium/generated/collector.js` and
   `collector.sha256` are the packaged copies from the same collector build.
 - `benches/baseline.json` comes from `just benchmark
   benches/baseline.json`.

@@ -17,14 +17,14 @@ fixture = (
 )
 
 with tempfile.TemporaryDirectory(
-    prefix="pageknot-python-package-host-exit-"
+    prefix="offprint-python-package-host-exit-"
 ) as temporary_directory:
     directory = Path(temporary_directory)
     inherited_environment = dict(os.environ)
     inherited_environment.pop("PYTHONPATH", None)
     environment = {
         **inherited_environment,
-        "PAGEKNOT_CAPTURE_REQUEST": str(fixture),
+        "OFFPRINT_CAPTURE_REQUEST": str(fixture),
         "PYTHONNOUSERSITE": "1",
         "TEMP": str(directory),
         "TMP": str(directory),

@@ -33,6 +33,7 @@
       "minimum": 0
     }
   },
+  "additionalProperties": false,
   "required": [
     "schemaVersion",
     "planSha256",
@@ -42,7 +43,7 @@
     "resumed"
   ],
   "$defs": {
-    "ArtifactResult": {
+    "CaptureArtifact": {
       "oneOf": [
         {
           "type": "object",
@@ -104,11 +105,11 @@
         }
       ]
     },
-    "CaptureResult": {
+    "CaptureReceipt": {
       "type": "object",
       "properties": {
         "artifact": {
-          "$ref": "#/$defs/ArtifactResult"
+          "$ref": "#/$defs/CaptureArtifact"
         },
         "captureId": {
           "type": "string"
@@ -124,14 +125,11 @@
         "source": {
           "$ref": "#/$defs/SourceSummary"
         },
-        "status": {
-          "$ref": "#/$defs/CaptureTerminalStatus"
-        },
         "timings": {
           "$ref": "#/$defs/CaptureTimings"
         },
         "verification": {
-          "$ref": "#/$defs/VerificationResult"
+          "$ref": "#/$defs/VerificationReport"
         },
         "warnings": {
           "type": "array",
@@ -144,20 +142,11 @@
       "required": [
         "schemaVersion",
         "captureId",
-        "status",
         "source",
         "artifact",
         "verification",
         "resources",
         "timings"
-      ]
-    },
-    "CaptureTerminalStatus": {
-      "type": "string",
-      "enum": [
-        "succeeded",
-        "cancelled",
-        "failed"
       ]
     },
     "CaptureTimings": {
@@ -188,12 +177,12 @@
           "format": "uint64",
           "minimum": 0
         },
-        "resources": {
+        "readiness": {
           "type": "integer",
           "format": "uint64",
           "minimum": 0
         },
-        "settle": {
+        "resources": {
           "type": "integer",
           "format": "uint64",
           "minimum": 0
@@ -224,7 +213,7 @@
         "validation",
         "browser",
         "navigation",
-        "settle",
+        "readiness",
         "collection",
         "resources",
         "transform",
@@ -281,7 +270,7 @@
         "internal"
       ]
     },
-    "PageKnotError": {
+    "OffprintError": {
       "type": "object",
       "properties": {
         "code": {
@@ -306,7 +295,7 @@
         "source": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PageKnotError"
+              "$ref": "#/$defs/OffprintError"
             },
             {
               "type": "null"
@@ -401,7 +390,7 @@
         "error": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PageKnotError"
+              "$ref": "#/$defs/OffprintError"
             },
             {
               "type": "null"
@@ -430,6 +419,7 @@
           "format": "uri"
         }
       },
+      "additionalProperties": false,
       "required": [
         "requestSha256",
         "status"
@@ -455,7 +445,7 @@
               "type": "string"
             },
             "result": {
-              "$ref": "#/$defs/CaptureResult"
+              "$ref": "#/$defs/CaptureReceipt"
             },
             "status": {
               "type": "string",
@@ -473,7 +463,7 @@
           "type": "object",
           "properties": {
             "error": {
-              "$ref": "#/$defs/PageKnotError"
+              "$ref": "#/$defs/OffprintError"
             },
             "id": {
               "type": "string"
@@ -538,75 +528,44 @@
         "finalUrlSha256"
       ]
     },
-    "VerificationPolicy": {
+    "VerificationMode": {
       "type": "string",
       "enum": [
         "static",
         "offline"
       ]
     },
-    "VerificationResult": {
+    "VerificationReport": {
       "type": "object",
       "properties": {
         "artifactSha256": {
           "type": "string"
-        },
-        "attemptedUrls": {
-          "type": "array",
-          "default": [],
-          "items": {
-            "type": "string"
-          }
         },
         "bytes": {
           "type": "integer",
           "format": "uint64",
           "minimum": 0
         },
-        "frameFailures": {
-          "type": "array",
-          "default": [],
-          "items": {
-            "type": "integer",
-            "format": "uint64",
-            "minimum": 0
-          }
-        },
-        "level": {
-          "$ref": "#/$defs/VerificationPolicy"
+        "mode": {
+          "$ref": "#/$defs/VerificationMode"
         },
         "networkRequests": {
           "type": "integer",
           "format": "uint32",
           "minimum": 0
         },
-        "pageErrors": {
-          "type": "array",
-          "default": [],
-          "items": {
-            "type": "string"
-          }
-        },
-        "passed": {
-          "type": "boolean"
-        },
         "schemaVersion": {
           "type": "integer",
           "format": "uint32",
           "minimum": 0
-        },
-        "stable": {
-          "type": "boolean"
         }
       },
       "required": [
         "schemaVersion",
-        "level",
-        "passed",
+        "mode",
         "artifactSha256",
         "bytes",
-        "networkRequests",
-        "stable"
+        "networkRequests"
       ]
     }
   }

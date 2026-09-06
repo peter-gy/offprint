@@ -114,7 +114,7 @@ export function copyState(
     ) {
       removeAttribute(cloneInput, "value");
       arrayPush(context.warnings, {
-        code: "pageknot.form.password_redacted",
+        code: "offprint.form.password_redacted",
         message: "A password value was redacted.",
       });
     } else {
@@ -157,7 +157,7 @@ export function copyState(
       allocatedPayloadBytes = encoded.bytes;
       const image = canvasImage(liveCanvas, cloneCanvas);
       setImageSource(image, encoded.value);
-      setAttribute(image, "data-pageknot-canvas", "");
+      setAttribute(image, "data-offprint-canvas", "");
       replaceNode(cloneCanvas, image);
     } catch (error) {
       if (allocatedPayloadBytes > 0) {
@@ -180,7 +180,7 @@ export function copyState(
     const cloneMedia = clone as HTMLMediaElement;
     setAttribute(
       cloneMedia,
-      "data-pageknot-current-time",
+      "data-offprint-current-time",
       SafeString(mediaCurrentTime(liveMedia)),
     );
     toggleAttribute(cloneMedia, "controls", mediaControls(liveMedia));
@@ -238,14 +238,14 @@ function copyInlineFrame(
       return;
     }
     const childWindow = frameContentWindow(liveFrame) as unknown as {
-      __pageknotCollector?: {
+      __offprintCollector?: {
         call(
           method: "snapshotInline",
           arguments_: [InlineSnapshotRequest],
         ): InlineSnapshot;
       };
     } | null;
-    const childCollector = childWindow?.__pageknotCollector;
+    const childCollector = childWindow?.__offprintCollector;
     const options = { ...context.options, captureScope: "page" as const };
     const visualFallbackIdPrefix = `${context.visualFallbackIdPrefix}inline-${SafeString(context.nextInlineFallbackNamespace)}-`;
     context.nextInlineFallbackNamespace += 1;
@@ -272,7 +272,7 @@ function copyInlineFrame(
     );
     setAttribute(
       clone,
-      "data-pageknot-frame-base",
+      "data-offprint-frame-base",
       documentBaseUri(childDocument),
     );
     removeAttribute(clone, "src");
@@ -284,7 +284,7 @@ function copyInlineFrame(
       throw error;
     }
     arrayPush(context.warnings, {
-      code: "pageknot.frame.cross_origin",
+      code: "offprint.frame.cross_origin",
       message: "A frame requires collection through its attached target.",
     });
   }
@@ -380,7 +380,7 @@ function videoImage(
   setImageWidth(image, videoWidth(live) || elementClientWidth(live));
   setImageHeight(image, videoHeight(live) || elementClientHeight(live));
   setImageAlt(image, getAttribute(clone, "aria-label") ?? "");
-  setAttribute(image, "data-pageknot-media", "video");
+  setAttribute(image, "data-offprint-media", "video");
   return image;
 }
 
@@ -432,7 +432,7 @@ function materializeVideo(
       allocatedPayloadBytes = encoded.bytes;
       const image = videoImage(live, clone);
       setImageSource(image, encoded.value);
-      setAttribute(image, "data-pageknot-media-frame", "");
+      setAttribute(image, "data-offprint-media-frame", "");
       replaceNode(clone, image);
       return;
     } catch (error) {
@@ -461,7 +461,7 @@ function materializeVideo(
   if (poster) {
     const image = videoImage(live, clone);
     setImageSource(image, poster);
-    setAttribute(image, "data-pageknot-media-poster", "");
+    setAttribute(image, "data-offprint-media-poster", "");
     replaceNode(clone, image);
     return;
   }
@@ -571,7 +571,7 @@ function materializeVisualFallback(
 ): void {
   if (!context.allowScreenshotFallback) {
     arrayPush(context.warnings, {
-      code: `pageknot.${kind}.capture_unavailable`,
+      code: `offprint.${kind}.capture_unavailable`,
       message: `The ${kind} bitmap could not be collected from an inline frame.`,
     });
     return;
@@ -586,7 +586,7 @@ function materializeVisualFallback(
     rectHeight(bounds) <= 0
   ) {
     arrayPush(context.warnings, {
-      code: `pageknot.${kind}.empty_bounds`,
+      code: `offprint.${kind}.empty_bounds`,
       message: `The ${kind} bitmap has no visible capture bounds.`,
     });
     return;
@@ -597,8 +597,8 @@ function materializeVisualFallback(
     isHtmlElement(live, "canvas") && isHtmlElement(clone, "canvas")
       ? canvasImage(live as HTMLCanvasElement, clone as HTMLCanvasElement)
       : videoImage(live as HTMLVideoElement, clone as HTMLVideoElement);
-  setAttribute(image, "data-pageknot-visual-fallback", id);
-  setAttribute(image, `data-pageknot-${kind}`, "");
+  setAttribute(image, "data-offprint-visual-fallback", id);
+  setAttribute(image, `data-offprint-${kind}`, "");
   replaceNode(clone, image);
   mapSet(context.visualFallbackTargets, id, live);
   const document = ownerDocument(live);

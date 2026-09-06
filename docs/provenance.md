@@ -1,10 +1,10 @@
 # Source provenance ledger
 
-PageKnot records inspected sources, adapted mechanisms, generated inputs, and
+Offprint records inspected sources, adapted mechanisms, generated inputs, and
 distributed binary inputs here. Revisions are immutable Git object IDs or
 catalog versions.
 
-| Source | Revision | License | PageKnot use |
+| Source | Revision | License | Offprint use |
 | --- | --- | --- | --- |
 | SingleFile | `7d556e71fa3a700d833116f77d31a8b9c3669643` | AGPL-3.0-or-later | Behavioral inventory, differential oracle, and safe page-capture research |
 | SingleFile CLI | `d1cdaa7b2006782415637ac79aeae136812826aa` | AGPL-3.0-or-later | Pinned executable oracle for the scheduled differential fixture |
@@ -17,11 +17,11 @@ catalog versions.
 ## Local adaptations
 
 `xtask/src/cdp.rs` follows the data-shape mapping found in agent-browser
-`cli/build.rs`. PageKnot adds exact upstream input hashes, selected domains,
+`cli/build.rs`. Offprint adds exact upstream input hashes, selected domains,
 command and event traits, stable formatting, a checked freshness mode, and
 workspace-specific output.
 
-PageKnot uses independently authored capture code. SingleFile remains a pinned
+Offprint uses independently authored capture code. SingleFile remains a pinned
 external differential oracle for rendered state and offline behavior. The
 project license follows the AGPL-compatible posture required by the direct
 source inspection recorded in `SPEC.md`.
@@ -38,15 +38,15 @@ The CDP generator downloads `browser_protocol.json` and
 
 The generated Rust file records those values in its header. The collector
 bundle records its own SHA-256 in `collector/dist/collector.sha256` and ships
-from the identical generated copy in `crates/pageknot-chromium/generated`.
+from the identical generated copy in `crates/offprint-chromium/generated`.
 
 ## Differential evidence
 
-`just differential PATH` captures one hermetic fixture with PageKnot and the
+`just differential PATH` captures one hermetic fixture with Offprint and the
 pinned SingleFile CLI under the same managed Chromium build. It reopens both
 artifacts with network access denied, compares browser-observed state and
 viewport pixels, and records duration, artifact size, peak resident memory,
-PageKnot resource outcomes, and browser identity under
+Offprint resource outcomes, and browser identity under
 `target/benchmark-evidence`.
 
 `just exploratory-corpus` captures the 32 Datawrapper article URLs recorded in

@@ -24,7 +24,7 @@
   },
   "configuration": [],
   "managedCache": {
-    "cacheDir": "/var/cache/pageknot",
+    "cacheDir": "/var/cache/offprint",
     "catalogVersion": "2026-07-27",
     "installedRevisions": [
       "1654411"
@@ -45,9 +45,9 @@
   },
   "ready": true,
   "recovery": [],
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "selected": {
-    "executablePath": "/opt/pageknot/chrome",
+    "executablePath": "/opt/offprint/chrome",
     "product": "chrome",
     "protocolVersion": "1.3",
     "revision": "1654411",

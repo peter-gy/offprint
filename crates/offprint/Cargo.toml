@@ -1,0 +1,47 @@
+[package]
+name = "offprint"
+description = "Capture rendered web pages as verified self-contained artifacts"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+readme.workspace = true
+
+[dependencies]
+base64.workspace = true
+camino.workspace = true
+chrono.workspace = true
+data-url.workspace = true
+directories.workspace = true
+futures-core.workspace = true
+futures-util.workspace = true
+offprint-artifact.workspace = true
+offprint-browser.workspace = true
+offprint-capture.workspace = true
+offprint-chromium.workspace = true
+offprint-document.workspace = true
+offprint-export.workspace = true
+offprint-html.workspace = true
+offprint-model.workspace = true
+offprint-protocol.workspace = true
+offprint-transform.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+tokio-util.workspace = true
+url.workspace = true
+
+[dev-dependencies]
+async-trait.workspace = true
+bytes.workspace = true
+image.workspace = true
+lopdf.workspace = true
+offprint-test-support = { path = "../offprint-test-support" }
+sysinfo.workspace = true
+
+[lints]
+workspace = true

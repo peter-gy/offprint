@@ -12,7 +12,7 @@ const fixture = fileURLToPath(
   new URL("./capture-request.json", import.meta.url),
 );
 const directory = await mkdtemp(
-  join(tmpdir(), "pageknot-node-package-host-exit-"),
+  join(tmpdir(), "offprint-node-package-host-exit-"),
 );
 try {
   await runLifecycleScenario({
@@ -20,8 +20,8 @@ try {
     scenario: "host-exit",
     directory,
     environment: {
-      PAGEKNOT_CAPTURE_REQUEST: fixture,
-      PAGEKNOT_LIFECYCLE_INSTALLED: "1",
+      OFFPRINT_CAPTURE_REQUEST: fixture,
+      OFFPRINT_LIFECYCLE_INSTALLED: "1",
     },
   });
 } finally {

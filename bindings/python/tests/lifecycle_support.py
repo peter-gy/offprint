@@ -164,7 +164,7 @@ def owned_processes(
 def owned_profiles(directory: Path) -> list[Path]:
     if not directory.exists():
         return []
-    return sorted(directory.glob("pageknot-browser-*"))
+    return sorted(directory.glob("offprint-browser-*"))
 
 
 def wait_for_lifecycle_cleanup(
@@ -188,7 +188,7 @@ def wait_for_lifecycle_cleanup(
         for process in processes
     ]
     raise RuntimeError(
-        f"PageKnot lifecycle residue under {directory}: "
+        f"Offprint lifecycle residue under {directory}: "
         f"processes={process_summary}, profiles={profiles}"
     )
 
@@ -203,12 +203,12 @@ def run_lifecycle_child(
     directory: Path,
     timeout: float = 60,
 ) -> None:
-    ready = directory / ".pageknot-lifecycle-ready"
-    proceed = directory / ".pageknot-lifecycle-continue"
+    ready = directory / ".offprint-lifecycle-ready"
+    proceed = directory / ".offprint-lifecycle-continue"
     child_environment = {
         **environment,
-        "PAGEKNOT_LIFECYCLE_READY": str(ready),
-        "PAGEKNOT_LIFECYCLE_CONTINUE": str(proceed),
+        "OFFPRINT_LIFECYCLE_READY": str(ready),
+        "OFFPRINT_LIFECYCLE_CONTINUE": str(proceed),
     }
     process = subprocess.Popen(
         [executable, str(script), scenario],

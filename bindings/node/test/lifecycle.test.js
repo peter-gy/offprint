@@ -14,14 +14,14 @@ const childScript = fileURLToPath(
 );
 
 test("tracks the Chromium process tree from its owned profile", () => {
-  const directory = "/pageknot-lifecycle-fixture";
+  const directory = "/offprint-lifecycle-fixture";
   const processes = [
     {
       pid: 10,
       parentPid: 1,
       name: "chrome.exe",
       commandLine:
-        `chrome --user-data-dir=${directory}/pageknot-browser-fixture`,
+        `chrome --user-data-dir=${directory}/offprint-browser-fixture`,
     },
     {
       pid: 11,
@@ -61,7 +61,7 @@ for (const scenario of [
     `releases a live browser after ${scenario}`,
     async () => {
       const directory = await mkdtemp(
-        join(tmpdir(), `pageknot-node-${scenario}-`),
+        join(tmpdir(), `offprint-node-${scenario}-`),
       );
       try {
         await runLifecycleScenario({

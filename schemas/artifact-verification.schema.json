@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ArtifactVerification",
+  "type": "object",
+  "properties": {
+    "bytes": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0
+    },
+    "format": {
+      "$ref": "#/$defs/ArtifactFormat"
+    },
+    "method": {
+      "$ref": "#/$defs/VerificationMethod"
+    },
+    "networkRequests": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "format": "uint32",
+      "minimum": 0
+    },
+    "sha256": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "format",
+    "method",
+    "bytes",
+    "sha256",
+    "networkRequests"
+  ],
+  "$defs": {
+    "ArtifactFormat": {
+      "type": "string",
+      "enum": [
+        "html",
+        "pdf",
+        "markdown",
+        "zip",
+        "self-extracting-html",
+        "mhtml"
+      ]
+    },
+    "VerificationMethod": {
+      "type": "string",
+      "enum": [
+        "static",
+        "offline",
+        "format-specific"
+      ]
+    }
+  }
+}

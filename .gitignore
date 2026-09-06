@@ -1,5 +1,5 @@
 /target/
-/pageknot
+/offprint
 /fuzz/target/
 /fuzz/corpus/
 /fuzz/artifacts/
@@ -22,9 +22,9 @@
 /bindings/python/dist/
 /bindings/python/.pytest_cache/
 /bindings/python/.mypy_cache/
-/bindings/python/python/pageknot/_native*.so
-/bindings/python/python/pageknot/_native*.dylib
-/bindings/python/python/pageknot/_native*.pyd
+/bindings/python/python/offprint/_native*.so
+/bindings/python/python/offprint/_native*.dylib
+/bindings/python/python/offprint/_native*.pyd
 **/__pycache__/
 *.py[cod]
 

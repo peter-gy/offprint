@@ -5,8 +5,8 @@ export const {
   BrowserService,
   CaptureJob,
   CaptureService,
-  PageKnot,
-  PageKnotError,
+  Offprint,
+  OffprintError,
 } = api;
 
 export default api;

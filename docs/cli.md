@@ -1,22 +1,22 @@
-# PageKnot CLI
+# Offprint CLI
 
-The `pageknot` command captures rendered pages, verifies artifacts, derives
+The `offprint` command captures rendered pages, verifies artifacts, derives
 additional formats, and manages its Chromium runtime. Commands write data to
 stdout and progress or diagnostics to stderr.
 
 Build the executable from the repository root:
 
 ```console
-cargo build --release --locked -p pageknot-cli
+cargo build --release --locked -p offprint-cli
 ```
 
-The examples below use `pageknot` as the executable name. From the source
-checkout, substitute `./target/release/pageknot`.
+The examples below use `offprint` as the executable name. From the source
+checkout, substitute `./target/release/offprint`.
 
 ## Capture and verify a page
 
 ```console
-pageknot capture https://example.com \
+offprint capture https://example.com \
   --output example.html \
   --quiet
 ```
@@ -27,14 +27,14 @@ The command prints the committed path:
 example.html
 ```
 
-PageKnot replaces an existing file at that path after the staged artifact
-passes verification. A failed or cancelled capture leaves the existing file
-unchanged.
+Offprint fails when that path already exists. Pass `--on-exists replace` to
+replace it after the staged artifact passes verification. A failed or cancelled
+capture leaves the existing file unchanged.
 
 Verify the committed artifact again:
 
 ```console
-pageknot verify example.html --level offline
+offprint artifact verify example.html --verification offline
 ```
 
 Offline verification reopens HTML with network access denied. A successful
@@ -44,52 +44,56 @@ verification reports `0 network requests`.
 
 | Command | Result and side effect |
 | --- | --- |
-| `capture <URL>` | Writes one verified HTML or PDF artifact. The default format is HTML. |
-| `export <ARTIFACT>` | Derives selected PDF, Markdown, ZIP, compressed HTML, or MHTML variants from a PageKnot HTML artifact. Existing variants are replaced by default. |
+| `capture <URL>` | Writes one verified Offprint HTML artifact to the required output. |
+| `artifact export <ARTIFACT>` | Derives selected PDF, Markdown, ZIP, self-extracting HTML, or MHTML artifacts from an Offprint HTML artifact. |
 | `batch <MANIFEST>` | Runs the independent requests in a [`BatchRequest`](../schemas/batch-request.schema.json) JSON document. |
 | `crawl <URL>` | Captures a breadth-first link graph into a directory. Defaults are 100 pages, depth 3, concurrency 4, and seed-origin links. |
-| `verify <ARTIFACT>` | Applies static checks or a network-denied browser reopen. |
-| `inspect <ARTIFACT>` | Validates and prints the embedded HTML artifact manifest. |
+| `artifact verify <ARTIFACT>` | Applies static checks or a network-denied browser reopen. |
+| `artifact inspect <ARTIFACT>` | Validates and prints the embedded HTML artifact manifest. |
 | `doctor` | Reports effective configuration, browser selection, collector compatibility, cache state, and output capabilities. |
 | `browser install` | Downloads and verifies a trusted managed Chromium revision. |
 | `browser list` | Lists managed and discovered browser candidates. |
 | `browser remove <REVISION>` | Removes a selected idle managed revision. `--force` first resolves a replacement. |
 | `completion <SHELL>` | Prints a completion script for Bash, Elvish, Fish, PowerShell, or Zsh. |
 
-Run `pageknot <command> --help` for the current arguments, accepted values, and
+Run `offprint <command> --help` for the current arguments, accepted values, and
 examples.
 
-## Choose a representation
+## Export another format
 
-`capture` commits safe-static HTML by default. Pass `--format pdf` to render
-the captured HTML as the committed PDF:
+`capture` commits canonical safe-static HTML. Derive a PDF from that capture
+artifact:
 
 ```console
-pageknot capture https://example.com \
-  --format pdf \
-  --output example.pdf
+offprint capture https://example.com \
+  --output example.html
+
+offprint artifact export example.html \
+  --output exports \
+  --format pdf
 ```
 
 PDF output preserves Chromium's selectable text, printable links, tagged
-structure, and document outline. PageKnot adds the HTML title, language,
+structure, and document outline. Offprint adds the HTML title, language,
 author, description, keywords, source URL, capture time, and provenance to
 document properties and Extensible Metadata Platform metadata. It verifies the
 passive PDF structure before commit.
 
-Use `--landscape` or `--prefer-css-page-size` to control PDF printing.
+Use `--landscape` or `--prefer-css-page-size` on `artifact export` to control PDF
+printing.
 
-Derive several independently verified formats from an existing PageKnot HTML
+Derive several independently verified formats from an existing Offprint HTML
 artifact:
 
 ```console
-pageknot export example.html \
+offprint artifact export example.html \
   --output exports \
-  --variant pdf,markdown,zip,self-extracting,mhtml
+  --format pdf,markdown,zip,self-extracting-html,mhtml
 ```
 
 Each derived artifact carries source provenance and passes its format-specific
-verifier before PageKnot commits the output set. Existing export destinations
-are replaced by default.
+verifier before Offprint commits the output set. Export fails when a destination
+already exists. Pass `--on-exists replace` to replace verified artifacts.
 
 ## Select capture readiness
 
@@ -108,7 +112,7 @@ Use `render-idle` when fetch or XMLHttpRequest calls stay open. Add `--delay`
 when worker computation updates the page after the chosen condition:
 
 ```console
-pageknot capture https://example.com \
+offprint capture https://example.com \
   --wait-until network-idle \
   --delay 1s \
   --timeout 2m \
@@ -123,14 +127,14 @@ Readiness and delay share the deadline set by `--timeout`.
 ancestor chain:
 
 ```console
-pageknot capture \
+offprint capture \
   https://www.datawrapper.de/blog/dual-axis-charts-guide \
   --selector "main article" \
   --output article.html
 ```
 
-Invalid CSS syntax returns `pageknot.selector.invalid`. A valid selector with
-no top-level document match returns `pageknot.selector.not_found`.
+Invalid CSS syntax returns `offprint.selector.invalid`. A valid selector with
+no top-level document match returns `offprint.selector.not_found`.
 
 ## Write machine-readable output
 
@@ -138,13 +142,12 @@ no top-level document match returns `pageknot.selector.not_found`.
 capturing progress text:
 
 ```console
-pageknot capture https://example.com \
+offprint capture https://example.com \
   --output example.html \
   --json > capture.json
 
 jq -e '
-  .status == "succeeded" and
-  .verification.passed and
+  (.captureId | startswith("cap_")) and
   .verification.networkRequests == 0
 ' capture.json
 ```
@@ -152,19 +155,27 @@ jq -e '
 `--quiet` suppresses non-error human diagnostics. `--output -` writes raw
 artifact bytes to stdout and conflicts with `--json`.
 
+`artifact verify --json` always returns one `ArtifactVerification` record. Its
+`format` and `method` fields identify HTML static checks, HTML offline checks,
+or a format-specific verifier.
+
 ## Run bounded capture sets
 
 Use `batch` for independent requests defined by a
 [`BatchRequest`](../schemas/batch-request.schema.json) JSON document:
 
 ```console
-pageknot batch jobs.json
+offprint batch jobs.json
 ```
+
+Persisted capture, batch, crawl, and export requests require `schemaVersion`.
+Unknown fields and incompatible versions fail before browser or filesystem
+work begins.
 
 Use `crawl` for a breadth-first link graph with explicit limits:
 
 ```console
-pageknot crawl https://example.com \
+offprint crawl https://example.com \
   --output captures \
   --max-pages 100 \
   --max-depth 3 \
@@ -186,9 +197,13 @@ runs.
 | `3` | Artifact verification failed |
 | `130` | The command was interrupted |
 
-Structured failures carry a stable `pageknot.*` code, pipeline stage,
+Structured failures carry a stable `offprint.*` code, pipeline stage,
 retryability, details, and an optional diagnostics path. The canonical catalog
 is [`schemas/error-codes.json`](../schemas/error-codes.json).
+
+In JSON mode, a failure writes the complete `OffprintError` record to stderr.
+Human mode writes a concise error line to stderr. Success data remains on
+stdout in both modes.
 
 ## Use credentials
 
@@ -196,7 +211,7 @@ Pass request headers or browser cookies through a protected JSON file:
 
 ```console
 chmod 600 headers.json
-pageknot capture https://example.com/account \
+offprint capture https://example.com/account \
   --headers headers.json \
   --output account.html
 ```
@@ -210,7 +225,7 @@ The header file can be a JSON object:
 ```
 
 Credential files must be regular files no larger than 1 MiB. On Unix, group
-and other permissions must be clear. PageKnot validates Windows access control
+and other permissions must be clear. Offprint validates Windows access control
 entries before reading a file. `--headers -` or `--cookies -` reads one
 credential input from stdin.
 
@@ -223,7 +238,7 @@ for cookie shape and network policies.
 Write the generated script to the location used by the shell:
 
 ```console
-pageknot completion zsh > _pageknot
+offprint completion zsh > _offprint
 ```
 
 The command prints the script and does not edit shell configuration.

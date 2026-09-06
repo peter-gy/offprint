@@ -1,6 +1,6 @@
 [package]
-name = "pageknot-bench"
-description = "Machine-readable PageKnot performance harness"
+name = "offprint-bench"
+description = "Machine-readable Offprint performance harness"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -15,11 +15,11 @@ camino.workspace = true
 chrono.workspace = true
 clap.workspace = true
 data-url.workspace = true
-pageknot.workspace = true
-pageknot-capture.workspace = true
-pageknot-document.workspace = true
-pageknot-model.workspace = true
-pageknot-test-support.workspace = true
+offprint.workspace = true
+offprint-capture.workspace = true
+offprint-document.workspace = true
+offprint-model.workspace = true
+offprint-test-support.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

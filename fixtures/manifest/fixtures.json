@@ -17,7 +17,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "static_article_with_font_round_trips",
         "ignored": true,
@@ -39,7 +39,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -61,7 +61,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -82,7 +82,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -103,7 +103,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -125,7 +125,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -147,7 +147,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -170,7 +170,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "adopted_stylesheets_preserve_their_cascade_order",
         "ignored": true,
@@ -194,7 +194,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "adopted_stylesheet_reuses_the_document_font_face",
         "ignored": true,
@@ -216,7 +216,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "frame_fixture_round_trips",
         "ignored": true,
@@ -238,7 +238,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "frame_fixture_round_trips",
         "ignored": true,
@@ -260,7 +260,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "frame_fixture_round_trips",
         "ignored": true,
@@ -282,7 +282,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "frame_fixture_round_trips",
         "ignored": true,
@@ -304,7 +304,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -326,7 +326,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "capture_regressions",
         "filter": "tainted_canvas_uses_a_clipped_browser_fallback",
         "ignored": true,
@@ -348,7 +348,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -370,7 +370,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -394,7 +394,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "rendered_state_reopens_across_light_and_shadow_trees",
         "ignored": true,
@@ -416,7 +416,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "visual_optimizers_reduce_resources_and_preserve_rendering",
         "ignored": true,
@@ -438,7 +438,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "selection_and_selector_capture_the_first_rendered_target",
         "ignored": true,
@@ -459,7 +459,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "external_stylesheet_resources_resolve_from_stylesheet_url",
         "ignored": true,
@@ -480,7 +480,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "repeated_missing_resource_loads_stop_after_the_first_batch",
         "ignored": true,
@@ -501,7 +501,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "resource_graph_fixture_round_trips",
         "ignored": true,
@@ -522,7 +522,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "resource_graph_fixture_round_trips",
         "ignored": true,
@@ -543,7 +543,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "static_article_with_font_round_trips",
         "ignored": true,
@@ -564,7 +564,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -585,7 +585,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -606,7 +606,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "resource_graph_fixture_round_trips",
         "ignored": true,
@@ -628,7 +628,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -650,7 +650,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "capture_regressions",
         "filter": "malformed_browser_dom_reopens_with_the_observed_tree",
         "ignored": true,
@@ -673,7 +673,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "permanent_connections_do_not_block_render_idle",
         "ignored": true,
@@ -693,7 +693,7 @@
         "typed-failure"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "navigation_deadline_returns_a_typed_timeout",
         "ignored": true,
@@ -713,7 +713,7 @@
         "typed-failure"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "network_idle_uses_the_total_capture_deadline",
         "ignored": true,
@@ -733,7 +733,7 @@
         "process-recovers"
       ],
       "runner": {
-        "package": "pageknot-chromium",
+        "package": "offprint-chromium",
         "filter": "backend::tests::local_browser_restarts_after_its_process_tree_crashes",
         "ignored": true,
         "serial": true
@@ -751,7 +751,7 @@
         "process-recycles"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "filter": "runtime::browser::tests::local_browser_recycles_after_the_configured_job_threshold",
         "ignored": false,
         "serial": true
@@ -769,7 +769,7 @@
         "typed-failure"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "capture_regressions",
         "filter": "detached_oopif_returns_a_typed_frame_outcome",
         "ignored": true,
@@ -789,7 +789,7 @@
         "destination-unchanged"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "cancellation_rolls_back_every_pipeline_stage",
         "ignored": true,
@@ -799,7 +799,7 @@
         "validating",
         "waiting-for-browser",
         "navigating",
-        "settling",
+        "waitingForReadiness",
         "collecting",
         "resolving-resources",
         "transforming",
@@ -821,7 +821,7 @@
         "destination-unchanged"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "explicit_output_conflict_preserves_the_destination",
         "ignored": false,
@@ -842,7 +842,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "atomic_replacement_commits_the_verified_artifact",
         "ignored": true,
@@ -863,7 +863,7 @@
         "committed-path-reported"
       ],
       "runner": {
-        "package": "pageknot-cli",
+        "package": "offprint-cli",
         "filter": "runner::tests::capture_commits_and_reports_the_destination",
         "ignored": true,
         "serial": true
@@ -885,7 +885,7 @@
         "secrets-redacted"
       ],
       "runner": {
-        "package": "pageknot-cli",
+        "package": "offprint-cli",
         "filter": "runner::tests::interrupted_capture_preserves_the_existing_destination_and_redacts_progress",
         "ignored": true,
         "serial": true
@@ -906,8 +906,8 @@
         "representation-verified"
       ],
       "runner": {
-        "package": "pageknot-cli",
-        "filter": "runner::tests::capture_writes_and_verifies_pdf_output",
+        "package": "offprint-cli",
+        "filter": "runner::tests::artifact_export_writes_and_verifies_pdf_output",
         "ignored": true,
         "serial": true
       }
@@ -928,8 +928,8 @@
         "representation-verified"
       ],
       "runner": {
-        "package": "pageknot-cli",
-        "filter": "runner::tests::pdf_capture_json_returns_the_committed_representation",
+        "package": "offprint-cli",
+        "filter": "runner::tests::artifact_export_json_returns_the_committed_artifact",
         "ignored": true,
         "serial": true
       }
@@ -949,7 +949,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "browser_state_fixture_round_trips",
         "ignored": true,
@@ -970,7 +970,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "request_policy_fixture_round_trips",
         "ignored": true,
@@ -993,7 +993,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "request_policy_fixture_round_trips",
         "ignored": true,
@@ -1014,7 +1014,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "request_policy_fixture_round_trips",
         "ignored": true,
@@ -1035,7 +1035,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "service_worker_response_round_trips",
         "ignored": true,
@@ -1056,7 +1056,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "partial_resource_has_a_typed_outcome",
         "ignored": true,
@@ -1077,7 +1077,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "request_policy_fixture_round_trips",
         "ignored": true,
@@ -1096,7 +1096,7 @@
         "typed-failure"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "fixture_matrix",
         "filter": "oversized_resource_fails_before_artifact_commit",
         "ignored": true,
@@ -1117,7 +1117,7 @@
         "zero-external-requests"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "capture_regressions",
         "filter": "request_variants_keep_distinct_resource_bytes",
         "ignored": true,
@@ -1137,7 +1137,7 @@
         "typed-failure"
       ],
       "runner": {
-        "package": "pageknot",
+        "package": "offprint",
         "testTarget": "capture_regressions",
         "filter": "redirect_address_policy_rejects_a_disallowed_host",
         "ignored": true,

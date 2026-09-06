@@ -124,7 +124,7 @@ export function reportMotionCaptureFailure(
 ): void {
   if (weakSetHas(failedDocuments, source)) {
     arrayPush(context.warnings, {
-      code: "pageknot.animation.capture_failed",
+      code: "offprint.animation.capture_failed",
       message: "Animated state could not be frozen at its current phase.",
     });
   }

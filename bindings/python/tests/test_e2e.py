@@ -9,7 +9,7 @@ from typing import Any
 
 import pytest
 
-from pageknot import PageKnot, ShutdownError
+from offprint import Offprint, ShutdownError
 
 
 EXAMPLES = Path(__file__).parents[3] / "schemas" / "examples"
@@ -62,7 +62,11 @@ def capture_request(url: str, output: Path) -> dict[str, Any]:
     )
     assert isinstance(value, dict)
     value["url"] = url
-    value["artifact"]["options"]["target"]["value"] = str(output)
+    value["output"] = {
+        "kind": "file",
+        "path": str(output),
+        "conflict": "replace",
+    }
     return value
 
 
@@ -73,21 +77,20 @@ async def test_capture_event_cancellation_and_close_contract(
 ) -> None:
     output = tmp_path / "python-binding.html"
     cancelled_output = tmp_path / "python-cancelled.html"
-    pageknot = PageKnot()
+    offprint = Offprint()
 
     try:
         output.write_text("stale artifact", encoding="utf-8")
-        result = await pageknot.capture(
+        result = await offprint.capture(
             source_url,
             output=output,
             selector="#capture",
+            conflict="replace",
         )
 
-        assert result["schemaVersion"] == 1
-        assert result["status"] == "succeeded"
+        assert result["schemaVersion"] == 2
         assert result["artifact"]["kind"] == "file"
         assert result["artifact"]["path"] == str(output)
-        assert result["verification"]["passed"] is True
         assert result["verification"]["networkRequests"] == 0
         content = output.read_text(encoding="utf-8")
         assert "binding rendered" in content
@@ -95,51 +98,51 @@ async def test_capture_event_cancellation_and_close_contract(
         assert "outside selector" not in content
         assert "stale artifact" not in content
 
-        manifest = await pageknot.artifacts.inspect(output)
-        assert manifest["schemaVersion"] == 1
+        manifest = await offprint.artifacts.inspect(output)
+        assert manifest["schemaVersion"] == 2
         assert manifest["source"]["finalUrl"] == source_url
         assert manifest["resources"]["embedded"] >= 1
 
-        exported = await pageknot.artifacts.export(
+        exported = await offprint.artifacts.export(
             output,
             {
-                "outputDirectory": str(tmp_path / "python-variants"),
+                "schemaVersion": 2,
+                "outputDirectory": str(tmp_path / "python-formats"),
                 "baseName": "python-binding",
                 "conflict": "fail",
-                "variants": [
-                    {"kind": "pdf", "options": {}},
+                "formats": [
+                    {"format": "pdf", "options": {}},
                     {
-                        "kind": "markdown",
+                        "format": "markdown",
                         "options": {"frontMatter": True},
                     },
-                    {"kind": "zip"},
-                    {"kind": "self-extracting"},
-                    {"kind": "mhtml"},
+                    {"format": "zip"},
+                    {"format": "self-extracting-html"},
+                    {"format": "mhtml"},
                 ],
             },
         )
-        assert exported["policySha256"] == manifest["policySha256"]
+        assert exported["capturePolicySha256"] == manifest["capturePolicySha256"]
         assert exported["resources"] == manifest["resources"]
         assert [
-            variant["kind"] for variant in exported["variants"]
+            artifact["format"] for artifact in exported["artifacts"]
         ] == [
             "pdf",
             "markdown",
             "zip",
-            "self-extracting",
+            "self-extracting-html",
             "mhtml",
         ]
-        for variant in exported["variants"]:
-            verified = await pageknot.artifacts.verify_variant(
-                variant["path"],
-                variant["kind"],
+        for artifact in exported["artifacts"]:
+            verified = await offprint.artifacts.verify_format(
+                artifact["path"],
+                artifact["format"],
             )
-            assert verified["passed"] is True
-            assert verified["sha256"] == variant["sha256"]
+            assert verified["sha256"] == artifact["sha256"]
 
         request = capture_request(source_url, cancelled_output)
         request["readiness"]["delay"] = 30_000
-        job = await pageknot.captures.start(request)
+        job = await offprint.captures.start(request)
         events = job.events()
         saw_started = False
         while True:
@@ -157,7 +160,7 @@ async def test_capture_event_cancellation_and_close_contract(
                 job.result(),
                 timeout=ASYNC_OPERATION_TIMEOUT,
             )
-        assert captured.value.code == "pageknot.runtime.cancelled"
+        assert captured.value.code == "offprint.runtime.cancelled"
 
         terminal = None
         while True:
@@ -174,5 +177,5 @@ async def test_capture_event_cancellation_and_close_contract(
         assert terminal["captureId"] == job.id
         assert not cancelled_output.exists()
     finally:
-        await pageknot.close()
-        await pageknot.close()
+        await offprint.close()
+        await offprint.close()

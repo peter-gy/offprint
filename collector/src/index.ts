@@ -287,12 +287,12 @@ const collector = objectFreeze({
     return { captureId, frameId };
   },
 });
-defineProperty(globalThis, "__pageknotCollector", {
+defineProperty(globalThis, "__offprintCollector", {
   configurable: false,
   enumerable: false,
   writable: false,
   value: collector,
 });
 declare global {
-  var __pageknotCollector: typeof collector;
+  var __offprintCollector: typeof collector;
 }

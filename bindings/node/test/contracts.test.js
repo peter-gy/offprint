@@ -61,10 +61,10 @@ describe("canonical contract fixtures", () => {
       (contract) => contract.name === "CaptureEvent",
     );
     const resultContract = inventory.contracts.find(
-      (contract) => contract.name === "CaptureResult",
+      (contract) => contract.name === "CaptureReceipt",
     );
     const event = await fixture("capture-event.json");
-    const result = await fixture("capture-result.json");
+    const result = await fixture("capture-receipt.json");
 
     const eventType = eventContract.enums.find(
       (record) =>
@@ -110,7 +110,10 @@ describe("canonical contract fixtures", () => {
     const files = new Set(index.files);
 
     for (const command of docs.commands) {
-      expect(files.has(command.successSchema)).toBe(true);
+      expect(command.successSchemas.length).toBeGreaterThan(0);
+      for (const successSchema of command.successSchemas) {
+        expect(files.has(successSchema)).toBe(true);
+      }
       expect(files.has(command.errorSchema)).toBe(true);
     }
   });

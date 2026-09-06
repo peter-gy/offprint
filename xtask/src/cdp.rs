@@ -1,5 +1,5 @@
 // The schema mapping follows agent-browser cli/build.rs at revision
-// 3cc7022271235694b5b5ce8aaea8bbfaa66e8cd5. PageKnot adds upstream pin
+// 3cc7022271235694b5b5ce8aaea8bbfaa66e8cd5. Offprint adds upstream pin
 // verification, domain selection, command markers, and checked-in output.
 
 mod selection;
@@ -17,8 +17,8 @@ use sha2::{Digest as _, Sha256};
 const MAXIMUM_PROTOCOL_BYTES: u64 = 16 * 1024 * 1024;
 const IMPORTED_DOMAINS: [&str; 2] = ["Browser", "Target"];
 const MAXIMUM_GENERATED_LINES: usize = 990;
-const GENERATED_DIRECTORY: &str = "crates/pageknot-chromium/src/cdp/generated";
-const LEGACY_GENERATED_FILE: &str = "crates/pageknot-chromium/src/cdp_generated.rs";
+const GENERATED_DIRECTORY: &str = "crates/offprint-chromium/src/cdp/generated";
+const LEGACY_GENERATED_FILE: &str = "crates/offprint-chromium/src/cdp_generated.rs";
 
 #[derive(Debug, Deserialize)]
 struct Versions {
@@ -123,7 +123,7 @@ pub(crate) fn generate(root: &Path, check: bool) -> Result<(), String> {
     let mut domains = parse_protocol(&browser, "browser_protocol.json")?.domains;
     domains.extend(parse_protocol(&javascript, "js_protocol.json")?.domains);
     validate_domains(&domains)?;
-    let imports = selection::imported_protocol_items(&root.join("crates/pageknot-chromium/src"))?;
+    let imports = selection::imported_protocol_items(&root.join("crates/offprint-chromium/src"))?;
     let selected = selection::select_protocol_items(&domains, &imports)?;
     let generated = format_generated(&versions, &domains, &selected)?;
     update_generated_files(root, &generated, check)
@@ -765,7 +765,7 @@ fn line(output: &mut String, arguments: std::fmt::Arguments<'_>) {
 
 fn rustfmt(content: &str) -> Result<String, String> {
     let mut temporary = tempfile::Builder::new()
-        .prefix("pageknot-cdp-")
+        .prefix("offprint-cdp-")
         .suffix(".rs")
         .tempfile()
         .map_err(|error| format!("failed to create generated CDP staging file: {error}"))?;

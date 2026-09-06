@@ -63,57 +63,57 @@ pub(super) fn contract_inventory(
         });
     }
     pretty_json(&ContractInventory {
-        schema_version: pageknot_model::PUBLIC_SCHEMA_VERSION,
+        schema_version: offprint_model::PUBLIC_SCHEMA_VERSION,
         contracts,
     })
 }
 
 pub(super) fn cli_json_contracts() -> Result<Vec<u8>, String> {
     pretty_json(&json!({
-        "schemaVersion": pageknot_model::PUBLIC_SCHEMA_VERSION,
+        "schemaVersion": offprint_model::PUBLIC_SCHEMA_VERSION,
         "streams": {
             "stdout": "result",
-            "stderr": "diagnostics"
+            "stderr": "diagnostics or OffprintError in JSON mode"
         },
         "commands": [
             {
                 "command": "capture",
-                "successSchema": "capture-result.schema.json",
+                "successSchemas": ["capture-receipt.schema.json"],
                 "errorSchema": "error.schema.json"
             },
             {
                 "command": "batch",
-                "successSchema": "batch-result.schema.json",
+                "successSchemas": ["batch-result.schema.json"],
                 "errorSchema": "error.schema.json"
             },
             {
                 "command": "crawl",
-                "successSchema": "crawl-result.schema.json",
+                "successSchemas": ["crawl-result.schema.json"],
                 "errorSchema": "error.schema.json"
             },
             {
-                "command": "export",
-                "successSchema": "artifact-export-result.schema.json",
+                "command": "artifact export",
+                "successSchemas": ["export-result.schema.json"],
                 "errorSchema": "error.schema.json"
             },
             {
-                "command": "verify",
-                "successSchema": "verification-result.schema.json",
+                "command": "artifact verify",
+                "successSchemas": ["artifact-verification.schema.json"],
                 "errorSchema": "error.schema.json"
             },
             {
-                "command": "inspect",
-                "successSchema": "artifact-manifest.schema.json",
+                "command": "artifact inspect",
+                "successSchemas": ["artifact-manifest.schema.json"],
                 "errorSchema": "error.schema.json"
             },
             {
                 "command": "doctor",
-                "successSchema": "browser-doctor-report.schema.json",
+                "successSchemas": ["browser-doctor-report.schema.json"],
                 "errorSchema": "error.schema.json"
             },
             {
                 "command": "browser",
-                "successSchema": "browser-operation-result.schema.json",
+                "successSchemas": ["browser-operation-result.schema.json"],
                 "errorSchema": "error.schema.json"
             }
         ]

@@ -1,44 +1,50 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createRequire } from "node:module";
 
-import { PageKnot, PageKnotError } from "../index.js";
+import { Offprint, OffprintError } from "../index.js";
 
 const open = new Set();
 const require = createRequire(import.meta.url);
 
 afterEach(async () => {
-  await Promise.all([...open].map((pageknot) => pageknot.close()));
+  await Promise.all([...open].map((offprint) => offprint.close()));
   open.clear();
 });
 
 function service(options) {
-  const pageknot = new PageKnot(options);
-  open.add(pageknot);
-  return pageknot;
+  const offprint = new Offprint(options);
+  open.add(offprint);
+  return offprint;
 }
 
-describe("PageKnot Node.js binding", () => {
+describe("Offprint Node.js binding", () => {
   test("exposes the three canonical services", () => {
-    const pageknot = service();
+    const offprint = service();
 
-    expect(typeof pageknot.captures.start).toBe("function");
-    expect(typeof pageknot.captures.batch).toBe("function");
-    expect(typeof pageknot.captures.crawl).toBe("function");
-    expect(typeof pageknot.artifacts.inspect).toBe("function");
-    expect(typeof pageknot.artifacts.export).toBe("function");
-    expect(typeof pageknot.artifacts.verifyVariant).toBe("function");
-    expect(typeof pageknot.browsers.ensure).toBe("function");
+    expect(typeof offprint.captures.start).toBe("function");
+    expect(typeof offprint.captures.batch).toBe("function");
+    expect(typeof offprint.captures.crawl).toBe("function");
+    expect(typeof offprint.artifacts.inspect).toBe("function");
+    expect(typeof offprint.artifacts.export).toBe("function");
+    expect(typeof offprint.artifacts.verifyFormat).toBe("function");
+    expect(typeof offprint.browsers.ensure).toBe("function");
+    expect(typeof offprint.browsers.list).toBe("function");
+    expect(typeof offprint.browsers.install).toBe("function");
+    expect(typeof offprint.browsers.remove).toBe("function");
+    expect(typeof offprint.browsers.doctor).toBe("function");
+    expect(typeof offprint.browsers.closeIdle).toBe("function");
+    expect(typeof offprint[Symbol.asyncDispose]).toBe("function");
   });
 
   test("maps validation failures to structured errors", async () => {
-    const pageknot = service();
+    const offprint = service();
 
     try {
-      await pageknot.capture("javascript:alert(1)");
+      await offprint.capture("javascript:alert(1)");
       throw new Error("capture unexpectedly succeeded");
     } catch (error) {
-      expect(error).toBeInstanceOf(PageKnotError);
-      expect(error.code).toBe("pageknot.input.url_scheme");
+      expect(error).toBeInstanceOf(OffprintError);
+      expect(error.code).toBe("offprint.input.url_scheme");
       expect(error.stage).toBe("validation");
       expect(error.retryable).toBe(false);
       expect(error.details).toEqual({});
@@ -47,30 +53,30 @@ describe("PageKnot Node.js binding", () => {
 
   test("rejects misspelled constructor options", () => {
     expect(() => service({ browserPat: "/tmp/chrome" })).toThrow(
-      PageKnotError,
+      OffprintError,
     );
   });
 
   test("close is idempotent", async () => {
-    const pageknot = service();
+    const offprint = service();
 
-    await pageknot.close();
-    await pageknot.close();
-    open.delete(pageknot);
+    await offprint.close();
+    await offprint.close();
+    open.delete(offprint);
   });
 
   test("the finalizer closes an abandoned native service", async () => {
     const native = require("../native.cjs");
-    const originalClose = native.NativePageKnot.prototype.close;
+    const originalClose = native.NativeOffprint.prototype.close;
     let closeCalls = 0;
-    native.NativePageKnot.prototype.close = function close() {
+    native.NativeOffprint.prototype.close = function close() {
       closeCalls += 1;
       return originalClose.call(this);
     };
     try {
-      let pageknot = new PageKnot();
-      const reference = new WeakRef(pageknot);
-      pageknot = undefined;
+      let offprint = new Offprint();
+      const reference = new WeakRef(offprint);
+      offprint = undefined;
       for (let attempt = 0; attempt < 100 && closeCalls === 0; attempt += 1) {
         Bun.gc(true);
         await Bun.sleep(10);
@@ -79,15 +85,15 @@ describe("PageKnot Node.js binding", () => {
       expect(reference.deref()).toBeUndefined();
       expect(closeCalls).toBe(1);
     } finally {
-      native.NativePageKnot.prototype.close = originalClose;
+      native.NativeOffprint.prototype.close = originalClose;
     }
   });
 
   test("a retained child service keeps the root service alive", async () => {
-    let pageknot = new PageKnot();
-    const captures = pageknot.captures;
-    const reference = new WeakRef(pageknot);
-    pageknot = undefined;
+    let offprint = new Offprint();
+    const captures = offprint.captures;
+    const reference = new WeakRef(offprint);
+    offprint = undefined;
 
     for (let attempt = 0; attempt < 10; attempt += 1) {
       Bun.gc(true);
@@ -100,24 +106,24 @@ describe("PageKnot Node.js binding", () => {
   });
 
   test("contains native panics and keeps the host alive", async () => {
-    const pageknot = service();
+    const offprint = service();
 
     try {
-      await pageknot._testPanic();
+      await offprint._testPanic();
       throw new Error("fault injection unexpectedly succeeded");
     } catch (error) {
-      expect(error).toBeInstanceOf(PageKnotError);
+      expect(error).toBeInstanceOf(OffprintError);
       expect(error).toMatchObject({
-        code: "pageknot.internal.panic",
+        code: "offprint.internal.panic",
         stage: "internal",
         retryable: false,
-        message: "PageKnot encountered an unexpected internal failure",
+        message: "Offprint encountered an unexpected internal failure",
       });
       expect(error.message).not.toContain("fault injection");
     }
 
-    await expect(pageknot.capture("javascript:alert(1)")).rejects.toMatchObject({
-      code: "pageknot.input.url_scheme",
+    await expect(offprint.capture("javascript:alert(1)")).rejects.toMatchObject({
+      code: "offprint.input.url_scheme",
       stage: "validation",
     });
   });

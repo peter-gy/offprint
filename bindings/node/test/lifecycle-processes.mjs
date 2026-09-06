@@ -139,7 +139,7 @@ export async function ownedProfiles(directory) {
     throw error;
   }
   return entries
-    .filter((entry) => entry.name.startsWith("pageknot-browser-"))
+    .filter((entry) => entry.name.startsWith("offprint-browser-"))
     .map((entry) => join(directory, entry.name))
     .sort();
 }
@@ -169,7 +169,7 @@ export async function waitForLifecycleCleanup(
       `${candidate.pid}:${candidate.name || candidate.commandLine}`,
   );
   throw new Error(
-    `PageKnot lifecycle residue under ${directory}: ` +
+    `Offprint lifecycle residue under ${directory}: ` +
       `processes=${JSON.stringify(processSummary)}, ` +
       `profiles=${JSON.stringify(profiles)}`,
   );

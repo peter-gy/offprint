@@ -1,7 +1,7 @@
 {
-  "code": "pageknot.browser.unavailable",
+  "code": "offprint.browser.unavailable",
   "details": {
-    "recoveryCommand": "pageknot browser install"
+    "recoveryCommand": "offprint browser install"
   },
   "message": "no compatible browser is available",
   "retryable": false,

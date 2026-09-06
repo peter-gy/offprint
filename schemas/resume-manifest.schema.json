@@ -37,6 +37,7 @@
       "minimum": 0
     }
   },
+  "additionalProperties": false,
   "required": [
     "schemaVersion",
     "kind",
@@ -63,6 +64,7 @@
           "format": "uri"
         }
       },
+      "additionalProperties": false,
       "required": [
         "url",
         "depth",
@@ -86,7 +88,7 @@
         "internal"
       ]
     },
-    "PageKnotError": {
+    "OffprintError": {
       "type": "object",
       "properties": {
         "code": {
@@ -111,7 +113,7 @@
         "source": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PageKnotError"
+              "$ref": "#/$defs/OffprintError"
             },
             {
               "type": "null"
@@ -163,7 +165,7 @@
         "error": {
           "anyOf": [
             {
-              "$ref": "#/$defs/PageKnotError"
+              "$ref": "#/$defs/OffprintError"
             },
             {
               "type": "null"
@@ -192,6 +194,7 @@
           "format": "uri"
         }
       },
+      "additionalProperties": false,
       "required": [
         "requestSha256",
         "status"

@@ -1,6 +1,6 @@
 # Dependency evaluation
 
-PageKnot keeps public records in `pageknot-model` and places runtime
+Offprint keeps public records in `offprint-model` and places runtime
 dependencies behind narrow crate boundaries.
 
 | Dependency | Boundary | Decision |

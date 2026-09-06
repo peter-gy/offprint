@@ -1,23 +1,23 @@
 # Rust public API
 
-The `pageknot` crate exposes one service handle, three service views, one
-capture builder, one job handle, and the canonical model records.
+The `offprint` crate exposes one service handle, three service views, one
+`Capture` operation, one job handle, and the canonical model records.
 
 This page describes the current alpha source checkout. The crate requires Rust
 1.97 or newer.
 
 ```rust
-use pageknot::PageKnot;
+use offprint::Offprint;
 
-# async fn example() -> pageknot::Result<()> {
-let pageknot = PageKnot::builder().build()?;
-let result = pageknot
+# async fn example() -> offprint::Result<()> {
+let offprint = Offprint::new()?;
+let result = offprint
     .capture("https://example.com")?
     .save("example.html")
     .await?;
 
-assert!(result.verification.passed);
-pageknot.close().await?;
+assert_eq!(result.verification.mode, offprint::VerificationMode::Offline);
+offprint.close().await?;
 # Ok(())
 # }
 ```
@@ -26,14 +26,14 @@ pageknot.close().await?;
 
 | API | Contract |
 | --- | --- |
-| `PageKnot::builder()` | Configures first-use managed browser provisioning, browser selection, profiles, runtime limits, and deterministic dependencies |
-| `PageKnot::capture(url)` | Builds a one-shot request with the selected profile |
-| `PageKnot::captures()` | Starts one-page jobs, bounded batches, and breadth-first crawls |
-| `PageKnot::artifacts()` | Inspects, verifies, and exports artifact variants |
-| `PageKnot::browsers()` | Discovers, installs, removes, diagnoses, and closes browser instances |
-| `PageKnot::close()` | Cancels active jobs, waits for cleanup, and releases owned browser resources |
+| `Offprint::builder()` | Configures first-use managed browser provisioning, browser selection, profiles, runtime limits, and deterministic dependencies |
+| `Offprint::capture(url)` | Builds a one-shot request with the selected profile |
+| `Offprint::captures()` | Starts one-page jobs, bounded batches, and breadth-first crawls |
+| `Offprint::artifacts()` | Inspects, verifies, and exports artifact formats |
+| `Offprint::browsers()` | Discovers, installs, removes, diagnoses, and closes browser instances |
+| `Offprint::close()` | Cancels active jobs, waits for cleanup, and releases owned browser resources |
 
-### `CaptureBuilder::wait_until` and `CaptureBuilder::delay`
+### `Capture::wait_until` and `Capture::delay`
 
 ```rust
 pub fn wait_until(self, mode: ReadinessMode) -> Self
@@ -43,12 +43,12 @@ pub fn delay(self, duration: Duration) -> Self
 `wait_until` selects `RenderIdle`, `NetworkIdle`, `Load`, or
 `DomContentLoaded`. `delay` adds a host-timed pause after that condition. The
 readiness condition and delay share the total deadline configured by
-`CaptureBuilder::timeout`. Captures default to `RenderIdle` with no added
+`Capture::timeout`. Captures default to `RenderIdle` with no added
 delay. `NetworkIdle` excludes WebSocket, EventSource, `blob:`, and `data:`
 lifetimes from its finite request count. Use `delay` when worker computation
 updates the document after request activity ends.
 
-### `CaptureBuilder::selector`
+### `Capture::selector`
 
 ```rust
 pub fn selector(self, selector: impl Into<String>) -> Self
@@ -59,15 +59,14 @@ document. The capture keeps the document head and the matched element's
 ancestor chain so stylesheet and layout selectors retain their context.
 
 Calling `selector` sets page scope. A later `scope` call replaces the selector.
-The capture future returns `pageknot.selector.invalid` for invalid CSS syntax
-and `pageknot.selector.not_found` when the document has no match.
+The capture future returns `offprint.selector.invalid` for invalid CSS syntax
+and `offprint.selector.not_found` when the document has no match.
 
-File outputs use `ConflictPolicy::Replace` by default. PageKnot verifies the
-staged capture before atomically replacing the destination. Call
-`CaptureBuilder::conflict` with `Fail` or `Uniquify` when the caller needs a
-different policy.
+File outputs use `ConflictPolicy::Fail` by default. Offprint verifies the
+staged capture before publication. Call `Capture::conflict` before `save` when
+the caller needs replacement or a unique path.
 
-`PageKnot` clones share one runtime. `close()` is idempotent. Operations started
+`Offprint` clones share one runtime. `close()` is idempotent. Operations started
 after close return a structured runtime error.
 
 ## Capture jobs
@@ -79,7 +78,7 @@ The job exposes:
 - `status()` for the latest lifecycle state
 - `events()` for an ordered `Stream<Item = CaptureEvent>`
 - `cancel()` for an idempotent cancellation request
-- `wait()` for the single terminal `CaptureResult`
+- `result()` for the successful `CaptureReceipt`
 
 Late event subscribers receive retained lifecycle events and the latest
 resource progress value. Progress can be coalesced under backpressure. A
@@ -100,29 +99,30 @@ again.
 scheduler derives one output path per URL and persists the pending frontier
 after each terminal page.
 
-## Artifact variants
+## Artifact formats
 
 `ArtifactService::export` accepts one verified HTML artifact and an
-`ArtifactExportRequest`. It verifies the source once, derives the requested
-PDF, Markdown, ZIP, compressed HTML, and MHTML variants, then runs each
+`ExportRequest`. It verifies the source once, derives the requested
+PDF, Markdown, ZIP, self-extracting HTML, and MHTML formats, then runs each
 format-specific verifier before commit.
 
 PDF export preserves Chromium's selectable text, links, tagged structure, and
 outline. It adds document properties and XMP metadata derived from the source
 HTML and capture manifest.
 
-`ArtifactService::verify_variant` checks an exported path through the verifier
-owned by its `ArtifactVariantKind`.
+`ArtifactService::verify_format` checks an exported path through the verifier
+owned by its `ArtifactFormat`.
 
 ## Records and errors
 
-The `pageknot` crate reexports the canonical records from `pageknot-model`.
+The `offprint` crate reexports the canonical records from `offprint-model`.
 Serialized field names and enum values are part of the versioned schema
-contract in [`schemas`](../schemas).
+contract in [`schemas`](../schemas). This contract round uses public schema 2
+and Offprint HTML format 2.
 
-Every public operation returns `pageknot::Result<T>`. `PageKnotError` provides:
+Every public operation returns `offprint::Result<T>`. `OffprintError` provides:
 
-- A stable `pageknot.*` code
+- A stable `offprint.*` code
 - The failing pipeline stage
 - A redacted message
 - Retryability
@@ -130,26 +130,27 @@ Every public operation returns `pageknot::Result<T>`. `PageKnotError` provides:
 - An optional causal error
 - An optional diagnostic bundle path
 
-Capture results contain the terminal status, redacted source URLs and digests,
-artifact record, offline verification evidence, complete resource outcome
-counts, structured warnings, and stage timings.
+`CaptureReceipt` is a success record. It contains redacted source URLs and
+digests, the published artifact, evidence for the selected verification mode,
+complete resource outcome counts, structured warnings, and stage timings.
+Capture failure and cancellation return `OffprintError`.
 
 ## Custom browser backends
 
-`PageKnotBuilder::browser_backend` accepts an implementation of
-`BrowserBackend`. The backend owns browser acquisition, contexts, pages,
+`OffprintBuilder::browser_backend` accepts an implementation of
+`offprint::ports::BrowserBackend`. The backend owns browser acquisition, contexts, pages,
 resource streams, offline reopen, and deterministic close behavior.
 
-Custom backends implement the browser-independent types reexported by
-`pageknot`. Chrome DevTools Protocol records and parser internals remain inside
+Custom backends implement the browser-independent contracts under
+`offprint::ports`. Chrome DevTools Protocol records and parser internals remain inside
 their owning crates.
 
 ## Compatibility policy
 
 The current alpha uses the naming and defaults reviewed for the 1.0 contract:
 
-- `PageKnot` is the root service noun.
-- `CaptureRequest -> CaptureService -> CaptureJob -> CaptureResult` is the
+- `Offprint` is the root service noun.
+- `CaptureRequest -> CaptureService -> CaptureJob -> CaptureReceipt` is the
   execution seam.
 - Builders own optional request configuration.
 - Service methods own operations with lifecycle or I/O.
@@ -164,4 +165,4 @@ compatible tag once that baseline exists. Schema freshness and binding contract
 tests protect the serialized surface on the current branch.
 
 Return to the [documentation index](./README.md) or inspect the generated API
-with `cargo doc --open -p pageknot`.
+with `cargo doc --open -p offprint`.

@@ -5,8 +5,8 @@ use std::path::Path;
 use std::time::Instant;
 
 use chrono::{DateTime, Utc};
-use pageknot::{BrowserInfo, PageKnot, ResourceSummary};
-use pageknot_model::{CaptureTimings, PageKnotError};
+use offprint::{BrowserInfo, Offprint, ResourceSummary};
+use offprint_model::{CaptureTimings, OffprintError};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest as _, Sha256};
 
@@ -72,7 +72,7 @@ enum CorpusOutcome {
         timings: CaptureTimings,
     },
     Failed {
-        error: PageKnotError,
+        error: OffprintError,
     },
 }
 
@@ -91,13 +91,13 @@ pub async fn run(
         return Err("corpus limit must be greater than zero".to_owned());
     }
 
-    let mut builder = PageKnot::builder();
+    let mut builder = Offprint::builder();
     if let Some(path) = browser_path {
         builder = builder.browser_path(path);
     }
-    let pageknot = builder.build().map_err(|error| error.to_string())?;
+    let offprint = builder.build().map_err(|error| error.to_string())?;
     let capture_result: Result<_, String> = async {
-        let browser = pageknot
+        let browser = offprint
             .browsers()
             .ensure()
             .await
@@ -107,12 +107,12 @@ pub async fn run(
             .min(manifest.entries.len());
         let mut results = Vec::with_capacity(count);
         for entry in manifest.entries.iter().take(count) {
-            results.push(capture_entry(&pageknot, entry).await);
+            results.push(capture_entry(&offprint, entry).await);
         }
         Ok((browser, results))
     }
     .await;
-    let close_result = pageknot
+    let close_result = offprint
         .close()
         .await
         .map_err(|error| format!("failed to close the corpus browser: {error}"));
@@ -145,10 +145,10 @@ pub async fn run(
     Ok(())
 }
 
-async fn capture_entry(pageknot: &PageKnot, entry: &CorpusEntry) -> CorpusResult {
+async fn capture_entry(offprint: &Offprint, entry: &CorpusEntry) -> CorpusResult {
     let started = Instant::now();
-    let outcome = match pageknot.capture(&entry.url) {
-        Ok(capture) => match capture.run().await {
+    let outcome = match offprint.capture(&entry.url) {
+        Ok(capture) => match capture.bytes(64 * 1024 * 1024).await {
             Ok(result) => {
                 let artifact_bytes = result.artifact.bytes();
                 let artifact_sha256 = result.artifact.sha256().to_hex();
@@ -202,7 +202,7 @@ fn validate_manifest(manifest: &CorpusManifest) -> Result<(), String> {
                 entry.id
             ));
         }
-        pageknot_model::CaptureRequest::builder(&entry.url)
+        offprint_model::CaptureRequest::builder(&entry.url)
             .and_then(|builder| builder.build())
             .map_err(|error| format!("corpus entry `{}` is invalid: {error}", entry.id))?;
     }

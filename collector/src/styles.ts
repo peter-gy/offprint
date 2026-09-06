@@ -100,7 +100,7 @@ export function copyCssRules(
     return { bytes, kind: "ok", rules: copied };
   } catch {
     arrayPush(context.warnings, {
-      code: "pageknot.cssom.unreadable",
+      code: "offprint.cssom.unreadable",
       message: "A stylesheet could not be read through the CSS Object Model.",
     });
     return undefined;
@@ -303,7 +303,7 @@ export function appendAdoptedStyles(
       continue;
     }
     const style = createElement(documentFor(root), "style");
-    setAttribute(style, "data-pageknot-adopted", "");
+    setAttribute(style, "data-offprint-adopted", "");
     markStyleBase(style, sheet);
     setNodeTextContent(style, css);
     appendChild(cloneRoot, style);
@@ -341,7 +341,7 @@ export function applyCssom(
       markStyleBase(ownerClone, sheet);
     } else {
       const style = createElement(documentFor(source), "style");
-      setAttribute(style, "data-pageknot-cssom", "");
+      setAttribute(style, "data-offprint-cssom", "");
       markStyleBase(style, sheet);
       setNodeTextContent(style, css);
       replaceNode(ownerClone, style);

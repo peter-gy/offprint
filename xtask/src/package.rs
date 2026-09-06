@@ -23,18 +23,18 @@ const SUPPORTED_TARGETS: &[&str] = &[
     "x86_64-pc-windows-msvc",
 ];
 pub(crate) const PUBLISHABLE_CRATES: &[&str] = &[
-    "pageknot",
-    "pageknot-artifact",
-    "pageknot-browser",
-    "pageknot-capture",
-    "pageknot-chromium",
-    "pageknot-cli",
-    "pageknot-document",
-    "pageknot-export",
-    "pageknot-html",
-    "pageknot-model",
-    "pageknot-protocol",
-    "pageknot-transform",
+    "offprint",
+    "offprint-artifact",
+    "offprint-browser",
+    "offprint-capture",
+    "offprint-chromium",
+    "offprint-cli",
+    "offprint-document",
+    "offprint-export",
+    "offprint-html",
+    "offprint-model",
+    "offprint-protocol",
+    "offprint-transform",
 ];
 pub(crate) const CRATE_LICENSE: &str = "AGPL-3.0-or-later";
 const MAXIMUM_CRATE_METADATA_BYTES: u64 = 1024 * 1024;
@@ -101,7 +101,7 @@ pub fn verify_metadata(
     let versions = read_versions(root)?;
     let expected = BuildMetadata {
         schema_version: 1,
-        product: "pageknot".to_owned(),
+        product: "offprint".to_owned(),
         version: versions.product,
         target: target.to_owned(),
         source_revision: source_revision.to_owned(),
@@ -496,7 +496,7 @@ pub fn create(root: &Path, target: &str, binary: &Path, output: &Path) -> Result
         .map_err(|error| format!("failed to create {}: {error}", output.display()))?;
 
     let versions = read_versions(root)?;
-    let archive_root = format!("pageknot-{}-{target}", versions.product);
+    let archive_root = format!("offprint-{}-{target}", versions.product);
     let staging = TempDir::new()
         .map_err(|error| format!("failed to create release staging directory: {error}"))?;
     let staged_root = staging.path().join(&archive_root);
@@ -504,9 +504,9 @@ pub fn create(root: &Path, target: &str, binary: &Path, output: &Path) -> Result
         .map_err(|error| format!("failed to create release root: {error}"))?;
 
     let binary_name = if target.contains("windows") {
-        "pageknot.exe"
+        "offprint.exe"
     } else {
-        "pageknot"
+        "offprint"
     };
     copy_regular(binary, &staged_root.join(binary_name))?;
     copy_regular(&root.join("README.md"), &staged_root.join("README.md"))?;
@@ -552,11 +552,11 @@ fn read_versions(root: &Path) -> Result<Versions, String> {
         .map_err(|error| format!("failed to read versions.toml: {error}"))?;
     let versions: Versions =
         toml::from_str(&contents).map_err(|error| format!("invalid versions.toml: {error}"))?;
-    if versions.collector_protocol != pageknot_protocol::COLLECTOR_PROTOCOL_VERSION_STRING {
+    if versions.collector_protocol != offprint_protocol::COLLECTOR_PROTOCOL_VERSION_STRING {
         return Err(format!(
             "versions.toml collector protocol {} differs from host protocol {}",
             versions.collector_protocol,
-            pageknot_protocol::COLLECTOR_PROTOCOL_VERSION_STRING,
+            offprint_protocol::COLLECTOR_PROTOCOL_VERSION_STRING,
         ));
     }
     Ok(versions)
@@ -565,7 +565,7 @@ fn read_versions(root: &Path) -> Result<Versions, String> {
 fn build_metadata(root: &Path, target: &str, versions: &Versions) -> Result<BuildMetadata, String> {
     Ok(BuildMetadata {
         schema_version: 1,
-        product: "pageknot".to_owned(),
+        product: "offprint".to_owned(),
         version: versions.product.clone(),
         target: target.to_owned(),
         source_revision: command_output(root, "git", &["rev-parse", "HEAD"])
@@ -654,7 +654,7 @@ fn append_tar_file(
     let mut header = TarHeader::new_gnu();
     header.set_size(metadata.len());
     header.set_mode(
-        if source.file_name().and_then(|name| name.to_str()) == Some("pageknot") {
+        if source.file_name().and_then(|name| name.to_str()) == Some("offprint") {
             0o755
         } else {
             0o644
@@ -676,7 +676,7 @@ fn create_zip(destination: &Path, root: &Path, archive_root: &str) -> Result<(),
     for name in release_file_names(root)? {
         let source = root.join(&name);
         let archive_name = format!("{archive_root}/{}", portable_name(&name));
-        let mode = if name == Path::new("pageknot.exe") {
+        let mode = if name == Path::new("offprint.exe") {
             0o755
         } else {
             0o644
@@ -752,18 +752,18 @@ fn write_completions(root: &Path) -> Result<(), String> {
     fs::create_dir(&directory)
         .map_err(|error| format!("failed to create completion directory: {error}"))?;
     let completions = [
-        (Shell::Bash, "pageknot.bash"),
-        (Shell::Elvish, "pageknot.elv"),
-        (Shell::Fish, "pageknot.fish"),
-        (Shell::PowerShell, "_pageknot.ps1"),
-        (Shell::Zsh, "_pageknot"),
+        (Shell::Bash, "offprint.bash"),
+        (Shell::Elvish, "offprint.elv"),
+        (Shell::Fish, "offprint.fish"),
+        (Shell::PowerShell, "_offprint.ps1"),
+        (Shell::Zsh, "_offprint"),
     ];
     for (shell, name) in completions {
         let mut bytes = Vec::new();
         generate(
             shell,
-            &mut pageknot_cli::Cli::command(),
-            "pageknot",
+            &mut offprint_cli::Cli::command(),
+            "offprint",
             &mut bytes,
         );
         fs::write(directory.join(name), bytes)
@@ -880,7 +880,7 @@ managed_version = "151.0.7922.47"
         let path = temporary.path().join("build-metadata.json");
         let metadata = BuildMetadata {
             schema_version: 1,
-            product: "pageknot".to_owned(),
+            product: "offprint".to_owned(),
             version: "0.1.0".to_owned(),
             target: "aarch64-apple-darwin".to_owned(),
             source_revision: "source-revision".to_owned(),

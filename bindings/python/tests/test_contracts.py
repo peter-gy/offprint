@@ -68,9 +68,9 @@ def test_binding_contracts_preserve_fields_enums_and_defaults() -> None:
         record["name"]: record for record in inventory["contracts"]
     }
     event_contract = contracts["CaptureEvent"]
-    result_contract = contracts["CaptureResult"]
+    result_contract = contracts["CaptureReceipt"]
     event = fixture("capture-event.json")
-    result = fixture("capture-result.json")
+    result = fixture("capture-receipt.json")
 
     event_type = next(
         record
@@ -115,5 +115,9 @@ def test_cli_json_output_records_resolve_to_canonical_schemas() -> None:
     files = set(index["files"])
 
     for command in docs["commands"]:
-        assert command["successSchema"] in files
+        assert command["successSchemas"]
+        assert all(
+            success_schema in files
+            for success_schema in command["successSchemas"]
+        )
         assert command["errorSchema"] in files

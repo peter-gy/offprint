@@ -113,7 +113,7 @@ jobs:
             libxkbcommon0
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        run: cargo run --locked -p offprint-cli -- browser install
 
       - name: Run fixture group
         run: cargo run --locked -p xtask -- e2e "${{ matrix.group }}"
@@ -122,7 +122,7 @@ jobs:
         if: always()
         run: |
           if pgrep -af '[c]hrome.*--remote-debugging-port'; then
-            echo "PageKnot Chromium process survived the fixture group"
+            echo "Offprint Chromium process survived the fixture group"
             exit 1
           fi
 
@@ -165,11 +165,11 @@ jobs:
             libxkbcommon0
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        run: cargo run --locked -p offprint-cli -- browser install
 
       - name: Run ignored browser integration suites
         run: |
-          cargo test --locked -p pageknot \
+          cargo test --locked -p offprint \
             --test artifact_exports \
             --test diagnostics \
             --test capture_regressions \
@@ -180,7 +180,7 @@ jobs:
         if: always()
         run: |
           if pgrep -af '[c]hrome.*--remote-debugging-port'; then
-            echo "PageKnot Chromium process survived the integration suites"
+            echo "Offprint Chromium process survived the integration suites"
             exit 1
           fi
 
@@ -223,16 +223,16 @@ jobs:
             libxkbcommon0
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p pageknot-cli -- browser install
+        run: cargo run --locked -p offprint-cli -- browser install
 
       - name: Run repeated capture suite
-        run: cargo test --release --locked -p pageknot repeated_capture -- --ignored --test-threads=1
+        run: cargo test --release --locked -p offprint repeated_capture -- --ignored --test-threads=1
 
       - name: Audit browser process cleanup
         if: always()
         run: |
           if pgrep -af '[c]hrome.*--remote-debugging-port'; then
-            echo "PageKnot Chromium process survived repeated capture"
+            echo "Offprint Chromium process survived repeated capture"
             exit 1
           fi
 
@@ -335,16 +335,16 @@ jobs:
         run: |
           cargo test -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
-            -p pageknot-chromium --lib
+            -p offprint-chromium --lib
 
       - name: Test native bindings under AddressSanitizer
         run: |
           cargo test -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
-            -p pageknot-node --lib --features napi-noop-in-unit-test
+            -p offprint-node --lib --features napi-noop-in-unit-test
           cargo test -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
-            -p pageknot-python --lib
+            -p offprint-python --lib
 
   native:
     name: Native ${{ matrix.target }}
@@ -357,16 +357,16 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
-            executable: pageknot
+            executable: offprint
           - os: macos-15-intel
             target: x86_64-apple-darwin
-            executable: pageknot
+            executable: offprint
           - os: macos-15
             target: aarch64-apple-darwin
-            executable: pageknot
+            executable: offprint
           - os: windows-2025
             target: x86_64-pc-windows-msvc
-            executable: pageknot.exe
+            executable: offprint.exe
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -392,7 +392,7 @@ jobs:
             libxkbcommon0
 
       - name: Build natively
-        run: cargo build --release --locked -p pageknot-cli --target ${{ matrix.target }}
+        run: cargo build --release --locked -p offprint-cli --target ${{ matrix.target }}
 
       - name: Package archive
         shell: bash
@@ -424,12 +424,12 @@ jobs:
       - name: Capture through release archive
         shell: bash
         env:
-          PAGEKNOT_BROWSER_CHANNEL: managed
-          PAGEKNOT_CACHE_DIR: ${{ runner.temp }}/pageknot-release-managed-cache
+          OFFPRINT_BROWSER_CHANNEL: managed
+          OFFPRINT_CACHE_DIR: ${{ runner.temp }}/offprint-release-managed-cache
         run: |
           binary="$(find release-smoke -type f -name '${{ matrix.executable }}' -print -quit)"
-          PAGEKNOT_RELEASE_BINARY="$binary" \
-            cargo test --locked -p pageknot-cli --test release_archive_smoke \
+          OFFPRINT_RELEASE_BINARY="$binary" \
+            cargo test --locked -p offprint-cli --test release_archive_smoke \
               -- --ignored --test-threads=1
 
       - name: Upload native archive
@@ -510,16 +510,16 @@ jobs:
         shell: bash
         working-directory: bindings/node
         run: |
-          package_dir="$RUNNER_TEMP/pageknot-node-package"
-          install_dir="$RUNNER_TEMP/pageknot-node-install"
+          package_dir="$RUNNER_TEMP/offprint-node-package"
+          install_dir="$RUNNER_TEMP/offprint-node-install"
           mkdir "$package_dir" "$install_dir"
           node scripts/package-license.mjs sync
           trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
           npm pack --ignore-scripts "npm/${{ matrix.package }}" \
             --pack-destination "$package_dir"
           npm pack --ignore-scripts --pack-destination "$package_dir"
-          root_package="$(find "$package_dir" -maxdepth 1 -name 'pageknot-node-[0-9]*.tgz' -print -quit)"
-          platform_package="$(find "$package_dir" -maxdepth 1 -name 'pageknot-node-${{ matrix.package }}-*.tgz' -print -quit)"
+          root_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-node-[0-9]*.tgz' -print -quit)"
+          platform_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-node-${{ matrix.package }}-*.tgz' -print -quit)"
           test -n "$root_package"
           test -n "$platform_package"
           node test/package-contents.mjs \
@@ -625,7 +625,7 @@ jobs:
             python_bin="wheel-test/bin/python"
           fi
           "$python_bin" -m pip install --disable-pip-version-check dist/*.whl
-          "$python_bin" -c "import pageknot; assert pageknot.PageKnot"
+          "$python_bin" -c "import offprint; assert offprint.Offprint"
           "$python_bin" bindings/python/tests/wheel_smoke.py
           "$python_bin" bindings/python/tests/package_lifecycle.py
 
@@ -697,7 +697,7 @@ jobs:
         with:
           path: release
           format: spdx-json
-          output-file: release/pageknot.spdx.json
+          output-file: release/offprint.spdx.json
 
       - name: Generate release checksums
         working-directory: release
@@ -796,16 +796,16 @@ jobs:
       - name: Capture through assembled root and platform packages
         working-directory: bindings/node
         run: |
-          package_dir="$RUNNER_TEMP/pageknot-node-package"
-          install_dir="$RUNNER_TEMP/pageknot-node-install"
+          package_dir="$RUNNER_TEMP/offprint-node-package"
+          install_dir="$RUNNER_TEMP/offprint-node-install"
           mkdir "$package_dir" "$install_dir"
           node scripts/package-license.mjs sync
           trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
           npm pack --ignore-scripts npm/linux-x64-gnu \
             --pack-destination "$package_dir"
           npm pack --ignore-scripts --pack-destination "$package_dir"
-          root_package="$(find "$package_dir" -maxdepth 1 -name 'pageknot-node-[0-9]*.tgz' -print -quit)"
-          platform_package="$(find "$package_dir" -maxdepth 1 -name 'pageknot-node-linux-x64-gnu-*.tgz' -print -quit)"
+          root_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-node-[0-9]*.tgz' -print -quit)"
+          platform_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-node-linux-x64-gnu-*.tgz' -print -quit)"
           test -n "$root_package"
           test -n "$platform_package"
           node test/package-contents.mjs \

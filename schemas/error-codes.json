@@ -1,1374 +1,1422 @@
 [
   {
-    "code": "pageknot.artifact.digest",
+    "code": "offprint.artifact.digest",
     "stage": "commit",
     "retryable": false,
     "description": "The staged artifact digest changed before commit."
   },
   {
-    "code": "pageknot.artifact.head",
+    "code": "offprint.artifact.head",
     "stage": "encoding",
     "retryable": false,
     "description": "The captured document has no HTML head element."
   },
   {
-    "code": "pageknot.artifact.manifest",
+    "code": "offprint.artifact.manifest",
     "stage": "encoding",
     "retryable": false,
     "description": "The artifact manifest could not be serialized."
   },
   {
-    "code": "pageknot.artifact.policy",
+    "code": "offprint.artifact.policy",
     "stage": "encoding",
     "retryable": false,
     "description": "The artifact policy is inconsistent with the captured document."
   },
   {
-    "code": "pageknot.artifact.read",
+    "code": "offprint.artifact.read",
     "stage": "verification",
     "retryable": true,
     "description": "The artifact could not be read."
   },
   {
-    "code": "pageknot.artifact.resource_summary",
+    "code": "offprint.artifact.resource_summary",
     "stage": "encoding",
     "retryable": false,
     "description": "The artifact resource summary is incomplete."
   },
   {
-    "code": "pageknot.artifact.sandbox",
+    "code": "offprint.artifact.sandbox",
     "stage": "encoding",
     "retryable": false,
     "description": "The sandboxed HTML artifact is inconsistent."
   },
   {
-    "code": "pageknot.artifact.serialize",
+    "code": "offprint.artifact.serialize",
     "stage": "encoding",
     "retryable": false,
     "description": "The HTML artifact could not be serialized."
   },
   {
-    "code": "pageknot.artifact.size",
+    "code": "offprint.artifact.size",
     "stage": "encoding",
     "retryable": false,
     "description": "The artifact exceeds a configured or platform byte limit."
   },
   {
-    "code": "pageknot.binding.runtime",
+    "code": "offprint.binding.runtime",
     "stage": "internal",
     "retryable": false,
     "description": "A language binding runtime could not be started."
   },
   {
-    "code": "pageknot.binding.serialization",
+    "code": "offprint.binding.serialization",
     "stage": "internal",
     "retryable": false,
     "description": "A language binding could not serialize a canonical record."
   },
   {
-    "code": "pageknot.binding.shutdown",
+    "code": "offprint.binding.shutdown",
     "stage": "shutdown",
     "retryable": false,
     "description": "A language binding shutdown ended before reporting its result."
   },
   {
-    "code": "pageknot.binding.shutdown_timeout",
+    "code": "offprint.binding.shutdown_timeout",
     "stage": "shutdown",
     "retryable": true,
     "description": "A language binding shutdown exceeded its deadline."
   },
   {
-    "code": "pageknot.browser.acquisition",
+    "code": "offprint.browser.acquisition",
     "stage": "internal",
     "retryable": false,
     "description": "Browser ownership was lost during acquisition."
   },
   {
-    "code": "pageknot.browser.acquisition_cancelled",
+    "code": "offprint.browser.acquisition_cancelled",
     "stage": "shutdown",
     "retryable": false,
     "description": "Browser acquisition was cancelled during shutdown."
   },
   {
-    "code": "pageknot.browser.active",
+    "code": "offprint.browser.active",
     "stage": "browser",
     "retryable": true,
     "description": "The selected managed browser has active leases or requires replacement."
   },
   {
-    "code": "pageknot.browser.cdp_close_timeout",
+    "code": "offprint.browser.cdp_close_timeout",
     "stage": "browser",
     "retryable": true,
     "description": "The CDP transport did not close before its deadline."
   },
   {
-    "code": "pageknot.browser.cdp_closed",
+    "code": "offprint.browser.cdp_closed",
     "stage": "browser",
     "retryable": true,
     "description": "The CDP connection closed."
   },
   {
-    "code": "pageknot.browser.cdp_command",
+    "code": "offprint.browser.cdp_command",
     "stage": "browser",
     "retryable": false,
     "description": "Chromium rejected a CDP command."
   },
   {
-    "code": "pageknot.browser.cdp_connect",
+    "code": "offprint.browser.cdp_connect",
     "stage": "browser",
     "retryable": true,
-    "description": "PageKnot could not connect to a CDP endpoint."
+    "description": "Offprint could not connect to a CDP endpoint."
   },
   {
-    "code": "pageknot.browser.cdp_decode",
+    "code": "offprint.browser.cdp_decode",
     "stage": "browser",
     "retryable": false,
     "description": "A CDP message could not be decoded."
   },
   {
-    "code": "pageknot.browser.cdp_encode",
+    "code": "offprint.browser.cdp_encode",
     "stage": "browser",
     "retryable": false,
     "description": "A CDP command could not be encoded."
   },
   {
-    "code": "pageknot.browser.cdp_event_lag",
+    "code": "offprint.browser.cdp_event_lag",
     "stage": "browser",
     "retryable": true,
     "description": "A CDP event consumer exceeded its bounded buffer."
   },
   {
-    "code": "pageknot.browser.cdp_event_limit",
+    "code": "offprint.browser.cdp_event_limit",
     "stage": "browser",
     "retryable": false,
     "description": "A CDP event exceeded its byte limit."
   },
   {
-    "code": "pageknot.browser.cdp_shape",
+    "code": "offprint.browser.cdp_shape",
     "stage": "browser",
     "retryable": false,
     "description": "A CDP response did not match the pinned protocol shape."
   },
   {
-    "code": "pageknot.browser.cdp_task",
+    "code": "offprint.browser.cdp_task",
     "stage": "browser",
     "retryable": false,
     "description": "The CDP transport task failed."
   },
   {
-    "code": "pageknot.browser.cdp_timeout",
+    "code": "offprint.browser.cdp_timeout",
     "stage": "browser",
     "retryable": true,
     "description": "A CDP command exceeded its deadline."
   },
   {
-    "code": "pageknot.browser.cdp_transport",
+    "code": "offprint.browser.cdp_transport",
     "stage": "browser",
     "retryable": true,
     "description": "The CDP WebSocket transport failed."
   },
   {
-    "code": "pageknot.browser.containment",
+    "code": "offprint.browser.containment",
     "stage": "browser",
     "retryable": false,
     "description": "The owned browser process tree could not be contained."
   },
   {
-    "code": "pageknot.browser.context",
+    "code": "offprint.browser.context",
     "stage": "internal",
     "retryable": false,
     "description": "The browser context lifecycle is internally inconsistent."
   },
   {
-    "code": "pageknot.browser.devtools_port",
+    "code": "offprint.browser.devtools_port",
     "stage": "browser",
     "retryable": false,
     "description": "Chromium published an invalid DevTools port."
   },
   {
-    "code": "pageknot.browser.devtools_url",
+    "code": "offprint.browser.devtools_url",
     "stage": "browser",
     "retryable": false,
     "description": "Chromium published an invalid DevTools endpoint."
   },
   {
-    "code": "pageknot.browser.executable",
+    "code": "offprint.browser.executable",
     "stage": "browser",
     "retryable": false,
     "description": "The selected browser executable is unavailable."
   },
   {
-    "code": "pageknot.browser.incompatible",
+    "code": "offprint.browser.incompatible",
     "stage": "browser",
     "retryable": false,
-    "description": "The selected browser is incompatible with PageKnot."
+    "description": "The selected browser is incompatible with Offprint."
   },
   {
-    "code": "pageknot.browser.install",
+    "code": "offprint.browser.install",
     "stage": "browser",
     "retryable": false,
     "description": "A managed browser installation needs attention."
   },
   {
-    "code": "pageknot.browser.interception_closed",
+    "code": "offprint.browser.interception_closed",
     "stage": "resource",
     "retryable": false,
     "description": "Response interception closed before collection completed."
   },
   {
-    "code": "pageknot.browser.interception_task",
+    "code": "offprint.browser.interception_task",
     "stage": "navigation",
     "retryable": false,
     "description": "The network interception task failed."
   },
   {
-    "code": "pageknot.browser.launch",
+    "code": "offprint.browser.launch",
     "stage": "browser",
     "retryable": true,
     "description": "Chromium could not be launched."
   },
   {
-    "code": "pageknot.browser.launch_timeout",
+    "code": "offprint.browser.launch_timeout",
     "stage": "browser",
     "retryable": true,
     "description": "Chromium did not start before its deadline."
   },
   {
-    "code": "pageknot.browser.management_unavailable",
+    "code": "offprint.browser.management_unavailable",
     "stage": "browser",
     "retryable": false,
     "description": "The requested managed browser operation is unavailable."
   },
   {
-    "code": "pageknot.browser.offline_verifier_unavailable",
+    "code": "offprint.browser.offline_verifier_unavailable",
     "stage": "browser",
     "retryable": false,
     "description": "Browser-backed offline verification is unavailable."
   },
   {
-    "code": "pageknot.browser.pdf_unavailable",
+    "code": "offprint.browser.pdf_unavailable",
     "stage": "encoding",
     "retryable": false,
     "description": "The selected browser backend cannot render PDF output."
   },
   {
-    "code": "pageknot.browser.probe",
+    "code": "offprint.browser.probe",
     "stage": "browser",
     "retryable": true,
     "description": "The browser executable probe failed."
   },
   {
-    "code": "pageknot.browser.probe_timeout",
+    "code": "offprint.browser.probe_timeout",
     "stage": "browser",
     "retryable": true,
     "description": "The browser executable probe exceeded its deadline."
   },
   {
-    "code": "pageknot.browser.profile",
+    "code": "offprint.browser.profile",
     "stage": "browser",
     "retryable": false,
     "description": "An ephemeral browser profile could not be created."
   },
   {
-    "code": "pageknot.browser.resource_task",
+    "code": "offprint.browser.resource_task",
     "stage": "resource",
     "retryable": false,
     "description": "A browser resource collection task failed."
   },
   {
-    "code": "pageknot.browser.selection_conflict",
+    "code": "offprint.browser.selection_conflict",
     "stage": "browser",
     "retryable": false,
     "description": "The browser selection options request incompatible ownership modes."
   },
   {
-    "code": "pageknot.browser.shutdown",
+    "code": "offprint.browser.shutdown",
     "stage": "shutdown",
     "retryable": true,
     "description": "Chromium could not be stopped cleanly."
   },
   {
-    "code": "pageknot.browser.target_crashed",
+    "code": "offprint.browser.target_crashed",
     "stage": "navigation",
     "retryable": true,
     "description": "The Chromium target crashed during an active operation."
   },
   {
-    "code": "pageknot.browser.terminate",
+    "code": "offprint.browser.terminate",
     "stage": "shutdown",
     "retryable": true,
     "description": "The owned Chromium process tree could not be terminated."
   },
   {
-    "code": "pageknot.browser.unavailable",
+    "code": "offprint.browser.unavailable",
     "stage": "browser",
     "retryable": false,
     "description": "No compatible browser is available."
   },
   {
-    "code": "pageknot.browser.version",
+    "code": "offprint.browser.version",
     "stage": "browser",
     "retryable": false,
     "description": "The browser version could not be identified."
   },
   {
-    "code": "pageknot.collector.base_url",
+    "code": "offprint.collector.base_url",
     "stage": "collection",
     "retryable": false,
     "description": "A collected frame has an invalid document base URL."
   },
   {
-    "code": "pageknot.collector.capability",
+    "code": "offprint.collector.capability",
     "stage": "collection",
     "retryable": false,
     "description": "The collector lacks a requested capability."
   },
   {
-    "code": "pageknot.collector.chunk_checksum",
+    "code": "offprint.collector.chunk_checksum",
     "stage": "collection",
     "retryable": true,
     "description": "A collector chunk checksum is invalid."
   },
   {
-    "code": "pageknot.collector.chunk_length",
+    "code": "offprint.collector.chunk_length",
     "stage": "collection",
     "retryable": false,
     "description": "A collector chunk length is inconsistent."
   },
   {
-    "code": "pageknot.collector.chunk_limit",
+    "code": "offprint.collector.chunk_limit",
     "stage": "collection",
     "retryable": false,
     "description": "A collector chunk exceeds the negotiated limit."
   },
   {
-    "code": "pageknot.collector.chunk_owner",
+    "code": "offprint.collector.chunk_owner",
     "stage": "collection",
     "retryable": false,
     "description": "A collector chunk belongs to another capture or frame."
   },
   {
-    "code": "pageknot.collector.chunk_sequence",
+    "code": "offprint.collector.chunk_sequence",
     "stage": "collection",
     "retryable": false,
     "description": "Collector chunks are out of sequence."
   },
   {
-    "code": "pageknot.collector.chunk_total",
+    "code": "offprint.collector.chunk_total",
     "stage": "collection",
     "retryable": false,
     "description": "The collector changed a declared chunk count."
   },
   {
-    "code": "pageknot.collector.document",
+    "code": "offprint.collector.document",
     "stage": "collection",
     "retryable": false,
     "description": "The rendered document could not be collected."
   },
   {
-    "code": "pageknot.collector.evaluate",
+    "code": "offprint.collector.evaluate",
     "stage": "collection",
     "retryable": false,
     "description": "The in-page collector evaluation failed."
   },
   {
-    "code": "pageknot.collector.payload_checksum",
+    "code": "offprint.collector.payload_checksum",
     "stage": "collection",
     "retryable": true,
     "description": "A collector payload digest is invalid."
   },
   {
-    "code": "pageknot.collector.payload_limit",
+    "code": "offprint.collector.payload_limit",
     "stage": "collection",
     "retryable": false,
     "description": "Collector payloads exceed the configured capture limit."
   },
   {
-    "code": "pageknot.collector.protocol_major",
+    "code": "offprint.collector.protocol_major",
     "stage": "collection",
     "retryable": false,
     "description": "The collector protocol major version is incompatible."
   },
   {
-    "code": "pageknot.collector.protocol_shape",
+    "code": "offprint.collector.protocol_shape",
     "stage": "collection",
     "retryable": false,
     "description": "A collector message does not match the protocol shape."
   },
   {
-    "code": "pageknot.collector.value",
+    "code": "offprint.collector.value",
     "stage": "collection",
     "retryable": false,
     "description": "The collector returned a value that could not cross the protocol boundary."
   },
   {
-    "code": "pageknot.config.directory",
+    "code": "offprint.config.directory",
     "stage": "validation",
     "retryable": false,
-    "description": "The PageKnot configuration directory is unavailable."
+    "description": "The Offprint configuration directory is unavailable."
   },
   {
-    "code": "pageknot.config.parse",
+    "code": "offprint.config.field",
     "stage": "validation",
     "retryable": false,
-    "description": "A PageKnot configuration file contains invalid TOML."
+    "description": "An Offprint environment variable is not recognized."
   },
   {
-    "code": "pageknot.config.profile",
+    "code": "offprint.config.parse",
+    "stage": "validation",
+    "retryable": false,
+    "description": "An Offprint configuration file contains invalid TOML."
+  },
+  {
+    "code": "offprint.config.profile",
     "stage": "validation",
     "retryable": false,
     "description": "The selected capture profile is undefined."
   },
   {
-    "code": "pageknot.config.read",
+    "code": "offprint.config.read",
     "stage": "validation",
     "retryable": true,
-    "description": "A PageKnot configuration file could not be read."
+    "description": "An Offprint configuration file could not be read."
   },
   {
-    "code": "pageknot.config.value",
+    "code": "offprint.config.value",
     "stage": "validation",
     "retryable": false,
-    "description": "A PageKnot configuration value is invalid."
+    "description": "An Offprint configuration value is invalid."
   },
   {
-    "code": "pageknot.export.encode",
+    "code": "offprint.export.encode",
     "stage": "encoding",
     "retryable": false,
-    "description": "An artifact variant could not be encoded."
+    "description": "An artifact format could not be encoded."
   },
   {
-    "code": "pageknot.export.files",
+    "code": "offprint.export.files",
     "stage": "encoding",
     "retryable": false,
-    "description": "An artifact variant exceeds its file count limit."
+    "description": "An artifact format exceeds its file count limit."
   },
   {
-    "code": "pageknot.export.markdown_asset",
+    "code": "offprint.export.format",
+    "stage": "validation",
+    "retryable": false,
+    "description": "The requested artifact format set is invalid."
+  },
+  {
+    "code": "offprint.export.markdown_asset",
     "stage": "encoding",
     "retryable": false,
     "description": "A Markdown asset is malformed or has an invalid relative path."
   },
   {
-    "code": "pageknot.export.name",
+    "code": "offprint.export.name",
     "stage": "validation",
     "retryable": false,
     "description": "The artifact export base name is invalid."
   },
   {
-    "code": "pageknot.export.output",
+    "code": "offprint.export.output",
     "stage": "commit",
     "retryable": false,
-    "description": "An artifact variant output could not be staged or committed."
+    "description": "An artifact format output could not be staged or committed."
   },
   {
-    "code": "pageknot.export.pdf",
+    "code": "offprint.export.pdf",
     "stage": "encoding",
     "retryable": false,
     "description": "Chromium returned an invalid PDF payload."
   },
   {
-    "code": "pageknot.export.pdf_metadata",
+    "code": "offprint.export.pdf_metadata",
     "stage": "encoding",
     "retryable": false,
     "description": "The PDF metadata record is incomplete or inconsistent."
   },
   {
-    "code": "pageknot.export.pdf_semantics",
+    "code": "offprint.export.pdf_semantics",
     "stage": "encoding",
     "retryable": false,
     "description": "The PDF semantic structure is unavailable or malformed."
   },
   {
-    "code": "pageknot.export.size",
+    "code": "offprint.export.size",
     "stage": "encoding",
     "retryable": false,
-    "description": "An artifact variant exceeds its byte limit."
+    "description": "An artifact format exceeds its byte limit."
   },
   {
-    "code": "pageknot.export.source",
+    "code": "offprint.export.source",
     "stage": "encoding",
     "retryable": false,
-    "description": "An artifact variant source is inconsistent with the verified HTML."
+    "description": "An artifact format source is inconsistent with the verified HTML."
   },
   {
-    "code": "pageknot.export.variant",
-    "stage": "validation",
-    "retryable": false,
-    "description": "The requested artifact variant set is invalid."
-  },
-  {
-    "code": "pageknot.export.verify",
+    "code": "offprint.export.verify",
     "stage": "verification",
     "retryable": false,
-    "description": "An artifact variant failed its format-specific verifier."
+    "description": "An artifact format failed its format-specific verifier."
   },
   {
-    "code": "pageknot.export.zip",
+    "code": "offprint.export.zip",
     "stage": "encoding",
     "retryable": false,
     "description": "A ZIP artifact could not be encoded or decoded."
   },
   {
-    "code": "pageknot.frame.collection",
+    "code": "offprint.frame.collection",
     "stage": "collection",
     "retryable": false,
     "description": "A frame could not be collected into the capture graph."
   },
   {
-    "code": "pageknot.frame.depth",
+    "code": "offprint.frame.depth",
     "stage": "collection",
     "retryable": false,
     "description": "The captured frame graph exceeds its configured depth."
   },
   {
-    "code": "pageknot.frame.detached",
+    "code": "offprint.frame.detached",
     "stage": "collection",
     "retryable": true,
     "description": "An out-of-process frame detached before collection completed."
   },
   {
-    "code": "pageknot.frame.limit",
+    "code": "offprint.frame.limit",
     "stage": "collection",
     "retryable": false,
     "description": "The captured frame graph exceeds its configured count."
   },
   {
-    "code": "pageknot.frame.nodes",
+    "code": "offprint.frame.nodes",
     "stage": "collection",
     "retryable": false,
     "description": "The captured frame graph exceeds its configured node budget."
   },
   {
-    "code": "pageknot.frame.owner",
+    "code": "offprint.frame.owner",
     "stage": "collection",
     "retryable": false,
     "description": "A captured node or frame has an inconsistent owner."
   },
   {
-    "code": "pageknot.frame.topology",
+    "code": "offprint.frame.topology",
     "stage": "collection",
     "retryable": false,
     "description": "The captured frame graph has an invalid topology."
   },
   {
-    "code": "pageknot.input.artifact",
+    "code": "offprint.input.arguments",
+    "stage": "validation",
+    "retryable": false,
+    "description": "The command line is invalid."
+  },
+  {
+    "code": "offprint.input.artifact",
     "stage": "validation",
     "retryable": false,
     "description": "The artifact input is invalid for the requested operation."
   },
   {
-    "code": "pageknot.input.browser_recycle",
+    "code": "offprint.input.browser_recycle",
     "stage": "validation",
     "retryable": false,
     "description": "The browser recycling limit is invalid."
   },
   {
-    "code": "pageknot.input.browser_selection",
+    "code": "offprint.input.browser_selection",
     "stage": "validation",
     "retryable": false,
     "description": "The selected browser policy is invalid for the requested operation."
   },
   {
-    "code": "pageknot.input.cdp_url",
+    "code": "offprint.input.cdp_url",
     "stage": "validation",
     "retryable": false,
     "description": "The remote browser endpoint URL is invalid."
   },
   {
-    "code": "pageknot.input.concurrency",
+    "code": "offprint.input.concurrency",
     "stage": "validation",
     "retryable": false,
     "description": "The browser context concurrency limit is invalid."
   },
   {
-    "code": "pageknot.input.credentials",
+    "code": "offprint.input.credentials",
     "stage": "validation",
     "retryable": false,
     "description": "The capture credential input is invalid or insufficiently protected."
   },
   {
-    "code": "pageknot.input.duration",
+    "code": "offprint.input.duration",
     "stage": "validation",
     "retryable": false,
     "description": "A command duration is invalid."
   },
   {
-    "code": "pageknot.input.error_code",
+    "code": "offprint.input.error_code",
     "stage": "validation",
     "retryable": false,
     "description": "An error code is malformed."
   },
   {
-    "code": "pageknot.input.export_option",
+    "code": "offprint.input.export_option",
     "stage": "validation",
     "retryable": false,
-    "description": "An artifact export option does not apply to the selected variants."
+    "description": "An artifact export option does not apply to the selected formats."
   },
   {
-    "code": "pageknot.input.file_root",
+    "code": "offprint.input.file_root",
     "stage": "validation",
     "retryable": false,
     "description": "A file URL is outside the configured roots."
   },
   {
-    "code": "pageknot.input.json",
+    "code": "offprint.input.json",
     "stage": "validation",
     "retryable": false,
     "description": "A JSON command input is unreadable, oversized, or invalid."
   },
   {
-    "code": "pageknot.input.limit",
+    "code": "offprint.input.limit",
     "stage": "validation",
     "retryable": false,
     "description": "A capture limit is invalid."
   },
   {
-    "code": "pageknot.input.network_cidr",
+    "code": "offprint.input.network_cidr",
     "stage": "validation",
     "retryable": false,
     "description": "A custom network CIDR is invalid."
   },
   {
-    "code": "pageknot.input.output",
+    "code": "offprint.input.output",
     "stage": "validation",
     "retryable": false,
     "description": "The output target is invalid."
   },
   {
-    "code": "pageknot.input.path_encoding",
+    "code": "offprint.input.path_encoding",
     "stage": "validation",
     "retryable": false,
     "description": "A filesystem path cannot be represented as UTF-8."
   },
   {
-    "code": "pageknot.input.remote_network_policy",
+    "code": "offprint.input.remote_file",
+    "stage": "validation",
+    "retryable": false,
+    "description": "A remote browser capture addressed the coordinator filesystem."
+  },
+  {
+    "code": "offprint.input.remote_network_policy",
     "stage": "validation",
     "retryable": false,
     "description": "A remote browser capture selected a restricted network policy."
   },
   {
-    "code": "pageknot.input.remote_verification_policy",
+    "code": "offprint.input.remote_verification_policy",
     "stage": "validation",
     "retryable": false,
     "description": "A remote browser capture selected browser-backed verification."
   },
   {
-    "code": "pageknot.input.selector_scope",
+    "code": "offprint.input.schema_version",
+    "stage": "validation",
+    "retryable": false,
+    "description": "An input record uses an incompatible schema version."
+  },
+  {
+    "code": "offprint.input.selector_scope",
     "stage": "validation",
     "retryable": false,
     "description": "A capture request combines a DOM selector with active selection scope."
   },
   {
-    "code": "pageknot.input.url",
+    "code": "offprint.input.url",
     "stage": "validation",
     "retryable": false,
     "description": "The capture URL is invalid."
   },
   {
-    "code": "pageknot.input.url_scheme",
+    "code": "offprint.input.url_scheme",
     "stage": "validation",
     "retryable": false,
     "description": "The capture URL uses a blocked scheme."
   },
   {
-    "code": "pageknot.input.value",
+    "code": "offprint.input.value",
     "stage": "validation",
     "retryable": false,
     "description": "A language binding input does not match its public record."
   },
   {
-    "code": "pageknot.input.verification_option",
+    "code": "offprint.input.verification_option",
     "stage": "validation",
     "retryable": false,
     "description": "A verification option does not apply to the selected artifact format."
   },
   {
-    "code": "pageknot.input.viewport",
+    "code": "offprint.input.viewport",
     "stage": "validation",
     "retryable": false,
     "description": "The browser viewport is invalid."
   },
   {
-    "code": "pageknot.internal.panic",
+    "code": "offprint.internal.panic",
     "stage": "internal",
     "retryable": false,
     "description": "A capture task panicked behind the runtime boundary."
   },
   {
-    "code": "pageknot.navigation.address_blocked",
+    "code": "offprint.navigation.address_blocked",
     "stage": "navigation",
     "retryable": false,
     "description": "The network policy blocked a resolved address."
   },
   {
-    "code": "pageknot.navigation.dns",
+    "code": "offprint.navigation.dns",
     "stage": "navigation",
     "retryable": true,
     "description": "The navigation host resolved to no addresses."
   },
   {
-    "code": "pageknot.navigation.dns_timeout",
+    "code": "offprint.navigation.dns_timeout",
     "stage": "navigation",
     "retryable": true,
     "description": "A network policy DNS decision exceeded its deadline."
   },
   {
-    "code": "pageknot.navigation.failed",
+    "code": "offprint.navigation.failed",
     "stage": "navigation",
     "retryable": true,
     "description": "Chromium could not navigate to the requested page."
   },
   {
-    "code": "pageknot.navigation.host",
+    "code": "offprint.navigation.host",
     "stage": "navigation",
     "retryable": false,
     "description": "The navigation URL has no host."
   },
   {
-    "code": "pageknot.navigation.policy_state",
+    "code": "offprint.navigation.policy_state",
     "stage": "navigation",
     "retryable": false,
     "description": "The navigation request has no validated network policy state."
   },
   {
-    "code": "pageknot.navigation.popup",
+    "code": "offprint.navigation.popup",
     "stage": "navigation",
     "retryable": false,
     "description": "A popup target could not be rejected safely."
   },
   {
-    "code": "pageknot.navigation.port",
+    "code": "offprint.navigation.port",
     "stage": "navigation",
     "retryable": false,
     "description": "The navigation URL has no usable port."
   },
   {
-    "code": "pageknot.navigation.proxy",
+    "code": "offprint.navigation.proxy",
     "stage": "navigation",
     "retryable": true,
     "description": "The validated network proxy could not complete a request."
   },
   {
-    "code": "pageknot.navigation.redirect_limit",
+    "code": "offprint.navigation.redirect_limit",
     "stage": "navigation",
     "retryable": false,
     "description": "Navigation exceeded the configured redirect count."
   },
   {
-    "code": "pageknot.navigation.request_limit",
+    "code": "offprint.navigation.request_limit",
     "stage": "navigation",
     "retryable": false,
     "description": "Concurrent intercepted requests exceed the supported limit."
   },
   {
-    "code": "pageknot.navigation.scheme",
+    "code": "offprint.navigation.scheme",
     "stage": "navigation",
     "retryable": false,
     "description": "The network URL scheme is blocked."
   },
   {
-    "code": "pageknot.navigation.url",
+    "code": "offprint.navigation.url",
     "stage": "navigation",
     "retryable": false,
     "description": "Chromium reported an invalid navigation URL."
   },
   {
-    "code": "pageknot.output.commit",
+    "code": "offprint.output.commit",
     "stage": "commit",
     "retryable": true,
     "description": "The verified artifact could not be committed."
   },
   {
-    "code": "pageknot.output.diagnostics",
+    "code": "offprint.output.diagnostics",
     "stage": "commit",
     "retryable": true,
     "description": "The sanitized diagnostic bundle could not be committed."
   },
   {
-    "code": "pageknot.output.directory",
+    "code": "offprint.output.directory",
     "stage": "validation",
     "retryable": false,
     "description": "The output directory is unavailable."
   },
   {
-    "code": "pageknot.output.exists",
+    "code": "offprint.output.exists",
     "stage": "validation",
     "retryable": false,
     "description": "The output path already exists."
   },
   {
-    "code": "pageknot.output.flush",
+    "code": "offprint.output.flush",
     "stage": "encoding",
     "retryable": true,
     "description": "The staging artifact could not be flushed."
   },
   {
-    "code": "pageknot.output.path",
+    "code": "offprint.output.path",
     "stage": "validation",
     "retryable": false,
     "description": "The output path is invalid."
   },
   {
-    "code": "pageknot.output.read",
+    "code": "offprint.output.read",
     "stage": "verification",
     "retryable": true,
     "description": "The staging artifact could not be read."
   },
   {
-    "code": "pageknot.output.staging",
+    "code": "offprint.output.staging",
     "stage": "encoding",
     "retryable": true,
     "description": "The staging artifact could not be created."
   },
   {
-    "code": "pageknot.output.stderr",
+    "code": "offprint.output.stderr",
     "stage": "commit",
     "retryable": true,
     "description": "Human diagnostics could not be written to stderr."
   },
   {
-    "code": "pageknot.output.stdout",
+    "code": "offprint.output.stdout",
     "stage": "commit",
     "retryable": true,
     "description": "A structured command result could not be written to stdout."
   },
   {
-    "code": "pageknot.output.sync",
+    "code": "offprint.output.sync",
     "stage": "encoding",
     "retryable": true,
     "description": "The staging artifact could not be synchronized."
   },
   {
-    "code": "pageknot.output.uniquify",
+    "code": "offprint.output.uniquify",
     "stage": "commit",
     "retryable": false,
     "description": "A unique output filename could not be selected."
   },
   {
-    "code": "pageknot.readiness.request_count",
+    "code": "offprint.readiness.request_count",
     "stage": "readiness",
     "retryable": false,
     "description": "The readiness tracker observed an inconsistent request count."
   },
   {
-    "code": "pageknot.readiness.timeout",
+    "code": "offprint.readiness.timeout",
     "stage": "readiness",
     "retryable": true,
     "description": "The page did not reach the requested readiness state before its deadline."
   },
   {
-    "code": "pageknot.resource.css_cycle",
+    "code": "offprint.resource.css_cycle",
     "stage": "resource",
     "retryable": false,
     "description": "A stylesheet import graph contains a cycle."
   },
   {
-    "code": "pageknot.resource.css_depth",
+    "code": "offprint.resource.css_depth",
     "stage": "resource",
     "retryable": false,
     "description": "A stylesheet import graph exceeds its configured depth."
   },
   {
-    "code": "pageknot.resource.css_encoding",
+    "code": "offprint.resource.css_encoding",
     "stage": "resource",
     "retryable": false,
     "description": "A captured stylesheet has an unsupported text encoding."
   },
   {
-    "code": "pageknot.resource.data_url",
+    "code": "offprint.resource.data_url",
     "stage": "resource",
     "retryable": false,
     "description": "A captured data URL could not be decoded."
   },
   {
-    "code": "pageknot.resource.decode",
+    "code": "offprint.resource.decode",
     "stage": "resource",
     "retryable": false,
     "description": "A browser resource body could not be decoded."
   },
   {
-    "code": "pageknot.resource.identifier",
+    "code": "offprint.resource.html_cycle",
+    "stage": "resource",
+    "retryable": false,
+    "description": "An embedded HTML resource graph contains a cycle."
+  },
+  {
+    "code": "offprint.resource.html_depth",
+    "stage": "resource",
+    "retryable": false,
+    "description": "An embedded HTML resource graph exceeds its configured depth."
+  },
+  {
+    "code": "offprint.resource.html_frame",
+    "stage": "resource",
+    "retryable": false,
+    "description": "An embedded HTML resource contains a nested frame."
+  },
+  {
+    "code": "offprint.resource.html_serialize",
+    "stage": "resource",
+    "retryable": false,
+    "description": "An embedded HTML document could not be serialized."
+  },
+  {
+    "code": "offprint.resource.identifier",
     "stage": "resource",
     "retryable": false,
     "description": "A resource identifier is absent from the graph."
   },
   {
-    "code": "pageknot.resource.incomplete",
+    "code": "offprint.resource.incomplete",
     "stage": "resource",
     "retryable": false,
     "description": "A resource graph contains unresolved references."
   },
   {
-    "code": "pageknot.resource.limit",
+    "code": "offprint.resource.limit",
     "stage": "resource",
     "retryable": false,
     "description": "A capture resource budget was exceeded."
   },
   {
-    "code": "pageknot.resource.load",
+    "code": "offprint.resource.load",
     "stage": "resource",
     "retryable": true,
     "description": "Chromium could not load a required resource body."
   },
   {
-    "code": "pageknot.resource.protocol_shape",
+    "code": "offprint.resource.protocol_shape",
     "stage": "resource",
     "retryable": false,
     "description": "A browser resource response did not match the pinned protocol shape."
   },
   {
-    "code": "pageknot.resource.rewrite",
+    "code": "offprint.resource.rewrite",
     "stage": "resource",
     "retryable": false,
     "description": "A controlled resource reference could not be rewritten."
   },
   {
-    "code": "pageknot.resource.scheme",
+    "code": "offprint.resource.scheme",
     "stage": "resource",
     "retryable": false,
     "description": "A resource reference uses an unsupported URL scheme."
   },
   {
-    "code": "pageknot.resource.status",
+    "code": "offprint.resource.status",
     "stage": "resource",
     "retryable": true,
     "description": "A required resource returned an unsuccessful HTTP status."
   },
   {
-    "code": "pageknot.resource.store",
+    "code": "offprint.resource.store",
     "stage": "internal",
     "retryable": false,
     "description": "The capture content store is internally inconsistent."
   },
   {
-    "code": "pageknot.resource.stream",
+    "code": "offprint.resource.stream",
     "stage": "resource",
     "retryable": true,
     "description": "A required resource stream ended with an error."
   },
   {
-    "code": "pageknot.resource.svg_cycle",
+    "code": "offprint.resource.svg_cycle",
     "stage": "resource",
     "retryable": false,
     "description": "An SVG resource graph contains a cycle."
   },
   {
-    "code": "pageknot.resource.svg_depth",
+    "code": "offprint.resource.svg_depth",
     "stage": "resource",
     "retryable": false,
     "description": "An SVG resource graph exceeds its configured depth."
   },
   {
-    "code": "pageknot.resource.svg_parse",
+    "code": "offprint.resource.svg_parse",
     "stage": "resource",
     "retryable": false,
     "description": "A captured SVG document has no usable root element."
   },
   {
-    "code": "pageknot.resource.svg_serialize",
+    "code": "offprint.resource.svg_serialize",
     "stage": "resource",
     "retryable": false,
     "description": "A transformed SVG document could not be serialized."
   },
   {
-    "code": "pageknot.resource.terminal",
+    "code": "offprint.resource.terminal",
     "stage": "resource",
     "retryable": false,
     "description": "A resource received more than one terminal outcome."
   },
   {
-    "code": "pageknot.resource.url",
+    "code": "offprint.resource.url",
     "stage": "resource",
     "retryable": false,
     "description": "A captured resource URL is invalid."
   },
   {
-    "code": "pageknot.runtime.acquisition",
+    "code": "offprint.runtime.acquisition",
     "stage": "internal",
     "retryable": false,
     "description": "Runtime ownership was lost during acquisition."
   },
   {
-    "code": "pageknot.runtime.cancelled",
+    "code": "offprint.runtime.cancelled",
     "stage": "shutdown",
     "retryable": false,
     "description": "The active capture was cancelled."
   },
   {
-    "code": "pageknot.runtime.capture_unavailable",
+    "code": "offprint.runtime.capture_unavailable",
     "stage": "internal",
     "retryable": false,
     "description": "The capture runtime is unavailable."
   },
   {
-    "code": "pageknot.runtime.closed",
+    "code": "offprint.runtime.closed",
     "stage": "shutdown",
     "retryable": false,
-    "description": "The PageKnot service is closed."
+    "description": "The Offprint service is closed."
   },
   {
-    "code": "pageknot.runtime.interrupted",
+    "code": "offprint.runtime.interrupted",
     "stage": "shutdown",
     "retryable": false,
     "description": "The active command received an interruption signal."
   },
   {
-    "code": "pageknot.runtime.job",
+    "code": "offprint.runtime.job",
     "stage": "internal",
     "retryable": false,
     "description": "The capture job registry is internally inconsistent."
   },
   {
-    "code": "pageknot.runtime.lock",
+    "code": "offprint.runtime.lock",
     "stage": "internal",
     "retryable": false,
     "description": "A runtime state lock is poisoned."
   },
   {
-    "code": "pageknot.runtime.shutdown",
+    "code": "offprint.runtime.shutdown",
     "stage": "shutdown",
     "retryable": false,
     "description": "Runtime shutdown did not complete cleanly."
   },
   {
-    "code": "pageknot.runtime.signal",
+    "code": "offprint.runtime.signal",
     "stage": "shutdown",
     "retryable": false,
     "description": "The command could not subscribe to interruption signals."
   },
   {
-    "code": "pageknot.runtime.state_transition",
+    "code": "offprint.runtime.state_transition",
     "stage": "internal",
     "retryable": false,
     "description": "The capture state machine rejected a transition."
   },
   {
-    "code": "pageknot.runtime.terminal_event",
+    "code": "offprint.runtime.terminal_event",
     "stage": "internal",
     "retryable": false,
     "description": "A capture emitted more than one terminal event."
   },
   {
-    "code": "pageknot.runtime.timeout",
+    "code": "offprint.runtime.timeout",
     "stage": "shutdown",
     "retryable": true,
     "description": "The requested operation exceeded its total deadline."
   },
   {
-    "code": "pageknot.scheduler.artifact_read",
+    "code": "offprint.scheduler.artifact_read",
     "stage": "internal",
     "retryable": true,
     "description": "A captured crawl artifact could not be read for link discovery."
   },
   {
-    "code": "pageknot.scheduler.concurrency",
+    "code": "offprint.scheduler.concurrency",
     "stage": "validation",
     "retryable": false,
     "description": "Scheduler concurrency is outside the supported range."
   },
   {
-    "code": "pageknot.scheduler.depth",
+    "code": "offprint.scheduler.depth",
     "stage": "validation",
     "retryable": false,
     "description": "Crawl depth is outside the supported range."
   },
   {
-    "code": "pageknot.scheduler.failed",
+    "code": "offprint.scheduler.failed",
     "stage": "internal",
     "retryable": false,
     "description": "One or more scheduled captures reached a failed terminal state."
   },
   {
-    "code": "pageknot.scheduler.job_count",
+    "code": "offprint.scheduler.job_count",
     "stage": "validation",
     "retryable": false,
     "description": "The number of scheduled jobs is outside the supported range."
   },
   {
-    "code": "pageknot.scheduler.job_id",
+    "code": "offprint.scheduler.job_id",
     "stage": "validation",
     "retryable": false,
     "description": "A batch job identifier is invalid or duplicated."
   },
   {
-    "code": "pageknot.scheduler.manifest_mismatch",
+    "code": "offprint.scheduler.manifest_mismatch",
     "stage": "validation",
     "retryable": false,
     "description": "Resume state belongs to a different scheduler plan."
   },
   {
-    "code": "pageknot.scheduler.manifest_read",
+    "code": "offprint.scheduler.manifest_read",
     "stage": "validation",
     "retryable": true,
     "description": "Resume state could not be inspected or decoded."
   },
   {
-    "code": "pageknot.scheduler.manifest_shape",
+    "code": "offprint.scheduler.manifest_shape",
     "stage": "validation",
     "retryable": false,
     "description": "Resume state has an invalid or inconsistent record shape."
   },
   {
-    "code": "pageknot.scheduler.manifest_write",
+    "code": "offprint.scheduler.manifest_write",
     "stage": "commit",
     "retryable": true,
     "description": "Resume state could not be staged or committed."
   },
   {
-    "code": "pageknot.scheduler.output",
+    "code": "offprint.scheduler.output",
     "stage": "validation",
     "retryable": false,
     "description": "The scheduler output directory is unavailable."
   },
   {
-    "code": "pageknot.scheduler.plan",
+    "code": "offprint.scheduler.plan",
     "stage": "validation",
     "retryable": false,
     "description": "A scheduler plan could not be serialized."
   },
   {
-    "code": "pageknot.scheduler.resume_credentials",
+    "code": "offprint.scheduler.resume_credentials",
     "stage": "validation",
     "retryable": false,
     "description": "A scheduler plan with capture credentials cannot use persisted resume state."
   },
   {
-    "code": "pageknot.scheduler.resume_target",
+    "code": "offprint.scheduler.resume_target",
     "stage": "validation",
     "retryable": false,
     "description": "A resumable job does not have a persistent artifact target."
   },
   {
-    "code": "pageknot.scheduler.state",
+    "code": "offprint.scheduler.state",
     "stage": "internal",
     "retryable": false,
     "description": "The scheduler reached an inconsistent internal state."
   },
   {
-    "code": "pageknot.scheduler.url",
+    "code": "offprint.scheduler.url",
     "stage": "validation",
     "retryable": false,
     "description": "A crawl URL uses an unsupported scheme."
   },
   {
-    "code": "pageknot.screenshot.encoding",
+    "code": "offprint.screenshot.encoding",
     "stage": "verification",
     "retryable": false,
     "description": "A screenshot response could not be decoded."
   },
   {
-    "code": "pageknot.screenshot.protocol_shape",
+    "code": "offprint.screenshot.protocol_shape",
     "stage": "verification",
     "retryable": false,
     "description": "A screenshot response did not match the pinned protocol shape."
   },
   {
-    "code": "pageknot.selection.empty",
+    "code": "offprint.selection.empty",
     "stage": "collection",
     "retryable": false,
     "description": "The selected document scope has no active top-level selection."
   },
   {
-    "code": "pageknot.selector.invalid",
+    "code": "offprint.selector.invalid",
     "stage": "collection",
     "retryable": false,
     "description": "The DOM selector is not a valid CSS selector."
   },
   {
-    "code": "pageknot.selector.not_found",
+    "code": "offprint.selector.not_found",
     "stage": "collection",
     "retryable": false,
     "description": "The top-level document has no element matching the DOM selector."
   },
   {
-    "code": "pageknot.transform.document",
+    "code": "offprint.transform.document",
     "stage": "transform",
     "retryable": false,
     "description": "The document model is incomplete or inconsistent."
   },
   {
-    "code": "pageknot.transform.node",
+    "code": "offprint.transform.node",
     "stage": "transform",
     "retryable": false,
     "description": "A document transform referenced an unknown node."
   },
   {
-    "code": "pageknot.transform.node_limit",
+    "code": "offprint.transform.node_limit",
     "stage": "transform",
     "retryable": false,
     "description": "A document exceeds the node identifier range."
   },
   {
-    "code": "pageknot.transform.structural_repair",
+    "code": "offprint.transform.structural_repair",
     "stage": "transform",
     "retryable": false,
     "description": "The structural repair program is invalid or exceeds its bounds."
   },
   {
-    "code": "pageknot.transform.visual_fallback",
+    "code": "offprint.transform.visual_fallback",
     "stage": "transform",
     "retryable": false,
     "description": "A visual fallback could not be attached to its captured node."
   },
   {
-    "code": "pageknot.verification.active_content",
+    "code": "offprint.verification.active_content",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact contains active captured content."
   },
   {
-    "code": "pageknot.verification.csp",
+    "code": "offprint.verification.csp",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact content security policy is inconsistent."
   },
   {
-    "code": "pageknot.verification.embedded_resource",
+    "code": "offprint.verification.embedded_resource",
     "stage": "verification",
     "retryable": false,
     "description": "An embedded resource is malformed or inconsistent with its manifest record."
   },
   {
-    "code": "pageknot.verification.external_reference",
+    "code": "offprint.verification.external_reference",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact contains an external render-fetch reference."
   },
   {
-    "code": "pageknot.verification.format",
+    "code": "offprint.verification.format",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact format or schema is incompatible."
   },
   {
-    "code": "pageknot.verification.frame",
+    "code": "offprint.verification.frame",
     "stage": "verification",
     "retryable": false,
     "description": "An artifact frame could not be inspected during offline verification."
   },
   {
-    "code": "pageknot.verification.frames",
+    "code": "offprint.verification.frames",
     "stage": "verification",
     "retryable": false,
     "description": "The embedded frame graph is incomplete or inconsistent."
   },
   {
-    "code": "pageknot.verification.manifest",
+    "code": "offprint.verification.manifest",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact manifest is missing or malformed."
   },
   {
-    "code": "pageknot.verification.network",
+    "code": "offprint.verification.network",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact attempted a network request during offline verification."
   },
   {
-    "code": "pageknot.verification.page_error",
+    "code": "offprint.verification.page_error",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact raised a page error during offline verification."
   },
   {
-    "code": "pageknot.verification.path",
+    "code": "offprint.verification.path",
     "stage": "verification",
     "retryable": false,
     "description": "The staged artifact path cannot be opened by the verifier."
   },
   {
-    "code": "pageknot.verification.record",
+    "code": "offprint.verification.record",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact verification record is inconsistent."
   },
   {
-    "code": "pageknot.verification.reference",
+    "code": "offprint.verification.reference",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact contains an invalid controlled resource reference."
   },
   {
-    "code": "pageknot.verification.resource_provenance",
+    "code": "offprint.verification.resource_provenance",
     "stage": "verification",
     "retryable": false,
     "description": "An embedded resource has incomplete retrieval provenance."
   },
   {
-    "code": "pageknot.verification.resource_summary",
+    "code": "offprint.verification.resource_summary",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact resource summary is inconsistent."
   },
   {
-    "code": "pageknot.verification.size",
+    "code": "offprint.verification.size",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact size exceeds the supported range."
   },
   {
-    "code": "pageknot.verification.structural_repair",
+    "code": "offprint.verification.structural_repair",
     "stage": "verification",
     "retryable": false,
     "description": "The artifact structural repair data is malformed or inconsistent."
   },
   {
-    "code": "pageknot.verification.timeout",
+    "code": "offprint.verification.timeout",
     "stage": "verification",
     "retryable": true,
     "description": "Offline verification exceeded its deadline."
   },
   {
-    "code": "pageknot.verification.unstable",
+    "code": "offprint.verification.unstable",
     "stage": "verification",
     "retryable": true,
     "description": "The artifact did not reach a stable browser state during offline verification."
   },
   {
-    "code": "pageknot.visual_fallback.bounds",
+    "code": "offprint.visual_fallback.bounds",
     "stage": "collection",
     "retryable": false,
     "description": "A visual fallback has invalid or out-of-range browser bounds."
   },
   {
-    "code": "pageknot.visual_fallback.encoding",
+    "code": "offprint.visual_fallback.encoding",
     "stage": "collection",
     "retryable": false,
     "description": "A visual fallback image could not be decoded."
   },
   {
-    "code": "pageknot.visual_fallback.evaluate",
+    "code": "offprint.visual_fallback.evaluate",
     "stage": "collection",
     "retryable": false,
     "description": "Visual fallback evaluation failed in the browser."
   },
   {
-    "code": "pageknot.visual_fallback.frame",
+    "code": "offprint.visual_fallback.frame",
     "stage": "collection",
     "retryable": false,
     "description": "A visual fallback frame is unavailable or inconsistent."
   },
   {
-    "code": "pageknot.visual_fallback.frame_owner",
+    "code": "offprint.visual_fallback.frame_owner",
     "stage": "collection",
     "retryable": false,
     "description": "A visual fallback frame owner is unavailable or inconsistent."
   },
   {
-    "code": "pageknot.visual_fallback.pixel_limit",
+    "code": "offprint.visual_fallback.pixel_limit",
     "stage": "collection",
     "retryable": false,
     "description": "A visual fallback exceeds its configured pixel budget."
   },
   {
-    "code": "pageknot.visual_fallback.protocol_shape",
+    "code": "offprint.visual_fallback.protocol_shape",
     "stage": "collection",
     "retryable": false,
     "description": "A visual fallback response did not match the pinned protocol shape."
   },
   {
-    "code": "pageknot.visual_fallback.viewport",
+    "code": "offprint.visual_fallback.viewport",
     "stage": "collection",
     "retryable": false,
     "description": "A visual fallback lies outside its browser viewport."

@@ -235,7 +235,7 @@ function applySelectionScope(
   }
   const cloneBody = mapGet(clones, body);
   if (cloneBody && isElement(cloneBody)) {
-    setAttribute(cloneBody, "data-pageknot-selection", "");
+    setAttribute(cloneBody, "data-offprint-selection", "");
   }
   return {
     ranges: ranges.length,

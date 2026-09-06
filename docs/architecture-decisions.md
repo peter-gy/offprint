@@ -16,7 +16,7 @@ Each record defines the current decision and the evidence that can reopen it.
 ## ADR 002: Rust service API
 
 - **Context:** The CLI and language bindings need one lifecycle and error model.
-- **Decision:** Keep orchestration in the `pageknot` Rust service API.
+- **Decision:** Keep orchestration in the `offprint` Rust service API.
 - **Consequences:** Frontends map canonical records and do not own capture
   semantics.
 - **Rejected:** Independent CLI, Node.js, and Python implementations.
@@ -36,7 +36,7 @@ Each record defines the current decision and the evidence that can reopen it.
 - **Context:** Frames, network responses, browser contexts, and screenshots
   need browser-level control.
 - **Decision:** Use Chromium through CDP behind `BrowserBackend`.
-- **Consequences:** Browser-specific behavior stays in `pageknot-chromium`.
+- **Consequences:** Browser-specific behavior stays in `offprint-chromium`.
 - **Rejected:** WebDriver as the canonical backend.
 - **Reconsider with:** Equivalent lifecycle and observation evidence from
   another browser protocol.
@@ -54,7 +54,7 @@ Each record defines the current decision and the evidence that can reopen it.
 
 - **Context:** Transformation needs stable node identity and browser-compatible
   parsing.
-- **Decision:** Parse into a PageKnot-owned arena built with html5ever.
+- **Decision:** Parse into an Offprint-owned arena built with html5ever.
 - **Consequences:** Rewriting operates on stable IDs and validates structure
   after serialization.
 - **Rejected:** String replacement as the document model.
@@ -147,7 +147,7 @@ Each record defines the current decision and the evidence that can reopen it.
 
 - **Context:** Public websites drift and make release failures ambiguous.
 - **Decision:** Serve controlled HTTP and HTTPS origins from
-  `pageknot-test-support`.
+  `offprint-test-support`.
 - **Consequences:** Required browser gates run without the public internet.
 - **Rejected:** Live-site tests as release gates.
 - **Reconsider with:** A browser behavior that cannot be reproduced locally.
@@ -167,7 +167,7 @@ Each record defines the current decision and the evidence that can reopen it.
 
 - **Context:** Design work included direct inspection of AGPL-licensed
   SingleFile source.
-- **Decision:** License PageKnot under AGPL-3.0-or-later.
+- **Decision:** License Offprint under AGPL-3.0-or-later.
 - **Consequences:** Source and distributed packages carry the same license
   posture.
 - **Rejected:** A permissive initial license without qualified legal review.

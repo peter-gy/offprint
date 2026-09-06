@@ -302,9 +302,9 @@ checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
 
 [[package]]
 name = "chacha20"
-version = "0.10.1"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d524456ba66e72eb8b115ff89e01e497f8e6d11d78b70b1aa13c0fbd97540a81"
+checksum = "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -1610,6 +1610,293 @@ dependencies = [
 ]
 
 [[package]]
+name = "offprint"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "base64",
+ "bytes",
+ "camino",
+ "chrono",
+ "data-url",
+ "directories",
+ "futures-core",
+ "futures-util",
+ "image",
+ "lopdf",
+ "offprint-artifact",
+ "offprint-browser",
+ "offprint-capture",
+ "offprint-chromium",
+ "offprint-document",
+ "offprint-export",
+ "offprint-html",
+ "offprint-model",
+ "offprint-protocol",
+ "offprint-test-support",
+ "offprint-transform",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sysinfo",
+ "tempfile",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "offprint-artifact"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "fs2",
+ "offprint-model",
+ "proptest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
+name = "offprint-bench"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "camino",
+ "chrono",
+ "clap",
+ "data-url",
+ "offprint",
+ "offprint-capture",
+ "offprint-document",
+ "offprint-model",
+ "offprint-test-support",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "offprint-browser"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bytes",
+ "futures-core",
+ "ipnet",
+ "offprint-model",
+ "schemars",
+ "serde",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "offprint-capture"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "futures-util",
+ "offprint-model",
+ "proptest",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-util",
+]
+
+[[package]]
+name = "offprint-chromium"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "base64",
+ "bytes",
+ "camino",
+ "fs2",
+ "futures-util",
+ "hex",
+ "offprint-browser",
+ "offprint-model",
+ "offprint-protocol",
+ "offprint-test-support",
+ "processkit",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-stream",
+ "tokio-tungstenite",
+ "tokio-util",
+ "url",
+ "zip",
+]
+
+[[package]]
+name = "offprint-cli"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "clap",
+ "clap_complete",
+ "directories",
+ "futures-util",
+ "offprint",
+ "offprint-document",
+ "offprint-html",
+ "offprint-test-support",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "toml",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "offprint-document"
+version = "0.1.0"
+dependencies = [
+ "cssparser",
+ "html5ever",
+ "lightningcss",
+ "markup5ever",
+ "offprint-model",
+ "proptest",
+ "serde_json",
+ "url",
+]
+
+[[package]]
+name = "offprint-export"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "data-url",
+ "flate2",
+ "html5ever",
+ "lopdf",
+ "offprint-document",
+ "offprint-html",
+ "offprint-model",
+ "pulldown-cmark",
+ "quick-xml",
+ "serde_json",
+ "tempfile",
+ "zip",
+]
+
+[[package]]
+name = "offprint-html"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "chrono",
+ "data-url",
+ "html5ever",
+ "markup5ever",
+ "offprint-document",
+ "offprint-model",
+ "serde_json",
+ "url",
+]
+
+[[package]]
+name = "offprint-model"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "chrono",
+ "hex",
+ "proptest",
+ "schemars",
+ "serde",
+ "serde_json",
+ "sha2",
+ "ulid",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "offprint-node"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "napi",
+ "napi-build",
+ "napi-derive",
+ "offprint",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "offprint-protocol"
+version = "0.1.0"
+dependencies = [
+ "crc32fast",
+ "offprint-model",
+ "proptest",
+ "schemars",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "offprint-python"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "offprint",
+ "pyo3",
+ "pyo3-async-runtimes",
+ "serde",
+ "serde_json",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "offprint-test-support"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "flate2",
+ "offprint-model",
+ "rcgen",
+ "reqwest",
+ "rustls",
+ "schemars",
+ "serde",
+ "sha1",
+ "tokio",
+ "tokio-rustls",
+ "tokio-util",
+ "url",
+]
+
+[[package]]
+name = "offprint-transform"
+version = "0.1.0"
+dependencies = [
+ "offprint-document",
+ "offprint-html",
+ "offprint-model",
+ "serde_json",
+]
+
+[[package]]
 name = "oid-registry"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1641,291 +1928,6 @@ name = "option-ext"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04744f49eae99ab78e0d5c0b603ab218f515ea8cfe5a456d7629ad883a3b6e7d"
-
-[[package]]
-name = "pageknot"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "base64",
- "camino",
- "chrono",
- "data-url",
- "directories",
- "futures-core",
- "futures-util",
- "image",
- "lopdf",
- "pageknot-artifact",
- "pageknot-browser",
- "pageknot-capture",
- "pageknot-chromium",
- "pageknot-document",
- "pageknot-export",
- "pageknot-html",
- "pageknot-model",
- "pageknot-protocol",
- "pageknot-test-support",
- "pageknot-transform",
- "serde",
- "serde_json",
- "sha2",
- "sysinfo",
- "tempfile",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "url",
-]
-
-[[package]]
-name = "pageknot-artifact"
-version = "0.1.0"
-dependencies = [
- "camino",
- "fs2",
- "pageknot-model",
- "proptest",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
-]
-
-[[package]]
-name = "pageknot-bench"
-version = "0.1.0"
-dependencies = [
- "base64",
- "camino",
- "chrono",
- "clap",
- "data-url",
- "pageknot",
- "pageknot-capture",
- "pageknot-document",
- "pageknot-model",
- "pageknot-test-support",
- "serde",
- "serde_json",
- "sha2",
- "tokio",
- "url",
-]
-
-[[package]]
-name = "pageknot-browser"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "bytes",
- "futures-core",
- "ipnet",
- "pageknot-model",
- "pageknot-protocol",
- "tokio-util",
- "url",
-]
-
-[[package]]
-name = "pageknot-capture"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "futures-util",
- "pageknot-model",
- "proptest",
- "sha2",
- "tempfile",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "pageknot-chromium"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "base64",
- "bytes",
- "camino",
- "fs2",
- "futures-util",
- "hex",
- "pageknot-browser",
- "pageknot-model",
- "pageknot-protocol",
- "pageknot-test-support",
- "processkit",
- "reqwest",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "tokio",
- "tokio-stream",
- "tokio-tungstenite",
- "tokio-util",
- "url",
- "zip",
-]
-
-[[package]]
-name = "pageknot-cli"
-version = "0.1.0"
-dependencies = [
- "camino",
- "clap",
- "clap_complete",
- "directories",
- "futures-util",
- "pageknot",
- "pageknot-document",
- "pageknot-html",
- "pageknot-test-support",
- "serde",
- "serde_json",
- "tempfile",
- "tokio",
- "toml",
- "url",
- "zeroize",
-]
-
-[[package]]
-name = "pageknot-document"
-version = "0.1.0"
-dependencies = [
- "cssparser",
- "html5ever",
- "lightningcss",
- "markup5ever",
- "pageknot-model",
- "proptest",
- "serde_json",
- "url",
-]
-
-[[package]]
-name = "pageknot-export"
-version = "0.1.0"
-dependencies = [
- "base64",
- "data-url",
- "flate2",
- "html5ever",
- "lopdf",
- "pageknot-document",
- "pageknot-html",
- "pageknot-model",
- "pulldown-cmark",
- "quick-xml",
- "serde_json",
- "tempfile",
- "zip",
-]
-
-[[package]]
-name = "pageknot-html"
-version = "0.1.0"
-dependencies = [
- "base64",
- "chrono",
- "data-url",
- "html5ever",
- "markup5ever",
- "pageknot-document",
- "pageknot-model",
- "serde_json",
- "url",
-]
-
-[[package]]
-name = "pageknot-model"
-version = "0.1.0"
-dependencies = [
- "camino",
- "chrono",
- "hex",
- "proptest",
- "schemars",
- "serde",
- "serde_json",
- "sha2",
- "ulid",
- "url",
- "zeroize",
-]
-
-[[package]]
-name = "pageknot-node"
-version = "0.1.0"
-dependencies = [
- "futures-util",
- "napi",
- "napi-build",
- "napi-derive",
- "pageknot",
- "serde",
- "serde_json",
- "tokio",
- "url",
-]
-
-[[package]]
-name = "pageknot-protocol"
-version = "0.1.0"
-dependencies = [
- "crc32fast",
- "pageknot-model",
- "proptest",
- "schemars",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "pageknot-python"
-version = "0.1.0"
-dependencies = [
- "futures-util",
- "pageknot",
- "pyo3",
- "pyo3-async-runtimes",
- "serde",
- "serde_json",
- "tokio",
- "url",
-]
-
-[[package]]
-name = "pageknot-test-support"
-version = "0.1.0"
-dependencies = [
- "base64",
- "flate2",
- "pageknot-model",
- "rcgen",
- "reqwest",
- "rustls",
- "schemars",
- "serde",
- "sha1",
- "tokio",
- "tokio-rustls",
- "tokio-util",
- "url",
-]
-
-[[package]]
-name = "pageknot-transform"
-version = "0.1.0"
-dependencies = [
- "pageknot-document",
- "pageknot-html",
- "pageknot-model",
- "serde_json",
-]
 
 [[package]]
 name = "parcel_selectors"
@@ -3936,12 +3938,13 @@ dependencies = [
  "clap_complete",
  "flate2",
  "hex",
- "pageknot",
- "pageknot-chromium",
- "pageknot-cli",
- "pageknot-model",
- "pageknot-protocol",
- "pageknot-test-support",
+ "offprint",
+ "offprint-browser",
+ "offprint-chromium",
+ "offprint-cli",
+ "offprint-model",
+ "offprint-protocol",
+ "offprint-test-support",
  "reqwest",
  "schemars",
  "serde",

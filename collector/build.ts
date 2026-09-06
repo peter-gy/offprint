@@ -78,7 +78,7 @@ const sourceDigest = new Bun.CryptoHasher("sha256")
   .update(bundledSource)
   .digest("hex");
 const output = bundledSource.replaceAll(
-  "__PAGEKNOT_COLLECTOR_BUILD_SHA256__",
+  "__OFFPRINT_COLLECTOR_BUILD_SHA256__",
   sourceDigest,
 );
 const outputDigest = new Bun.CryptoHasher("sha256")
@@ -91,11 +91,11 @@ const targets = [
   },
   {
     bundle: new URL(
-      "../crates/pageknot-chromium/generated/collector.js",
+      "../crates/offprint-chromium/generated/collector.js",
       import.meta.url,
     ),
     digest: new URL(
-      "../crates/pageknot-chromium/generated/collector.sha256",
+      "../crates/offprint-chromium/generated/collector.sha256",
       import.meta.url,
     ),
   },
