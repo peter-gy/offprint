@@ -7,7 +7,7 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from offprint import Offprint
+from offprint import CaptureRequest, CaptureStatus, Offprint, OffprintOptions
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -37,6 +37,9 @@ class Handler(BaseHTTPRequestHandler):
 
 
 async def run() -> None:
+    assert CaptureRequest.__name__ == "CaptureRequest"
+    assert OffprintOptions.__name__ == "OffprintOptions"
+    assert CaptureStatus is not None
     server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()

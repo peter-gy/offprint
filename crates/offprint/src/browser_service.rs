@@ -545,11 +545,11 @@ fn effective_configuration(state: &RuntimeState) -> Vec<EffectiveConfigValue> {
     }
     if !configuration
         .iter()
-        .any(|value| value.field == "browser.channel")
+        .any(|value| value.field == "browser.source")
     {
         configuration.push(EffectiveConfigValue {
-            field: "browser.channel".to_owned(),
-            value: serde_json::to_value(state.browser_channel).unwrap_or(serde_json::Value::Null),
+            field: "browser.source".to_owned(),
+            value: serde_json::to_value(state.browser_source).unwrap_or(serde_json::Value::Null),
             provenance: ConfigProvenance::Default,
             redacted: false,
         });
@@ -573,25 +573,25 @@ fn effective_configuration(state: &RuntimeState) -> Vec<EffectiveConfigValue> {
 fn network_summary(policy: &offprint_model::NetworkPolicy) -> NetworkPolicySummary {
     match policy {
         offprint_model::NetworkPolicy::Standard => NetworkPolicySummary {
-            profile: "standard".to_owned(),
+            policy: "standard".to_owned(),
             permits_loopback_initial_origin: true,
             permits_private_addresses: false,
             revalidates_redirects: true,
         },
         offprint_model::NetworkPolicy::Server => NetworkPolicySummary {
-            profile: "server".to_owned(),
+            policy: "server".to_owned(),
             permits_loopback_initial_origin: false,
             permits_private_addresses: false,
             revalidates_redirects: true,
         },
         offprint_model::NetworkPolicy::Unrestricted => NetworkPolicySummary {
-            profile: "unrestricted".to_owned(),
+            policy: "unrestricted".to_owned(),
             permits_loopback_initial_origin: true,
             permits_private_addresses: true,
             revalidates_redirects: true,
         },
         offprint_model::NetworkPolicy::Custom(rules) => NetworkPolicySummary {
-            profile: "custom".to_owned(),
+            policy: "custom".to_owned(),
             permits_loopback_initial_origin: rules.allow_loopback,
             permits_private_addresses: rules.allow_private,
             revalidates_redirects: true,

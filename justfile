@@ -226,7 +226,11 @@ python-check:
     cd bindings/python && uv run --frozen pytest
     cd bindings/python && uv run --frozen mypy
     cd bindings/python && uv run --frozen mypy --strict \
-      python/offprint/__init__.pyi python/offprint/_contracts.pyi
+      python/offprint/__init__.pyi python/offprint/contracts.py
+    cd bindings/python && uv run --frozen mypy --config-file=/dev/null \
+      --no-incremental --strict tests/typing_contract.py
+    cd bindings/python && uv run --frozen mypy --config-file=/dev/null \
+      --no-incremental --strict examples/capture_memory.py
 
 python-wheel-check:
     #!/usr/bin/env bash

@@ -19,6 +19,7 @@ pub enum CaptureOutput {
         conflict: ConflictPolicy,
     },
     Memory {
+        #[schemars(range(min = 1))]
         max_bytes: u64,
     },
 }

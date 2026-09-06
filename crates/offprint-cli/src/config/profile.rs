@@ -341,7 +341,7 @@ fn apply_limits(
     set_limit!(nodes, "nodes");
     set_limit!(resources, "resources");
     set_limit!(concurrent_resources, "concurrentResources");
-    set_limit!(css_import_depth, "cssImportDepth");
+    set_limit!(resource_recursion_depth, "resourceRecursionDepth");
     set_limit!(frame_depth, "frameDepth");
     set_byte_limit!(resource_bytes, "resourceBytes");
     set_byte_limit!(total_resource_bytes, "totalResourceBytes");

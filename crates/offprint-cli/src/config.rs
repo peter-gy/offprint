@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
 use offprint::{
-    BrowserChannel, BrowserInstallationPolicy, CaptureProfile, CaptureRequest, ConfigProvenance,
-    EffectiveConfigValue, LazyLoadPolicy, OffprintBuilder, OffprintError, ReadinessMode,
-    ReadinessPolicy, Result,
+    BrowserInstallationPolicy, BrowserSourcePolicy, CaptureProfile, CaptureRequest,
+    ConfigProvenance, EffectiveConfigValue, LazyLoadPolicy, OffprintBuilder, OffprintError,
+    ReadinessMode, ReadinessPolicy, Result,
 };
 use serde_json::Value;
 use url::Url;
@@ -34,7 +34,7 @@ pub(crate) enum BrowserSelection {
 pub(crate) struct ResolvedConfig {
     browser: BrowserSelection,
     cache_dir: Option<String>,
-    browser_channel: BrowserChannel,
+    browser_source: BrowserSourcePolicy,
     browser_installation: BrowserInstallationPolicy,
     headless: bool,
     maximum_contexts: u16,
@@ -60,7 +60,7 @@ impl ResolvedConfig {
     pub(crate) fn apply_to_builder(&self, mut builder: OffprintBuilder) -> OffprintBuilder {
         builder = builder
             .headed(!self.headless)
-            .browser_channel(self.browser_channel)
+            .browser_source(self.browser_source)
             .browser_installation(self.browser_installation)
             .maximum_contexts(self.maximum_contexts)
             .effective_configuration(self.configuration.values().cloned().collect())

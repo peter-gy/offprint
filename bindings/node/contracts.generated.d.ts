@@ -272,13 +272,13 @@ type BatchRequestCaptureLimits = {
   artifactBytes: number;
   collectorChunkBytes: number;
   concurrentResources: number;
-  cssImportDepth: number;
   duration: number;
   frameDepth: number;
   frames: number;
   nodes: number;
   redirects: number;
   resourceBytes: number;
+  resourceRecursionDepth: number;
   resources: number;
   totalResourceBytes: number;
 };
@@ -327,7 +327,6 @@ type BatchRequestCookieSameSite = ("strict" | "lax" | "none");
 
 type BatchRequestDiagnosticsPolicy = {
   directory?: (string | null);
-  screenshots?: boolean;
 };
 
 type BatchRequestLazyLoadPolicy = ({
@@ -586,7 +585,7 @@ type BrowserDoctorReportManagedBrowserState = {
 type BrowserDoctorReportNetworkPolicySummary = {
   permitsLoopbackInitialOrigin: boolean;
   permitsPrivateAddresses: boolean;
-  profile: string;
+  policy: string;
   revalidatesRedirects: boolean;
 };
 
@@ -819,13 +818,13 @@ type CaptureRequestCaptureLimits = {
   artifactBytes: number;
   collectorChunkBytes: number;
   concurrentResources: number;
-  cssImportDepth: number;
   duration: number;
   frameDepth: number;
   frames: number;
   nodes: number;
   redirects: number;
   resourceBytes: number;
+  resourceRecursionDepth: number;
   resources: number;
   totalResourceBytes: number;
 };
@@ -858,7 +857,6 @@ type CaptureRequestCookieSameSite = ("strict" | "lax" | "none");
 
 type CaptureRequestDiagnosticsPolicy = {
   directory?: (string | null);
-  screenshots?: boolean;
 };
 
 type CaptureRequestLazyLoadPolicy = ({
@@ -1049,13 +1047,13 @@ type CrawlRequestCaptureLimits = {
   artifactBytes: number;
   collectorChunkBytes: number;
   concurrentResources: number;
-  cssImportDepth: number;
   duration: number;
   frameDepth: number;
   frames: number;
   nodes: number;
   redirects: number;
   resourceBytes: number;
+  resourceRecursionDepth: number;
   resources: number;
   totalResourceBytes: number;
 };
@@ -1088,7 +1086,6 @@ type CrawlRequestCookieSameSite = ("strict" | "lax" | "none");
 
 type CrawlRequestDiagnosticsPolicy = {
   directory?: (string | null);
-  screenshots?: boolean;
 };
 
 type CrawlRequestLazyLoadPolicy = ({

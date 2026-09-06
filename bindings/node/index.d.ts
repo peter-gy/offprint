@@ -59,8 +59,8 @@ export type {
   Viewport,
 } from "./contracts.generated.js";
 
-export type BrowserChannel = "auto" | "managed" | "system";
-export type BrowserInstallationPolicy = "explicit" | "install-managed";
+export type BrowserSourcePolicy = "auto" | "managed" | "system";
+export type BrowserInstallationPolicy = "existing-only" | "install-managed";
 export type ReadinessMode = CaptureRequest["readiness"]["mode"];
 export type NetworkPolicyName = "standard" | "server" | "unrestricted";
 
@@ -85,7 +85,7 @@ export interface OffprintOptions {
   browserPath?: string;
   cdpUrl?: string;
   cacheDir?: string;
-  browserChannel?: BrowserChannel;
+  browserSource?: BrowserSourcePolicy;
   browserInstallation?: BrowserInstallationPolicy;
   maximumContexts?: number;
   browserRecycleAfterJobs?: number;
@@ -181,7 +181,7 @@ export declare class Offprint {
   constructor(options?: OffprintOptions);
   capture(
     url: string,
-    options?: CaptureOptions,
+    options: CaptureOptions,
   ): Promise<CaptureReceipt>;
   close(): Promise<void>;
   [Symbol.asyncDispose](): Promise<void>;

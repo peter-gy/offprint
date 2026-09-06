@@ -60,7 +60,9 @@ pub enum CookieSameSite {
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BrowserCookie {
+    #[schemars(length(min = 1, max = 4096))]
     pub name: String,
+    #[schemars(length(max = 4096))]
     pub value: SecretString,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<Url>,
@@ -82,8 +84,10 @@ pub struct BrowserCookie {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CaptureCredentials {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[schemars(length(max = 256))]
     pub headers: Vec<RequestHeader>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[schemars(length(max = 4096))]
     pub cookies: Vec<BrowserCookie>,
 }
 

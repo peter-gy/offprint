@@ -29,7 +29,6 @@ async fn failed_capture_commits_a_sanitized_diagnostic_bundle() -> Result<()> {
     request.content.missing_resources = MissingResourcePolicy::Fail;
     request.diagnostics = DiagnosticsPolicy {
         directory: Some(PortablePath::from_path_buf(directory)?),
-        screenshots: false,
     };
     let offprint = Offprint::builder().build()?;
     let result = offprint.captures().start(request).await?.result().await;

@@ -144,8 +144,10 @@ impl Capture {
         self
     }
 
-    /// Writes, verifies, and commits an HTML artifact to `path`, replacing an
-    /// existing file after verification succeeds.
+    /// Writes, verifies, and commits an HTML artifact to `path`.
+    ///
+    /// The default conflict policy returns an error when `path` exists. Call
+    /// [`Self::conflict`] to select replacement or a unique destination.
     pub async fn save(mut self, path: impl Into<PortablePath>) -> Result<CaptureReceipt> {
         self.request.output = CaptureOutput::File {
             path: path.into(),

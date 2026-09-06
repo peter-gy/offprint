@@ -1,9 +1,10 @@
 //! Shared safe-static transformation for the native capture pipeline.
 //!
 //! Browser sessions collect rendered state and resolve resources before this
-//! boundary. The transformer freezes rendering, removes active content,
-//! applies structural repair, encodes the manifest, and runs the independent
-//! static verifier.
+//! boundary. The transformer freezes rendering, removes captured page code and
+//! request triggers, applies structural repair, encodes the manifest, and runs
+//! the independent static verifier. Encoding can add exact Offprint-owned state
+//! restoration programs.
 
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations)]

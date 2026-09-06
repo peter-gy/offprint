@@ -453,7 +453,7 @@ jobs:
       - name: Capture through release archive
         shell: bash
         env:
-          OFFPRINT_BROWSER_CHANNEL: managed
+          OFFPRINT_BROWSER_SOURCE: managed
           OFFPRINT_CACHE_DIR: ${{ runner.temp }}/offprint-release-managed-cache
         run: |
           binary="$(find release-smoke -type f -name '${{ matrix.executable }}' -print -quit)"

@@ -169,7 +169,7 @@ impl BrowserBackend for FixtureBackend {
             },
             configuration: Vec::new(),
             network: NetworkPolicySummary {
-                profile: "fixture".to_owned(),
+                policy: "fixture".to_owned(),
                 permits_loopback_initial_origin: true,
                 permits_private_addresses: false,
                 revalidates_redirects: true,

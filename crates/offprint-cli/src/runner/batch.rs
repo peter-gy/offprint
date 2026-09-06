@@ -13,7 +13,7 @@ pub(super) async fn execute_batch(
     input: &mut dyn Read,
     output: &mut dyn Write,
 ) -> Result<()> {
-    let request = read_json_input::<BatchRequest>(&arguments.manifest, input, "batch manifest")?;
+    let request = read_json_input::<BatchRequest>(&arguments.request, input, "batch request")?;
     let mut resolved = ResolvedConfig::load(arguments.config.as_deref(), None)?;
     if let Some(path) = arguments.browser_path {
         resolved.apply_browser_path_flag(path);

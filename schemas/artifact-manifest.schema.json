@@ -561,18 +561,18 @@
         "height": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0
+          "minimum": 1
         },
         "scale": {
           "type": "integer",
           "format": "uint8",
           "maximum": 255,
-          "minimum": 0
+          "minimum": 1
         },
         "width": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0
+          "minimum": 1
         }
       },
       "additionalProperties": false,

@@ -8,7 +8,7 @@ use futures_util::FutureExt as _;
 use offprint_browser::BrowserBackend;
 use offprint_chromium::ChromiumDiscovery;
 use offprint_model::{
-    BrowserChannel, BrowserInstallationPolicy, BrowserSpec, CaptureId, CaptureProfile,
+    BrowserInstallationPolicy, BrowserSourcePolicy, BrowserSpec, CaptureId, CaptureProfile,
     EffectiveConfigValue, ErrorStage, NetworkPolicy, OffprintError, Result,
 };
 use tokio::sync::{Notify, Semaphore};
@@ -39,7 +39,7 @@ pub(crate) struct RuntimeState {
     browser_backend: Arc<dyn BrowserBackend>,
     injected_browser_backend: bool,
     owned_backend_gate: Option<tokio::sync::Mutex<()>>,
-    pub(crate) browser_channel: BrowserChannel,
+    pub(crate) browser_source: BrowserSourcePolicy,
     pub(crate) browser_installation: BrowserInstallationPolicy,
     context_slots: Arc<Semaphore>,
     contexts_changed: Notify,
@@ -264,7 +264,7 @@ struct ActiveJob {
 #[cfg(test)]
 mod tests {
     use chrono::{DateTime, Utc};
-    use offprint_model::{BrowserChannel, BrowserInstallationPolicy, CaptureId};
+    use offprint_model::{BrowserInstallationPolicy, BrowserSourcePolicy, CaptureId};
     use std::error::Error;
     use std::sync::Arc;
     use std::sync::atomic::Ordering;
@@ -293,9 +293,9 @@ mod tests {
     }
 
     #[test]
-    fn system_channel_overrides_managed_auto_installation() {
+    fn system_source_disables_managed_auto_installation() {
         let result = Offprint::builder()
-            .browser_channel(BrowserChannel::System)
+            .browser_source(BrowserSourcePolicy::System)
             .build();
 
         assert!(result.is_ok());

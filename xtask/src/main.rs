@@ -452,7 +452,7 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
             },
             "configuration": [],
             "network": {
-                "profile": "standard",
+                "policy": "standard",
                 "permitsLoopbackInitialOrigin": true,
                 "permitsPrivateAddresses": false,
                 "revalidatesRedirects": true

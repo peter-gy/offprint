@@ -265,7 +265,7 @@
         "permitsPrivateAddresses": {
           "type": "boolean"
         },
-        "profile": {
+        "policy": {
           "type": "string"
         },
         "revalidatesRedirects": {
@@ -273,7 +273,7 @@
         }
       },
       "required": [
-        "profile",
+        "policy",
         "permitsLoopbackInitialOrigin",
         "permitsPrivateAddresses",
         "revalidatesRedirects"

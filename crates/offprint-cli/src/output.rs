@@ -204,7 +204,7 @@ pub(crate) fn render_json_or_doctor(
         writeln!(
             output,
             "network: {} loopback={} private={} redirects={}",
-            report.network.profile,
+            report.network.policy,
             report.network.permits_loopback_initial_origin,
             report.network.permits_private_addresses,
             report.network.revalidates_redirects

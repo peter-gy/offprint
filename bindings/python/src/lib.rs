@@ -8,10 +8,10 @@ use std::time::Duration;
 
 use futures_util::{FutureExt as _, StreamExt as _};
 use offprint::{
-    ArtifactFormat, ArtifactSource, BatchRequest, BrowserChannel, BrowserInstallRequest,
-    BrowserInstallationPolicy, CaptureJob, CaptureRequest, CaptureScope, CaptureStatus,
-    ConflictPolicy, CrawlRequest, ErrorStage, ExportRequest, Offprint, OffprintError, PortablePath,
-    ReadinessMode, VerificationMode, Viewport,
+    ArtifactFormat, ArtifactSource, BatchRequest, BrowserInstallRequest, BrowserInstallationPolicy,
+    BrowserSourcePolicy, CaptureJob, CaptureRequest, CaptureScope, CaptureStatus, ConflictPolicy,
+    CrawlRequest, ErrorStage, ExportRequest, Offprint, OffprintError, PortablePath, ReadinessMode,
+    VerificationMode, Viewport,
 };
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
@@ -27,7 +27,7 @@ struct OffprintOptions {
     browser_path: Option<String>,
     cdp_url: Option<String>,
     cache_dir: Option<String>,
-    browser_channel: Option<BrowserChannel>,
+    browser_source: Option<BrowserSourcePolicy>,
     browser_installation: Option<BrowserInstallationPolicy>,
     maximum_contexts: Option<u16>,
     browser_recycle_after_jobs: Option<u32>,
@@ -444,8 +444,8 @@ fn build_offprint(options_json: Option<&str>) -> offprint::Result<Offprint> {
     if let Some(path) = options.cache_dir {
         builder = builder.cache_dir(path);
     }
-    if let Some(channel) = options.browser_channel {
-        builder = builder.browser_channel(channel);
+    if let Some(source) = options.browser_source {
+        builder = builder.browser_source(source);
     }
     if let Some(policy) = options.browser_installation {
         builder = builder.browser_installation(policy);

@@ -7,10 +7,10 @@ use offprint_browser::{
     PageSession,
 };
 use offprint_model::{
-    BrowserCandidate, BrowserCandidateState, BrowserChannel, BrowserDoctorReport,
-    BrowserEnvironment, BrowserInfo, BrowserInstallationPolicy, BrowserSource, BrowserSpec,
-    CapabilityCheck, CaptureId, ErrorStage, ManagedBrowserState, NetworkPolicy,
-    NetworkPolicySummary, OffprintError, OutputCapability, RecoveryAction, Result,
+    BrowserCandidate, BrowserCandidateState, BrowserDoctorReport, BrowserEnvironment, BrowserInfo,
+    BrowserInstallationPolicy, BrowserSource, BrowserSourcePolicy, BrowserSpec, CapabilityCheck,
+    CaptureId, ErrorStage, ManagedBrowserState, NetworkPolicy, NetworkPolicySummary, OffprintError,
+    OutputCapability, RecoveryAction, Result,
 };
 use offprint_protocol::{
     COLLECTOR_PROTOCOL_VERSION, COLLECTOR_PROTOCOL_VERSION_STRING, CollectorHandshake,
@@ -36,7 +36,7 @@ const HEALTH_CHECK_TIMEOUT: Duration = Duration::from_secs(2);
 pub struct ChromiumBackendOptions {
     discovery: ChromiumDiscovery,
     cache_dir: Utf8PathBuf,
-    browser_channel: BrowserChannel,
+    browser_source: BrowserSourcePolicy,
     browser_installation: BrowserInstallationPolicy,
 }
 
@@ -48,15 +48,15 @@ impl ChromiumBackendOptions {
         Self {
             discovery,
             cache_dir,
-            browser_channel: BrowserChannel::Auto,
+            browser_source: BrowserSourcePolicy::Auto,
             browser_installation: BrowserInstallationPolicy::InstallManaged,
         }
     }
 
     /// Selects automatic, managed, or system browser discovery.
     #[must_use]
-    pub const fn with_browser_channel(mut self, channel: BrowserChannel) -> Self {
-        self.browser_channel = channel;
+    pub const fn with_browser_source(mut self, source: BrowserSourcePolicy) -> Self {
+        self.browser_source = source;
         self
     }
 
@@ -165,7 +165,7 @@ impl ChromiumBackend {
             return Ok(selected);
         }
         if self.options.browser_installation == BrowserInstallationPolicy::InstallManaged
-            && self.options.browser_channel != BrowserChannel::System
+            && self.options.browser_source != BrowserSourcePolicy::System
         {
             ManagedBrowserManager::new(self.options.cache_dir.clone())
                 .install(None)
@@ -327,7 +327,7 @@ impl BrowserBackend for ChromiumBackend {
             output,
             configuration: Vec::new(),
             network: NetworkPolicySummary {
-                profile: "standard".to_owned(),
+                policy: "standard".to_owned(),
                 permits_loopback_initial_origin: true,
                 permits_private_addresses: false,
                 revalidates_redirects: true,
@@ -656,7 +656,7 @@ fn browser_unavailable() -> OffprintError {
     OffprintError::new(
         "offprint.browser.unavailable",
         ErrorStage::Browser,
-        "no compatible Chrome or Chromium executable was found",
+        "no compatible Chromium-based executable was found",
     )
     .with_detail("recoveryCommand", "offprint browser install")
 }

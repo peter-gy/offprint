@@ -447,11 +447,11 @@ impl ResourceResolver<'_> {
             };
             let mut stored_content = Some(content);
             if is_css(&media_type) {
-                if nested_depth >= self.request.limits.css_import_depth {
+                if nested_depth >= self.request.limits.resource_recursion_depth {
                     let error = OffprintError::new(
                         "offprint.resource.css_depth",
                         ErrorStage::Resource,
-                        "CSS import depth exceeds the configured limit",
+                        "CSS resource recursion exceeds the configured limit",
                     );
                     return self.missing(url, role, resource_id, error);
                 }
@@ -521,7 +521,7 @@ impl ResourceResolver<'_> {
                 };
             }
             if is_svg(&media_type) {
-                if nested_depth >= self.request.limits.css_import_depth {
+                if nested_depth >= self.request.limits.resource_recursion_depth {
                     let error = OffprintError::new(
                         "offprint.resource.svg_depth",
                         ErrorStage::Resource,

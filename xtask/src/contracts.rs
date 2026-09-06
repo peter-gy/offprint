@@ -77,7 +77,7 @@ pub fn binding_files(
             content: typescript::generate(&schemas).into_bytes(),
         },
         GeneratedFile {
-            path: PathBuf::from("bindings/python/python/offprint/_contracts.pyi"),
+            path: PathBuf::from("bindings/python/python/offprint/contracts.py"),
             content: python::generate(&schemas)?.into_bytes(),
         },
     ])

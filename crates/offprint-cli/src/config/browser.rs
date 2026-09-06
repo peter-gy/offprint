@@ -4,7 +4,7 @@ use url::Url;
 
 use super::document::BrowserConfig;
 use super::value::parse_cdp_endpoint;
-use super::{BrowserSelection, ResolvedConfig, config_error, config_value_error, record};
+use super::{BrowserSelection, ResolvedConfig, config_error, record};
 
 pub(super) fn apply_browser(
     resolved: &mut ResolvedConfig,
@@ -12,12 +12,12 @@ pub(super) fn apply_browser(
     provenance: ConfigProvenance,
 ) -> Result<()> {
     let selection = selection_from_values(browser.path.as_deref(), browser.cdp_url.as_deref())?;
-    if let Some(channel) = browser.channel {
-        resolved.browser_channel = channel;
+    if let Some(source) = browser.source {
+        resolved.browser_source = source;
         record(
             resolved,
-            "browser.channel",
-            serde_json::to_value(channel).unwrap_or(Value::Null),
+            "browser.source",
+            serde_json::to_value(source).unwrap_or(Value::Null),
             provenance,
             false,
         );
@@ -113,7 +113,12 @@ pub(super) fn set_browser_selection(
 }
 
 pub(super) fn parse_cdp_url(value: &str) -> Result<Url> {
-    parse_cdp_endpoint(value).map_err(|_| config_value_error("remote browser endpoint", value))
+    parse_cdp_endpoint(value).map_err(|_| {
+        config_error(
+            "offprint.config.value",
+            "configuration remote browser endpoint is invalid",
+        )
+    })
 }
 
 pub(super) fn browser_spec(selection: &BrowserSelection) -> BrowserSpec {

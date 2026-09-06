@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use directories::ProjectDirs;
 use offprint::{
-    BrowserChannel, BrowserInstallationPolicy, BrowserSpec, CaptureProfile, CaptureRequest,
+    BrowserInstallationPolicy, BrowserSourcePolicy, BrowserSpec, CaptureProfile, CaptureRequest,
     ConfigProvenance, Result,
 };
 use serde_json::Value;
@@ -131,7 +131,7 @@ fn default_config(profile: String, profile_provenance: ConfigProvenance) -> Reso
     let mut resolved = ResolvedConfig {
         browser: BrowserSelection::Auto,
         cache_dir: None,
-        browser_channel: BrowserChannel::Auto,
+        browser_source: BrowserSourcePolicy::Auto,
         browser_installation: BrowserInstallationPolicy::InstallManaged,
         headless: true,
         maximum_contexts: 4,
@@ -149,7 +149,7 @@ fn default_config(profile: String, profile_provenance: ConfigProvenance) -> Reso
     );
     record(
         &mut resolved,
-        "browser.channel",
+        "browser.source",
         Value::String("auto".to_owned()),
         ConfigProvenance::Default,
         false,

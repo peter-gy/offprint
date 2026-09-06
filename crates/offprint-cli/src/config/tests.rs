@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use offprint::{
-    BrowserChannel, BrowserInstallationPolicy, CaptureProfile, CaptureRequest, CaptureScope,
+    BrowserInstallationPolicy, BrowserSourcePolicy, CaptureProfile, CaptureRequest, CaptureScope,
     ColorScheme, ConfigProvenance, LazyLoadPolicy, MAXIMUM_CAPTURE_NODES, Milliseconds,
     MissingResourcePolicy, NetworkPolicy, ReadinessMode, VerificationMode, Viewport,
 };
@@ -87,6 +87,26 @@ fn one_config_source_rejects_two_browser_selections() {
 
     assert!(result.is_some_and(|result| {
         result.is_err_and(|error| error.code.as_str() == "offprint.config.value")
+    }));
+}
+
+#[test]
+fn invalid_remote_endpoint_does_not_echo_its_value() {
+    let explicit = toml::from_str::<ConfigFile>(
+        r#"
+        [browser]
+        cdp_url = "secret endpoint"
+        "#,
+    );
+    let result = explicit
+        .ok()
+        .map(|explicit| resolve_documents(ConfigFile::default(), explicit, &BTreeMap::new(), None));
+
+    assert!(result.is_some_and(|result| {
+        result.is_err_and(|error| {
+            error.code.as_str() == "offprint.config.value"
+                && !error.message.contains("secret endpoint")
+        })
     }));
 }
 
@@ -347,11 +367,11 @@ fn default_configuration_provisions_a_managed_browser_on_demand() {
 }
 
 #[test]
-fn system_browser_channel_keeps_provisioning_external() {
+fn system_browser_source_keeps_provisioning_external() {
     let explicit = toml::from_str::<ConfigFile>(
         r#"
         [browser]
-        channel = "system"
+        source = "system"
         "#,
     );
     let resolved = explicit
@@ -360,8 +380,8 @@ fn system_browser_channel_keeps_provisioning_external() {
         .and_then(Result::ok);
 
     assert_eq!(
-        resolved.as_ref().map(|config| config.browser_channel),
-        Some(BrowserChannel::System)
+        resolved.as_ref().map(|config| config.browser_source),
+        Some(BrowserSourcePolicy::System)
     );
 }
 
@@ -370,7 +390,7 @@ fn browser_management_policy_reaches_the_resolved_configuration() {
     let explicit = toml::from_str::<ConfigFile>(
         r#"
         [browser]
-        channel = "managed"
+        source = "managed"
         installation = "install-managed"
         "#,
     );
@@ -380,8 +400,8 @@ fn browser_management_policy_reaches_the_resolved_configuration() {
         .and_then(Result::ok);
 
     assert_eq!(
-        resolved.as_ref().map(|resolved| resolved.browser_channel),
-        Some(BrowserChannel::Managed)
+        resolved.as_ref().map(|resolved| resolved.browser_source),
+        Some(BrowserSourcePolicy::Managed)
     );
     assert_eq!(
         resolved

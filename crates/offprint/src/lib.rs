@@ -47,7 +47,30 @@ pub use capture_builder::Capture;
 pub use capture_service::{CaptureEvents, CaptureJob, CaptureService};
 pub use dependencies::{CaptureIdGenerator, Clock, SystemClock, UlidCaptureIdGenerator};
 pub use offprint_artifact::portable_file_stem;
-pub use offprint_model::*;
+pub use offprint_model::{
+    ARTIFACT_FORMAT_VERSION, ArtifactFormat, ArtifactManifest, ArtifactSource,
+    ArtifactVerification, BatchJob, BatchRequest, BatchResult, BrowserAction, BrowserCandidate,
+    BrowserCandidateState, BrowserCookie, BrowserDoctorReport, BrowserEnvironment, BrowserInfo,
+    BrowserInstallRequest, BrowserInstallationPolicy, BrowserOperationResult, BrowserProduct,
+    BrowserSource, BrowserSourcePolicy, BrowserSpec, CapabilityCheck, CaptureArtifact,
+    CaptureCredentials, CaptureEvent, CaptureId, CaptureLimits, CaptureOutput, CaptureProfile,
+    CaptureReceipt, CaptureRequest, CaptureRequestBuilder, CaptureScope, CaptureStatus,
+    CaptureTerminalStatus, CaptureTimings, CaptureWarning, ColorScheme, ConfigProvenance,
+    ConflictPolicy, ContentDigest, ContentPolicy, CookieSameSite, CrawlFrontierItem,
+    CrawlPageOutcome, CrawlRequest, CrawlResult, DiagnosticsPolicy, ERROR_CODE_REGISTRY,
+    EffectiveConfigValue, ErrorCode, ErrorCodeDefinition, ErrorStage, ExportRequest, ExportResult,
+    ExportedArtifact, ExternalReason, FormatSpec, FormatVerification, FrameId, LazyLoadPolicy,
+    MAXIMUM_CAPTURE_NODES, ManagedBrowserState, ManifestGenerator, ManifestSource, MarkdownOptions,
+    Milliseconds, MissingResourcePolicy, NetworkPolicy, NetworkPolicySummary, NetworkRules,
+    OffprintError, OmissionReason, OptimizationPolicy, OutputCapability, PUBLIC_SCHEMA_VERSION,
+    PdfOptions, PortablePath, ReadinessMode, ReadinessPolicy, RecoveryAction, RedactedUrl,
+    RedactionPolicy, ReducedMotion, RequestHeader, ResourceError, ResourceId, ResourceOutcome,
+    ResourceProvenance, ResourceRecord, ResourceRetrievalSource, ResourceSummary, Result,
+    ResumeJobRecord, ResumeJobStatus, ResumeManifest, ResumeOptions, ScheduleKind,
+    ScheduledCaptureOutcome, SecretString, SourceSummary, StructuralRepair, UserAgentPolicy,
+    VerificationMethod, VerificationMode, VerificationReport, ViewState, Viewport,
+    ViewportSweepPolicy,
+};
 use runtime::{RuntimeOptions, RuntimeState};
 
 /// Extension contracts implemented by browser adapters.
@@ -125,7 +148,7 @@ pub struct OffprintBuilder {
     cdp_url: Option<url::Url>,
     browser_backend: Option<Arc<dyn ports::BrowserBackend>>,
     cache_dir: Option<camino::Utf8PathBuf>,
-    browser_channel: BrowserChannel,
+    browser_source: BrowserSourcePolicy,
     browser_installation: BrowserInstallationPolicy,
     maximum_contexts: u16,
     browser_recycle_after_jobs: u32,
@@ -154,7 +177,7 @@ impl OffprintBuilder {
             cdp_url: None,
             browser_backend: None,
             cache_dir: None,
-            browser_channel: BrowserChannel::Auto,
+            browser_source: BrowserSourcePolicy::Auto,
             browser_installation: BrowserInstallationPolicy::InstallManaged,
             maximum_contexts: 4,
             browser_recycle_after_jobs: 100,
@@ -168,7 +191,7 @@ impl OffprintBuilder {
         }
     }
 
-    /// Selects a local Chrome or Chromium executable.
+    /// Selects a local Chromium-based executable.
     #[must_use]
     pub fn browser_path(mut self, path: impl Into<camino::Utf8PathBuf>) -> Self {
         self.browser_path = Some(path.into());
@@ -198,8 +221,8 @@ impl OffprintBuilder {
 
     /// Selects automatic, managed, or system browser discovery.
     #[must_use]
-    pub const fn browser_channel(mut self, channel: BrowserChannel) -> Self {
-        self.browser_channel = channel;
+    pub const fn browser_source(mut self, source: BrowserSourcePolicy) -> Self {
+        self.browser_source = source;
         self
     }
 
@@ -272,7 +295,7 @@ impl OffprintBuilder {
         self
     }
 
-    /// Registers a named profile for one-shot and service captures.
+    /// Registers a named profile for fluent [`Capture`] operations.
     #[must_use]
     pub fn register_profile(mut self, name: impl Into<String>, profile: CaptureProfile) -> Self {
         self.profiles.insert(name.into(), profile);
@@ -292,7 +315,7 @@ impl OffprintBuilder {
             cdp_url: self.cdp_url,
             browser_backend: self.browser_backend,
             cache_dir: self.cache_dir,
-            browser_channel: self.browser_channel,
+            browser_source: self.browser_source,
             browser_installation: self.browser_installation,
             maximum_contexts: self.maximum_contexts,
             browser_recycle_after_jobs: self.browser_recycle_after_jobs,

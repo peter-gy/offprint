@@ -1,9 +1,8 @@
 //! Alternate artifact encoders and format-specific structural verification.
 //!
-//! Every encoder consumes an already verified Offprint HTML artifact. The
-//! resulting formats preserve the source manifest and resource report while
-//! exposing a representation suited to printing, text workflows, packaging,
-//! compressed transport, or browser-native archive import.
+//! Every encoder consumes an already verified Offprint HTML artifact. ZIP and
+//! MHTML preserve the full manifest as a sidecar. Other formats preserve the
+//! source and policy projection defined by their representation contract.
 
 #![forbid(unsafe_code)]
 #![deny(missing_debug_implementations)]

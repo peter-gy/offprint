@@ -20,7 +20,7 @@ pub(super) fn require_local_browser(resolved: &ResolvedConfig, operation: &str) 
             "offprint.input.browser_selection",
             ErrorStage::Validation,
             format!(
-                "{operation} requires a local Chrome or Chromium executable. Set \
+                "{operation} requires a local Chromium-based executable. Set \
                  `--browser-path` or remove `browser.cdp_url` from configuration"
             ),
         ));

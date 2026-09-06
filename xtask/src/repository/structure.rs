@@ -236,7 +236,7 @@ fn is_generated(path: &Path) -> bool {
         || path.starts_with("collector/dist")
         || path.starts_with("crates/offprint-chromium/generated")
         || path == Path::new("bindings/node/contracts.generated.d.ts")
-        || path == Path::new("bindings/python/python/offprint/_contracts.pyi")
+        || path == Path::new("bindings/python/python/offprint/contracts.py")
         || path.starts_with("schemas")
         || path.starts_with("fixtures/manifest")
 }
@@ -314,7 +314,7 @@ mod tests {
             "crates/offprint-chromium/src/cdp_generated.rs"
         )));
         assert!(is_generated(Path::new(
-            "bindings/python/python/offprint/_contracts.pyi"
+            "bindings/python/python/offprint/contracts.py"
         )));
         assert!(is_test(Path::new(
             "crates/offprint/tests/fixture_matrix.rs"
@@ -327,7 +327,9 @@ mod tests {
         assert!(is_handwritten_production_source(Path::new(
             "crates/offprint/src/lib.rs"
         )));
-        assert!(!is_handwritten_production_source(Path::new("SPEC.md")));
+        assert!(!is_handwritten_production_source(Path::new(
+            "development_docs/product-contract.md"
+        )));
         assert!(!is_handwritten_production_source(Path::new("Cargo.toml")));
     }
 

@@ -31,6 +31,7 @@ fn default_same_origin() -> bool {
 /// One independently scheduled capture.
 pub struct BatchJob {
     /// Stable identifier used in results and resume state.
+    #[schemars(length(min = 1, max = 256), regex(pattern = r"\S"))]
     pub id: String,
     /// Complete one-page capture request.
     pub request: CaptureRequest,
@@ -52,8 +53,10 @@ pub struct ResumeOptions {
 /// A bounded collection of independent one-page capture requests.
 pub struct BatchRequest {
     pub schema_version: u32,
+    #[schemars(length(min = 1, max = 100_000))]
     pub jobs: Vec<BatchJob>,
     #[serde(default = "default_concurrency")]
+    #[schemars(range(min = 1, max = 256))]
     pub concurrency: u16,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resume: Option<ResumeOptions>,
@@ -70,10 +73,13 @@ pub struct CrawlRequest {
     pub seed: CaptureRequest,
     pub output_directory: PortablePath,
     #[serde(default = "default_maximum_pages")]
+    #[schemars(range(min = 1))]
     pub maximum_pages: u32,
     #[serde(default = "default_maximum_depth")]
+    #[schemars(range(max = 10_000))]
     pub maximum_depth: u16,
     #[serde(default = "default_concurrency")]
+    #[schemars(range(min = 1, max = 256))]
     pub concurrency: u16,
     #[serde(default = "default_same_origin")]
     pub same_origin: bool,

@@ -60,8 +60,11 @@ pub enum UserAgentPolicy {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Viewport {
+    #[schemars(range(min = 1))]
     pub width: u32,
+    #[schemars(range(min = 1))]
     pub height: u32,
+    #[schemars(range(min = 1))]
     pub scale: u8,
 }
 
@@ -115,7 +118,7 @@ pub enum CaptureScope {
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(default, rename_all = "camelCase")]
+#[serde(default, rename_all = "camelCase", deny_unknown_fields)]
 pub struct OptimizationPolicy {
     pub remove_unused_css: bool,
     pub remove_unused_fonts: bool,
@@ -248,18 +251,28 @@ impl Default for ContentPolicy {
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct CaptureLimits {
+    #[schemars(range(min = 1))]
     pub duration: Milliseconds,
     pub redirects: u32,
+    #[schemars(range(min = 1))]
     pub frames: u32,
     #[schemars(range(min = 1, max = MAXIMUM_CAPTURE_NODES))]
     pub nodes: u64,
+    #[schemars(range(min = 1))]
     pub resources: u32,
+    #[schemars(range(min = 1))]
     pub resource_bytes: u64,
+    #[schemars(range(min = 1))]
     pub total_resource_bytes: u64,
+    #[schemars(range(min = 1))]
     pub collector_chunk_bytes: u64,
+    #[schemars(range(min = 1))]
     pub concurrent_resources: u16,
+    #[schemars(range(min = 1))]
     pub artifact_bytes: u64,
-    pub css_import_depth: u16,
+    #[schemars(range(min = 1))]
+    pub resource_recursion_depth: u16,
+    #[schemars(range(min = 1))]
     pub frame_depth: u16,
 }
 
@@ -276,7 +289,7 @@ impl Default for CaptureLimits {
             collector_chunk_bytes: 1024 * 1024,
             concurrent_resources: 8,
             artifact_bytes: 64 * 1024 * 1024,
-            css_import_depth: 64,
+            resource_recursion_depth: 64,
             frame_depth: 64,
         }
     }
@@ -287,8 +300,6 @@ impl Default for CaptureLimits {
 pub struct DiagnosticsPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub directory: Option<crate::PortablePath>,
-    #[serde(default)]
-    pub screenshots: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
@@ -360,7 +371,16 @@ impl Default for CaptureProfile {
 
 #[cfg(test)]
 mod tests {
-    use crate::{CaptureOutput, CaptureProfile, CaptureRequest};
+    use crate::{CaptureOutput, CaptureProfile, CaptureRequest, OptimizationPolicy};
+
+    #[test]
+    fn optimization_policy_rejects_unknown_fields() {
+        let result = serde_json::from_str::<OptimizationPolicy>(
+            r#"{"removeUnusedCss":false,"removeUnusedStyles":true}"#,
+        );
+
+        assert!(result.is_err());
+    }
 
     #[test]
     fn profile_updates_an_inherited_memory_artifact_limit() -> crate::Result<()> {

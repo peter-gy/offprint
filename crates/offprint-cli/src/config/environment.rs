@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use offprint::{
-    BrowserChannel, BrowserInstallationPolicy, CaptureScope, ColorScheme, ConfigProvenance,
+    BrowserInstallationPolicy, BrowserSourcePolicy, CaptureScope, ColorScheme, ConfigProvenance,
     Milliseconds, MissingResourcePolicy, ReadinessMode, Result, VerificationMode,
 };
 
@@ -17,7 +17,7 @@ pub(super) fn is_supported_environment_name(name: &str) -> bool {
         "OFFPRINT_BROWSER_PATH"
             | "OFFPRINT_CDP_URL"
             | "OFFPRINT_CACHE_DIR"
-            | "OFFPRINT_BROWSER_CHANNEL"
+            | "OFFPRINT_BROWSER_SOURCE"
             | "OFFPRINT_BROWSER_INSTALLATION"
             | "OFFPRINT_HEADLESS"
             | "OFFPRINT_VIEWPORT"
@@ -53,17 +53,17 @@ pub(super) fn apply_environment(
         cache_dir: environment.get("OFFPRINT_CACHE_DIR").cloned(),
         ..BrowserConfig::default()
     };
-    if let Some(value) = environment.get("OFFPRINT_BROWSER_CHANNEL") {
-        browser.channel = Some(match value.as_str() {
-            "auto" => BrowserChannel::Auto,
-            "managed" => BrowserChannel::Managed,
-            "system" => BrowserChannel::System,
-            _ => return Err(config_value_error("OFFPRINT_BROWSER_CHANNEL", value)),
+    if let Some(value) = environment.get("OFFPRINT_BROWSER_SOURCE") {
+        browser.source = Some(match value.as_str() {
+            "auto" => BrowserSourcePolicy::Auto,
+            "managed" => BrowserSourcePolicy::Managed,
+            "system" => BrowserSourcePolicy::System,
+            _ => return Err(config_value_error("OFFPRINT_BROWSER_SOURCE", value)),
         });
     }
     if let Some(value) = environment.get("OFFPRINT_BROWSER_INSTALLATION") {
         browser.installation = Some(match value.as_str() {
-            "explicit" => BrowserInstallationPolicy::Explicit,
+            "existing-only" => BrowserInstallationPolicy::ExistingOnly,
             "install-managed" => BrowserInstallationPolicy::InstallManaged,
             _ => {
                 return Err(config_value_error("OFFPRINT_BROWSER_INSTALLATION", value));

@@ -11,6 +11,8 @@ mod structure;
 #[derive(Debug, Deserialize)]
 struct VersionManifest {
     product: String,
+    artifact_format: u32,
+    public_schema: u32,
     collector_protocol: String,
     rust: RustVersionManifest,
     chromium: ChromiumVersionManifest,
@@ -94,18 +96,18 @@ fn check_binding_contract_wiring(root: &Path, violations: &mut Vec<String>) -> R
     let python = fs::read_to_string(&python_path)
         .map_err(|error| format!("failed to read {}: {error}", python_path.display()))?;
     for required in [
-        "from ._contracts import (",
-        "class CaptureEvents(AsyncIterator[_CaptureEvent])",
-        "async def result(self) -> _CaptureReceipt",
-        "request: _CaptureRequest",
-        "request: _BatchRequest",
-        "request: _CrawlRequest",
-        ") -> _ArtifactManifest",
-        ") -> _VerificationReport",
-        ") -> _ExportResult",
-        ") -> _FormatVerification",
-        "async def ensure(self) -> _BrowserInfo",
-        ") -> _CaptureReceipt",
+        "from .contracts import (",
+        "class CaptureEvents(AsyncIterator[CaptureEvent])",
+        "async def result(self) -> CaptureReceipt",
+        "request: CaptureRequest",
+        "request: BatchRequest",
+        "request: CrawlRequest",
+        ") -> ArtifactManifest",
+        ") -> VerificationReport",
+        ") -> ExportResult",
+        ") -> FormatVerification",
+        "async def ensure(self) -> BrowserInfo",
+        ") -> CaptureReceipt",
     ] {
         if !python.contains(required) {
             violations.push(format!(
@@ -425,6 +427,20 @@ fn check_version_alignment(root: &Path, violations: &mut Vec<String>) -> Result<
         .map_err(|error| format!("failed to read versions.toml: {error}"))?;
     let versions: VersionManifest =
         toml::from_str(&versions).map_err(|error| format!("invalid versions.toml: {error}"))?;
+    if versions.artifact_format != offprint_model::ARTIFACT_FORMAT_VERSION {
+        violations.push(format!(
+            "artifact format {} differs from model format {}",
+            versions.artifact_format,
+            offprint_model::ARTIFACT_FORMAT_VERSION,
+        ));
+    }
+    if versions.public_schema != offprint_model::PUBLIC_SCHEMA_VERSION {
+        violations.push(format!(
+            "public schema {} differs from model schema {}",
+            versions.public_schema,
+            offprint_model::PUBLIC_SCHEMA_VERSION,
+        ));
+    }
     if versions.collector_protocol != offprint_protocol::COLLECTOR_PROTOCOL_VERSION_STRING {
         violations.push(format!(
             "collector protocol {} differs from host protocol {}",
@@ -445,7 +461,7 @@ fn check_version_alignment(root: &Path, violations: &mut Vec<String>) -> Result<
         .and_then(toml::Value::as_str);
     if toolchain_channel != Some(versions.rust.toolchain.as_str()) {
         violations.push(format!(
-            "Rust toolchain channel {:?} differs from version manifest toolchain {}",
+            "Rust toolchain channel {:?} differs from versions.toml toolchain {}",
             toolchain_channel, versions.rust.toolchain
         ));
     }
@@ -562,13 +578,13 @@ fn check_managed_browser_versions(versions: &VersionManifest, violations: &mut V
     for entry in offprint_chromium::managed_browser_catalog() {
         if entry.revision != chromium.managed_revision {
             violations.push(format!(
-                "managed browser {} revision {} differs from version manifest revision {}",
+                "managed browser {} revision {} differs from versions.toml revision {}",
                 entry.platform, entry.revision, chromium.managed_revision
             ));
         }
         if entry.version != chromium.managed_version {
             violations.push(format!(
-                "managed browser {} version {} differs from version manifest version {}",
+                "managed browser {} version {} differs from versions.toml version {}",
                 entry.platform, entry.version, chromium.managed_version
             ));
         }

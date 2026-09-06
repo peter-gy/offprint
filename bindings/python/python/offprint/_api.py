@@ -7,7 +7,7 @@ import json
 import os
 import weakref
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, Literal, TypeAlias, TypedDict, TypeVar, cast
 
 from ._native import NativeCaptureEvents, NativeCaptureJob, NativeOffprint
 from .exceptions import OffprintError
@@ -21,7 +21,7 @@ _OFFPRINT_OPTION_NAMES = {
     "browser_path": "browserPath",
     "cdp_url": "cdpUrl",
     "cache_dir": "cacheDir",
-    "browser_channel": "browserChannel",
+    "browser_source": "browserSource",
     "browser_installation": "browserInstallation",
     "maximum_contexts": "maximumContexts",
     "browser_recycle_after_jobs": "browserRecycleAfterJobs",
@@ -49,6 +49,36 @@ _CAPTURE_OPTION_NAMES = {
 
 _OFFPRINT_PATH_OPTIONS = {"browser_path", "cache_dir"}
 _CAPTURE_PATH_OPTIONS = {"output"}
+
+
+class OffprintOptions(TypedDict, total=False):
+    browser_path: str | os.PathLike[str]
+    cdp_url: str
+    cache_dir: str | os.PathLike[str]
+    browser_source: Literal["auto", "managed", "system"]
+    browser_installation: Literal["existing-only", "install-managed"]
+    maximum_contexts: int
+    browser_recycle_after_jobs: int
+    headed: bool
+
+
+CaptureStatus: TypeAlias = Literal[
+    "created",
+    "validating",
+    "waitingForBrowser",
+    "navigating",
+    "waitingForReadiness",
+    "collecting",
+    "resolvingResources",
+    "transforming",
+    "encoding",
+    "verifying",
+    "committing",
+    "cancelling",
+    "succeeded",
+    "cancelled",
+    "failed",
+]
 
 
 def _translate_error(error: BaseException) -> BaseException:
@@ -309,7 +339,7 @@ class BrowserService:
 
 
 class Offprint:
-    def __init__(self, options: Mapping[str, Any] | None = None) -> None:
+    def __init__(self, options: OffprintOptions | None = None) -> None:
         try:
             self._native = NativeOffprint(
                 _json_options(

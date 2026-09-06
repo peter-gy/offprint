@@ -1,5 +1,5 @@
 use offprint::{
-    BrowserChannel, BrowserSource, CaptureArtifact, CaptureRequest, ErrorStage, NetworkPolicy,
+    BrowserSource, BrowserSourcePolicy, CaptureArtifact, CaptureRequest, ErrorStage, NetworkPolicy,
     Offprint, OffprintError, Result, VerificationMode,
 };
 use offprint_chromium::{ChromiumDiscovery, ChromiumLaunchOptions, ChromiumProcess};
@@ -219,7 +219,7 @@ async fn remote_doctor_reports_endpoint_failure_without_falling_back_locally() -
     })?;
     let offprint = Offprint::builder()
         .cdp_url(endpoint)
-        .browser_channel(BrowserChannel::Managed)
+        .browser_source(BrowserSourcePolicy::Managed)
         .cache_dir(cache.path().to_string_lossy().into_owned())
         .build()?;
 

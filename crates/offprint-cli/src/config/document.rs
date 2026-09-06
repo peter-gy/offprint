@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use offprint::{
-    BrowserChannel, BrowserInstallationPolicy, CaptureScope, ColorScheme, MissingResourcePolicy,
-    ReadinessMode, ReducedMotion, VerificationMode, Viewport,
+    BrowserInstallationPolicy, BrowserSourcePolicy, CaptureScope, ColorScheme,
+    MissingResourcePolicy, ReadinessMode, ReducedMotion, VerificationMode, Viewport,
 };
 use serde::{Deserialize, Serialize};
 
@@ -19,7 +19,7 @@ pub(super) struct ConfigFile {
 #[derive(Clone, Debug, Default, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub(super) struct BrowserConfig {
-    pub(super) channel: Option<BrowserChannel>,
+    pub(super) source: Option<BrowserSourcePolicy>,
     pub(super) installation: Option<BrowserInstallationPolicy>,
     pub(super) path: Option<String>,
     pub(super) cdp_url: Option<String>,
@@ -100,7 +100,7 @@ pub(super) struct LimitsConfig {
     pub(super) collector_chunk_bytes: Option<ConfigScalar>,
     pub(super) concurrent_resources: Option<u16>,
     pub(super) artifact_bytes: Option<ConfigScalar>,
-    pub(super) css_import_depth: Option<u16>,
+    pub(super) resource_recursion_depth: Option<u16>,
     pub(super) frame_depth: Option<u16>,
 }
 

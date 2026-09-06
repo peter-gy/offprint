@@ -9,7 +9,7 @@ import weakref
 import pytest
 
 from offprint import _api
-from offprint import Offprint, ValidationError
+from offprint import CaptureRequest, Offprint, OffprintOptions, ValidationError
 
 
 def test_exposes_the_three_canonical_services() -> None:
@@ -27,6 +27,14 @@ def test_exposes_the_three_canonical_services() -> None:
     assert callable(offprint.browsers.remove)
     assert callable(offprint.browsers.doctor)
     assert callable(offprint.browsers.close_idle)
+
+
+def test_exports_constructor_and_record_types() -> None:
+    options: OffprintOptions = {"maximum_contexts": 2}
+    request_type = CaptureRequest
+
+    assert options == {"maximum_contexts": 2}
+    assert request_type.__name__ == "CaptureRequest"
 
 
 def test_rejects_misspelled_constructor_options() -> None:

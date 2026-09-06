@@ -8,5 +8,3 @@ export const {
   Offprint,
   OffprintError,
 } = api;
-
-export default api;

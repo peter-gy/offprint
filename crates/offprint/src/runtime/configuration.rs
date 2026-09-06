@@ -8,7 +8,7 @@ use directories::ProjectDirs;
 use offprint_browser::BrowserBackend;
 use offprint_chromium::{ChromiumBackend, ChromiumBackendOptions, ChromiumDiscovery};
 use offprint_model::{
-    BrowserChannel, BrowserInstallationPolicy, BrowserSpec, CaptureId, CaptureProfile,
+    BrowserInstallationPolicy, BrowserSourcePolicy, BrowserSpec, CaptureId, CaptureProfile,
     EffectiveConfigValue, ErrorStage, NetworkPolicy, OffprintError, Result,
 };
 use tokio::sync::{Notify, Semaphore};
@@ -24,7 +24,7 @@ pub(crate) struct RuntimeOptions {
     pub(crate) cdp_url: Option<Url>,
     pub(crate) browser_backend: Option<Arc<dyn BrowserBackend>>,
     pub(crate) cache_dir: Option<Utf8PathBuf>,
-    pub(crate) browser_channel: BrowserChannel,
+    pub(crate) browser_source: BrowserSourcePolicy,
     pub(crate) browser_installation: BrowserInstallationPolicy,
     pub(crate) maximum_contexts: u16,
     pub(crate) browser_recycle_after_jobs: u32,
@@ -44,7 +44,7 @@ impl RuntimeState {
             cdp_url,
             browser_backend,
             cache_dir,
-            browser_channel,
+            browser_source,
             browser_installation,
             maximum_contexts,
             browser_recycle_after_jobs,
@@ -98,16 +98,16 @@ impl RuntimeState {
             BrowserSpec::Executable(path) => ChromiumDiscovery::new()
                 .with_explicit_path(path.as_utf8_path().to_owned())
                 .with_managed_cache(cache_dir.clone())
-                .with_channel(browser_channel),
+                .with_source_policy(browser_source),
             BrowserSpec::Auto | BrowserSpec::Remote(_) => ChromiumDiscovery::new()
                 .with_managed_cache(cache_dir.clone())
-                .with_channel(browser_channel),
+                .with_source_policy(browser_source),
         };
         let injected_browser_backend = browser_backend.is_some();
         let browser_backend = browser_backend.unwrap_or_else(|| {
             Arc::new(ChromiumBackend::new(
                 ChromiumBackendOptions::new(discovery.clone(), cache_dir.clone())
-                    .with_browser_channel(browser_channel)
+                    .with_browser_source(browser_source)
                     .with_browser_installation(browser_installation),
             ))
         });
@@ -120,7 +120,7 @@ impl RuntimeState {
             browser_backend,
             injected_browser_backend,
             owned_backend_gate: (!injected_browser_backend).then(tokio::sync::Mutex::default),
-            browser_channel,
+            browser_source,
             browser_installation,
             context_slots: Arc::new(Semaphore::new(maximum_contexts)),
             contexts_changed: Notify::new(),

@@ -22,7 +22,7 @@ pub enum BrowserSource {
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum BrowserChannel {
+pub enum BrowserSourcePolicy {
     Auto,
     Managed,
     System,
@@ -31,7 +31,7 @@ pub enum BrowserChannel {
 #[derive(Clone, Copy, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum BrowserInstallationPolicy {
-    Explicit,
+    ExistingOnly,
     InstallManaged,
 }
 
@@ -126,7 +126,7 @@ pub struct EffectiveConfigValue {
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NetworkPolicySummary {
-    pub profile: String,
+    pub policy: String,
     pub permits_loopback_initial_origin: bool,
     pub permits_private_addresses: bool,
     pub revalidates_redirects: bool,

@@ -87,7 +87,9 @@
           ]
         },
         "name": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 4096,
+          "minLength": 1
         },
         "path": {
           "type": [
@@ -119,7 +121,8 @@
           "format": "uri"
         },
         "value": {
-          "type": "string"
+          "type": "string",
+          "maxLength": 4096
         }
       },
       "additionalProperties": false,
@@ -216,13 +219,15 @@
           "type": "array",
           "items": {
             "$ref": "#/$defs/BrowserCookie"
-          }
+          },
+          "maxItems": 4096
         },
         "headers": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/RequestHeader"
-          }
+          },
+          "maxItems": 256
         }
       },
       "additionalProperties": false
@@ -233,40 +238,34 @@
         "artifactBytes": {
           "type": "integer",
           "format": "uint64",
-          "minimum": 0
+          "minimum": 1
         },
         "collectorChunkBytes": {
           "type": "integer",
           "format": "uint64",
-          "minimum": 0
+          "minimum": 1
         },
         "concurrentResources": {
           "type": "integer",
           "format": "uint16",
           "maximum": 65535,
-          "minimum": 0
-        },
-        "cssImportDepth": {
-          "type": "integer",
-          "format": "uint16",
-          "maximum": 65535,
-          "minimum": 0
+          "minimum": 1
         },
         "duration": {
           "type": "integer",
           "format": "uint64",
-          "minimum": 0
+          "minimum": 1
         },
         "frameDepth": {
           "type": "integer",
           "format": "uint16",
           "maximum": 65535,
-          "minimum": 0
+          "minimum": 1
         },
         "frames": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0
+          "minimum": 1
         },
         "nodes": {
           "type": "integer",
@@ -282,17 +281,23 @@
         "resourceBytes": {
           "type": "integer",
           "format": "uint64",
-          "minimum": 0
+          "minimum": 1
+        },
+        "resourceRecursionDepth": {
+          "type": "integer",
+          "format": "uint16",
+          "maximum": 65535,
+          "minimum": 1
         },
         "resources": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0
+          "minimum": 1
         },
         "totalResourceBytes": {
           "type": "integer",
           "format": "uint64",
-          "minimum": 0
+          "minimum": 1
         }
       },
       "additionalProperties": false,
@@ -307,7 +312,7 @@
         "collectorChunkBytes",
         "concurrentResources",
         "artifactBytes",
-        "cssImportDepth",
+        "resourceRecursionDepth",
         "frameDepth"
       ]
     },
@@ -343,7 +348,7 @@
             "maxBytes": {
               "type": "integer",
               "format": "uint64",
-              "minimum": 0
+              "minimum": 1
             }
           },
           "required": [
@@ -432,10 +437,6 @@
             "string",
             "null"
           ]
-        },
-        "screenshots": {
-          "type": "boolean",
-          "default": false
         }
       },
       "additionalProperties": false
@@ -584,7 +585,8 @@
           "type": "boolean",
           "default": false
         }
-      }
+      },
+      "additionalProperties": false
     },
     "ReadinessMode": {
       "type": "string",
@@ -697,18 +699,18 @@
         "height": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0
+          "minimum": 1
         },
         "scale": {
           "type": "integer",
           "format": "uint8",
           "maximum": 255,
-          "minimum": 0
+          "minimum": 1
         },
         "width": {
           "type": "integer",
           "format": "uint32",
-          "minimum": 0
+          "minimum": 1
         }
       },
       "additionalProperties": false,

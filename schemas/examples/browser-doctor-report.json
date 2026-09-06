@@ -34,7 +34,7 @@
   "network": {
     "permitsLoopbackInitialOrigin": true,
     "permitsPrivateAddresses": false,
-    "profile": "standard",
+    "policy": "standard",
     "revalidatesRedirects": true
   },
   "output": {

@@ -1,6 +1,6 @@
 product = "0.1.0"
-artifact_format = 1
-public_schema = 1
+artifact_format = 2
+public_schema = 2
 collector_protocol = "1.5"
 collector_bundle = 1
 

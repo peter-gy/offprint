@@ -20,7 +20,7 @@ pub enum Command {
     Capture(Box<CaptureArguments>),
     /// Inspect, verify, or export an artifact.
     Artifact(ArtifactArguments),
-    /// Run independent capture requests from a JSON batch manifest.
+    /// Run independent capture requests from a JSON `BatchRequest`.
     Batch(BatchArguments),
     /// Capture a bounded breadth-first set of linked pages.
     Crawl(CrawlArguments),
@@ -51,14 +51,14 @@ pub enum ArtifactCommand {
 #[derive(Clone, Debug, Args)]
 pub struct BatchArguments {
     /// JSON `BatchRequest` path. Use `-` for stdin.
-    #[arg(value_name = "MANIFEST")]
-    pub manifest: String,
+    #[arg(value_name = "BATCH_REQUEST")]
+    pub request: String,
 
     /// Read service configuration from this TOML file.
     #[arg(long, value_name = "PATH")]
     pub config: Option<String>,
 
-    /// Use this Chrome or Chromium executable.
+    /// Use this Chromium-based executable.
     #[arg(long, value_name = "PATH", conflicts_with = "cdp_url")]
     pub browser_path: Option<String>,
 
@@ -113,7 +113,7 @@ pub struct CrawlArguments {
     #[arg(long)]
     pub allow_cross_origin: bool,
 
-    /// Use this Chrome or Chromium executable.
+    /// Use this Chromium-based executable.
     #[arg(long, value_name = "PATH")]
     pub browser_path: Option<String>,
 
@@ -131,7 +131,7 @@ pub struct CaptureArguments {
     #[arg(value_name = "URL")]
     pub url: String,
 
-    /// Write the capture artifact to this path. Use `-` for stdout.
+    /// Write the Offprint HTML artifact to this path. Use `-` for stdout.
     #[arg(short, long, value_name = "PATH", required = true)]
     pub output: String,
 
@@ -147,7 +147,7 @@ pub struct CaptureArguments {
     #[arg(long, value_name = "PATH")]
     pub config: Option<String>,
 
-    /// Use this Chrome or Chromium executable.
+    /// Use this Chromium-based executable.
     #[arg(long, value_name = "PATH", conflicts_with = "cdp_url")]
     pub browser_path: Option<String>,
 
@@ -280,7 +280,7 @@ pub struct ExportArguments {
     #[arg(long, value_name = "PATH")]
     pub config: Option<String>,
 
-    /// Use this Chrome or Chromium executable.
+    /// Use this Chromium-based executable.
     #[arg(long, value_name = "PATH")]
     pub browser_path: Option<String>,
 
@@ -306,7 +306,7 @@ pub struct VerifyArguments {
     #[arg(long, value_name = "PATH")]
     pub config: Option<String>,
 
-    /// Use this Chrome or Chromium executable for offline verification.
+    /// Use this Chromium-based executable for offline verification.
     #[arg(long, value_name = "PATH")]
     pub browser_path: Option<String>,
 
@@ -338,7 +338,7 @@ pub struct DoctorArguments {
     #[arg(long, value_name = "PATH")]
     pub config: Option<String>,
 
-    /// Check this Chrome or Chromium executable.
+    /// Check this Chromium-based executable.
     #[arg(long, value_name = "PATH", conflicts_with = "cdp_url")]
     pub browser_path: Option<String>,
 

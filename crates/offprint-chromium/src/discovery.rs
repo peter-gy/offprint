@@ -5,8 +5,8 @@ use std::time::Duration;
 use crate::ManagedBrowserManager;
 use camino::Utf8PathBuf;
 use offprint_model::{
-    BrowserCandidate, BrowserCandidateState, BrowserChannel, BrowserInfo, BrowserProduct,
-    BrowserSource, ErrorStage, OffprintError, Result,
+    BrowserCandidate, BrowserCandidateState, BrowserInfo, BrowserProduct, BrowserSource,
+    BrowserSourcePolicy, ErrorStage, OffprintError, Result,
 };
 #[cfg(target_os = "windows")]
 use std::path::PathBuf;
@@ -20,7 +20,7 @@ const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
 pub struct ChromiumDiscovery {
     explicit_path: Option<Utf8PathBuf>,
     managed_cache: Option<Utf8PathBuf>,
-    channel: BrowserChannel,
+    source_policy: BrowserSourcePolicy,
 }
 
 impl ChromiumDiscovery {
@@ -29,7 +29,7 @@ impl ChromiumDiscovery {
         Self {
             explicit_path: None,
             managed_cache: None,
-            channel: BrowserChannel::Auto,
+            source_policy: BrowserSourcePolicy::Auto,
         }
     }
 
@@ -46,8 +46,8 @@ impl ChromiumDiscovery {
     }
 
     #[must_use]
-    pub const fn with_channel(mut self, channel: BrowserChannel) -> Self {
-        self.channel = channel;
+    pub const fn with_source_policy(mut self, policy: BrowserSourcePolicy) -> Self {
+        self.source_policy = policy;
         self
     }
 
@@ -65,7 +65,7 @@ impl ChromiumDiscovery {
             )
             .await;
         }
-        if self.channel != BrowserChannel::System
+        if self.source_policy != BrowserSourcePolicy::System
             && let Some(cache_dir) = &self.managed_cache
         {
             match ManagedBrowserManager::new(cache_dir.clone())
@@ -86,7 +86,7 @@ impl ChromiumDiscovery {
                 Err(error) => failures.push(error),
             }
         }
-        if self.channel != BrowserChannel::Managed {
+        if self.source_policy != BrowserSourcePolicy::Managed {
             for path in system_candidate_paths() {
                 push_probed_candidate(
                     &path,

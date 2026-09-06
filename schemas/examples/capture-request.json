@@ -13,9 +13,7 @@
     "preservePasswordValues": false,
     "scope": "page"
   },
-  "diagnostics": {
-    "screenshots": false
-  },
+  "diagnostics": {},
   "environment": {
     "colorScheme": "light",
     "locale": "en-US",
@@ -34,13 +32,13 @@
     "artifactBytes": 67108864,
     "collectorChunkBytes": 1048576,
     "concurrentResources": 8,
-    "cssImportDepth": 64,
     "duration": 120000,
     "frameDepth": 64,
     "frames": 256,
     "nodes": 1000000,
     "redirects": 20,
     "resourceBytes": 67108864,
+    "resourceRecursionDepth": 64,
     "resources": 10000,
     "totalResourceBytes": 536870912
   },

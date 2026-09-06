@@ -7,7 +7,7 @@ name = "offprint"
 version = "0.1.0"
 description = "Capture rendered web pages as verified self-contained artifacts"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.15"
 license = "AGPL-3.0-or-later"
 classifiers = [
   "Development Status :: 3 - Alpha",

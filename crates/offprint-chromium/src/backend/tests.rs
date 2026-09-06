@@ -102,7 +102,7 @@ fn test_backend(
             ChromiumDiscovery::new().with_managed_cache(cache_dir.clone()),
             cache_dir,
         )
-        .with_browser_installation(BrowserInstallationPolicy::Explicit),
+        .with_browser_installation(BrowserInstallationPolicy::ExistingOnly),
     ))
 }
 

@@ -40,9 +40,9 @@ impl SchedulerService {
 
     /// Runs independent capture requests with bounded concurrency.
     ///
-    /// Each capture produces an independent outcome. When resume state is
-    /// configured, each terminal outcome is checkpointed through an atomic
-    /// file transaction.
+    /// Each capture produces an independent outcome. When a resume manifest is
+    /// configured, each terminal outcome is persisted through an atomic file
+    /// transaction.
     pub async fn batch(&self, mut request: BatchRequest) -> Result<BatchResult> {
         self.state.ensure_open()?;
         for job in &mut request.jobs {
@@ -354,11 +354,11 @@ fn validate_batch_jobs(request: &BatchRequest) -> Result<()> {
     }
     let mut ids = BTreeSet::new();
     for job in &request.jobs {
-        if job.id.trim().is_empty() || job.id.len() > 256 {
+        if job.id.trim().is_empty() || job.id.chars().count() > 256 {
             return Err(scheduler_error(
                 "offprint.scheduler.job_id",
                 ErrorStage::Validation,
-                "batch job identifiers must contain between 1 and 256 bytes",
+                "batch job identifiers must contain between 1 and 256 characters",
             ));
         }
         if !ids.insert(job.id.as_str()) {
@@ -400,7 +400,7 @@ fn validate_crawl_request(request: &CrawlRequest) -> Result<()> {
         return Err(scheduler_error(
             "offprint.input.browser_selection",
             ErrorStage::Validation,
-            "crawl requires an Offprint-owned Chrome or Chromium process",
+            "crawl requires an Offprint-owned Chromium-based process",
         ));
     }
     request.seed.validate()?;

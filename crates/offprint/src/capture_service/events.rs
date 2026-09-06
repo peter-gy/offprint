@@ -33,7 +33,7 @@ impl EventJournal {
 
     pub(super) fn emit_with(&self, event: CaptureEvent, observe: impl FnOnce(&CaptureEvent)) {
         // Subscription baselines, diagnostic observation, retention, and
-        // publication share one order.
+        // broadcast share one order.
         let _gate = self
             .gate
             .lock()

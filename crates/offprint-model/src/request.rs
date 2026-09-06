@@ -253,7 +253,7 @@ fn validate_limits(limits: &CaptureLimits) -> Result<()> {
         || limits.collector_chunk_bytes == 0
         || limits.concurrent_resources == 0
         || limits.artifact_bytes == 0
-        || limits.css_import_depth == 0
+        || limits.resource_recursion_depth == 0
         || limits.frame_depth == 0;
     if has_zero {
         return Err(OffprintError::new(

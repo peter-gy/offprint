@@ -552,6 +552,17 @@ fn read_versions(root: &Path) -> Result<Versions, String> {
         .map_err(|error| format!("failed to read versions.toml: {error}"))?;
     let versions: Versions =
         toml::from_str(&contents).map_err(|error| format!("invalid versions.toml: {error}"))?;
+    if versions.artifact_format != offprint_model::ARTIFACT_FORMAT_VERSION
+        || versions.public_schema != offprint_model::PUBLIC_SCHEMA_VERSION
+    {
+        return Err(format!(
+            "versions.toml public contract {}.{} differs from model {}.{}",
+            versions.artifact_format,
+            versions.public_schema,
+            offprint_model::ARTIFACT_FORMAT_VERSION,
+            offprint_model::PUBLIC_SCHEMA_VERSION,
+        ));
+    }
     if versions.collector_protocol != offprint_protocol::COLLECTOR_PROTOCOL_VERSION_STRING {
         return Err(format!(
             "versions.toml collector protocol {} differs from host protocol {}",
@@ -866,8 +877,8 @@ mod tests {
             temporary.path().join("versions.toml"),
             r#"
 product = "0.1.0"
-artifact_format = 1
-public_schema = 1
+artifact_format = 2
+public_schema = 2
 collector_protocol = "1.5"
 
 [chromium]
@@ -885,8 +896,8 @@ managed_version = "151.0.7922.47"
             target: "aarch64-apple-darwin".to_owned(),
             source_revision: "source-revision".to_owned(),
             rustc: "rustc 1.97.0".to_owned(),
-            artifact_format: 1,
-            public_schema: 1,
+            artifact_format: 2,
+            public_schema: 2,
             collector_protocol: "1.5".to_owned(),
             cdp_revision: "cdp-revision".to_owned(),
             managed_browser_revision: "1654411".to_owned(),

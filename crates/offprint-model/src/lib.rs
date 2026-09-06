@@ -29,9 +29,9 @@ pub use artifact::{
     ManifestSource, StructuralRepair, ViewState,
 };
 pub use browser::{
-    BrowserAction, BrowserCandidate, BrowserCandidateState, BrowserChannel, BrowserDoctorReport,
-    BrowserInfo, BrowserInstallRequest, BrowserInstallationPolicy, BrowserOperationResult,
-    BrowserProduct, BrowserSource, CapabilityCheck, ConfigProvenance, EffectiveConfigValue,
+    BrowserAction, BrowserCandidate, BrowserCandidateState, BrowserDoctorReport, BrowserInfo,
+    BrowserInstallRequest, BrowserInstallationPolicy, BrowserOperationResult, BrowserProduct,
+    BrowserSource, BrowserSourcePolicy, CapabilityCheck, ConfigProvenance, EffectiveConfigValue,
     ManagedBrowserState, NetworkPolicySummary, OutputCapability, RecoveryAction,
 };
 pub use credentials::{

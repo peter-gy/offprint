@@ -207,7 +207,6 @@ fn sanitized_request(request: &CaptureRequest) -> Value {
         "network": request.network,
         "limits": request.limits,
         "verification": request.verification,
-        "screenshotsRequested": request.diagnostics.screenshots,
     });
     clamp_json_strings(&mut value);
     value
@@ -341,7 +340,6 @@ mod tests {
         };
         request.diagnostics = DiagnosticsPolicy {
             directory: Some(PortablePath::from_path_buf(directory)?),
-            screenshots: false,
         };
         let diagnostics = CaptureDiagnostics::prepare(&request)
             .await?

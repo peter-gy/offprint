@@ -284,7 +284,7 @@
     {
       "name": "ArtifactManifest",
       "schema": "artifact-manifest.schema.json",
-      "sha256": "824ea7d1157919d80a64c26d0b83e87ca602d61d9110c39aa67f3a390393a1eb",
+      "sha256": "1670fff2240368e2f717ba0d6ecb59b411bae9e43c3e4bce27e88ca4d0e4e8a1",
       "fields": [
         {
           "path": "#/$defs/BrowserEnvironment/properties/colorScheme",
@@ -961,7 +961,7 @@
     {
       "name": "BatchRequest",
       "schema": "batch-request.schema.json",
-      "sha256": "c037a66a127bcf3161b1689fe12cf3afb627af986ddae5754ba43dcdc68b4a30",
+      "sha256": "6209b4a4982bef84930b6c0b6d5d6aa515bbd80bfe246833c8f4c4b1f2b286bb",
       "fields": [
         {
           "path": "#/$defs/BatchJob/properties/id",
@@ -1126,12 +1126,6 @@
           "nullable": false
         },
         {
-          "path": "#/$defs/CaptureLimits/properties/cssImportDepth",
-          "name": "cssImportDepth",
-          "required": true,
-          "nullable": false
-        },
-        {
           "path": "#/$defs/CaptureLimits/properties/duration",
           "name": "duration",
           "required": true,
@@ -1164,6 +1158,12 @@
         {
           "path": "#/$defs/CaptureLimits/properties/resourceBytes",
           "name": "resourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resourceRecursionDepth",
+          "name": "resourceRecursionDepth",
           "required": true,
           "nullable": false
         },
@@ -1335,13 +1335,6 @@
           "name": "directory",
           "required": false,
           "nullable": true
-        },
-        {
-          "path": "#/$defs/DiagnosticsPolicy/properties/screenshots",
-          "name": "screenshots",
-          "required": false,
-          "nullable": false,
-          "default": false
         },
         {
           "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
@@ -2271,7 +2264,7 @@
     {
       "name": "BrowserDoctorReport",
       "schema": "browser-doctor-report.schema.json",
-      "sha256": "d2c1aa299472356e21bb60cf8b4afef514bfc12c652640f3494229947cf66afe",
+      "sha256": "9ee7cde398bb910519eeec61ce6f16b9dcd60f8d21ae2ab05c65fc6804c61e0e",
       "fields": [
         {
           "path": "#/$defs/BrowserCandidate/properties/activeLeases",
@@ -2439,8 +2432,8 @@
           "nullable": false
         },
         {
-          "path": "#/$defs/NetworkPolicySummary/properties/profile",
-          "name": "profile",
+          "path": "#/$defs/NetworkPolicySummary/properties/policy",
+          "name": "policy",
           "required": true,
           "nullable": false
         },
@@ -3321,7 +3314,7 @@
     {
       "name": "ContentPolicy",
       "schema": "content-policy.schema.json",
-      "sha256": "326e3eb666d58f021d181ff5504ae05ce2102893aa8bc1c40e34e065031250e2",
+      "sha256": "798bd547b1f4669e1e6fe45a2041837b486a7f9be71ffce0fd5cab588fbe8359",
       "fields": [
         {
           "path": "#/$defs/OptimizationPolicy/properties/removeHiddenElements",
@@ -3408,7 +3401,7 @@
     {
       "name": "CaptureRequest",
       "schema": "capture-request.schema.json",
-      "sha256": "83b077c0d06df4bf9d66e6824761459e56bed48f8a77ac75a68cce3de7e620c8",
+      "sha256": "5c04fa3ac994e726fdef02685dd163dd76f20eda749a2c37f67f56a7eadfd527",
       "fields": [
         {
           "path": "#/$defs/BrowserCookie/properties/domain",
@@ -3561,12 +3554,6 @@
           "nullable": false
         },
         {
-          "path": "#/$defs/CaptureLimits/properties/cssImportDepth",
-          "name": "cssImportDepth",
-          "required": true,
-          "nullable": false
-        },
-        {
           "path": "#/$defs/CaptureLimits/properties/duration",
           "name": "duration",
           "required": true,
@@ -3599,6 +3586,12 @@
         {
           "path": "#/$defs/CaptureLimits/properties/resourceBytes",
           "name": "resourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resourceRecursionDepth",
+          "name": "resourceRecursionDepth",
           "required": true,
           "nullable": false
         },
@@ -3692,13 +3685,6 @@
           "name": "directory",
           "required": false,
           "nullable": true
-        },
-        {
-          "path": "#/$defs/DiagnosticsPolicy/properties/screenshots",
-          "name": "screenshots",
-          "required": false,
-          "nullable": false,
-          "default": false
         },
         {
           "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
@@ -4428,7 +4414,7 @@
     {
       "name": "CrawlRequest",
       "schema": "crawl-request.schema.json",
-      "sha256": "55edd62cea0eb57b7f497fe7c19f09a909172b1e27920b81ec0e12fca4d660a2",
+      "sha256": "3542e37a1bd7202f08352ecaae18c7881d589b5a4396d360008674c54cffc313",
       "fields": [
         {
           "path": "#/$defs/BrowserCookie/properties/domain",
@@ -4551,12 +4537,6 @@
           "nullable": false
         },
         {
-          "path": "#/$defs/CaptureLimits/properties/cssImportDepth",
-          "name": "cssImportDepth",
-          "required": true,
-          "nullable": false
-        },
-        {
           "path": "#/$defs/CaptureLimits/properties/duration",
           "name": "duration",
           "required": true,
@@ -4589,6 +4569,12 @@
         {
           "path": "#/$defs/CaptureLimits/properties/resourceBytes",
           "name": "resourceBytes",
+          "required": true,
+          "nullable": false
+        },
+        {
+          "path": "#/$defs/CaptureLimits/properties/resourceRecursionDepth",
+          "name": "resourceRecursionDepth",
           "required": true,
           "nullable": false
         },
@@ -4682,13 +4668,6 @@
           "name": "directory",
           "required": false,
           "nullable": true
-        },
-        {
-          "path": "#/$defs/DiagnosticsPolicy/properties/screenshots",
-          "name": "screenshots",
-          "required": false,
-          "nullable": false,
-          "default": false
         },
         {
           "path": "#/$defs/LazyLoadPolicy/oneOf/0/properties/kind",
