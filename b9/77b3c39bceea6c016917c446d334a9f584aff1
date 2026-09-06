@@ -1,0 +1,347 @@
+docs/README.md
+  s_ba1a8ee0fd334c::t_14ba9016d21a73 42-47
+  s_ba1a8ee0fd334c::t_46fe79924770fb 3-5,7,9-13,17,19-32,34-41,48-62,64-82
+  s_ba1a8ee0fd334c::t_d76631727142e1 14-16
+  s_ba1a8ee0fd334c::t_bb82be4233bf34 63
+development_docs/bindings.md
+  s_ba1a8ee0fd334c::t_2cef1016c3211d 60-62
+  s_ba1a8ee0fd334c::t_e62ef7d8416105 1-28,33-39,43-50,53-59,63-72
+  s_ba1a8ee0fd334c::t_05a96880774e83 29-32
+  s_ba1a8ee0fd334c::t_5faede25a8fa14 40-42
+  s_ba1a8ee0fd334c::t_f70f8faae12996 51-52
+docs/guides/inspect-verify-export.md
+  s_ba1a8ee0fd334c::t_9792484b6ae621 62-66,78-80
+  s_ba1a8ee0fd334c::t_ee3865372575c8 1-13,16-61,67-77,81-84,89-95
+  s_ba1a8ee0fd334c::t_3bffea95e261c6 14-15,85-88
+docs/reference/formats.md
+  s_ba1a8ee0fd334c::t_9792484b6ae621 49-50,94,97-101
+  s_ba1a8ee0fd334c::t_e0177397a408a0 1-3,6-48,51-93,95-96
+  s_ba1a8ee0fd334c::t_05a96880774e83 4-5
+development_docs/setup.md
+  s_ba1a8ee0fd334c::t_9792484b6ae621 57
+  s_ba1a8ee0fd334c::t_ce63f0d1eb4520 1-15,22-30,33-56
+  s_ba1a8ee0fd334c::t_00b837443d070c 16-21
+  s_ba1a8ee0fd334c::t_03d3a335a41870 31-32
+development_docs/document-and-collector.md
+  s_ba1a8ee0fd334c::t_cda1927a247f00 27-30
+  s_ba1a8ee0fd334c::t_2749d0ad4f9794 69-71,73-74,76-80
+  s_ba1a8ee0fd334c::t_0a21e9f3f52994 56-58
+  s_ba1a8ee0fd334c::t_ce63f0d1eb4520 1-26,31-55,59-68,72,75,81-84
+docs/integrations/python.md
+  s_ba1a8ee0fd334c::t_ce63f0d1eb4520 38-39
+  s_ba1a8ee0fd334c::t_f70f8faae12996 56-63
+  s_ba1a8ee0fd334c::t_3a2249d0a809d4 69
+  s_ba1a8ee0fd334c::t_9bf860a9df4a4b 112
+  s_ba1a8ee0fd334c::t_bb82be4233bf34 150-152
+  s_ba1a8ee0fd334c::t_2b1cb3684e575b 163-165
+  s_ba1a8ee0fd334c::t_bfd5461578b63a 140-142
+  s_ba1a8ee0fd334c::t_d1b8000d858177 1-5,8-37,40-55,64-66,70,136,143-149,153-162,166-167
+  s_ba1a8ee0fd334c::t_04bc0546c10c51 67-68,71-111,113-115,117-135,137-139
+  s_ba1a8ee0fd334c::t_c05469ad425c38 116
+  s_ba1a8ee0fd334c::t_9a68802841d4e1 6-7
+docs/reference/service-api.md
+  s_ba1a8ee0fd334c::t_162ba890f427b0 19
+  s_ba1a8ee0fd334c::t_3c2e3d9d00b649 175-177
+  s_ba1a8ee0fd334c::t_1c4a4ca0cf19fa 17
+  s_ba1a8ee0fd334c::t_f70f8faae12996 219-220
+  s_ba1a8ee0fd334c::t_bb82be4233bf34 1-16,18,21-51,57-92,95-105,107-113,118-151,153,166-174,178-218,221-224
+  s_ba1a8ee0fd334c::t_de3891388efaae 93-94
+  s_ba1a8ee0fd334c::t_ba5d4731fbab6d 52-56
+  s_ba1a8ee0fd334c::t_cd405f3cb6eb62 152,154-165
+  s_ba1a8ee0fd334c::t_253be58572dd03 20
+  s_ba1a8ee0fd334c::t_cf990949a4a00c 106,114-117
+bindings/node/README.md
+  s_ba1a8ee0fd334c::t_64ed06b0f9d6a5 9-10
+  s_ba1a8ee0fd334c::t_754b549461d606 12,79-80
+  s_ba1a8ee0fd334c::t_d7722db206f2db 17,20-21
+  s_ba1a8ee0fd334c::t_ebb4845f560905 14
+  s_ba1a8ee0fd334c::t_1587cfcc3505b5 1,3-4,6-7,23,37-38,43,45,47-51,53-59,64,66-67,69-70,72-74,76-77
+  s_ba1a8ee0fd334c::t_05a96880774e83 61-62
+  s_ba1a8ee0fd334c::t_5fca79c9daffd5 26-33
+  s_ba1a8ee0fd334c::t_2b1cb3684e575b 39-41
+development_docs/README.md
+  s_ba1a8ee0fd334c::t_03d3a335a41870 43
+  s_ba1a8ee0fd334c::t_ce63f0d1eb4520 22-23,29
+  s_ba1a8ee0fd334c::t_2e49139108b7e3 1-17,24-27,30-42,44-53
+  s_ba1a8ee0fd334c::t_e62ef7d8416105 18-21,28
+README.md
+  s_ba1a8ee0fd334c::t_e2b0070d53eba9 3,7-8,11,14-17,19,21,27,35,41-42,45-47,50-52,54-55,57-58,60,62-64,72-74,76,78-83,85-87,89,91,93,95-97,99-103,105,107-111,113
+  s_ba1a8ee0fd334c::t_9792484b6ae621 66-70
+  s_ba1a8ee0fd334c::t_2b1cb3684e575b 5-6,84
+docs/start/what-is-offprint.md
+  s_ba1a8ee0fd334c::t_9792484b6ae621 11-12,22-24
+  s_ba1a8ee0fd334c::t_a0c6682e897907 47-48
+  s_ba1a8ee0fd334c::t_6b3d0f2700e643 18-20
+  s_ba1a8ee0fd334c::t_f7e755d5a3ec81 1-10,13-17,21,25-46,49,53-115
+  s_ba1a8ee0fd334c::t_3bffea95e261c6 50-52
+docs/operations/troubleshooting.md
+  s_ba1a8ee0fd334c::t_ce70b49a949fa1 1-69,72-156
+  s_ba1a8ee0fd334c::t_03d3a335a41870 70-71
+docs/guides/remote-browser.md
+  s_ba1a8ee0fd334c::t_ee3865372575c8 1-16,23-34,38-48,53-60,64-71
+  s_ba1a8ee0fd334c::t_be747bd5634ddd 17-22
+  s_ba1a8ee0fd334c::t_7a4e426eec488c 35-37,49-52
+  s_ba1a8ee0fd334c::t_c62edd0a2d75c3 61-63
+docs/guides/batch-and-crawl.md
+  s_ba1a8ee0fd334c::t_6196288a081229 31-32
+  s_ba1a8ee0fd334c::t_0bb335a8eaf779 81-83
+  s_ba1a8ee0fd334c::t_2b1cb3684e575b 45,49-52
+  s_ba1a8ee0fd334c::t_05a96880774e83 97
+  s_ba1a8ee0fd334c::t_4e1bd346798d69 9-11
+  s_ba1a8ee0fd334c::t_ee3865372575c8 1-8,12-30,33-44,46-48,53-80,84-85,91-96,98-101,106-107
+  s_ba1a8ee0fd334c::t_cf990949a4a00c 102-105
+  s_ba1a8ee0fd334c::t_7a4e426eec488c 86-90
+docs/reference/cli.md
+  s_ba1a8ee0fd334c::t_7a4e426eec488c 87-88
+  s_ba1a8ee0fd334c::t_0bb335a8eaf779 43-44,98-100
+  s_ba1a8ee0fd334c::t_e0177397a408a0 1-42,45-86,89-97,101-128
+docs/operations/limits-and-performance.md
+  s_ba1a8ee0fd334c::t_540e61efd1f47e 21
+  s_ba1a8ee0fd334c::t_ce63f0d1eb4520 40-52
+  s_ba1a8ee0fd334c::t_ce70b49a949fa1 1-20,22-23,26-39
+  s_ba1a8ee0fd334c::t_9792484b6ae621 24-25
+development_docs/testing.md
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-28,35-62,64-92
+  s_ba1a8ee0fd334c::t_1e5dac882de4e3 63
+  s_ba1a8ee0fd334c::t_ddad24518d82ad 29-34
+docs/start/quickstart.md
+  s_ba1a8ee0fd334c::t_f7e755d5a3ec81 1-24,27-89
+  s_ba1a8ee0fd334c::t_754b549461d606 25-26
+docs/concepts/browsers.md
+  s_ba1a8ee0fd334c::t_de3891388efaae 69-70
+  s_ba1a8ee0fd334c::t_f7e755d5a3ec81 1-20,22-35,37-44,49,52-61,71-90
+  s_ba1a8ee0fd334c::t_310312c611bb6b 21
+  s_ba1a8ee0fd334c::t_c579a9837a9b65 36
+  s_ba1a8ee0fd334c::t_1fb333c376d955 45-48,62-68
+  s_ba1a8ee0fd334c::t_be747bd5634ddd 50-51
+docs/reference/configuration.md
+  s_ba1a8ee0fd334c::t_e0177397a408a0 1-3,6-10,12-64,77-103,106-162,165-181,183-185,188-194,196-206
+  s_ba1a8ee0fd334c::t_f101cb8bfc6be0 65-76
+  s_ba1a8ee0fd334c::t_4e1bd346798d69 4-5
+  s_ba1a8ee0fd334c::t_162ba890f427b0 104,195
+  s_ba1a8ee0fd334c::t_253be58572dd03 105
+  s_ba1a8ee0fd334c::t_9792484b6ae621 186-187
+  s_ba1a8ee0fd334c::t_9bf860a9df4a4b 182
+  s_ba1a8ee0fd334c::t_310312c611bb6b 11
+  s_ba1a8ee0fd334c::t_0bb335a8eaf779 163-164
+development_docs/review.md
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-21,26-45
+  s_ba1a8ee0fd334c::t_d7722db206f2db 22
+  s_ba1a8ee0fd334c::t_c968fd7d5e04cb 23-25
+development_docs/schemas-and-versioning.md
+  s_ba1a8ee0fd334c::t_1f53fef1b0def2 43
+  s_ba1a8ee0fd334c::t_c62edd0a2d75c3 62-66
+  s_ba1a8ee0fd334c::t_e9b3af5b414c56 44-47
+  s_ba1a8ee0fd334c::t_cda1927a247f00 12,19-22,42
+  s_ba1a8ee0fd334c::t_d7722db206f2db 81
+  s_ba1a8ee0fd334c::t_c968fd7d5e04cb 82
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-11,13-18,23-41,48-61,67-80
+docs/operations/security.md
+  s_ba1a8ee0fd334c::t_0bb335a8eaf779 20-22
+  s_ba1a8ee0fd334c::t_0ca54e79dee606 60,71-72
+  s_ba1a8ee0fd334c::t_05a96880774e83 84-85
+  s_ba1a8ee0fd334c::t_999cb3e974b16b 81-82
+  s_ba1a8ee0fd334c::t_be747bd5634ddd 132-135
+  s_ba1a8ee0fd334c::t_a74bd4c9b65c8b 33-51
+  s_ba1a8ee0fd334c::t_ce70b49a949fa1 1-19,23-32,52,94-96,101-108,115-131,136-162
+  s_ba1a8ee0fd334c::t_7efadde17cfcee 53-59,61-70,73-80,83
+  s_ba1a8ee0fd334c::t_03d3a335a41870 97-100,109-114
+  s_ba1a8ee0fd334c::t_7a4e426eec488c 86-93,163-164
+crates/offprint/README.md
+  s_ba1a8ee0fd334c::t_be6f32b1f90891 1-8,17-39
+  s_ba1a8ee0fd334c::t_e57c243f7922ab 9-10
+  s_ba1a8ee0fd334c::t_c4b25e46c3b922 11-16
+docs/start/why-offprint.md
+  s_ba1a8ee0fd334c::t_f7e755d5a3ec81 1-11,16-52,56-70
+  s_ba1a8ee0fd334c::t_3bffea95e261c6 12-15,53-55
+development_docs/capture-pipeline.md
+  s_ba1a8ee0fd334c::t_cda1927a247f00 61-64,74-75
+  s_ba1a8ee0fd334c::t_2e49139108b7e3 1-13,15-54,58-60,65-73,76-106
+  s_ba1a8ee0fd334c::t_2749d0ad4f9794 14,55-57
+development_docs/configuration-and-diagnostics.md
+  s_ba1a8ee0fd334c::t_2cef1016c3211d 36-39,58-62
+  s_ba1a8ee0fd334c::t_e62ef7d8416105 1-35,40-57,63-79
+docs/reference/compatibility.md
+  s_ba1a8ee0fd334c::t_03d3a335a41870 13,31-35
+  s_ba1a8ee0fd334c::t_e0177397a408a0 1-12,14-26,28-30,36-52
+  s_ba1a8ee0fd334c::t_ebb4845f560905 27
+docs/concepts/artifacts-and-verification.md
+  s_ba1a8ee0fd334c::t_be747bd5634ddd 71-75,89,99-103
+  s_ba1a8ee0fd334c::t_f7e755d5a3ec81 1-2,9-22,29-46,53-62,65-70,76-88,104-114
+  s_ba1a8ee0fd334c::t_9792484b6ae621 23-28,64
+  s_ba1a8ee0fd334c::t_1fb333c376d955 63
+  s_ba1a8ee0fd334c::t_ce63f0d1eb4520 3-8
+  s_ba1a8ee0fd334c::t_6b3d0f2700e643 47-52
+  s_ba1a8ee0fd334c::t_e19c420a9d7b27 90-98
+docs/integrations/node.md
+  s_ba1a8ee0fd334c::t_05a96880774e83 140-143
+  s_ba1a8ee0fd334c::t_e13785247ae99a 33-34,39-74,76-78,80,93-97,105-107
+  s_ba1a8ee0fd334c::t_38bd7bb421bebe 108-110
+  s_ba1a8ee0fd334c::t_d1b8000d858177 1-5,8-13,23-32,35-38,81,90-91,101-104,111-119,123-134,139,144-146
+  s_ba1a8ee0fd334c::t_c62edd0a2d75c3 135-138
+  s_ba1a8ee0fd334c::t_9a68802841d4e1 6-7
+  s_ba1a8ee0fd334c::t_5fca79c9daffd5 14-22,82-89,92,98-100
+  s_ba1a8ee0fd334c::t_bb82be4233bf34 120-122
+  s_ba1a8ee0fd334c::t_c05469ad425c38 79
+  s_ba1a8ee0fd334c::t_9bf860a9df4a4b 75
+docs/reference/records.md
+  s_ba1a8ee0fd334c::t_cf990949a4a00c 104-106
+  s_ba1a8ee0fd334c::t_6b3d0f2700e643 69-80
+  s_ba1a8ee0fd334c::t_e0177397a408a0 1-6,8-15,17-68,81-103,107-112,118-120
+  s_ba1a8ee0fd334c::t_be747bd5634ddd 7,16,113-117
+docs/guides/automation.md
+  s_ba1a8ee0fd334c::t_4e1bd346798d69 7-9
+  s_ba1a8ee0fd334c::t_ee3865372575c8 1-6,10-78
+bindings/python/README.md
+  s_ba1a8ee0fd334c::t_ebb4845f560905 14
+  s_ba1a8ee0fd334c::t_d7722db206f2db 17,20-21
+  s_ba1a8ee0fd334c::t_f70f8faae12996 80-81
+  s_ba1a8ee0fd334c::t_754b549461d606 12,83-84
+  s_ba1a8ee0fd334c::t_1587cfcc3505b5 1,3-4,6-7,16,31,35,41-42,47,49,51-55,57-60,62-63,65,67-69,71-73,75-77,79
+  s_ba1a8ee0fd334c::t_64ed06b0f9d6a5 9-10
+  s_ba1a8ee0fd334c::t_2b1cb3684e575b 43-45
+development_docs/provenance.md
+  s_ba1a8ee0fd334c::t_f97ccaffd1abfc 31-33,43-45
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-7,15-30,34,39-42
+  s_ba1a8ee0fd334c::t_1e5dac882de4e3 8-14,35-38
+docs/concepts/resources-and-fidelity.md
+  s_ba1a8ee0fd334c::t_0bb335a8eaf779 83-84
+  s_ba1a8ee0fd334c::t_a9d562767ecc30 12-14,54-56
+  s_ba1a8ee0fd334c::t_f7e755d5a3ec81 1-11,15-53,57-75,79-82,85-88
+  s_ba1a8ee0fd334c::t_540e61efd1f47e 76-78
+development_docs/architecture.md
+  s_ba1a8ee0fd334c::t_2e49139108b7e3 1-24,27-30,32-36,41-68,72-76,81-87
+  s_ba1a8ee0fd334c::t_cda1927a247f00 25-26,31,37-40,77-80
+  s_ba1a8ee0fd334c::t_d7034e501c8f08 69-71
+docs/integrations/rust.md
+  s_ba1a8ee0fd334c::t_05a96880774e83 81
+  s_ba1a8ee0fd334c::t_be747bd5634ddd 70-72,145-149
+  s_ba1a8ee0fd334c::t_23e0574b84c6b6 56-60,64
+  s_ba1a8ee0fd334c::t_667b7e749a63e0 40-43,127-129
+  s_ba1a8ee0fd334c::t_d1b8000d858177 1-10,13-39,44-55,61-63,65-69,73-80,82,84-126,130-132,135-141
+  s_ba1a8ee0fd334c::t_162ba890f427b0 83
+  s_ba1a8ee0fd334c::t_bb82be4233bf34 133-134,142-144
+  s_ba1a8ee0fd334c::t_85f696f9942cef 11-12
+development_docs/browser-and-network.md
+  s_ba1a8ee0fd334c::t_2e49139108b7e3 1-22,25-28,30-34,37-58,61-70,73-76,78,83-88,95-105
+  s_ba1a8ee0fd334c::t_2749d0ad4f9794 23-24,59-60
+  s_ba1a8ee0fd334c::t_162ba890f427b0 29
+  s_ba1a8ee0fd334c::t_218d79ea8a22cc 35-36
+  s_ba1a8ee0fd334c::t_cda1927a247f00 79-82
+  s_ba1a8ee0fd334c::t_ebb4845f560905 72
+  s_ba1a8ee0fd334c::t_c968fd7d5e04cb 77
+  s_ba1a8ee0fd334c::t_42460a8768d6cb 89-94
+  s_ba1a8ee0fd334c::t_d7722db206f2db 71
+crates/offprint/Cargo.toml
+  s_ba1a8ee0fd334c::t_be6f32b1f90891 9
+development_docs/performance.md
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-2,6-10,13-17,24-27,31-37,41-44
+  s_ba1a8ee0fd334c::t_2cef1016c3211d 3-5,28-30,38-40
+  s_ba1a8ee0fd334c::t_ebb4845f560905 11-12,18-23
+development_docs/generated-files.md
+  s_ba1a8ee0fd334c::t_1e5dac882de4e3 34-35
+  s_ba1a8ee0fd334c::t_1c4a4ca0cf19fa 9-10
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-8,11-33,36-44
+justfile
+  s_ba1a8ee0fd334c::t_7697c30980a16f 18-20,23,27
+  s_ba1a8ee0fd334c::t_d03c675a18e34c 300
+  s_ba1a8ee0fd334c::t_80bbae7c538ded 303-306
+development_docs/artifacts-and-formats.md
+  s_ba1a8ee0fd334c::t_cda1927a247f00 3-5
+  s_ba1a8ee0fd334c::t_e19c420a9d7b27 74-79
+  s_ba1a8ee0fd334c::t_9792484b6ae621 101
+  s_ba1a8ee0fd334c::t_2749d0ad4f9794 11,48-50,82-86
+  s_ba1a8ee0fd334c::t_2e49139108b7e3 1-2,6-10,12-40,43-47,51-73,80-81,87-100,102-105
+  s_ba1a8ee0fd334c::t_1e5dac882de4e3 41-42
+docs/concepts/capture-model.md
+  s_ba1a8ee0fd334c::t_c05469ad425c38 42
+  s_ba1a8ee0fd334c::t_f7e755d5a3ec81 1-30,36,43-48,51-76,82-99,102-125,129-132
+  s_ba1a8ee0fd334c::t_cf990949a4a00c 77-81
+  s_ba1a8ee0fd334c::t_be747bd5634ddd 100-101,126-128
+  s_ba1a8ee0fd334c::t_1fb333c376d955 31-35
+  s_ba1a8ee0fd334c::t_a0c6682e897907 37-41
+  s_ba1a8ee0fd334c::t_ce63f0d1eb4520 49-50
+docs/guides/authenticated-pages.md
+  s_ba1a8ee0fd334c::t_a0c6682e897907 83-87
+  s_ba1a8ee0fd334c::t_be747bd5634ddd 65-67
+  s_ba1a8ee0fd334c::t_4e1bd346798d69 90-91
+  s_ba1a8ee0fd334c::t_ee3865372575c8 1-64,68-82,88-89,92-112
+development_docs/release.md
+  s_ba1a8ee0fd334c::t_e1edad98e8d997 49-53
+  s_ba1a8ee0fd334c::t_ebb4845f560905 14-15
+  s_ba1a8ee0fd334c::t_8b93cff00bdb5a 20-21,28-29
+  s_ba1a8ee0fd334c::t_2c1088738a7abe 25-27,30-45
+  s_ba1a8ee0fd334c::t_d7722db206f2db 12
+  s_ba1a8ee0fd334c::t_d23012408f7d01 47-48,60-61
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-11,13,16,18-19,22,46,54-59,62-89
+  s_ba1a8ee0fd334c::t_cda1927a247f00 17,23-24
+docs/examples/README.md
+  s_ba1a8ee0fd334c::t_1fb333c376d955 44-45,48,55-56
+  s_ba1a8ee0fd334c::t_14ba9016d21a73 1-6,12-43,46-47,49-54,57-119
+  s_ba1a8ee0fd334c::t_2469be49aabcd4 7-11
+docs/guides/manage-browsers.md
+  s_ba1a8ee0fd334c::t_c62edd0a2d75c3 27,30-31,68,70
+  s_ba1a8ee0fd334c::t_253be58572dd03 69
+  s_ba1a8ee0fd334c::t_ee3865372575c8 1-26,28-29,32-36,39-62,64-66,71-73
+  s_ba1a8ee0fd334c::t_310312c611bb6b 37-38,63,67
+docs/reference/errors.md
+  s_ba1a8ee0fd334c::t_0bb335a8eaf779 12,52-56
+  s_ba1a8ee0fd334c::t_e0177397a408a0 1-11,13-51,57-76
+development_docs/schedulers.md
+  s_ba1a8ee0fd334c::t_e62ef7d8416105 1-41,45-47,53-65,67-69
+  s_ba1a8ee0fd334c::t_05a96880774e83 66
+  s_ba1a8ee0fd334c::t_cda1927a247f00 42
+  s_ba1a8ee0fd334c::t_ebb4845f560905 48-52
+  s_ba1a8ee0fd334c::t_de3891388efaae 43-44
+AGENTS.md
+  s_ba1a8ee0fd334c::t_1c4a4ca0cf19fa 124-126
+  s_ba1a8ee0fd334c::t_cda1927a247f00 15-16,21
+  s_ba1a8ee0fd334c::t_e4eb43eda8a106 133-134
+  s_ba1a8ee0fd334c::t_abafc50c5d1d46 81-83,129
+  s_ba1a8ee0fd334c::t_c65d6c7f8b47b9 4-5,17-18,24,68-71,75-77,84-89,187-190
+docs/guides/control-capture.md
+  s_ba1a8ee0fd334c::t_ee3865372575c8 1-16,18-24,29-99,101-122
+  s_ba1a8ee0fd334c::t_42460a8768d6cb 17,25-28
+  s_ba1a8ee0fd334c::t_a0c6682e897907 100
+development_docs/decisions.md
+  s_ba1a8ee0fd334c::t_f8fbbfc5039a34 8-11,16-18,22-25,35-37,39-41,54-56,58-60,69-71,74-76,84-86
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-7,12-15,19-21,26-34,38,42-53,57,61,64-68,72-73,77-83
+  s_ba1a8ee0fd334c::t_ac3f4a421914eb 62-63
+development_docs/product-contract.md
+  s_ba1a8ee0fd334c::t_2e49139108b7e3 1-25,27-32,34,36-49,51-96,98-125
+  s_ba1a8ee0fd334c::t_ce63f0d1eb4520 26,33,35
+  s_ba1a8ee0fd334c::t_162ba890f427b0 50
+  s_ba1a8ee0fd334c::t_2749d0ad4f9794 97
+xtask/src/repository.rs
+  s_ba1a8ee0fd334c::t_4b2444a21ad21b 441,443-447,456-461,466-475,481-507
+  s_ba1a8ee0fd334c::t_ddad24518d82ad 39,71-109
+development_docs/dependencies.md
+  s_ba1a8ee0fd334c::t_05a96880774e83 26-27
+  s_ba1a8ee0fd334c::t_9bdcaa12080d0c 7-18
+  s_ba1a8ee0fd334c::t_410f953e6e02a2 1-6,19-25,28-30,33-35
+  s_ba1a8ee0fd334c::t_ac3f4a421914eb 31-32
+docs/start/install.md
+  s_ba1a8ee0fd334c::t_754b549461d606 117-119
+  s_ba1a8ee0fd334c::t_2005d18da0b3e2 6-9,15-18,87,90-93,96,99,102-105,120
+  s_ba1a8ee0fd334c::t_64ed06b0f9d6a5 30-47
+  s_ba1a8ee0fd334c::t_6b3d0f2700e643 48
+  s_ba1a8ee0fd334c::t_7b2ba42028999b 58-71
+  s_ba1a8ee0fd334c::t_d76631727142e1 1-5,10-14,19-22,49-57,72-86,88-89,94-95,97-98,100-101,106-116
+  s_ba1a8ee0fd334c::t_c4b25e46c3b922 23-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "b977b3c39bceea6c016917c446d334a9f584aff1",
+  "prompts": {},
+  "sessions": {
+    "s_ba1a8ee0fd334c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a076aa-aee9-7b63-a20e-eceb53cc9f2c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
