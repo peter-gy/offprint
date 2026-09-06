@@ -173,6 +173,17 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
 
+      - name: Install Chromium runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
@@ -186,6 +197,10 @@ jobs:
         run: |
           node -e "import('./index.js').then(m => { if (!m.Offprint) process.exit(1) })"
           node -e "if (!require('./index.cjs').Offprint) process.exit(1)"
+
+      - name: Capture through Node.js runtime
+        working-directory: bindings/node
+        run: node test/package-smoke.mjs
 
       - name: Inspect npm package
         working-directory: bindings/node

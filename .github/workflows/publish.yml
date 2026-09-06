@@ -821,7 +821,7 @@ jobs:
 
   publish-crates:
     name: Publish Rust crates
-    needs: supply-chain
+    needs: [supply-chain, validate]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -840,7 +840,55 @@ jobs:
       - name: Publish workspace crates
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: cargo publish --workspace --locked
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          registry_token="$CARGO_REGISTRY_TOKEN"
+          unset CARGO_REGISTRY_TOKEN
+          crates=(
+            offprint-model
+            offprint-artifact
+            offprint-browser
+            offprint-capture
+            offprint-document
+            offprint-protocol
+            offprint-chromium
+            offprint-html
+            offprint-export
+            offprint-transform
+            offprint
+            offprint-cli
+          )
+          for crate in "${crates[@]}"; do
+            cargo package --locked -p "$crate" --no-verify
+            archive="target/package/$crate-$VERSION.crate"
+            test -f "$archive"
+            local_checksum="$(sha256sum "$archive" | cut -d ' ' -f 1)"
+            registry_record="$(mktemp)"
+            if curl --fail --silent \
+              --header "User-Agent: offprint-release/$VERSION" \
+              "https://crates.io/api/v1/crates/$crate/$VERSION" \
+              --output "$registry_record"
+            then
+              published_checksum="$(jq -er '.version.checksum' "$registry_record")"
+              if [[ "$published_checksum" != "$local_checksum" ]]; then
+                echo "$crate@$VERSION exists with a different checksum" >&2
+                exit 1
+              fi
+              echo "$crate@$VERSION is already published with matching bytes"
+              continue
+            fi
+            for attempt in {1..6}; do
+              if CARGO_REGISTRY_TOKEN="$registry_token" \
+                cargo publish --locked --no-verify -p "$crate"
+              then
+                break
+              fi
+              if [[ "$attempt" == 6 ]]; then
+                exit 1
+              fi
+              sleep 10
+            done
+          done
 
   publish-node:
     name: Publish npm package
@@ -872,13 +920,67 @@ jobs:
       - name: Publish with npm trusted publishing
         env:
           NPM_TAG: ${{ needs.validate.outputs.npm_tag }}
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
           packages=(dist/npm/offprint-*.tgz)
           test "${#packages[@]}" = "1"
+          published="$(npx --yes npm@11.12.1 view "offprint@$VERSION" version 2>/dev/null || true)"
+          if [[ "$published" == "$VERSION" ]]; then
+            local_integrity="sha512-$(openssl dgst -sha512 -binary "${packages[0]}" | openssl base64 -A)"
+            published_integrity="$(npx --yes npm@11.12.1 view "offprint@$VERSION" dist.integrity)"
+            if [[ "$published_integrity" != "$local_integrity" ]]; then
+              echo "offprint@$VERSION exists with different package bytes" >&2
+              exit 1
+            fi
+            echo "offprint@$VERSION is already published with matching bytes"
+            tagged="$(npx --yes npm@11.12.1 view "offprint@$NPM_TAG" version 2>/dev/null || true)"
+            if [[ "$tagged" != "$VERSION" ]]; then
+              echo "npm dist-tag $NPM_TAG points to $tagged, expected $VERSION" >&2
+              echo "trusted publishing cannot repair dist-tags outside npm publish" >&2
+              exit 1
+            fi
+            exit 0
+          fi
           npx --yes npm@11.12.1 publish \
             --access public \
             --tag "$NPM_TAG" \
             "${packages[0]}"
+
+  verify-crates:
+    name: Verify crates.io release
+    needs: [publish-crates, validate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
+        with:
+          toolchain: 1.97.0
+
+      - name: Build a public-registry consumer
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          consumer="$RUNNER_TEMP/offprint-crates-consumer"
+          cargo init --name offprint-public-smoke --bin "$consumer"
+          for attempt in {1..12}; do
+            if cargo add "offprint@=$VERSION" \
+              --manifest-path "$consumer/Cargo.toml" \
+              && cargo check --manifest-path "$consumer/Cargo.toml"
+            then
+              break
+            fi
+            if [[ "$attempt" == 12 ]]; then
+              exit 1
+            fi
+            sleep 10
+          done
+          cargo tree \
+            --manifest-path "$consumer/Cargo.toml" \
+            --package "offprint@$VERSION" \
+            --depth 0
 
   publish-python:
     name: Publish Python distributions
@@ -1043,9 +1145,9 @@ jobs:
   release-notes:
     name: Publish GitHub release
     needs:
-      - publish-crates
       - supply-chain
       - validate
+      - verify-crates
       - verify-node
       - verify-python
     if: startsWith(github.ref, 'refs/tags/v')
