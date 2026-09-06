@@ -11,7 +11,8 @@ async fn main() -> ExitCode {
     let json = arguments.iter().any(|argument| argument == "--json");
     let cli = match Cli::try_parse_from(&arguments) {
         Ok(cli) => cli,
-        Err(error) if json => {
+        Err(error) if json && error.use_stderr() => {
+            let exit = error.exit_code() as u8;
             let record = offprint::OffprintError::new(
                 "offprint.input.arguments",
                 offprint::ErrorStage::Validation,
@@ -20,11 +21,12 @@ async fn main() -> ExitCode {
             let mut diagnostics = io::stderr().lock();
             let _ignored = serde_json::to_writer(&mut diagnostics, &record);
             let _ignored = std::io::Write::write_all(&mut diagnostics, b"\n");
-            return ExitCode::from(2);
+            return ExitCode::from(exit);
         }
         Err(error) => {
+            let exit = error.exit_code() as u8;
             let _ignored = error.print();
-            return ExitCode::from(2);
+            return ExitCode::from(exit);
         }
     };
     let diagnostics_terminal = io::stderr().is_terminal();
