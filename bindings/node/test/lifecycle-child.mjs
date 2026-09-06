@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 const offprintModule =
   process.env.OFFPRINT_LIFECYCLE_INSTALLED === "1"
-    ? await import("@offprint/node")
+    ? await import("offprint")
     : await import("../index.js");
 const { Offprint } = offprintModule;
 

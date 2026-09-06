@@ -1,9 +1,6 @@
 use std::fs;
 use std::path::Path;
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    env,
-};
+use std::{collections::BTreeMap, env};
 
 use serde::Deserialize;
 
@@ -480,69 +477,18 @@ fn check_version_alignment(root: &Path, violations: &mut Vec<String>) -> Result<
             node_version, versions.product
         ));
     }
-    let optional_dependencies = node
-        .get("optionalDependencies")
-        .and_then(serde_json::Value::as_object)
-        .ok_or_else(|| "Node.js package metadata has no optionalDependencies object".to_owned())?;
-    let expected_platform_packages = optional_dependencies
-        .keys()
-        .cloned()
-        .collect::<BTreeSet<_>>();
-    for (name, version) in optional_dependencies {
-        if version.as_str() != Some(versions.product.as_str()) {
-            violations.push(format!(
-                "Node.js optional dependency {name} version {:?} differs from product version {}",
-                version.as_str(),
-                versions.product
-            ));
-        }
+    if node.get("name").and_then(serde_json::Value::as_str) != Some("offprint") {
+        violations.push("Node.js package name must be `offprint`".to_owned());
     }
-
-    let platform_root = root.join("bindings/node/npm");
-    let entries = fs::read_dir(&platform_root).map_err(|error| {
-        format!(
-            "failed to read Node.js platform packages under {}: {error}",
-            platform_root.display()
-        )
-    })?;
-    let mut platform_manifests = Vec::new();
-    for entry in entries {
-        let entry = entry.map_err(|error| {
-            format!(
-                "failed to read a Node.js platform package under {}: {error}",
-                platform_root.display()
-            )
-        })?;
-        let manifest = entry.path().join("package.json");
-        if manifest.is_file() {
-            platform_manifests.push(manifest);
-        }
-    }
-    platform_manifests.sort();
-    let mut actual_platform_packages = BTreeSet::new();
-    for manifest in &platform_manifests {
-        let package = fs::read_to_string(manifest)
-            .map_err(|error| format!("failed to read {}: {error}", manifest.display()))?;
-        let package: serde_json::Value = serde_json::from_str(&package)
-            .map_err(|error| format!("invalid {}: {error}", manifest.display()))?;
-        let name = package
-            .get("name")
-            .and_then(serde_json::Value::as_str)
-            .ok_or_else(|| format!("{} has no package name", manifest.display()))?;
-        let version = package.get("version").and_then(serde_json::Value::as_str);
-        actual_platform_packages.insert(name.to_owned());
-        if version != Some(versions.product.as_str()) {
-            violations.push(format!(
-                "Node.js platform package {name} version {:?} differs from product version {}",
-                version, versions.product
-            ));
-        }
-    }
-    if actual_platform_packages != expected_platform_packages {
-        violations.push(format!(
-            "Node.js platform packages {:?} differ from root optional dependencies {:?}",
-            actual_platform_packages, expected_platform_packages
-        ));
+    let files = node
+        .get("files")
+        .and_then(serde_json::Value::as_array)
+        .ok_or_else(|| "Node.js package metadata has no files array".to_owned())?;
+    if !files
+        .iter()
+        .any(|value| value.as_str() == Some("offprint-native.*.node"))
+    {
+        violations.push("Node.js package omits native addons from its files contract".to_owned());
     }
 
     let python = fs::read_to_string(root.join("bindings/python/pyproject.toml"))

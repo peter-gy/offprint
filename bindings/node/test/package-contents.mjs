@@ -29,11 +29,10 @@ function archiveEntries(bytes) {
   return entries;
 }
 
-const [rootPath, platformPath, licensePath] = process.argv.slice(2);
-assert(rootPath && platformPath && licensePath);
+const [rootPath, licensePath, ...nativeFiles] = process.argv.slice(2);
+assert(rootPath && licensePath && nativeFiles.length > 0);
 const expectedLicense = await readFile(licensePath);
 const root = archiveEntries(await readFile(rootPath));
-const platform = archiveEntries(await readFile(platformPath));
 
 assert.deepEqual(root.get("package/LICENSE"), expectedLicense);
 assert(root.has("package/contracts.generated.d.ts"));
@@ -42,13 +41,10 @@ assert.equal(
   root.get("package/native.d.ts").includes(Buffer.from("testPanic")),
   false,
 );
-assert.equal(
-  [...root.keys()].filter((name) => name.endsWith(".node")).length,
-  0,
-);
-
-assert.deepEqual(platform.get("package/LICENSE"), expectedLicense);
-assert.equal(
-  [...platform.keys()].filter((name) => name.endsWith(".node")).length,
-  1,
+assert.deepEqual(
+  [...root.keys()]
+    .filter((name) => name.endsWith(".node"))
+    .map((name) => name.slice("package/".length))
+    .sort(),
+  nativeFiles.sort(),
 );

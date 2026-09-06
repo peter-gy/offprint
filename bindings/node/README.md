@@ -1,13 +1,29 @@
-# `@offprint/node`
+# `offprint`
 
-`@offprint/node` captures rendered pages through the Offprint Rust engine and
+`offprint` captures rendered pages through the Offprint Rust engine and
 returns the canonical capture records as JavaScript objects.
 
-The current package is an alpha build from the Offprint source checkout. It
-requires Node.js 22 or newer, Bun 1.3.14, the repository Rust toolchain, and a
-supported native build environment.
+The package requires Node.js 22 or newer. Building it from source also requires
+Bun 1.3.14, the repository Rust toolchain, and a supported native build
+environment.
 
-## Build and capture
+## Install and capture
+
+```console
+npm install offprint
+```
+
+```ts
+import { Offprint } from "offprint";
+
+await using offprint = new Offprint();
+const result = await offprint.capture("https://example.com", {
+  output: "example.html",
+});
+console.log(result.artifact);
+```
+
+## Build from source
 
 From the repository root:
 
@@ -27,7 +43,7 @@ example.html
 Its complete source is [`examples/capture.ts`](./examples/capture.ts):
 
 ```ts
-import { Offprint } from "@offprint/node";
+import { Offprint } from "offprint";
 
 await using offprint = new Offprint();
 const result = await offprint.capture("https://example.com", {

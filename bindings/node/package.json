@@ -1,5 +1,5 @@
 {
-  "name": "@offprint/node",
+  "name": "offprint",
   "version": "0.1.0",
   "description": "Capture rendered web pages as verified self-contained artifacts",
   "license": "AGPL-3.0-or-later",
@@ -31,16 +31,11 @@
     "LICENSE",
     "native.cjs",
     "native.d.ts",
+    "offprint-native.*.node",
     "README.md"
   ],
-  "optionalDependencies": {
-    "@offprint/node-darwin-arm64": "0.1.0",
-    "@offprint/node-darwin-x64": "0.1.0",
-    "@offprint/node-linux-x64-gnu": "0.1.0",
-    "@offprint/node-win32-x64-msvc": "0.1.0"
-  },
   "napi": {
-    "packageName": "@offprint/node",
+    "packageName": "offprint",
     "binaryName": "offprint-native",
     "targets": [
       "x86_64-unknown-linux-gnu",
@@ -53,12 +48,10 @@
     "build": "napi build --platform --release --no-js --dts native.d.ts",
     "build:debug": "napi build --platform --no-js --dts native.d.ts",
     "build:test": "napi build --platform --no-js --dts ../../target/offprint-node-test.d.ts --features binding-test-hooks",
-    "artifacts": "napi artifacts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "prepack": "node scripts/package-license.mjs sync",
-    "postpack": "node scripts/package-license.mjs clean",
-    "prepublishOnly": "node scripts/publish-packages.mjs"
+    "postpack": "node scripts/package-license.mjs clean"
   },
   "engines": {
     "node": ">=22"

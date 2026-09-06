@@ -25,7 +25,6 @@ clean:
       bindings/python/target \
       dist
     find bindings/node -maxdepth 1 -type f -name '*.node' -delete
-    find bindings/node/npm -type f -name '*.node' -delete
     find bindings/python/python/offprint -maxdepth 1 -type f \
       \( -name '_native*.so' -o -name '_native*.dylib' -o -name '_native*.pyd' \) \
       -delete
@@ -179,13 +178,9 @@ node-package-check:
     set -euo pipefail
     workspace="$(pwd)"
     package_tmp="$(mktemp -d)"
-    platform_addon=""
     cd bindings/node
     cleanup() {
       node "$workspace/bindings/node/scripts/package-license.mjs" clean
-      if [[ -n "$platform_addon" ]]; then
-        rm -f "$workspace/bindings/node/$platform_addon"
-      fi
       rm -rf "$package_tmp"
     }
     trap cleanup EXIT
@@ -205,31 +200,22 @@ node-package-check:
       process.stdout.write(suffix);
     ')"
     root_addon="offprint-native.$suffix.node"
-    platform_addon="npm/$suffix/$root_addon"
     test -f "$root_addon"
-    cp "$root_addon" "$platform_addon"
-    cmp "$root_addon" "$platform_addon"
     if [[ "$(uname -s)" == "Darwin" ]]; then
       codesign --verify "$root_addon"
-      codesign --verify "$platform_addon"
     fi
     root_package="$package_tmp/$(
       npm pack --ignore-scripts --silent --pack-destination "$package_tmp"
     )"
-    platform_package="$package_tmp/$(
-      npm pack --ignore-scripts --silent \
-        --pack-destination "$package_tmp" "./npm/$suffix"
-    )"
     node test/package-contents.mjs \
-      "$root_package" "$platform_package" "$workspace/LICENSE"
+      "$root_package" "$workspace/LICENSE" "$root_addon"
     mkdir "$package_tmp/install"
     cd "$package_tmp/install"
     npm init --yes >/dev/null
-    npm install --ignore-scripts --no-audit --no-fund \
-      "$root_package" "$platform_package"
-    node -e "if (!require('@offprint/node').Offprint) process.exit(1)"
+    npm install --ignore-scripts --no-audit --no-fund "$root_package"
+    node -e "if (!require('offprint').Offprint) process.exit(1)"
     node --input-type=module -e \
-      "import { Offprint } from '@offprint/node'; if (!Offprint) process.exit(1)"
+      "import { Offprint } from 'offprint'; if (!Offprint) process.exit(1)"
     cp "$workspace/bindings/node/test/package-smoke.mjs" smoke.mjs
     node smoke.mjs
 

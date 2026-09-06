@@ -1,13 +1,17 @@
-name: Release
+name: Publish
 
 on:
   push:
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+*"
+      - "v[0-9]*.[0-9]*.[0-9]*"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
@@ -20,6 +24,10 @@ jobs:
     name: Validate release candidate
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    outputs:
+      npm_tag: ${{ steps.release.outputs.npm_tag }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -42,6 +50,27 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
+
+      - name: Resolve release metadata
+        id: release
+        shell: bash
+        run: |
+          version="$(node -p "require('./bindings/node/package.json').version")"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            test "$GITHUB_REF_NAME" = "v$version"
+          fi
+          if [[ "$version" == *-* ]]; then
+            npm_tag=next
+            prerelease=true
+          else
+            npm_tag=latest
+            prerelease=false
+          fi
+          {
+            echo "version=$version"
+            echo "npm_tag=$npm_tag"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
@@ -502,11 +531,7 @@ jobs:
         working-directory: bindings/node
         run: bunx napi build --platform --release --target ${{ matrix.target }} --no-js --dts native.d.ts
 
-      - name: Assemble platform package
-        working-directory: bindings/node
-        run: bunx napi artifacts --output-dir .
-
-      - name: Capture through root and platform packages
+      - name: Capture through packed npm package
         shell: bash
         working-directory: bindings/node
         run: |
@@ -515,18 +540,15 @@ jobs:
           mkdir "$package_dir" "$install_dir"
           node scripts/package-license.mjs sync
           trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
-          npm pack --ignore-scripts "npm/${{ matrix.package }}" \
-            --pack-destination "$package_dir"
           npm pack --ignore-scripts --pack-destination "$package_dir"
-          root_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-node-[0-9]*.tgz' -print -quit)"
-          platform_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-node-${{ matrix.package }}-*.tgz' -print -quit)"
+          root_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-[0-9]*.tgz' -print -quit)"
           test -n "$root_package"
-          test -n "$platform_package"
           node test/package-contents.mjs \
-            "$root_package" "$platform_package" "$GITHUB_WORKSPACE/LICENSE"
+            "$root_package" "$GITHUB_WORKSPACE/LICENSE" \
+            "offprint-native.${{ matrix.package }}.node"
           cd "$install_dir"
           npm init --yes >/dev/null
-          npm install --ignore-scripts --no-audit --no-fund "$root_package" "$platform_package"
+          npm install --ignore-scripts --no-audit --no-fund "$root_package"
           cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
           node smoke.mjs
           cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-child.mjs" lifecycle-child.mjs
@@ -540,7 +562,81 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: node-${{ matrix.target }}
-          path: bindings/node/npm/${{ matrix.package }}/*.node
+          path: bindings/node/offprint-native.${{ matrix.package }}.node
+          if-no-files-found: error
+
+  node-package:
+    name: Assemble npm package
+    needs: node
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install Chromium runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Download native addons
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          pattern: node-*
+          path: bindings/node
+          merge-multiple: true
+
+      - name: Pack and verify npm package
+        shell: bash
+        working-directory: bindings/node
+        run: |
+          test "$(find . -maxdepth 1 -name 'offprint-native.*.node' -type f | wc -l | tr -d ' ')" = "4"
+          package_dir="$RUNNER_TEMP/offprint-node-package"
+          install_dir="$RUNNER_TEMP/offprint-node-install"
+          mkdir "$package_dir" "$install_dir"
+          node scripts/package-license.mjs sync
+          trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
+          npm pack --ignore-scripts --pack-destination "$package_dir"
+          package="$(find "$package_dir" -maxdepth 1 -name 'offprint-[0-9]*.tgz' -print -quit)"
+          test -n "$package"
+          node test/package-contents.mjs \
+            "$package" "$GITHUB_WORKSPACE/LICENSE" \
+            offprint-native.darwin-arm64.node \
+            offprint-native.darwin-x64.node \
+            offprint-native.linux-x64-gnu.node \
+            offprint-native.win32-x64-msvc.node
+          cd "$install_dir"
+          npm init --yes >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund "$package"
+          cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
+          node smoke.mjs
+          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-child.mjs" lifecycle-child.mjs
+          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-processes.mjs" lifecycle-processes.mjs
+          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-runner.mjs" lifecycle-runner.mjs
+          cp "$GITHUB_WORKSPACE/bindings/node/test/package-lifecycle.mjs" package-lifecycle.mjs
+          cp "$GITHUB_WORKSPACE/schemas/examples/capture-request.json" capture-request.json
+          node package-lifecycle.mjs
+
+      - name: Upload npm package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: node-package
+          path: ${{ runner.temp }}/offprint-node-package/offprint-*.tgz
+          retention-days: 1
           if-no-files-found: error
 
   python:
@@ -652,7 +748,7 @@ jobs:
       - fuzz
       - miri
       - native
-      - node
+      - node-package
       - python
       - repeated-capture
       - sanitizer
@@ -660,7 +756,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
-      contents: write
+      actions: read
+      artifact-metadata: write
+      contents: read
       id-token: write
       attestations: write
     steps:
@@ -713,10 +811,13 @@ jobs:
         with:
           subject-path: release/*
 
-      - name: Publish GitHub release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh release create "${GITHUB_REF_NAME}" release/* --verify-tag --generate-notes
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: release-artifacts
+          path: release/*
+          retention-days: 1
+          if-no-files-found: error
 
   publish-crates:
     name: Publish Rust crates
@@ -742,97 +843,54 @@ jobs:
         run: cargo publish --workspace --locked
 
   publish-node:
-    name: Publish Node.js packages
-    needs: supply-chain
+    name: Publish npm package
+    needs: [supply-chain, validate]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    environment: release
+    timeout-minutes: 10
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/offprint
     permissions:
+      actions: read
       contents: read
       id-token: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-
-      - name: Download native addons
+      - name: Download npm package
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
-          pattern: node-*
-          path: bindings/node/artifacts
-          merge-multiple: true
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
+          name: node-package
+          path: dist/npm
 
       - name: Configure npm
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
 
-      - name: Install Chromium runtime libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libasound2t64 \
-            libatk-bridge2.0-0 \
-            libgbm1 \
-            libgtk-3-0 \
-            libnss3 \
-            libxkbcommon0
-
-      - name: Assemble platform packages
-        working-directory: bindings/node
-        run: |
-          bun install --frozen-lockfile
-          bunx napi artifacts
-          test "$(find npm -name '*.node' -type f | wc -l | tr -d ' ')" = "4"
-
-      - name: Capture through assembled root and platform packages
-        working-directory: bindings/node
-        run: |
-          package_dir="$RUNNER_TEMP/offprint-node-package"
-          install_dir="$RUNNER_TEMP/offprint-node-install"
-          mkdir "$package_dir" "$install_dir"
-          node scripts/package-license.mjs sync
-          trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
-          npm pack --ignore-scripts npm/linux-x64-gnu \
-            --pack-destination "$package_dir"
-          npm pack --ignore-scripts --pack-destination "$package_dir"
-          root_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-node-[0-9]*.tgz' -print -quit)"
-          platform_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-node-linux-x64-gnu-*.tgz' -print -quit)"
-          test -n "$root_package"
-          test -n "$platform_package"
-          node test/package-contents.mjs \
-            "$root_package" "$platform_package" "$GITHUB_WORKSPACE/LICENSE"
-          cd "$install_dir"
-          npm init --yes >/dev/null
-          npm install --ignore-scripts --no-audit --no-fund "$root_package" "$platform_package"
-          cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
-          node smoke.mjs
-
-      - name: Publish platform packages and root package
-        working-directory: bindings/node
+      - name: Publish with npm trusted publishing
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          NPM_CONFIG_IGNORE_SCRIPTS: "false"
-          NPM_CONFIG_PROVENANCE: "true"
+          NPM_TAG: ${{ needs.validate.outputs.npm_tag }}
         run: |
-          npm publish --access public --provenance
+          packages=(dist/npm/offprint-*.tgz)
+          test "${#packages[@]}" = "1"
+          npx --yes npm@11.12.1 publish \
+            --access public \
+            --tag "$NPM_TAG" \
+            "${packages[0]}"
 
   publish-python:
     name: Publish Python distributions
-    needs: supply-chain
+    needs: [supply-chain, validate]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
-    environment: release
+    environment:
+      name: pypi
+      url: https://pypi.org/project/offprint/
     permissions:
+      actions: read
       contents: read
       id-token: write
     steps:
@@ -845,6 +903,9 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
+        with:
+          enable-cache: false
+          version: "0.12.9"
 
       - name: Check distribution set
         run: |
@@ -852,4 +913,171 @@ jobs:
           test "$(find dist -name '*.tar.gz' -type f | wc -l | tr -d ' ')" = "1"
 
       - name: Publish with PyPI trusted publishing
-        run: uv publish --trusted-publishing always dist/*
+        run: >-
+          uv publish
+          --check-url https://pypi.org/simple
+          --trusted-publishing always
+          dist/offprint-*.whl
+          dist/offprint-*.tar.gz
+
+  verify-node:
+    name: Verify npm release
+    needs: [publish-node, validate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: 24
+          package-manager-cache: false
+
+      - name: Install Chromium runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Install and capture through npm release
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          NPM_TAG: ${{ needs.validate.outputs.npm_tag }}
+          OFFPRINT_CACHE_DIR: ${{ runner.temp }}/offprint-npm-managed-cache
+        run: |
+          for attempt in {1..12}; do
+            published="$(npx --yes npm@11.12.1 view "offprint@$VERSION" version 2>/dev/null || true)"
+            if [[ "$published" == "$VERSION" ]]; then
+              break
+            fi
+            if [[ "$attempt" == 12 ]]; then
+              exit 1
+            fi
+            sleep 5
+          done
+          test "$(npx --yes npm@11.12.1 view "offprint@$NPM_TAG" version)" = "$VERSION"
+          install_dir="$RUNNER_TEMP/offprint-npm-install"
+          mkdir "$install_dir"
+          cd "$install_dir"
+          npm init --yes >/dev/null
+          npx --yes npm@11.12.1 install \
+            --ignore-scripts \
+            --no-audit \
+            --no-fund \
+            "offprint@$VERSION"
+          cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
+          node smoke.mjs
+
+  verify-python:
+    name: Verify PyPI release
+    needs: [publish-python, validate]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
+        with:
+          enable-cache: false
+          python-version: "3.14"
+          version: "0.12.9"
+
+      - name: Install Chromium runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2t64 \
+            libatk-bridge2.0-0 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnss3 \
+            libxkbcommon0
+
+      - name: Install and capture through PyPI release
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          OFFPRINT_CACHE_DIR: ${{ runner.temp }}/offprint-pypi-managed-cache
+        run: |
+          uv venv --python 3.14 release-venv
+          for attempt in {1..12}; do
+            if uv pip install \
+              --python release-venv/bin/python \
+              --no-cache \
+              --only-binary offprint \
+              --index-url https://pypi.org/simple \
+              "offprint==$VERSION"
+            then
+              break
+            fi
+            if [[ "$attempt" == 12 ]]; then
+              exit 1
+            fi
+            sleep 5
+          done
+          EXPECTED_VERSION="$VERSION" release-venv/bin/python - <<'PY'
+          from importlib.metadata import version
+          import os
+
+          assert version("offprint") == os.environ["EXPECTED_VERSION"]
+          PY
+          release-venv/bin/python bindings/python/tests/wheel_smoke.py
+          release-venv/bin/python bindings/python/tests/package_lifecycle.py
+
+  release-notes:
+    name: Publish GitHub release
+    needs:
+      - publish-crates
+      - supply-chain
+      - validate
+      - verify-node
+      - verify-python
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: release-artifacts
+          path: release
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+        run: |
+          release_args=()
+          if [[ "$PRERELEASE" == "true" ]]; then
+            release_args+=(--prerelease)
+          fi
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release/* --clobber
+            gh release edit "$GITHUB_REF_NAME" --verify-tag "${release_args[@]}"
+          else
+            gh release create "$GITHUB_REF_NAME" release/* \
+              --generate-notes \
+              --title "Offprint $GITHUB_REF_NAME" \
+              --verify-tag \
+              "${release_args[@]}"
+          fi

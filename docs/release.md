@@ -1,13 +1,16 @@
 # Release contract
 
-Offprint publishes Rust crates, native CLI archives, a root npm package with
-platform addon packages, and Python distributions from one signed version tag.
-The tag version must match `versions.toml`, the Cargo workspace, every npm
-package, and Python package metadata.
+Offprint publishes Rust crates, native CLI archives, one npm package with four
+native addons, and Python distributions from one signed version tag. The tag
+version must match `versions.toml`, the Cargo workspace, npm package, and Python
+package metadata.
 
 The version gate also compares the pinned Rust toolchain, the Rust and
 TypeScript collector protocol declarations, and every managed-browser catalog
 revision and archive digest with `versions.toml`.
+
+Push `v<version>` to run [`.github/workflows/publish.yml`](../.github/workflows/publish.yml).
+The tag version must match the package metadata exactly.
 
 Run the local release gate before creating the tag:
 
@@ -43,6 +46,33 @@ Each native matrix job builds from the tagged checkout, verifies that
 browser in a fresh cache, then captures and offline-verifies a fixture through
 the extracted executable.
 
+## npm
+
+The `offprint` npm package contains the native addons for every supported
+target. The package loader selects the addon for the current operating system
+and CPU architecture.
+
+The [npm trusted publisher](https://docs.npmjs.com/trusted-publishers/)
+configuration names `publish.yml` and the `npm` GitHub environment. The
+publish job receives the packaged tarball from an unprivileged build job,
+requests an
+[OpenID Connect](https://docs.github.com/en/actions/reference/security/oidc)
+identity token, and publishes with npm 11.12.1. A fresh Linux installation
+captures a fixture from the public registry before the GitHub release is
+created. Prerelease versions use the `next` npm tag. Stable versions use
+`latest`.
+
+## PyPI
+
+The `offprint` Python distributions contain four ABI3 wheels and one source
+distribution. The
+[PyPI trusted publisher](https://docs.pypi.org/trusted-publishers/)
+configuration names `publish.yml` and the `pypi` GitHub environment. The
+publish job downloads the verified distributions and uses
+`uv publish --trusted-publishing always` with the PyPI index check. A fresh
+Python 3.14 environment installs the public wheel and runs the package
+lifecycle smoke tests.
+
 ## Release sequence
 
 1. Run `just release-check`.
@@ -53,8 +83,12 @@ the extracted executable.
    versions agree.
 5. Build the native matrix from the signed tag.
 6. Generate the dependency license report, checksums, SBOM, and provenance.
-7. Publish immutable artifacts.
-8. Install each published shape and capture the static fixture.
+7. Publish crates.io, npm, and PyPI packages.
+8. Install npm and PyPI packages from their public registries and capture the
+   static fixture.
+9. Publish the verified artifact set as the GitHub release.
+
+Versions with a prerelease suffix create a GitHub prerelease.
 
 The release gate requires all platform, browser, binding, dependency, Miri,
 fuzz, sanitizer, repeated-capture, package-capture, and offline-verification

@@ -144,7 +144,7 @@ records, defaults, errors, and artifact formats.
 | --- | --- |
 | CLI | [CLI guide](./docs/cli.md) |
 | Rust | [Rust public API](./docs/public-api.md) |
-| Node.js | [`@offprint/node`](./bindings/node/README.md) |
+| Node.js | [`offprint`](./bindings/node/README.md) |
 | Python | [`offprint`](./bindings/python/README.md) |
 
 Long-running callers can share one `Offprint` service, start typed

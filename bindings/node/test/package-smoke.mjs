@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { Offprint } from "@offprint/node";
+import { Offprint } from "offprint";
 
 const directory = await mkdtemp(join(tmpdir(), "offprint-node-package-"));
 const server = createServer((request, response) => {

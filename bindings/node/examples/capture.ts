@@ -1,4 +1,4 @@
-import { Offprint } from "@offprint/node";
+import { Offprint } from "offprint";
 
 const offprint = new Offprint();
 

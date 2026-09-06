@@ -35,25 +35,15 @@ function loadNative() {
   const suffix = targetSuffix();
   const filename = `offprint-native.${suffix}.node`;
   const local = path.join(__dirname, filename);
-  const failures = [];
 
   try {
     return require(local);
   } catch (error) {
-    failures.push(`${filename}: ${error.message}`);
+    throw new Error(
+      `Failed to load the Offprint native addon ${filename}: ${error.message}`,
+      { cause: error },
+    );
   }
-
-  const packageName = `@offprint/node-${suffix}`;
-  try {
-    return require(packageName);
-  } catch (error) {
-    failures.push(`${packageName}: ${error.message}`);
-  }
-
-  const details = failures.map((failure) => `  ${failure}`).join("\n");
-  throw new Error(
-    `Failed to load the Offprint native addon for ${suffix}.\n${details}`,
-  );
 }
 
 module.exports = loadNative();

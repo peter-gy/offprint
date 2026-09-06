@@ -27,7 +27,7 @@ and accepted values.
 | Interface | Guide |
 | --- | --- |
 | Rust | [Rust public API](./public-api.md) |
-| Node.js | [`@offprint/node`](../bindings/node/README.md) |
+| Node.js | [`offprint`](../bindings/node/README.md) |
 | Python | [`offprint`](../bindings/python/README.md) |
 | All interfaces | [Feature and parity matrix](./feature-matrix.md) |
 
