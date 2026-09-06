@@ -1,0 +1,63 @@
+bindings/node/test/lifecycle-child.mjs
+  s_ba1a8ee0fd334c::t_3b2c379378eace 8
+justfile
+  s_ba1a8ee0fd334c::t_50e81aa374004d 215-216,218
+  s_ba1a8ee0fd334c::t_1c7733a98fffcd 211
+bindings/node/scripts/package-license.mjs
+  s_ba1a8ee0fd334c::t_0a16d9d799311b 1,9,13,18-27
+.github/workflows/publish.yml
+  s_ba1a8ee0fd334c::t_c983dbc441477c 534,544,551,565
+  s_ba1a8ee0fd334c::t_2c1bb796a3a52b 29,64,67,1048,1068-1073,1076,1081-1082
+  s_ba1a8ee0fd334c::t_38b29fcaa8b74f 69-73
+  s_ba1a8ee0fd334c::t_0c7f6bf2a83a02 568-609,611-615,622-641
+  s_ba1a8ee0fd334c::t_e94e665a0dadab 761
+  s_ba1a8ee0fd334c::t_c097d4e87fa3d8 1-27,30-63,65-66,68,74-533,535-543,545-546,549-550,552-564,566-567,642-750,752-758,762-813,821-845,848-849,854,856-858,861,882,898-899,902-903,906,909,937-939,941-952,958,972-973,979-981,985-989,992,994-996,1001,1003,1012
+  s_ba1a8ee0fd334c::t_aa74ed44e3a989 28,874
+  s_ba1a8ee0fd334c::t_3a6622124ab62d 610
+  s_ba1a8ee0fd334c::t_ed2a13cf065393 751,759-760,814-820
+  s_ba1a8ee0fd334c::t_c19f41fae28d67 956,969
+  s_ba1a8ee0fd334c::t_1c7733a98fffcd 547-548,616-621
+  s_ba1a8ee0fd334c::t_d49fb3b6364945 846-847,850-853,855,859-860,862-873,875-881,883-897,900-901,904-905,907-908,910-936,940,953-955,957,959-968,970-971,974-978,982-984,990-991,993,997-1000,1002,1004-1011,1013-1047,1049-1067,1074-1075,1077-1080,1083
+docs/release.md
+  s_ba1a8ee0fd334c::t_ca89a1d8f5f4a8 55-58,68-71
+  s_ba1a8ee0fd334c::t_c53471bf7d9a75 59-61,72-73
+  s_ba1a8ee0fd334c::t_2c1bb796a3a52b 62-63,90-91
+  s_ba1a8ee0fd334c::t_0b0d3d22ac9f97 3-6,12-14,49-54,64-67,74-75,86-89
+bindings/node/native.cjs
+  s_ba1a8ee0fd334c::t_0a16d9d799311b 42-45
+bindings/node/test/package-smoke.mjs
+  s_ba1a8ee0fd334c::t_3b2c379378eace 7
+bindings/node/README.md
+  s_ba1a8ee0fd334c::t_3b2c379378eace 1,3,46
+  s_ba1a8ee0fd334c::t_fff31eea07ff50 6-8
+  s_ba1a8ee0fd334c::t_1e5f57613b92a7 10-26
+README.md
+  s_ba1a8ee0fd334c::t_3b2c379378eace 147
+bindings/node/examples/capture.ts
+  s_ba1a8ee0fd334c::t_3b2c379378eace 1
+xtask/src/repository.rs
+  s_ba1a8ee0fd334c::t_aa0a3eab5629cc 3
+  s_ba1a8ee0fd334c::t_e4927065b6a7df 480-481,483-491
+bindings/node/test/package-contents.mjs
+  s_ba1a8ee0fd334c::t_1c7733a98fffcd 32-33,44-49
+bindings/node/package.json
+  s_ba1a8ee0fd334c::t_0a16d9d799311b 2,34,38,54
+docs/README.md
+  s_ba1a8ee0fd334c::t_3b2c379378eace 30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "f65a4896d64b0258e2a0f74d5c16df5c5ac1bed0",
+  "prompts": {},
+  "sessions": {
+    "s_ba1a8ee0fd334c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a076aa-aee9-7b63-a20e-eceb53cc9f2c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
