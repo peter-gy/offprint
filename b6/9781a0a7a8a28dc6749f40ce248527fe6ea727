@@ -1,0 +1,39 @@
+sdk/node/test/lifecycle.test.js
+  s_c15eeb5af092d4::t_256aa14bb2a96b 7
+sdk/node/test/lifecycle-processes.mjs
+  s_c15eeb5af092d4::t_c8b2a9364f27df 87-89
+  s_c15eeb5af092d4::t_56009014ab962e 12-15,41,68,81-86,90-93,98-110,126,128,147,153
+sdk/python/tests/test_lifecycle.py
+  s_c15eeb5af092d4::t_256aa14bb2a96b 9
+sdk/python/tests/test_process_tracking.py
+  s_c15eeb5af092d4::t_f2b51c7f323de6 48,52-70,75,79-82,84-95,97-106,108-117
+  s_c15eeb5af092d4::t_256aa14bb2a96b 1-47,49-51,71-74,76-78,83,96,107,118-160
+sdk/node/test/lifecycle-runner.mjs
+  s_c15eeb5af092d4::t_56009014ab962e 79
+.github/workflows/ci.yml
+  s_c15eeb5af092d4::t_38c37c6b4f296a 269-301
+sdk/python/tests/lifecycle_support.py
+  s_c15eeb5af092d4::t_56009014ab962e 18,27-30,62,69,116-138,142,168,174,177,188,207,209,302
+  s_c15eeb5af092d4::t_c8b2a9364f27df 155-167
+sdk/node/test/process-tracking.test.js
+  s_c15eeb5af092d4::t_7d19355928930c 92-93
+  s_c15eeb5af092d4::t_f2b51c7f323de6 48,53-60,66-67,69-71,75-81,83-91,94,96
+  s_c15eeb5af092d4::t_38c37c6b4f296a 72-74
+  s_c15eeb5af092d4::t_256aa14bb2a96b 1-47,49-52,61-65,68,82,95,97-170
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "b69781a0a7a8a28dc6749f40ce248527fe6ea727",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
