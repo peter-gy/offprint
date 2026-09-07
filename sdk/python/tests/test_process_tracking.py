@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import sys
 import threading
@@ -50,6 +51,8 @@ def test_observes_a_live_process_tree_after_a_long_command_line(
 ) -> None:
     monkeypatch.setenv("COLUMNS", "40")
     script = """
+import json
+import os
 import subprocess
 import sys
 
@@ -58,7 +61,7 @@ child = subprocess.Popen(
     stdin=subprocess.PIPE,
 )
 try:
-    print(child.pid, flush=True)
+    print(json.dumps({"parent": os.getpid(), "child": child.pid}), flush=True)
     sys.stdin.buffer.read(1)
 finally:
     child.stdin.close()
@@ -95,12 +98,14 @@ finally:
     reader.start()
     try:
         assert ready.wait(timeout=10), "Process did not report its child"
-        descendant_pid = int(lines[0])
+        reported = json.loads(lines[0])
+        parent_pid = reported["parent"]
+        descendant_pid = reported["child"]
         records = {record.pid: record for record in owned_processes(tmp_path)}
         assert process.pid in records
-        assert records[descendant_pid].parent_pid == process.pid
+        assert records[descendant_pid].parent_pid == parent_pid
         if sys.platform == "win32":
-            parent_creation = records[process.pid].creation_time
+            parent_creation = records[parent_pid].creation_time
             child_creation = records[descendant_pid].creation_time
             assert parent_creation and child_creation
             assert parent_creation <= child_creation
