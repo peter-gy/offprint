@@ -1,0 +1,19 @@
+sdk/python/tests/test_process_tracking.py
+  s_c15eeb5af092d4::t_a972ec4713f5aa 3,54-55,64,101-103,106,108
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "dc5c568f70b393fd5d71d38a94b5a3e1e1c4dc57",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
