@@ -25,40 +25,12 @@ Dependencies stay behind the crate that owns their behavior.
   them.
 - Browser, parser, foreign-function interface, archive, and protocol changes
   run focused security and boundary checks.
-- `cargo deny` checks advisories, licenses, registries, and Git sources.
+- `cargo deny` checks advisories, registries, and Git sources.
 - `cargo machete` checks unused Rust dependencies.
+- Package checks compile extracted source in a fresh Cargo target directory.
 - The pnpm workspace and Python lockfiles remain committed and install with frozen resolution.
 - Review package lifecycle scripts before enabling them in a development or
   release environment.
 
 The generated CDP layer keeps protocol-code generation out of the production
 runtime.
-
-## Distribution notices
-
-Generate notices after changing the Rust dependency graph:
-
-```console
-just licenses
-just licenses-check
-```
-
-[`cargo-about`](https://github.com/EmbarkStudios/cargo-about) 0.9.2 collects
-license texts from the locked Rust workspace. Install it with
-`cargo install --locked cargo-about --version 0.9.2`. Generation requires
-network access for the pinned upstream license files declared in
-`offprint-rs/about.toml`. Their SHA-256 digests are checked before use.
-
-`offprint-rs/about.hbs` supplies versioned source archive links.
-`offprint-rs/chromium/NOTICE` and `offprint-rs/xtask/NOTICE` preserve source
-attributions. `just licenses` combines them into `THIRD_PARTY_NOTICES.txt` and
-synchronizes the Python distribution copies. Package checks verify
-the notice bytes in native archives, npm tarballs, wheels, and source distributions.
-Extracted source packages compile in a fresh Cargo target directory, with build
-outputs owned by that verification run.
-
-The CSS parser and platform-directory dependencies include
-[MPL-2.0](https://www.mozilla.org/en-US/MPL/2.0/) code. MPL applies to its covered
-source files. Distributors must preserve those terms and tell recipients where
-to obtain the corresponding source. Mozilla's [distribution FAQ](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
-describes combining MPL code with separately licensed application code.

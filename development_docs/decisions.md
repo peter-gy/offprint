@@ -79,8 +79,6 @@ partial output, and package-shape failures often appear outside unit tests.
 - Rust toolchain and JavaScript and Python lockfiles are pinned.
 - Release packages install and perform a real capture before the GitHub release
   is created.
-- Original project code uses MIT. Distributed packages carry dependency
-  notices and versioned source links under the recorded provenance.
 
 **Consequence:** Hermetic fixtures gate releases. Live corpora remain
 exploratory, and registry packages must complete capture after installation.

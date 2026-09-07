@@ -45,7 +45,7 @@ User-facing behavior and runnable capture workflows live in
 - [Testing](./testing.md)
 - [Dependency policy](./dependencies.md)
 - [Performance evidence](./performance.md)
-- [Source and license provenance](./provenance.md)
+- [Acknowledgements and source inputs](./provenance.md)
 - [Architecture decisions](./decisions.md)
 - [Release process](./release.md)
 - [Review checklist](./review.md)
