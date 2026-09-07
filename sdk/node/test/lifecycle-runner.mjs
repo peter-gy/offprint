@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 import { ownedProcesses, ownedProfiles, waitForLifecycleCleanup } from "./lifecycle-processes.mjs";
 
-const delay = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
+const delay = (duration) => new Promise((resolve) => setTimeout(resolve, duration).unref());
 
 async function pathExists(path) {
   try {

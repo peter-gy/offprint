@@ -18,6 +18,7 @@ async function windowsProcesses() {
       encoding: "utf8",
       maxBuffer: 16 * 1024 * 1024,
       windowsHide: true,
+      timeout: 15_000,
     },
   );
   if (!stdout.trim()) {
@@ -38,7 +39,9 @@ async function windowsProcesses() {
 }
 
 async function unixProcesses() {
-  const { stdout } = await execFileAsync("ps", ["-axww", "-o", "pid=,ppid=,command="]);
+  const { stdout } = await execFileAsync("ps", ["-axww", "-o", "pid=,ppid=,command="], {
+    timeout: 15_000,
+  });
   return stdout
     .split("\n")
     .map((line) => line.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/))

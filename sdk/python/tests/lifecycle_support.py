@@ -39,6 +39,7 @@ def _windows_processes() -> list[ProcessRecord]:
         capture_output=True,
         text=True,
         encoding="utf-8",
+        timeout=15,
     )
     if not result.stdout.strip():
         return []
@@ -68,6 +69,7 @@ def _windows_processes() -> list[ProcessRecord]:
 def _unix_processes() -> list[ProcessRecord]:
     result = subprocess.run(
         ["ps", "-axww", "-o", "pid=,ppid=,command="],
+        timeout=15,
         check=True,
         capture_output=True,
         text=True,
