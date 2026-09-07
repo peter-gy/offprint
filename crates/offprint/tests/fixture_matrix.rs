@@ -144,6 +144,112 @@ async fn external_stylesheet_resources_resolve_from_stylesheet_url() -> TestResu
 
 #[tokio::test]
 #[ignore = "requires a locally installed compatible Chromium browser"]
+async fn stylesheet_media_and_disabled_state_survive_capture() -> TestResult {
+    let server = FixtureServer::start().await?;
+    let cross_origin = FixtureServer::start().await?;
+    cross_origin
+        .register(
+            "/print.css",
+            response("text/css", "#cross{color:rgb(90,100,110)}"),
+        )
+        .await?;
+    cross_origin
+        .register(
+            "/disabled.css",
+            response("text/css", "#cross{color:red!important}"),
+        )
+        .await?;
+    server
+        .register(
+            "/print.css",
+            response("text/css", "#media{color:rgb(80,90,100)}"),
+        )
+        .await?;
+    server
+        .register(
+            "/disabled.css",
+            response("text/css", "#media{color:red!important}"),
+        )
+        .await?;
+    server
+        .register(
+            "/",
+            FixtureResponse::html(
+                r#"<!doctype html><html><head>
+      <style>#media{color:rgb(10,20,30)}#cross{color:rgb(20,30,40)}</style>
+      <link id="cross-print" rel="stylesheet" href="CROSS_PRINT">
+      <link id="cross-disabled" rel="stylesheet" href="CROSS_DISABLED">
+      <link rel="stylesheet" media="print" href="/print.css">
+      <link id="disabled" rel="stylesheet" href="/disabled.css">
+      <style id="inline-disabled">#media{color:green!important}</style>
+      </head><body><p id="media">Stylesheet media</p><p id="cross">Cross-origin stylesheet</p>
+      <script>addEventListener('load', () => {
+        document.getElementById('cross-print').sheet.media.mediaText = 'print';
+        document.getElementById('cross-disabled').sheet.disabled = true;
+        document.getElementById('disabled').sheet.disabled = true;
+        document.getElementById('inline-disabled').sheet.disabled = true;
+      });</script></body></html>"#
+                    .replace("CROSS_PRINT", cross_origin.url("/print.css")?.as_str())
+                    .replace(
+                        "CROSS_DISABLED",
+                        cross_origin.url("/disabled.css")?.as_str(),
+                    ),
+            ),
+        )
+        .await?;
+    let offprint = Offprint::builder().build()?;
+    let captured = capture_bytes(&offprint, server.url("/")?, NetworkPolicy::Standard).await?;
+    assert!(
+        captured
+            .result
+            .warnings
+            .iter()
+            .any(|warning| warning.code.as_str() == "offprint.cssom.unreadable")
+    );
+    let directory = tempfile::tempdir()?;
+    let artifact = directory.path().join("media.html");
+    std::fs::write(&artifact, &captured.content)?;
+    offprint.close().await?;
+    server.close().await;
+    cross_origin.close().await;
+    let executable = ChromiumDiscovery::new()
+        .discover()
+        .await
+        .selected
+        .and_then(|browser| browser.executable_path)
+        .ok_or_else(|| std::io::Error::other("no browser"))?;
+    let process = ChromiumProcess::launch(ChromiumLaunchOptions::new(executable)).await?;
+    let page = process.new_page(&BrowserEnvironment::default()).await?;
+    let url = Url::from_file_path(&artifact)
+        .map_err(|()| std::io::Error::other("invalid artifact URL"))?;
+    let mut colors = Vec::new();
+    for media in [
+        offprint::ports::RenderingMedia::Screen,
+        offprint::ports::RenderingMedia::Print,
+    ] {
+        let observation = page
+            .verify_offline_url(&url, Duration::from_secs(10), media)
+            .await?;
+        assert!(observation.stable);
+        colors.push(
+            page.evaluate("({local:getComputedStyle(document.getElementById('media')).color,cross:getComputedStyle(document.getElementById('cross')).color})")
+                .await?,
+        );
+    }
+    page.close().await?;
+    process.close().await?;
+    assert_eq!(
+        colors,
+        vec![
+            serde_json::json!({"local":"rgb(10, 20, 30)","cross":"rgb(20, 30, 40)"}),
+            serde_json::json!({"local":"rgb(80, 90, 100)","cross":"rgb(90, 100, 110)"})
+        ]
+    );
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "requires a locally installed compatible Chromium browser"]
 async fn repeated_missing_resource_loads_stop_after_the_first_batch() -> TestResult {
     let server = FixtureServer::start().await?;
     server

@@ -169,6 +169,15 @@ impl fmt::Debug for LoadedResource {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+/// CSS media used while reopening and verifying an artifact.
+pub enum RenderingMedia {
+    /// Interactive screen rendering.
+    Screen,
+    /// Paged rendering with every image loaded before printing.
+    Print,
+}
+
 #[derive(Clone, Debug)]
 /// Browser evidence from a denied-network artifact reopen.
 pub struct OfflineBrowserObservation {
@@ -307,6 +316,7 @@ pub trait PageSession: fmt::Debug + Send + Sync {
         &self,
         url: &Url,
         deadline: std::time::Duration,
+        media: RenderingMedia,
     ) -> Result<OfflineBrowserObservation>;
 
     /// Resolves printable links against `source_url` and renders a bounded PDF.

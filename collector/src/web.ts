@@ -17,6 +17,8 @@ const cssStyleSheetPrototype =
   typeof CSSStyleSheet === "undefined" ? undefined : CSSStyleSheet.prototype;
 const styleSheetPrototype =
   typeof StyleSheet === "undefined" ? undefined : StyleSheet.prototype;
+const mediaListPrototype =
+  typeof MediaList === "undefined" ? undefined : MediaList.prototype;
 const cssRulePrototype =
   typeof CSSRule === "undefined" ? undefined : CSSRule.prototype;
 const cssStyleRulePrototype =
@@ -143,6 +145,24 @@ const getStyleSheetHref = captureGetter<StyleSheet, string | null>(
   "href",
   (sheet) => sheet.href,
 );
+export const styleSheetDisabled = captureGetter<StyleSheet, boolean>(
+  styleSheetPrototype,
+  "disabled",
+  (sheet) => sheet.disabled,
+);
+const getStyleSheetMedia = captureGetter<StyleSheet, MediaList>(
+  styleSheetPrototype,
+  "media",
+  (sheet) => sheet.media,
+);
+const getMediaText = captureGetter<MediaList, string>(
+  mediaListPrototype,
+  "mediaText",
+  (media) => media.mediaText,
+);
+export function styleSheetMedia(sheet: CSSStyleSheet): string {
+  return getMediaText(getStyleSheetMedia(sheet));
+}
 const getRuleType = captureGetter<CSSRule, number>(
   cssRulePrototype,
   "type",

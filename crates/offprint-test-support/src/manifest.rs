@@ -1,138 +1,9 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+mod model;
 
-pub const FIXTURE_MANIFEST_SCHEMA_VERSION: u32 = 1;
-
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FixtureManifest {
-    pub schema_version: u32,
-    pub fixtures: Vec<FixtureDefinition>,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FixtureDefinition {
-    pub id: String,
-    pub group: FixtureGroup,
-    pub summary: String,
-    pub required: bool,
-    pub capabilities: Vec<FixtureCapability>,
-    pub expectations: Vec<FixtureExpectation>,
-    pub runner: FixtureRunner,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub variants: Vec<String>,
-}
-
-#[derive(Clone, Debug, Deserialize, Eq, JsonSchema, Ord, PartialEq, PartialOrd, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FixtureRunner {
-    pub package: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub test_target: Option<String>,
-    pub filter: String,
-    pub ignored: bool,
-    pub serial: bool,
-}
-
-#[derive(
-    Clone, Copy, Debug, Deserialize, Eq, JsonSchema, Ord, PartialEq, PartialOrd, Serialize,
-)]
-#[serde(rename_all = "kebab-case")]
-pub enum FixtureGroup {
-    Artifact,
-    BrowserState,
-    Frames,
-    Lifecycle,
-    Network,
-    Resources,
-}
-
-#[derive(
-    Clone, Copy, Debug, Deserialize, Eq, JsonSchema, Ord, PartialEq, PartialOrd, Serialize,
-)]
-#[serde(rename_all = "kebab-case")]
-pub enum FixtureCapability {
-    AdoptedFontFace,
-    AdoptedStylesheet,
-    AdoptedStylesheetCascade,
-    AtomicReplace,
-    Authentication,
-    BlobResource,
-    BrowserCrash,
-    BrowserJobRecycling,
-    CacheVariation,
-    Canvas,
-    ClosedShadowRoot,
-    CliCaptureOutput,
-    CliInterrupt,
-    CliJsonOutput,
-    Compression,
-    ContentSecurityPolicy,
-    Cookies,
-    CrossOriginFrame,
-    CssImportCycle,
-    CssImports,
-    DataResource,
-    DiagnosticRedaction,
-    DnsAddressPolicy,
-    DomMutationSettling,
-    EventSource,
-    ExplicitOutputConflict,
-    ExternalStylesheetResources,
-    FontLoading,
-    FormState,
-    FrameDetachment,
-    HeaderValidation,
-    LazyImages,
-    MalformedDomNesting,
-    MissingResourceDeduplication,
-    MultipleOrigins,
-    NavigationTimeout,
-    NetworkIdleDeadline,
-    OfflineReopen,
-    OpenShadowRoot,
-    OptimizationPolicy,
-    OversizedPayload,
-    PartialResponse,
-    PdfOutput,
-    PermanentNetworkActivity,
-    Redirects,
-    ReferrerSensitiveResponse,
-    RenderedViewState,
-    ResponsiveImages,
-    SameOriginFrame,
-    SandboxedFrame,
-    ScriptRenderedDocument,
-    ServiceWorker,
-    SelectionScope,
-    SlowResponse,
-    SrcdocFrame,
-    StageCancellation,
-    StaticArticle,
-    SvgResourceGraph,
-    TaintedCanvas,
-    VideoPoster,
-    WebGlCanvas,
-    WebSocket,
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum FixtureExpectation {
-    ArtifactStateRoundTrips,
-    CaptureSucceeds,
-    CommittedPathReported,
-    DestinationUnchanged,
-    EveryResourceHasOutcome,
-    ProcessRecovers,
-    ProcessRecycles,
-    RepresentationVerified,
-    SecretsRedacted,
-    TypedFailure,
-    VisibleOutputPreserved,
-    ZeroExternalRequests,
-}
+pub use model::{
+    FIXTURE_MANIFEST_SCHEMA_VERSION, FixtureCapability, FixtureDefinition, FixtureExpectation,
+    FixtureGroup, FixtureManifest, FixtureRunner,
+};
 
 #[must_use]
 pub fn fixture_manifest() -> FixtureManifest {
@@ -315,6 +186,13 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
                 FixtureExpectation::EveryResourceHasOutcome,
                 FixtureExpectation::ZeroExternalRequests,
             ],
+        ),
+        fixture(
+            "stylesheet-media-state",
+            FixtureGroup::Resources,
+            "Preserves stylesheet media and disabled state across screen and print rendering.",
+            &[FixtureCapability::ExternalStylesheetResources],
+            success(),
         ),
         fixture(
             "external-stylesheet-resources",
@@ -514,6 +392,17 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
             ],
         ),
         fixture(
+            "pdf-heading-pagination",
+            FixtureGroup::Artifact,
+            "Keeps a heading and its following content on the same PDF page.",
+            &[FixtureCapability::PdfPagination],
+            &[
+                FixtureExpectation::CaptureSucceeds,
+                FixtureExpectation::RepresentationVerified,
+                FixtureExpectation::HeadingWithContent,
+            ],
+        ),
+        fixture(
             "cli-pdf-output",
             FixtureGroup::Artifact,
             "Commits and verifies a PDF representation through the capture command.",
@@ -681,6 +570,12 @@ fn runner(id: &str) -> FixtureRunner {
             "adopted_stylesheet_reuses_the_document_font_face",
             true,
         ),
+        "stylesheet-media-state" => (
+            "offprint",
+            Some("fixture_matrix"),
+            "stylesheet_media_and_disabled_state_survive_capture",
+            true,
+        ),
         "external-stylesheet-resources" => (
             "offprint",
             Some("fixture_matrix"),
@@ -799,6 +694,12 @@ fn runner(id: &str) -> FixtureRunner {
             "offprint-cli",
             None,
             "runner::tests::interrupted_capture_preserves_the_existing_destination_and_redacts_progress",
+            true,
+        ),
+        "pdf-heading-pagination" => (
+            "offprint",
+            Some("artifact_exports"),
+            "pdf_keeps_heading_with_following_content",
             true,
         ),
         "cli-pdf-output" => (

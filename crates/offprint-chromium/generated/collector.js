@@ -80,7 +80,7 @@
   var cssBaseAttribute = "data-offprint-css-base";
   var freezeAttribute = "data-offprint-freeze";
   var freezeCss = "*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}";
-  var buildSha256 = "af7ea73dcc333022e9ee5624dc70cd1e9be0811f149fad58c43095c55339a122";
+  var buildSha256 = "6040a1612bfb0536743deb10f65e0e2d305086bc9db3b0a5bf3a6c8fcfd5d1ed";
 
   // src/primordials.ts
   var reflectApply = Reflect.apply;
@@ -502,6 +502,7 @@
   var cssRuleListPrototype = typeof CSSRuleList === "undefined" ? undefined : CSSRuleList.prototype;
   var cssStyleSheetPrototype = typeof CSSStyleSheet === "undefined" ? undefined : CSSStyleSheet.prototype;
   var styleSheetPrototype = typeof StyleSheet === "undefined" ? undefined : StyleSheet.prototype;
+  var mediaListPrototype = typeof MediaList === "undefined" ? undefined : MediaList.prototype;
   var cssRulePrototype = typeof CSSRule === "undefined" ? undefined : CSSRule.prototype;
   var cssStyleRulePrototype = typeof CSSStyleRule === "undefined" ? undefined : CSSStyleRule.prototype;
   var cssFontFaceRulePrototype = typeof CSSFontFaceRule === "undefined" ? undefined : CSSFontFaceRule.prototype;
@@ -539,6 +540,12 @@
   var getCssRules = captureGetter(cssStyleSheetPrototype, "cssRules", (sheet) => sheet.cssRules);
   var getStyleSheetOwner = captureGetter(styleSheetPrototype, "ownerNode", (sheet) => sheet.ownerNode);
   var getStyleSheetHref = captureGetter(styleSheetPrototype, "href", (sheet) => sheet.href);
+  var styleSheetDisabled = captureGetter(styleSheetPrototype, "disabled", (sheet) => sheet.disabled);
+  var getStyleSheetMedia = captureGetter(styleSheetPrototype, "media", (sheet) => sheet.media);
+  var getMediaText = captureGetter(mediaListPrototype, "mediaText", (media) => media.mediaText);
+  function styleSheetMedia(sheet) {
+    return getMediaText(getStyleSheetMedia(sheet));
+  }
   var getRuleType = captureGetter(cssRulePrototype, "type", (rule) => rule.type);
   var getRuleText = captureGetter(cssRulePrototype, "cssText", (rule) => rule.cssText);
   var getSelectorText = captureGetter(cssStyleRulePrototype, "selectorText", (rule) => rule.selectorText);
@@ -2274,7 +2281,7 @@
       }
       const style = createElement(documentFor(root), "style");
       setAttribute(style, "data-offprint-adopted", "");
-      markStyleBase(style, sheet);
+      markStyleState(style, sheet);
       setNodeTextContent(style, css);
       appendChild(cloneRoot, style);
     }
@@ -2292,23 +2299,29 @@
         continue;
       }
       const replacesStyleText = namespaceUri(ownerClone) === "http://www.w3.org/1999/xhtml" && localName(ownerClone) === "style";
+      markStyleState(ownerClone, sheet);
       const css = materializeCssRules(sheet, source, context, !replacesStyleText);
       if (css === undefined) {
         continue;
       }
       if (replacesStyleText) {
         setNodeTextContent(ownerClone, css);
-        markStyleBase(ownerClone, sheet);
       } else {
         const style = createElement(documentFor(source), "style");
         setAttribute(style, "data-offprint-cssom", "");
-        markStyleBase(style, sheet);
+        markStyleState(style, sheet);
         setNodeTextContent(style, css);
         replaceNode(ownerClone, style);
       }
     }
   }
-  function markStyleBase(element, sheet) {
+  function markStyleState(element, sheet) {
+    const media = styleSheetDisabled(sheet) ? "not all" : styleSheetMedia(sheet);
+    if (media) {
+      setAttribute(element, "media", media);
+    } else {
+      removeAttribute(element, "media");
+    }
     const href = styleSheetHref(sheet);
     if (href) {
       setAttribute(element, cssBaseAttribute, href);

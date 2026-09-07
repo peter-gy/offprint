@@ -36,6 +36,7 @@ struct OwnershipCounts {
     pages: AtomicUsize,
     bounded_frame_queries: AtomicUsize,
     freeze_entries: AtomicUsize,
+    verification_media: Mutex<Vec<offprint::ports::RenderingMedia>>,
     page_closes: AtomicUsize,
     context_closes: AtomicUsize,
     lease_closes: AtomicUsize,
@@ -534,7 +535,13 @@ impl PageSession for FixturePage {
         &self,
         _url: &Url,
         _deadline: Duration,
+        media: offprint::ports::RenderingMedia,
     ) -> Result<OfflineBrowserObservation> {
+        self.counts
+            .verification_media
+            .lock()
+            .map_err(lock_error)?
+            .push(media);
         let attempted_urls = if self.deny_network && self.verification_attempts_network {
             vec!["https://blocked.example/asset.css?token=secret".to_owned()]
         } else {
@@ -1082,5 +1089,51 @@ async fn crawl_resume_preserves_breadth_first_pending_order() -> TestResult {
     assert_eq!(resumed.resumed, 4);
     assert_owner_counts(&counts, 4, 0);
     offprint.close().await?;
+    Ok(())
+}
+
+#[tokio::test]
+async fn mixed_pdf_export_verifies_the_html_source_in_screen_media() -> TestResult {
+    let (backend, counts) = FixtureBackend::new(true);
+    let offprint = Offprint::builder().browser_backend(backend).build()?;
+    let capture = offprint
+        .captures()
+        .start(capture_request()?)
+        .await?
+        .result()
+        .await?;
+    let CaptureArtifact::Bytes { content, .. } = capture.artifact else {
+        return Err("expected in-memory source capture".into());
+    };
+    let directory = tempfile::tempdir()?;
+    let output = directory.path().join("mixed-formats");
+    let result = offprint
+        .artifacts()
+        .export(
+            offprint::ArtifactSource::Bytes(content),
+            offprint::ExportRequest {
+                schema_version: offprint::PUBLIC_SCHEMA_VERSION,
+                output_directory: PortablePath::from_path_buf(output.clone())?,
+                base_name: "capture".to_owned(),
+                formats: vec![
+                    offprint::FormatSpec::Pdf(offprint::PdfOptions::default()),
+                    offprint::FormatSpec::Zip,
+                ],
+                conflict: ConflictPolicy::Fail,
+            },
+        )
+        .await;
+
+    assert_eq!(
+        result.err().map(|error| error.code.as_str().to_owned()),
+        Some("offprint.verification.network".to_owned())
+    );
+    assert_eq!(
+        *counts.verification_media.lock().map_err(lock_error)?,
+        vec![offprint::ports::RenderingMedia::Screen]
+    );
+    assert!(!output.exists());
+    offprint.close().await?;
+    assert_owner_counts(&counts, 2, 1);
     Ok(())
 }

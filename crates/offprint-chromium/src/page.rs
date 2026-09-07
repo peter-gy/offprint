@@ -17,9 +17,9 @@ use offprint_browser::{
     ObservedFrame, OfflineBrowserObservation, PageSession, ReadinessObservation, VisualFallback,
 };
 use offprint_model::{
-    CaptureCredentials, CaptureId, CookieSameSite, ErrorStage, FrameId, LazyLoadPolicy,
-    Milliseconds, NetworkPolicy, OffprintError, ReadinessMode, ReadinessPolicy, RequestHeader,
-    Result,
+    BrowserEnvironment, CaptureCredentials, CaptureId, CookieSameSite, ErrorStage, FrameId,
+    LazyLoadPolicy, Milliseconds, NetworkPolicy, OffprintError, ReadinessMode, ReadinessPolicy,
+    RequestHeader, Result,
 };
 use serde_json::{Value, json};
 use tokio::sync::Mutex;
@@ -49,6 +49,7 @@ const MUTATION_QUIET_TIMEOUT_MILLISECONDS: u64 = 5_000;
 #[derive(Debug)]
 pub struct ChromiumPage {
     client: CdpClient,
+    environment: BrowserEnvironment,
     browser_context_id: String,
     session_id: String,
     sessions: SessionRegistry,
@@ -635,7 +636,7 @@ impl ChromiumPage {
         prefer_css_page_size: bool,
         maximum_bytes: u64,
     ) -> Result<Vec<u8>> {
-        self.evaluate(&crate::pdf::prepare_pdf_links_expression(source_url))
+        self.evaluate(&crate::pdf::prepare_pdf_document_expression(source_url))
             .await?;
         crate::pdf::print_to_pdf(
             self.client.clone(),
@@ -754,8 +755,9 @@ impl PageSession for ChromiumPage {
         &self,
         url: &Url,
         deadline: Duration,
+        media: offprint_browser::RenderingMedia,
     ) -> Result<OfflineBrowserObservation> {
-        ChromiumPage::verify_offline_url(self, url, deadline).await
+        ChromiumPage::verify_offline_url(self, url, deadline, media).await
     }
 
     async fn print_to_pdf(

@@ -218,7 +218,7 @@ impl ArtifactService {
             () = cancellation.cancelled() => Err(operation_cancelled_error()),
             observation = verifier
                 .page()?
-                .verify_offline_url(&url, std::time::Duration::from_secs(120)) => observation,
+                .verify_offline_url(&url, std::time::Duration::from_secs(120), offprint_browser::RenderingMedia::Screen) => observation,
         };
         let close = verifier.close().await;
         let observation = match (observation, close) {

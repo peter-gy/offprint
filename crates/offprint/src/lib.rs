@@ -80,7 +80,7 @@ pub mod ports {
         BrowserContext, BrowserContextRequest, BrowserLease, FrameObservation,
         FrameOwnerObservation, LoadedResource, NavigationRedirect, NavigationResult, NetworkGuard,
         ObservationLimits, ObservationViewport, ObservationWarning, ObservedFrame,
-        OfflineBrowserObservation, PageSession, ReadinessObservation,
+        OfflineBrowserObservation, PageSession, ReadinessObservation, RenderingMedia,
         ResourceObservationLimits, SelectionObservation, VisualFallback, VisualFallbackKind,
     };
 }

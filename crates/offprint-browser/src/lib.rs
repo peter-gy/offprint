@@ -15,7 +15,7 @@ pub use backend::{
     AttachedFrame, BodyStream, BrowserAcquireRequest, BrowserBackend, BrowserContext,
     BrowserContextRequest, BrowserLease, LoadedResource, NavigationRedirect, NavigationResult,
     ObservationLimits, ObservedFrame, OfflineBrowserObservation, PageSession, ReadinessObservation,
-    ResourceObservationLimits,
+    RenderingMedia, ResourceObservationLimits,
 };
 pub use network::{AddressClass, NetworkGuard};
 pub use observation::{

@@ -51,9 +51,11 @@ pub(super) async fn verify(
     .map_err(|error| error.with_detail("capturePhase", "offline-verification"))?;
     let observation = cancellable(
         cancellation,
-        verifier
-            .page()?
-            .verify_offline_url(&url, Duration::from(request.limits.duration)),
+        verifier.page()?.verify_offline_url(
+            &url,
+            Duration::from(request.limits.duration),
+            offprint_browser::RenderingMedia::Screen,
+        ),
     )
     .await;
     let close = verifier.close().await;

@@ -287,3 +287,53 @@ fn offprint_pdf_verifier_requires_the_xmp_packet() -> TestResult {
     assert!(verify_offprint_pdf(&stripped).is_err());
     Ok(())
 }
+
+#[test]
+fn pdf_preserves_repeated_warning_provenance_beyond_source_metadata_list_limits() -> TestResult {
+    let html = b"<!doctype html><html lang=\"en\"><title>Resource warnings</title></html>";
+    let mut manifest = manifest()?;
+    manifest.warning_codes = vec!["offprint.resource.load".to_owned(); 600];
+    manifest
+        .warning_codes
+        .insert(0, "offprint.cssom.unreadable".to_owned());
+    manifest
+        .warning_codes
+        .push("offprint.resource.scheme".to_owned());
+    let encoded = embed_pdf_metadata(
+        &tagged_pdf()?,
+        html,
+        &manifest,
+        ContentDigest::sha256(html),
+        4 * 1024 * 1024,
+    )?;
+
+    verify_offprint_pdf(&encoded)?;
+    let document = load_pdf(&encoded, ErrorStage::Verification)?;
+    let metadata = super::verify::verify_metadata(&document)?;
+    assert_eq!(metadata.warning_codes, manifest.warning_codes);
+    Ok(())
+}
+
+#[test]
+fn pdf_warning_provenance_has_independent_entry_and_byte_limits() -> TestResult {
+    let html = b"<!doctype html><title>Warning budgets</title>";
+    for warnings in [
+        vec!["offprint.resource.load".to_owned(); 16_385],
+        vec!["w".repeat(1024); 1025],
+    ] {
+        let mut manifest = manifest()?;
+        manifest.warning_codes = warnings;
+        let result = embed_pdf_metadata(
+            &tagged_pdf()?,
+            html,
+            &manifest,
+            ContentDigest::sha256(html),
+            4 * 1024 * 1024,
+        );
+        assert_eq!(
+            result.err().map(|error| error.code.as_str().to_owned()),
+            Some("offprint.export.pdf_metadata".to_owned())
+        );
+    }
+    Ok(())
+}

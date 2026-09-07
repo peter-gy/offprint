@@ -9,6 +9,9 @@ use super::source::{
 };
 use crate::pdf::semantics::PdfSemantics;
 
+pub(super) const MAXIMUM_WARNING_CODES: usize = 16_384;
+const MAXIMUM_WARNING_BYTES: usize = 1024 * 1024;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct PdfMetadata {
     pub(super) source: SourceMetadata,
@@ -52,6 +55,7 @@ impl PdfMetadata {
         semantics: PdfSemantics,
         pdf_version: String,
     ) -> Result<Self> {
+        validate_warning_codes(&manifest.warning_codes, ErrorStage::Encoding)?;
         let metadata = Self {
             source,
             requested_url: manifest.source.requested_url.as_str().to_owned(),
@@ -84,6 +88,7 @@ impl PdfMetadata {
     }
 
     pub(super) fn validate(&self, stage: ErrorStage) -> Result<()> {
+        validate_warning_codes(&self.warning_codes, stage)?;
         let required = [
             self.source.title.as_str(),
             self.source.language.as_str(),
@@ -112,7 +117,6 @@ impl PdfMetadata {
             || !optional_field_is_valid(self.browser_revision.as_deref())
             || !list_is_valid(&self.source.authors)
             || !list_is_valid(&self.source.keywords)
-            || !list_is_valid(&self.warning_codes)
         {
             return Err(OffprintError::new(
                 "offprint.export.pdf_metadata",
@@ -243,6 +247,28 @@ pub(super) fn parse_boolean(value: &str) -> Option<bool> {
 
 fn joined(values: &[String]) -> Option<String> {
     (!values.is_empty()).then(|| values.join(", "))
+}
+
+fn validate_warning_codes(values: &[String], stage: ErrorStage) -> Result<()> {
+    let valid = values.len() <= MAXIMUM_WARNING_CODES
+        && values
+            .iter()
+            .try_fold(0usize, |total, value| {
+                if value.is_empty() || value.chars().count() > MAXIMUM_LIST_ITEM_CHARACTERS {
+                    return None;
+                }
+                let bytes = total.checked_add(value.len())?;
+                (bytes <= MAXIMUM_WARNING_BYTES).then_some(bytes)
+            })
+            .is_some();
+    if !valid {
+        return Err(OffprintError::new(
+            "offprint.export.pdf_metadata",
+            stage,
+            "PDF warning metadata contains an invalid code or exceeds its limits",
+        ));
+    }
+    Ok(())
 }
 
 fn list_is_valid(values: &[String]) -> bool {

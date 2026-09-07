@@ -156,11 +156,19 @@ impl PreparedArtifact {
         }
     }
 
-    pub(super) fn file_count(&self) -> usize {
+    /// Returns the number of files that delivery will create.
+    #[must_use]
+    pub fn file_count(&self) -> usize {
         match &self.payload {
             PreparedPayload::File(_) => 1,
             PreparedPayload::Directory { directory, .. } => directory.file_count(),
         }
+    }
+
+    /// Returns the aggregate byte size of the prepared payload.
+    #[must_use]
+    pub const fn bytes(&self) -> u64 {
+        self.verification.bytes
     }
 
     pub(super) fn entrypoint(&self) -> Option<&str> {

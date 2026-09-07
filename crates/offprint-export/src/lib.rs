@@ -138,12 +138,17 @@ pub fn markdown_byte_limit_error(stage: ErrorStage) -> OffprintError {
 }
 
 /// Encodes and verifies one Markdown directory bundle.
+///
+/// Limits apply to unique assets and their combined content with Markdown text
+/// buffers before encoding grows either output.
 pub fn prepare_markdown(
     html: &[u8],
     manifest: &ArtifactManifest,
     options: MarkdownOptions,
+    maximum_assets: usize,
+    maximum_bytes: u64,
 ) -> Result<VerifiedFormat<MarkdownBundle>> {
-    encode_markdown(html, manifest, options)
+    encode_markdown(html, manifest, options, maximum_assets, maximum_bytes)
         .map(|payload| VerifiedFormat::new(ArtifactFormat::Markdown, payload))
 }
 

@@ -207,7 +207,11 @@ async fn probe_artifact(process: &ChromiumProcess, path: &Path) -> TestResult<Of
     let page = process.new_page(&BrowserEnvironment::default()).await?;
     let url = Url::from_file_path(path).map_err(|()| "artifact path cannot become a file URL")?;
     let observation = page
-        .verify_offline_url(&url, Duration::from_secs(30))
+        .verify_offline_url(
+            &url,
+            Duration::from_secs(30),
+            offprint_browser::RenderingMedia::Screen,
+        )
         .await?;
     assert!(
         observation.attempted_urls.is_empty(),

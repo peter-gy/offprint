@@ -10,8 +10,8 @@ use quick_xml::name::{QName, ResolveResult};
 use quick_xml::{NsReader, Writer};
 
 use super::model::{
-    PdfMetadata, boolean_text, browser_product, parse_boolean, parse_browser_product,
-    parse_verification_mode, verification_mode,
+    MAXIMUM_WARNING_CODES, PdfMetadata, boolean_text, browser_product, parse_boolean,
+    parse_browser_product, parse_verification_mode, verification_mode,
 };
 use super::source::SourceMetadata;
 use crate::pdf::semantics::PdfSemantics;
@@ -23,7 +23,9 @@ const DC_NAMESPACE: &[u8] = b"http://purl.org/dc/elements/1.1/";
 const XMP_NAMESPACE: &[u8] = b"http://ns.adobe.com/xap/1.0/";
 const PDF_NAMESPACE: &[u8] = b"http://ns.adobe.com/pdf/1.3/";
 const OFFPRINT_NAMESPACE: &[u8] = b"https://github.com/peter-gy/offprint/xmp/pdf/1.0/";
-const MAXIMUM_XMP_NODES: usize = 512;
+// Capture warnings scale with resource outcomes. Reserve separate nodes for
+// their entries while retaining the bounded source-metadata structure.
+const MAXIMUM_XMP_NODES: usize = 512 + MAXIMUM_WARNING_CODES;
 const MAXIMUM_XMP_DEPTH: usize = 128;
 
 pub(super) fn encode_xmp(metadata: &PdfMetadata) -> Result<Vec<u8>> {

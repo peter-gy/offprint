@@ -2,8 +2,10 @@ use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 use std::time::Duration;
 
-use offprint_browser::OfflineBrowserObservation;
-use offprint_model::{ErrorStage, OffprintError, Result};
+use offprint_browser::{OfflineBrowserObservation, RenderingMedia};
+use offprint_model::{
+    BrowserEnvironment, ColorScheme, ErrorStage, OffprintError, ReducedMotion, Result,
+};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use tokio::sync::{Mutex, broadcast};
@@ -22,53 +24,71 @@ const MAXIMUM_PAGE_ERROR_BYTES: usize = 1024;
 const MAXIMUM_ATTEMPTED_URLS: usize = 1024;
 const MAXIMUM_ATTEMPTED_URL_BYTES: usize = 256 * 1024;
 
-const STABILITY_PROBE: &str = r#"(() => {
-    const state = globalThis.__offprintOfflineStability ||= {records: []};
+const STABILITY_PROBE: &str = r#"(print) => {
+    const state = globalThis.__offprintOfflineStability ||= {records: [], images: new WeakMap()};
+    const roots = [];
     const documents = [];
-    const visit = (current) => {
-        if (!current || documents.includes(current)) return;
-        documents.push(current);
-        for (const frame of current.querySelectorAll("iframe,frame")) {
-            try {
-                if (frame.contentDocument) visit(frame.contentDocument);
-            } catch {
+    const visit = (root) => {
+        if (!root || roots.includes(root)) return;
+        roots.push(root);
+        if (root.nodeType === 9) documents.push(root);
+        for (const element of root.querySelectorAll("*")) {
+            visit(element.shadowRoot);
+            if (element.localName === "iframe" || element.localName === "frame") {
+                try { visit(element.contentDocument); } catch {}
             }
         }
     };
     visit(document);
-    state.records = state.records.filter((record) => documents.includes(record.document));
-    for (const current of documents) {
-        if (state.records.some((record) => record.document === current)) continue;
-        const record = {document: current, mutations: 0};
+    state.records = state.records.filter((record) => roots.includes(record.root));
+    for (const root of roots) {
+        if (state.records.some((record) => record.root === root)) continue;
+        const record = {root, mutations: 0};
         record.observer = new MutationObserver(() => { record.mutations += 1; });
-        record.observer.observe(current, {
-            attributes: true,
-            childList: true,
-            characterData: true,
-            subtree: true
+        record.observer.observe(root, {
+            attributes: true, childList: true, characterData: true, subtree: true
         });
         state.records.push(record);
     }
+    const outsideViewport = (element) => {
+        for (let current = element; current;) {
+            const view = current.ownerDocument.defaultView;
+            const bounds = current.getBoundingClientRect();
+            if (bounds.bottom <= 0 || bounds.top >= (view?.innerHeight || 0) ||
+                bounds.right <= 0 || bounds.left >= (view?.innerWidth || 0)) return true;
+            try { current = view?.frameElement; } catch { return false; }
+        }
+        return false;
+    };
     let pendingImages = 0;
     let brokenImages = 0;
     let pendingFonts = 0;
     let failedFonts = 0;
     let ready = true;
-    for (const current of documents) {
-        ready &&= current.readyState === "complete";
-        for (const image of current.images) {
+    for (const root of roots) {
+        for (const image of root.querySelectorAll("img")) {
+            if (print && image.loading === "lazy") image.loading = "eager";
             const source = image.currentSrc || image.getAttribute("src") || "";
             if (!source) continue;
-            const bounds = image.getBoundingClientRect();
-            const deferredLazyImage =
-                image.loading === "lazy" &&
-                !image.complete &&
-                (bounds.bottom <= 0 ||
-                    bounds.top >= (current.defaultView?.innerHeight || 0));
+            const deferredLazyImage = !print && image.loading === "lazy" &&
+                !image.complete && outsideViewport(image);
             if (deferredLazyImage) continue;
             if (!image.complete) pendingImages += 1;
             else if (image.naturalWidth === 0) brokenImages += 1;
+            else if (print) {
+                let decoded = state.images.get(image);
+                if (!decoded || decoded.source !== source) {
+                    decoded = {source, ready: false, failed: false};
+                    state.images.set(image, decoded);
+                    image.decode().then(() => { decoded.ready = true; }, () => { decoded.failed = true; });
+                }
+                if (decoded.failed) brokenImages += 1;
+                else if (!decoded.ready) pendingImages += 1;
+            }
         }
+    }
+    for (const current of documents) {
+        ready &&= current.readyState === "complete";
         if (current.fonts) {
             if (current.fonts.status !== "loaded") pendingFonts += 1;
             for (const face of current.fonts) {
@@ -77,15 +97,28 @@ const STABILITY_PROBE: &str = r#"(() => {
         }
     }
     return {
-        ready,
-        documents: documents.length,
+        ready, documents: documents.length,
         mutations: state.records.reduce((total, record) => total + record.mutations, 0),
-        pendingImages,
-        brokenImages,
-        pendingFonts,
-        failedFonts
+        pendingImages, brokenImages, pendingFonts, failedFonts
     };
-})()"#;
+}"#;
+
+pub(crate) fn emulated_media_parameters(
+    environment: &BrowserEnvironment,
+    media: RenderingMedia,
+) -> Value {
+    json!({
+        "media": match media { RenderingMedia::Screen => "screen", RenderingMedia::Print => "print" },
+        "features": [
+            {"name": "prefers-color-scheme", "value": match environment.color_scheme {
+                ColorScheme::Light => "light", ColorScheme::Dark => "dark",
+            }},
+            {"name": "prefers-reduced-motion", "value": match environment.reduced_motion {
+                ReducedMotion::Reduce => "reduce", ReducedMotion::NoPreference => "no-preference",
+            }},
+        ],
+    })
+}
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -150,6 +183,9 @@ pub(crate) struct OfflineVerifier<'a> {
     sessions: &'a SessionRegistry,
     targets: &'a FrameTargetManager,
     seen_sessions: Arc<Mutex<HashSet<String>>>,
+    media_sessions: Mutex<HashSet<String>>,
+    environment: &'a BrowserEnvironment,
+    media: RenderingMedia,
 }
 
 #[derive(Debug, Default)]
@@ -221,6 +257,8 @@ impl<'a> OfflineVerifier<'a> {
         main_session_id: &'a str,
         sessions: &'a SessionRegistry,
         targets: &'a FrameTargetManager,
+        environment: &'a BrowserEnvironment,
+        media: RenderingMedia,
     ) -> Self {
         Self {
             client,
@@ -228,6 +266,9 @@ impl<'a> OfflineVerifier<'a> {
             sessions,
             targets,
             seen_sessions: Arc::new(Mutex::new(HashSet::from([main_session_id.to_owned()]))),
+            media_sessions: Mutex::new(HashSet::from([main_session_id.to_owned()])),
+            environment,
+            media,
         }
     }
 
@@ -340,12 +381,18 @@ impl<'a> OfflineVerifier<'a> {
                     "offline stability probe exceeded its deadline",
                 ));
             }
+            if self.media_sessions.lock().await.insert(session_id.clone()) {
+                self.client.command_with_timeout(
+                    "Emulation.setEmulatedMedia", emulated_media_parameters(self.environment, self.media),
+                    Some(&session_id), remaining,
+                ).await?;
+            }
             let response = self
                 .client
                 .command_with_timeout(
                     "Runtime.evaluate",
                     json!({
-                        "expression": STABILITY_PROBE,
+                        "expression": format!("({STABILITY_PROBE})({})", self.media == RenderingMedia::Print),
                         "returnByValue": true,
                         "awaitPromise": false,
                         "userGesture": false,

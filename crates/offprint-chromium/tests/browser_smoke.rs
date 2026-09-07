@@ -2036,7 +2036,11 @@ async fn offline_verification_accepts_deferred_lazy_images() -> TestResult {
         <title>Deferred image fixture</title>
         <main style="height: 100000px">visible content</main>
         <img loading="lazy" width="1" height="1"
-             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==">"#,
+             src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==">
+        <div id="host"><template shadowrootmode="open"><img loading="lazy"
+          src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="></template></div>
+        <iframe srcdoc="<img loading='lazy' src='data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='>"></iframe>
+"#,
     )?;
     artifact.flush()?;
     let artifact_url = url::Url::from_file_path(artifact.path())
@@ -2046,12 +2050,54 @@ async fn offline_verification_accepts_deferred_lazy_images() -> TestResult {
     let page = process.new_page(&BrowserEnvironment::default()).await?;
 
     let observation = page
-        .verify_offline_url(&artifact_url, Duration::from_secs(10))
+        .verify_offline_url(
+            &artifact_url,
+            Duration::from_secs(10),
+            offprint_browser::RenderingMedia::Screen,
+        )
         .await?;
 
-    assert!(observation.stable);
+    assert!(observation.stable, "{observation:?}");
     assert!(observation.attempted_urls.is_empty());
     assert!(observation.page_errors.is_empty());
+    assert_eq!(
+        page.evaluate(
+            r#"({
+      offscreen: document.querySelector('iframe').getBoundingClientRect().top >= innerHeight,
+      loading: document.querySelector('iframe').contentDocument.querySelector('img').loading
+    })"#
+        )
+        .await?,
+        serde_json::json!({"offscreen":true,"loading":"lazy"})
+    );
+    let printed = page
+        .verify_offline_url(
+            &artifact_url,
+            Duration::from_secs(10),
+            offprint_browser::RenderingMedia::Print,
+        )
+        .await?;
+    assert!(printed.stable, "{printed:?}");
+    assert!(printed.attempted_urls.is_empty());
+    assert!(printed.page_errors.is_empty());
+    assert_eq!(
+        page.evaluate(
+            r#"({
+      media: matchMedia('print').matches,
+      images: [document.querySelector('img'),
+        document.getElementById('host').shadowRoot.querySelector('img'),
+        document.querySelector('iframe').contentDocument.querySelector('img')]
+        .map(image => ({loading:image.loading, complete:image.complete, width:image.naturalWidth}))
+    })"#
+        )
+        .await?,
+        serde_json::json!({
+            "media": true,
+            "images": [{"loading":"eager","complete":true,"width":1},
+                       {"loading":"eager","complete":true,"width":1},
+                       {"loading":"eager","complete":true,"width":1}],
+        })
+    );
     page.close().await?;
     process.close().await?;
     Ok(())
@@ -2083,7 +2129,11 @@ async fn offline_verification_accepts_large_inline_resources() -> TestResult {
     let page = process.new_page(&BrowserEnvironment::default()).await?;
 
     let observation = page
-        .verify_offline_url(&artifact_url, Duration::from_secs(10))
+        .verify_offline_url(
+            &artifact_url,
+            Duration::from_secs(10),
+            offprint_browser::RenderingMedia::Screen,
+        )
         .await?;
 
     assert!(observation.stable);
@@ -2120,7 +2170,11 @@ async fn offline_verification_keeps_up_with_large_event_stream() -> TestResult {
     let page = process.new_page(&BrowserEnvironment::default()).await?;
 
     let observation = page
-        .verify_offline_url(&artifact_url, Duration::from_secs(10))
+        .verify_offline_url(
+            &artifact_url,
+            Duration::from_secs(10),
+            offprint_browser::RenderingMedia::Screen,
+        )
         .await?;
 
     assert!(observation.stable, "{observation:#?}");
@@ -2150,7 +2204,11 @@ async fn offline_verification_ignores_rendering_diagnostics() -> TestResult {
     let page = process.new_page(&BrowserEnvironment::default()).await?;
 
     let observation = page
-        .verify_offline_url(&artifact_url, Duration::from_secs(10))
+        .verify_offline_url(
+            &artifact_url,
+            Duration::from_secs(10),
+            offprint_browser::RenderingMedia::Screen,
+        )
         .await?;
 
     assert!(observation.stable);
@@ -2247,7 +2305,11 @@ async fn offline_verification_contains_page_and_nested_worker_transports() -> Te
     let page = process.new_page(&BrowserEnvironment::default()).await?;
 
     let observation = page
-        .verify_offline_url(&artifact_url, Duration::from_secs(10))
+        .verify_offline_url(
+            &artifact_url,
+            Duration::from_secs(10),
+            offprint_browser::RenderingMedia::Screen,
+        )
         .await?;
 
     assert!(observation.stable);

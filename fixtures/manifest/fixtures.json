@@ -446,6 +446,27 @@
       }
     },
     {
+      "id": "stylesheet-media-state",
+      "group": "resources",
+      "summary": "Preserves stylesheet media and disabled state across screen and print rendering.",
+      "required": true,
+      "capabilities": [
+        "external-stylesheet-resources"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "offprint",
+        "testTarget": "fixture_matrix",
+        "filter": "stylesheet_media_and_disabled_state_survive_capture",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
       "id": "external-stylesheet-resources",
       "group": "resources",
       "summary": "Resolves stylesheet-relative fonts and images against the stylesheet URL.",
@@ -887,6 +908,27 @@
       "runner": {
         "package": "offprint-cli",
         "filter": "runner::tests::interrupted_capture_preserves_the_existing_destination_and_redacts_progress",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "pdf-heading-pagination",
+      "group": "artifact",
+      "summary": "Keeps a heading and its following content on the same PDF page.",
+      "required": true,
+      "capabilities": [
+        "pdf-pagination"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "representation-verified",
+        "heading-with-content"
+      ],
+      "runner": {
+        "package": "offprint",
+        "testTarget": "artifact_exports",
+        "filter": "pdf_keeps_heading_with_following_content",
         "ignored": true,
         "serial": true
       }

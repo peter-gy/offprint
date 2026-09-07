@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use offprint_browser::OfflineBrowserObservation;
+use offprint_browser::{OfflineBrowserObservation, RenderingMedia};
 use offprint_model::{ErrorStage, OffprintError, ReadinessMode, Result};
 use url::Url;
 
@@ -12,6 +12,7 @@ impl ChromiumPage {
         &self,
         url: &Url,
         deadline: Duration,
+        media: RenderingMedia,
     ) -> Result<OfflineBrowserObservation> {
         if !self.client.is_owned_browser() {
             return Err(OffprintError::new(
@@ -29,9 +30,19 @@ impl ChromiumPage {
             &self.session_id,
             &self.sessions,
             &self.targets,
+            &self.environment,
+            media,
         );
         let events = verifier.subscribe();
         verifier.block_network().await?;
+        self.client
+            .command_with_timeout(
+                "Emulation.setEmulatedMedia",
+                crate::offline::emulated_media_parameters(&self.environment, media),
+                Some(&self.session_id),
+                expires.saturating_duration_since(tokio::time::Instant::now()),
+            )
+            .await?;
         let remaining = expires.saturating_duration_since(tokio::time::Instant::now());
         if remaining.is_zero() {
             return Err(OffprintError::new(

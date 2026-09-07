@@ -6,7 +6,7 @@ use futures_util::{Stream, StreamExt as _};
 use offprint_model::{ContentDigest, ErrorStage, OffprintError, Result};
 use sha2::{Digest as _, Sha256};
 use tempfile::TempDir;
-use tokio::io::AsyncWriteExt as _;
+use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct StoredContent {
@@ -40,12 +40,24 @@ impl StoredContent {
             .with_detail("bytes", self.bytes)
             .with_detail("limit", maximum_bytes));
         }
-        let bytes = tokio::fs::read(&self.path).await.map_err(|error| {
+        let file = tokio::fs::File::open(&self.path).await.map_err(|error| {
             content_error(
                 "offprint.resource.store",
                 format!("failed to read stored resource content: {error}"),
             )
         })?;
+        // The exposed path may have grown since insertion. Read one extra byte
+        // to detect growth while bounding allocation by the recorded size.
+        let mut bytes = Vec::new();
+        file.take(self.bytes.saturating_add(1))
+            .read_to_end(&mut bytes)
+            .await
+            .map_err(|error| {
+                content_error(
+                    "offprint.resource.store",
+                    format!("failed to read stored resource content: {error}"),
+                )
+            })?;
         if u64::try_from(bytes.len()).unwrap_or(u64::MAX) != self.bytes {
             return Err(content_error(
                 "offprint.resource.store",
@@ -294,6 +306,37 @@ mod tests {
                 Err("offprint.resource.limit")
             );
             assert!(store.is_empty());
+            Ok(())
+        })
+    }
+
+    #[test]
+    fn stored_content_read_enforces_limits_and_detects_changed_length()
+    -> Result<(), Box<dyn std::error::Error>> {
+        runtime()?.block_on(async {
+            let mut store = ContentStore::new()?;
+            let inserted = store.insert_bytes(b"page".to_vec(), 16, 32).await?;
+            assert_eq!(inserted.content.read(4).await?, b"page");
+            assert_eq!(
+                inserted
+                    .content
+                    .read(3)
+                    .await
+                    .map_err(|error| error.code.to_string()),
+                Err("offprint.resource.limit".to_owned())
+            );
+
+            for changed in [b"longer".as_slice(), b"x".as_slice()] {
+                std::fs::write(inserted.content.path(), changed)?;
+                assert_eq!(
+                    inserted
+                        .content
+                        .read(4)
+                        .await
+                        .map_err(|error| error.code.to_string()),
+                    Err("offprint.resource.store".to_owned())
+                );
+            }
             Ok(())
         })
     }

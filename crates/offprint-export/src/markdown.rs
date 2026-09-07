@@ -1,26 +1,40 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::rc::Rc;
 
 use data_url::DataUrl;
 use html5ever::ns;
 use offprint_document::{Document, NodeData};
-use offprint_model::{ArtifactFormat, ArtifactManifest, ContentDigest, MarkdownOptions, Result};
+use offprint_model::{
+    ArtifactFormat, ArtifactManifest, ContentDigest, ErrorStage, MarkdownOptions, Result,
+};
 use pulldown_cmark::{Event as MarkdownEvent, Parser as MarkdownParser, Tag as MarkdownTag};
 
 use crate::support::{ensure_verified, export_error};
-use crate::{FormatEvidence, MarkdownBundle};
+use crate::{FormatEvidence, MarkdownBundle, markdown_byte_limit_error, markdown_file_limit_error};
+
+mod output;
+use output::{Budget, Output};
 
 /// Converts a verified HTML artifact into Markdown and relative assets.
+///
+/// `maximum_assets` bounds unique image files. `maximum_bytes` bounds their
+/// combined content and the Markdown text buffers used during encoding.
 pub fn encode_markdown(
     html: &[u8],
     manifest: &ArtifactManifest,
     options: MarkdownOptions,
+    maximum_assets: usize,
+    maximum_bytes: u64,
 ) -> Result<MarkdownBundle> {
     let document = Document::parse(html);
     let mut encoder = MarkdownEncoder {
         document: &document,
         assets: BTreeMap::new(),
+        maximum_assets,
+        maximum_bytes,
+        budget: Budget::new(maximum_bytes),
     };
-    let mut markdown = String::new();
+    let mut markdown = Output::new(&encoder.budget);
     if options.front_matter {
         markdown.push_str("---\n");
         markdown.push_str("source: \"");
@@ -39,7 +53,7 @@ pub fn encode_markdown(
     encoder.render_children(body, &mut markdown, RenderMode::Block)?;
     normalize_markdown_end(&mut markdown);
     let bundle = MarkdownBundle {
-        markdown: markdown.into_bytes(),
+        markdown: markdown.finish()?.into_bytes(),
         assets: encoder.assets,
     };
     verify_markdown(&bundle)?;
@@ -93,6 +107,9 @@ pub fn verify_markdown(bundle: &MarkdownBundle) -> Result<FormatEvidence> {
 struct MarkdownEncoder<'a> {
     document: &'a Document,
     assets: BTreeMap<String, Vec<u8>>,
+    maximum_assets: usize,
+    maximum_bytes: u64,
+    budget: Rc<Budget>,
 }
 
 #[derive(Clone, Copy)]
@@ -106,7 +123,7 @@ impl MarkdownEncoder<'_> {
     fn render_children(
         &mut self,
         id: offprint_model::NodeId,
-        output: &mut String,
+        output: &mut Output,
         mode: RenderMode,
     ) -> Result<()> {
         let children = self
@@ -123,7 +140,7 @@ impl MarkdownEncoder<'_> {
     fn render_node(
         &mut self,
         id: offprint_model::NodeId,
-        output: &mut String,
+        output: &mut Output,
         mode: RenderMode,
     ) -> Result<()> {
         let Some(node) = self.document.node(id) else {
@@ -186,15 +203,15 @@ impl MarkdownEncoder<'_> {
                         output.push_str("~~");
                     }
                     "code" if !matches!(mode, RenderMode::Preformatted) => {
-                        let mut code = String::new();
+                        let mut code = Output::new(&self.budget);
                         self.render_children(id, &mut code, RenderMode::Preformatted)?;
-                        push_inline_code(output, &code);
+                        push_inline_code(output, &code.finish()?);
                     }
                     "pre" => {
-                        let mut code = String::new();
+                        let mut code = Output::new(&self.budget);
                         self.render_children(id, &mut code, RenderMode::Preformatted)?;
                         ensure_blank_line(output);
-                        push_fenced_code(output, &code);
+                        push_fenced_code(output, &code.finish()?);
                         ensure_blank_line(output);
                     }
                     "a" => {
@@ -207,10 +224,10 @@ impl MarkdownEncoder<'_> {
                     }
                     "img" => self.render_image(attrs, output)?,
                     "blockquote" => {
-                        let mut quote = String::new();
+                        let mut quote = Output::new(&self.budget);
                         self.render_children(id, &mut quote, RenderMode::Block)?;
                         ensure_blank_line(output);
-                        for line in quote.trim().lines() {
+                        for line in quote.finish()?.trim().lines() {
                             output.push_str("> ");
                             output.push_str(line);
                             output.push('\n');
@@ -229,6 +246,9 @@ impl MarkdownEncoder<'_> {
                             let mut nested = MarkdownEncoder {
                                 document: &frame,
                                 assets: std::mem::take(&mut self.assets),
+                                maximum_assets: self.maximum_assets,
+                                maximum_bytes: self.maximum_bytes,
+                                budget: Rc::clone(&self.budget),
                             };
                             ensure_blank_line(output);
                             nested.render_children(body, output, RenderMode::Block)?;
@@ -245,10 +265,10 @@ impl MarkdownEncoder<'_> {
             | NodeData::Comment { .. }
             | NodeData::ProcessingInstruction { .. } => {}
         }
-        Ok(())
+        self.budget.check()
     }
 
-    fn render_image(&mut self, attrs: &[html5ever::Attribute], output: &mut String) -> Result<()> {
+    fn render_image(&mut self, attrs: &[html5ever::Attribute], output: &mut Output) -> Result<()> {
         let alt = markdown_text(attribute(attrs, "alt").unwrap_or_default());
         let source = attribute(attrs, "src").unwrap_or_default();
         let destination = if source.starts_with("data:") {
@@ -259,16 +279,33 @@ impl MarkdownEncoder<'_> {
                 )
             })?;
             let media_type = parsed.mime_type().to_string();
-            let (bytes, _) = parsed.decode_to_vec().map_err(|error| {
-                export_error(
-                    "offprint.export.markdown_asset",
-                    format!("embedded Markdown image body is malformed: {error}"),
-                )
-            })?;
+            let mut bytes = Vec::new();
+            parsed
+                .decode(|chunk| {
+                    if (bytes.len() as u64).saturating_add(chunk.len() as u64) > self.maximum_bytes
+                    {
+                        return Err(markdown_byte_limit_error(ErrorStage::Encoding));
+                    }
+                    bytes.extend_from_slice(chunk);
+                    Ok(())
+                })
+                .map_err(|error| match error {
+                    data_url::forgiving_base64::DecodeError::WriteError(error) => error,
+                    data_url::forgiving_base64::DecodeError::InvalidBase64(error) => export_error(
+                        "offprint.export.markdown_asset",
+                        format!("embedded Markdown image body is malformed: {error}"),
+                    ),
+                })?;
             let digest = ContentDigest::sha256(&bytes).to_hex();
             let extension = media_extension(&media_type);
             let path = format!("assets/{digest}.{extension}");
-            self.assets.entry(path.clone()).or_insert(bytes);
+            if !self.assets.contains_key(&path) {
+                if self.assets.len() >= self.maximum_assets {
+                    return Err(markdown_file_limit_error(ErrorStage::Encoding));
+                }
+                self.budget.claim(bytes.len())?;
+                self.assets.insert(path.clone(), bytes);
+            }
             path
         } else {
             markdown_destination(source)
@@ -284,7 +321,7 @@ impl MarkdownEncoder<'_> {
     fn render_list(
         &mut self,
         id: offprint_model::NodeId,
-        output: &mut String,
+        output: &mut Output,
         ordered: bool,
     ) -> Result<()> {
         ensure_blank_line(output);
@@ -318,7 +355,7 @@ impl MarkdownEncoder<'_> {
         Ok(())
     }
 
-    fn render_table(&mut self, id: offprint_model::NodeId, output: &mut String) -> Result<()> {
+    fn render_table(&mut self, id: offprint_model::NodeId, output: &mut Output) -> Result<()> {
         let rows = owned_table_rows(self.document, id);
         if rows.is_empty() {
             return Ok(());
@@ -344,9 +381,10 @@ impl MarkdownEncoder<'_> {
                 .collect::<Vec<_>>();
             let mut values = Vec::new();
             for cell in cells {
-                let mut value = String::new();
+                let mut value = Output::new(&self.budget);
                 self.render_children(cell, &mut value, RenderMode::Inline)?;
-                values.push(value.trim().to_owned());
+                value.trim_whitespace();
+                values.push(value);
             }
             if !values.is_empty() {
                 rendered.push(values);
@@ -356,11 +394,14 @@ impl MarkdownEncoder<'_> {
             return Ok(());
         };
         ensure_blank_line(output);
-        for (row_index, row) in rendered.iter().enumerate() {
+        for (row_index, row) in rendered.into_iter().enumerate() {
+            let mut cells = row.into_iter();
             output.push('|');
-            for column in 0..columns {
+            for _ in 0..columns {
                 output.push(' ');
-                output.push_str(row.get(column).map(String::as_str).unwrap_or_default());
+                if let Some(value) = cells.next() {
+                    output.push_str(&value.finish()?);
+                }
                 output.push_str(" |");
             }
             output.push('\n');
@@ -414,7 +455,7 @@ fn attribute<'a>(attrs: &'a [html5ever::Attribute], name: &str) -> Option<&'a st
         .map(|attribute| attribute.value.as_ref())
 }
 
-fn push_collapsed_text(output: &mut String, value: &str) {
+fn push_collapsed_text(output: &mut Output, value: &str) {
     let leading = value.chars().next().is_some_and(char::is_whitespace);
     let trailing = value.chars().next_back().is_some_and(char::is_whitespace);
     let collapsed = value.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -483,7 +524,7 @@ fn markdown_destination(value: &str) -> String {
     encoded
 }
 
-fn push_inline_code(output: &mut String, value: &str) {
+fn push_inline_code(output: &mut Output, value: &str) {
     let delimiter = "`".repeat(longest_run(value, '`').saturating_add(1));
     let needs_padding = value.starts_with(['`', ' ']) || value.ends_with(['`', ' ']);
     output.push_str(&delimiter);
@@ -497,7 +538,7 @@ fn push_inline_code(output: &mut String, value: &str) {
     output.push_str(&delimiter);
 }
 
-fn push_fenced_code(output: &mut String, value: &str) {
+fn push_fenced_code(output: &mut Output, value: &str) {
     let fence = "`".repeat(longest_run(value, '`').saturating_add(1).max(3));
     output.push_str(&fence);
     output.push('\n');
@@ -522,7 +563,7 @@ fn longest_run(value: &str, needle: char) -> usize {
         .0
 }
 
-fn ensure_blank_line(output: &mut String) {
+fn ensure_blank_line(output: &mut Output) {
     while output.ends_with(' ') {
         output.pop();
     }
@@ -534,7 +575,7 @@ fn ensure_blank_line(output: &mut String) {
     }
 }
 
-fn normalize_markdown_end(output: &mut String) {
+fn normalize_markdown_end(output: &mut Output) {
     let trimmed = output.trim_end().len();
     output.truncate(trimmed);
     output.push('\n');
@@ -655,13 +696,71 @@ mod tests {
     }
 
     #[test]
+    fn markdown_limits_count_unique_assets_across_inline_frames() -> Result<()> {
+        let (html, manifest) = fixture_from_html(
+            br#"<html><body><img src="data:image/png;base64,AQID">
+            <iframe srcdoc="<img src='data:image/png;base64,AQID'>"></iframe>
+            </body></html>"#,
+        )?;
+        let options = MarkdownOptions {
+            front_matter: false,
+        };
+        let bundle = encode_markdown(&html, &manifest, options, 1, 1_000)?;
+        assert_eq!(bundle.assets.len(), 1);
+        assert_eq!(bundle.assets.values().next(), Some(&vec![1, 2, 3]));
+
+        let (html, manifest) = fixture_from_html(
+            br#"<html><body><img src="data:image/png;base64,AQID">
+            <img src="data:image/png;base64,BAUG"></body></html>"#,
+        )?;
+        let result = encode_markdown(&html, &manifest, options, 1, 1_000);
+        assert_eq!(
+            result.err().map(|error| error.code.as_str().to_owned()),
+            Some("offprint.export.files".to_owned())
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn markdown_byte_budget_covers_decoding_text_and_table_buffers() -> Result<()> {
+        for (source, maximum_bytes) in [
+            ("<img src='data:image/png;base64,AQID'>".to_owned(), 2),
+            ("<img src='data:image/png;base64,AQID'>".to_owned(), 82),
+            (
+                format!(
+                    "<table><tr><td>{}</td><td>{}</td></tr></table>",
+                    "a".repeat(30),
+                    "b".repeat(30)
+                ),
+                50,
+            ),
+        ] {
+            let (html, manifest) = fixture_from_html(source.as_bytes())?;
+            let result = encode_markdown(
+                &html,
+                &manifest,
+                MarkdownOptions {
+                    front_matter: false,
+                },
+                10,
+                maximum_bytes,
+            );
+            assert_eq!(
+                result.err().map(|error| error.code.as_str().to_owned()),
+                Some("offprint.export.size".to_owned())
+            );
+        }
+        Ok(())
+    }
+
+    #[test]
     fn markdown_assets_are_bound_to_their_content_digest() -> Result<()> {
         let (html, manifest) = fixture_from_html(
             br#"<html><body><p>Asset</p>
             <img src="data:image/png;base64,AQID" alt="asset">
             </body></html>"#,
         )?;
-        let bundle = encode_markdown(&html, &manifest, MarkdownOptions::default())?;
+        let bundle = encode_markdown(&html, &manifest, MarkdownOptions::default(), 100, 1_000_000)?;
         let mut changed = bundle.clone();
         let Some(asset) = changed.assets.values_mut().next() else {
             return Err(test_error("Markdown fixture did not produce an asset"));
@@ -684,7 +783,7 @@ mod tests {
             <a href="javascript:alert(1)">active link</a>
             </body></html>"#,
         )?;
-        let bundle = encode_markdown(&html, &manifest, MarkdownOptions::default())?;
+        let bundle = encode_markdown(&html, &manifest, MarkdownOptions::default(), 100, 1_000_000)?;
         let rendered = std::str::from_utf8(&bundle.markdown)
             .map_err(|_| test_error("Markdown fixture was not UTF-8"))?;
         let has_raw_html = MarkdownParser::new(rendered)
@@ -709,7 +808,7 @@ mod tests {
             <p>HTML paragraph</p>
             </body></html>"#,
         )?;
-        let bundle = encode_markdown(&html, &manifest, MarkdownOptions::default())?;
+        let bundle = encode_markdown(&html, &manifest, MarkdownOptions::default(), 100, 1_000_000)?;
         let rendered = std::str::from_utf8(&bundle.markdown)
             .map_err(|_| test_error("Markdown fixture was not UTF-8"))?;
 
@@ -730,8 +829,8 @@ mod tests {
             </table>
             </body></html>"#,
         )?;
-        let first = encode_markdown(&html, &manifest, MarkdownOptions::default())?;
-        let second = encode_markdown(&html, &manifest, MarkdownOptions::default())?;
+        let first = encode_markdown(&html, &manifest, MarkdownOptions::default(), 100, 1_000_000)?;
+        let second = encode_markdown(&html, &manifest, MarkdownOptions::default(), 100, 1_000_000)?;
         let rendered = std::str::from_utf8(&first.markdown)
             .map_err(|_| test_error("Markdown fixture was not UTF-8"))?;
 

@@ -44,6 +44,9 @@ copies stream input into bounded temporary storage before opening it.
 
 ## Export alternate representations
 
+For page selection, print layout, and PDF checks, follow
+[Save a web page as PDF](./export-pdf.md).
+
 ```console
 offprint artifact export example.html \
   --output exports \

@@ -181,7 +181,7 @@ async fn every_artifact_variant_encodes_and_verifies() -> TestResult {
         .register(
             "/",
             FixtureResponse::html(
-                r#"<!doctype html><html lang="en-GB"><head><title>Artifact formats</title>
+                r##"<!doctype html><html lang="en-GB"><head><title>Artifact formats</title>
                 <meta name="author" content="Ada Lovelace">
                 <meta name="description" content="Portable artifact representations">
                 <meta name="keywords" content="capture, metadata, accessibility">
@@ -190,7 +190,11 @@ async fn every_artifact_variant_encodes_and_verifies() -> TestResult {
                 <style>body{font-family:system-ui}h1{color:rgb(20,40,80)}</style></head>
                 <body><article><h1>Artifact formats</h1><p>portable output</p>
                 <a href="/details">Details</a>
-                <img src="/pixel.svg" alt="blue pixel"></article></body></html>"#,
+                <a href="#section">Jump to section</a>
+                <h2 id="section">Section destination</h2>
+                <a href="#literal%">Percent section</a>
+                <h2 id="literal%">Percent destination</h2>
+                <img src="/pixel.svg" alt="blue pixel"></article></body></html>"##,
             ),
         )
         .await?;
@@ -269,6 +273,62 @@ async fn every_artifact_variant_encodes_and_verifies() -> TestResult {
     Ok(())
 }
 
+#[tokio::test]
+#[ignore = "requires a locally installed compatible Chromium browser"]
+async fn pdf_keeps_heading_with_following_content() -> TestResult {
+    let server = FixtureServer::start().await?;
+    server
+        .register(
+            "/",
+            FixtureResponse::html(
+                r#"<!doctype html><html><head><title>Pagination</title>
+                <style>
+                @page { size: 400px 600px; margin: 40px; }
+                html, body { margin: 0; font: 16px/20px sans-serif; }
+                h2, p { margin: 0; font: 16px/20px sans-serif; }
+                </style></head><body>
+                <div style="height:480px">Opening page</div>
+                <h2>Section heading</h2>
+                <p>Following explanation<br>Continues here<br>And ends here</p>
+                </body></html>"#,
+            ),
+        )
+        .await?;
+    let directory = tempfile::tempdir()?;
+    let offprint = Offprint::new()?;
+    let captured = offprint
+        .capture(server.url("/")?.as_str())?
+        .bytes(1024 * 1024)
+        .await?;
+    let exported = offprint
+        .artifacts()
+        .export_capture(
+            &captured,
+            ExportRequest {
+                schema_version: offprint::PUBLIC_SCHEMA_VERSION,
+                output_directory: PortablePath::from_path_buf(directory.path().join("pdf"))?,
+                base_name: "pagination".to_owned(),
+                formats: vec![FormatSpec::Pdf(PdfOptions {
+                    landscape: false,
+                    prefer_css_page_size: true,
+                })],
+                conflict: ConflictPolicy::Fail,
+            },
+        )
+        .await?;
+    let document = lopdf::Document::load(exported.artifacts[0].path.as_std_path())?;
+    assert_eq!(document.get_pages().len(), 2);
+    let first = document.extract_text(&[1])?;
+    let second = document.extract_text(&[2])?;
+    assert!(first.contains("Opening page"));
+    assert!(!first.contains("Section heading"));
+    assert!(second.contains("Section heading"));
+    assert!(second.contains("Following explanation"));
+    offprint.close().await?;
+    server.close().await;
+    Ok(())
+}
+
 fn verify_pdf_semantics(path: &std::path::Path, source_digest: ContentDigest) -> TestResult {
     let bytes = std::fs::read(path)?;
     let metadata = lopdf::Document::load_metadata_mem(&bytes)?;
@@ -295,6 +355,34 @@ fn verify_pdf_semantics(path: &std::path::Path, source_digest: ContentDigest) ->
     let text = document.extract_text_with_limit(&page_numbers, 8 * 1024 * 1024)?;
     assert!(!text.trim().is_empty());
     let catalog = document.catalog()?;
+    let annotations = document.get_pages().values().try_fold(
+        Vec::new(),
+        |mut annotations, page| -> TestResult<Vec<lopdf::Dictionary>> {
+            let page = document.get_object(*page)?.as_dict()?;
+            if let Ok(entries) = page.get(b"Annots").and_then(lopdf::Object::as_array) {
+                for entry in entries {
+                    let (_, annotation) = document.dereference(entry)?;
+                    annotations.push(annotation.as_dict()?.clone());
+                }
+            }
+            Ok(annotations)
+        },
+    )?;
+    assert_eq!(
+        annotations
+            .iter()
+            .filter(|annotation| annotation.has(b"Dest"))
+            .count(),
+        2
+    );
+    assert!(annotations.iter().any(|annotation| {
+        annotation
+            .get(b"A")
+            .and_then(lopdf::Object::as_dict)
+            .and_then(|action| action.get(b"URI"))
+            .and_then(lopdf::decode_text_string)
+            .is_ok_and(|uri| uri.starts_with("http://127.0.0.1:") && uri.ends_with("/details"))
+    }));
     assert!(catalog.get(b"StructTreeRoot").is_ok());
     assert!(catalog.get(b"Outlines").is_ok());
     assert_eq!(
@@ -335,7 +423,11 @@ async fn verify_browser_file(
     let url = Url::from_file_path(path)
         .map_err(|()| std::io::Error::other("format path is not a file URL"))?;
     let observation = page
-        .verify_offline_url(&url, Duration::from_secs(20))
+        .verify_offline_url(
+            &url,
+            Duration::from_secs(20),
+            offprint_browser::RenderingMedia::Screen,
+        )
         .await?;
     page.close().await?;
     process.close().await?;
@@ -357,7 +449,11 @@ async fn verify_mhtml_browser_import(path: &std::path::Path) -> TestResult {
         .map_err(|()| std::io::Error::other("MHTML path is not a file URL"))?;
     let result = async {
         let observation = page
-            .verify_offline_url(&url, Duration::from_secs(20))
+            .verify_offline_url(
+                &url,
+                Duration::from_secs(20),
+                offprint_browser::RenderingMedia::Screen,
+            )
             .await?;
         assert!(observation.attempted_urls.is_empty(), "{observation:?}");
         assert!(observation.page_errors.is_empty(), "{observation:?}");

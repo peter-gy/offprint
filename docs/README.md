@@ -1,82 +1,64 @@
 # Offprint documentation
 
-Offprint captures a rendered page as verified, self-contained HTML. Start with
-the product model, complete one capture, then follow the path that matches your
-next task.
+Offprint saves a rendered web page as self-contained HTML, verifies it with
+network access denied, and returns evidence of what was captured.
 
-## Start
+[Install Offprint](./start/install.md), then
+[capture your first page](./start/quickstart.md).
 
-1. [What is Offprint?](./start/what-is-offprint.md) defines the product, result,
-   and preservation boundary.
-2. [Why Offprint?](./start/why-offprint.md) explains why rendered pages need
-   browser observation, resource resolution, verification, and transactional
-   output.
-3. [Install Offprint](./start/install.md) compares the CLI, Rust, Node.js, and
-   Python distribution paths.
-4. [Capture and verify one page](./start/quickstart.md) builds the CLI and
-   produces an inspectable artifact.
+```console
+offprint capture https://example.com --output example.html
+```
 
-## Concepts
+## Choose your next task
 
-- [The capture model](./concepts/capture-model.md) connects request, job,
-  observation, artifact, verification, delivery, and receipt.
-- [Artifacts and verification](./concepts/artifacts-and-verification.md) defines
-  safe-static HTML, artifact manifests, and verification evidence.
-- [Resources and fidelity](./concepts/resources-and-fidelity.md) explains
-  references, records, outcomes, warnings, and retrieval provenance.
-- [Browsers and ownership](./concepts/browsers.md) distinguishes browser
-  selection, source, discovery, installation, process, and context ownership.
-
-## Guides
-
-| Task | Guide |
+| I want to… | Read |
 | --- | --- |
-| Choose readiness, selection, resource handling, optimizations, or local files | [Control capture](./guides/control-capture.md) |
-| Pass headers or cookies safely | [Authenticated pages](./guides/authenticated-pages.md) |
-| Run known requests or discover a link graph | [Batch and crawl](./guides/batch-and-crawl.md) |
-| Read manifests, repeat verification, or derive another representation | [Inspect, verify, and export](./guides/inspect-verify-export.md) |
-| Install, select, list, or remove local browsers | [Manage browsers](./guides/manage-browsers.md) |
-| Attach to caller-owned Chromium | [Remote browser](./guides/remote-browser.md) |
-| Consume JSON, events, failures, and exit status | [Automation](./guides/automation.md) |
+| Decide whether Offprint preserves the content I need | [What is Offprint?](./start/what-is-offprint.md) |
+| Understand the verification guarantees | [Why Offprint?](./start/why-offprint.md) |
+| Wait for content, select an element, or capture local files | [Control capture](./guides/control-capture.md) |
+| Capture a page that requires authentication | [Authenticated pages](./guides/authenticated-pages.md) |
+| Capture a list of pages or follow a site's links | [Batch and crawl](./guides/batch-and-crawl.md) |
+| Save documentation or articles as PDF | [Save a web page as PDF](./guides/export-pdf.md) |
+| Read capture evidence or create PDF and other exports | [Inspect, verify, and export](./guides/inspect-verify-export.md) |
+| Use JSON results, events, or cancellation | [Automation](./guides/automation.md) |
+| Provision a browser | [Manage browsers](./guides/manage-browsers.md) |
+| Connect to a browser running elsewhere | [Remote browser](./guides/remote-browser.md) |
+| Start from a working program | [Examples](./examples/README.md) |
 
-## Examples
+## Use Offprint in an application
 
-[Executable capture scenarios](./examples/README.md) connect rendered inputs to
-artifact state, receipt evidence, and the browser fixtures that enforce each
-claim.
+Choose [Rust](./integrations/rust.md), [Node.js](./integrations/node.md), or
+[Python](./integrations/python.md). Each interface calls the same native
+service. Reuse one service for repeated captures and close it when your
+application finishes.
 
-## Integrations
+## Understand the result
 
-- [Rust](./integrations/rust.md)
-- [Node.js](./integrations/node.md)
-- [Python](./integrations/python.md)
+- [The capture model](./concepts/capture-model.md): requests, jobs, receipts,
+  and service lifetime.
+- [Artifacts and verification](./concepts/artifacts-and-verification.md): saved
+  HTML, embedded manifests, and verification evidence.
+- [Resources and fidelity](./concepts/resources-and-fidelity.md): embedded
+  resources, missing content, and warnings.
+- [Browsers and ownership](./concepts/browsers.md): browser selection, isolated
+  contexts, and process lifetime.
 
-The three language APIs call the same native service and share canonical
-serialized records. Their construction, naming, type, and error ergonomics
-differ by host language.
-
-## Reference
+## Look up a contract
 
 - [CLI commands, output, and exit statuses](./reference/cli.md)
 - [Configuration, profiles, environment variables, and defaults](./reference/configuration.md)
-- [Requests, events, results, manifests, browser, batch, and crawl records](./reference/records.md)
-- [Service construction, methods, lifecycle, and host-language differences](./reference/service-api.md)
-- [Artifact format contracts and limits](./reference/formats.md)
-- [Errors, stages, code families, and recovery](./reference/errors.md)
+- [Request, event, result, and manifest records](./reference/records.md)
+- [Service methods and lifecycle](./reference/service-api.md)
+- [Artifact formats](./reference/formats.md)
+- [Errors and recovery](./reference/errors.md)
 - [Platforms, versions, and interface parity](./reference/compatibility.md)
 
-Generated JSON Schemas in [`schemas/`](../schemas) own exhaustive serialized
-field shapes. Rustdoc, TypeScript declarations, and Python stubs own exact host
-signatures.
-
-## Operate
+## Run in production
 
 - [Security and trust boundaries](./operations/security.md)
 - [Troubleshooting](./operations/troubleshooting.md)
 - [Limits and performance](./operations/limits-and-performance.md)
 
-## Develop Offprint
-
-Contributor architecture, generated-file ownership, validation, dependency,
-performance, provenance, decision, and release material lives in
-[`development_docs/`](../development_docs/README.md).
+For build, test, architecture, and release work, use the
+[contributor documentation](../development_docs/README.md).

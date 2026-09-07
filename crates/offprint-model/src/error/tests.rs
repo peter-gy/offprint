@@ -13,6 +13,7 @@ const NON_ERROR_IDENTIFIERS: &[&str] = &[
     "offprint.canvas.capture_failed",
     "offprint.canvas.capture_unavailable",
     "offprint.capture.fixture",
+    "offprint.cssom.unreadable",
     "offprint.export.test",
     "offprint.frame.cross_origin",
     "offprint.html",

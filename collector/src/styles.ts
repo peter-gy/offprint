@@ -12,6 +12,7 @@ import {
   querySelector,
   querySelectorAll,
   replaceNode,
+  removeAttribute,
   setAttribute,
   setNodeTextContent,
   styleSheets,
@@ -45,6 +46,8 @@ import {
   stylePropertyValue,
   styleSheetFor,
   styleSheetHref,
+  styleSheetDisabled,
+  styleSheetMedia,
   styleSheetOwner,
   styleSheetsFromList,
 } from "./web";
@@ -304,7 +307,7 @@ export function appendAdoptedStyles(
     }
     const style = createElement(documentFor(root), "style");
     setAttribute(style, "data-offprint-adopted", "");
-    markStyleBase(style, sheet);
+    markStyleState(style, sheet);
     setNodeTextContent(style, css);
     appendChild(cloneRoot, style);
   }
@@ -332,24 +335,30 @@ export function applyCssom(
     const replacesStyleText =
       namespaceUri(ownerClone) === "http://www.w3.org/1999/xhtml" &&
       localName(ownerClone) === "style";
+    markStyleState(ownerClone, sheet);
     const css = materializeCssRules(sheet, source, context, !replacesStyleText);
     if (css === undefined) {
       continue;
     }
     if (replacesStyleText) {
       setNodeTextContent(ownerClone, css);
-      markStyleBase(ownerClone, sheet);
     } else {
       const style = createElement(documentFor(source), "style");
       setAttribute(style, "data-offprint-cssom", "");
-      markStyleBase(style, sheet);
+      markStyleState(style, sheet);
       setNodeTextContent(style, css);
       replaceNode(ownerClone, style);
     }
   }
 }
 
-function markStyleBase(element: Element, sheet: CSSStyleSheet): void {
+function markStyleState(element: Element, sheet: CSSStyleSheet): void {
+  const media = styleSheetDisabled(sheet) ? "not all" : styleSheetMedia(sheet);
+  if (media) {
+    setAttribute(element, "media", media);
+  } else {
+    removeAttribute(element, "media");
+  }
   const href = styleSheetHref(sheet);
   if (href) {
     setAttribute(element, cssBaseAttribute, href);

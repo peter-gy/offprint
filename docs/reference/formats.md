@@ -28,9 +28,25 @@ PDF export prints the offline-verified page through Chromium. It preserves
 selectable text, printable HTTP, HTTPS, mail, and telephone links, tagged
 structure, document outline, and selected source metadata.
 
+Offprint activates print styles before offline verification and loads and
+decodes HTML image elements, including lazy images in shadow trees and inline
+frames, before printing. Linked stylesheets retain their media and disabled
+state.
+
+Export first verifies the source HTML in screen media, then verifies the PDF's
+print layout with deferred images loaded. Rust's `export_capture` reuses the
+capture receipt's screen verification. Links to captured element IDs become
+internal PDF destinations. Other links
+resolve against the captured source URL. Follow the
+[PDF guide](../guides/export-pdf.md) for a complete capture and export workflow.
+
 The verifier rejects encryption, embedded files, rich media, local file links,
 automatic actions, executable actions, malformed content streams, and metadata
 that disagrees with the Offprint provenance packet.
+
+The provenance packet preserves capture warning codes, including repeated
+occurrences, within 16,384 entries and 1 MiB of warning text. Exceeding either
+limit fails before the PDF is committed.
 
 Options:
 
@@ -49,7 +65,8 @@ digests. Front matter contains source, capture time, and policy digest unless
 `frontMatter` is false. The Markdown verifier validates syntax, links, and asset
 integrity. It does not validate front-matter provenance values.
 
-The export transaction accepts at most 10,000 Markdown assets.
+Markdown encoding accepts at most 10,000 unique assets. Its text buffers and
+asset content share the remaining byte budget for the export request.
 
 ## ZIP
 
@@ -91,8 +108,12 @@ locations, deterministic boundary, and static sandboxed HTML.
 - HTML inspection and source loading: 64 MiB
 - Decoded HTML inside container formats: 64 MiB
 - Decoded manifest sidecar: 16 MiB
-- Each exported payload: 256 MiB
-- Markdown assets: 10,000 files
+- All formats in one export request: 256 MiB and 10,001 files combined
+- Markdown assets: 10,000 unique files, within the request's file budget
+
+Each completed format is charged before Offprint retains it for delivery.
+Markdown also checks its byte budget while building text and decoding assets.
+If a limit is exceeded, the export fails before committing output files.
 
 Format verifiers establish the representation-specific structure and content
 contract. ZIP and MHTML verify full manifest sidecars, PDF verifies its selected

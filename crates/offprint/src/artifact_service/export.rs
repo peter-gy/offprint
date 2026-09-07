@@ -14,8 +14,7 @@ use url::Url;
 
 use super::markdown_bundle::read_markdown_bundle;
 use super::{
-    ArtifactService, BoundedFileReadError, offline_verification_result, read_bounded_file,
-    read_input, stage_temporary_artifact,
+    ArtifactService, BoundedFileReadError, read_bounded_file, read_input, stage_temporary_artifact,
 };
 use crate::runtime::{RuntimePagePurpose, RuntimePageRequest, operation_cancelled_error};
 use crate::verified_html::OfflineHtmlArtifact;
@@ -26,9 +25,9 @@ pub(super) const MAXIMUM_MARKDOWN_ASSETS: usize = 10_000;
 impl ArtifactService {
     /// Derives verified artifact formats from one verified HTML capture.
     ///
-    /// The source capture is reopened with networking denied once before any
-    /// output is encoded. Every requested format then passes its own
-    /// structural verifier before commit.
+    /// The source capture is verified in screen media with networking denied.
+    /// PDF rendering additionally verifies print media. Every requested format
+    /// passes its own structural verifier before commit.
     pub async fn export(
         &self,
         input: ArtifactSource,
@@ -37,37 +36,18 @@ impl ArtifactService {
         self.state.ensure_open()?;
         validate_export_request(&request)?;
         let bytes = read_input(input).await?;
-        let pdf_options = request.formats.iter().find_map(|format| match format {
-            FormatSpec::Pdf(options) => Some(*options),
-            _ => None,
-        });
-        let (verification, proof, rendered_pdf) = match pdf_options {
-            Some(options) => {
-                let proof = offprint_html::verify_html(bytes.as_slice())?.into_proof();
-                let rendered = self
-                    .render_pdf(proof.bytes(), proof.manifest(), options)
-                    .await?;
-                let verification = offline_verification_result(
-                    proof.verification().clone(),
-                    rendered.observation,
-                )?;
-                (verification, proof, Some(rendered.bytes))
-            }
-            None => {
-                let (verification, proof) = self
-                    .verify_html_proof(bytes.as_slice(), VerificationMode::Offline)
-                    .await?;
-                (verification, proof, None)
-            }
-        };
+        let (verification, proof) = self
+            .verify_html_proof(bytes.as_slice(), VerificationMode::Offline)
+            .await?;
         let source = OfflineHtmlArtifact::from_static_proof(proof, &verification)?;
-        self.export_validated(source, request, rendered_pdf).await
+        self.export_validated(source, request).await
     }
 
     /// Derives verified artifact formats from a completed offline capture.
     ///
     /// The capture's HTML bytes and verification record must describe the same
-    /// artifact. Reusing that proof avoids a second offline browser reopen.
+    /// artifact. Reusing that proof skips fresh screen-media verification.
+    /// PDF rendering still verifies its print-media document.
     pub async fn export_capture(
         &self,
         capture: &CaptureReceipt,
@@ -83,31 +63,37 @@ impl ArtifactService {
         };
         let proof = offprint_html::verify_html(bytes.as_ref())?.into_proof();
         let source = OfflineHtmlArtifact::from_static_proof(proof, &capture.verification)?;
-        self.export_validated(source, request, None).await
+        self.export_validated(source, request).await
     }
 
     async fn export_validated(
         &self,
         source: OfflineHtmlArtifact<'_>,
         request: ExportRequest,
-        mut rendered_pdf: Option<Vec<u8>>,
     ) -> Result<ExportResult> {
         let (html, manifest, verification) = source.into_parts();
         let source_artifact_sha256 = verification.artifact_sha256;
         let stem = offprint_artifact::portable_file_stem(&request.base_name);
         let mut prepared = Vec::with_capacity(request.formats.len());
+        let mut remaining = ArtifactTransactionLimits::new(
+            MAXIMUM_MARKDOWN_ASSETS.saturating_add(1),
+            MAXIMUM_EXPORT_BYTES,
+        );
         for format in request.formats {
-            prepared.push(
-                self.prepare_format(
-                    html,
-                    &manifest,
-                    source_artifact_sha256,
-                    &stem,
+            let artifact = self
+                .prepare_format(
+                    FormatContext {
+                        html,
+                        manifest: &manifest,
+                        source_artifact_sha256,
+                        stem: &stem,
+                        limits: remaining,
+                    },
                     format,
-                    &mut rendered_pdf,
                 )
-                .await?,
-            );
+                .await?;
+            charge_export(&artifact, &mut remaining)?;
+            prepared.push(artifact);
         }
         prepare_export_directory(&request.output_directory).await?;
         let artifacts = ArtifactTransaction::stage(
@@ -131,36 +117,46 @@ impl ArtifactService {
 
     async fn prepare_format(
         &self,
-        html: &[u8],
-        manifest: &ArtifactManifest,
-        source_artifact_sha256: ContentDigest,
-        stem: &str,
+        context: FormatContext<'_>,
         format: FormatSpec,
-        rendered_pdf: &mut Option<Vec<u8>>,
     ) -> Result<PreparedArtifact> {
+        let FormatContext {
+            html,
+            manifest,
+            source_artifact_sha256,
+            stem,
+            limits,
+        } = context;
+        let maximum_assets = limits.maximum_files.saturating_sub(1);
+        let maximum_bytes = limits.maximum_bytes;
         match format {
             FormatSpec::Pdf(options) => {
-                let rendered = match rendered_pdf.take() {
-                    Some(encoded) => encoded,
-                    None => self.render_pdf(html, manifest, options).await?.bytes,
-                };
+                let rendered = self
+                    .render_pdf(html, manifest, options, maximum_bytes)
+                    .await?;
                 let verified = offprint_export::prepare_pdf(
                     &rendered,
                     html,
                     manifest,
                     source_artifact_sha256,
-                    MAXIMUM_EXPORT_BYTES,
+                    maximum_bytes,
                 )?;
                 prepare_file(format!("{stem}.pdf"), verified)
             }
             FormatSpec::Markdown(options) => {
-                let verified = offprint_export::prepare_markdown(html, manifest, options)?;
+                let verified = offprint_export::prepare_markdown(
+                    html,
+                    manifest,
+                    options,
+                    maximum_assets,
+                    maximum_bytes,
+                )?;
                 prepare_directory(
                     format!("{stem}-markdown"),
                     "index.md",
                     verified,
-                    MAXIMUM_MARKDOWN_ASSETS,
-                    MAXIMUM_EXPORT_BYTES,
+                    maximum_assets,
+                    maximum_bytes,
                 )
             }
             FormatSpec::Zip => {
@@ -216,7 +212,8 @@ impl ArtifactService {
         html: &[u8],
         manifest: &ArtifactManifest,
         options: offprint_model::PdfOptions,
-    ) -> Result<RenderedPdf> {
+        maximum_bytes: u64,
+    ) -> Result<Vec<u8>> {
         let file =
             stage_temporary_artifact("offprint-pdf-", ".html", html, "PDF source HTML").await?;
         let url = Url::from_file_path(file.path()).map_err(|()| {
@@ -254,7 +251,7 @@ impl ArtifactService {
             render = async {
             let observation = page
                 .page()?
-                .verify_offline_url(&url, std::time::Duration::from_secs(120))
+                .verify_offline_url(&url, std::time::Duration::from_secs(120), offprint_browser::RenderingMedia::Print)
                 .await?;
             validate_offline_observation(&observation)?;
             let bytes = page
@@ -263,10 +260,10 @@ impl ArtifactService {
                     &source_url,
                     options.landscape,
                     options.prefer_css_page_size,
-                    MAXIMUM_EXPORT_BYTES,
+                    maximum_bytes,
                 )
                 .await?;
-            Ok(RenderedPdf { bytes, observation })
+            Ok(bytes)
             } => render,
         };
         let close = page.close().await;
@@ -277,10 +274,40 @@ impl ArtifactService {
     }
 }
 
-#[derive(Debug)]
-struct RenderedPdf {
-    bytes: Vec<u8>,
-    observation: offprint_browser::OfflineBrowserObservation,
+struct FormatContext<'a> {
+    html: &'a [u8],
+    manifest: &'a ArtifactManifest,
+    source_artifact_sha256: ContentDigest,
+    stem: &'a str,
+    limits: ArtifactTransactionLimits,
+}
+
+fn charge_export(
+    artifact: &PreparedArtifact,
+    remaining: &mut ArtifactTransactionLimits,
+) -> Result<()> {
+    let bytes = remaining
+        .maximum_bytes
+        .checked_sub(artifact.bytes())
+        .ok_or_else(|| {
+            export_error(
+                "offprint.export.size",
+                ErrorStage::Encoding,
+                "requested artifact formats exceed the aggregate export byte limit",
+            )
+        })?;
+    let files = remaining
+        .maximum_files
+        .checked_sub(artifact.file_count())
+        .ok_or_else(|| {
+            export_error(
+                "offprint.export.files",
+                ErrorStage::Encoding,
+                "requested artifact formats exceed the aggregate export file limit",
+            )
+        })?;
+    *remaining = ArtifactTransactionLimits::new(files, bytes);
+    Ok(())
 }
 
 fn validate_export_request(request: &ExportRequest) -> Result<()> {
@@ -449,4 +476,60 @@ pub(super) fn export_error(
     message: impl Into<String>,
 ) -> OffprintError {
     OffprintError::new(code, stage, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use super::*;
+
+    fn file() -> Result<PreparedArtifact> {
+        PreparedArtifact::file(
+            "capture.pdf",
+            vec![1, 2, 3],
+            FormatVerification {
+                format: ArtifactFormat::Pdf,
+                bytes: 3,
+                sha256: ContentDigest::sha256([1, 2, 3]),
+            },
+        )
+    }
+
+    #[test]
+    fn export_budget_charges_files_and_directory_members_together() -> Result<()> {
+        let directory = ArtifactDirectory::new(BTreeMap::from([
+            ("index.md".to_owned(), vec![1, 2]),
+            ("assets/a.bin".to_owned(), vec![3, 4, 5]),
+        ]))?;
+        let verification = FormatVerification {
+            format: ArtifactFormat::Markdown,
+            bytes: 5,
+            sha256: directory.sha256(),
+        };
+        let bundle = PreparedArtifact::directory("markdown", "index.md", directory, verification)?;
+        let mut budget = ArtifactTransactionLimits::new(3, 8);
+        charge_export(&file()?, &mut budget)?;
+        charge_export(&bundle, &mut budget)?;
+        assert_eq!(budget, ArtifactTransactionLimits::new(0, 0));
+        let error = charge_export(&file()?, &mut budget).err();
+        assert_eq!(
+            error.map(|error| error.code.as_str().to_owned()),
+            Some("offprint.export.size".to_owned())
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn export_file_budget_rejects_an_additional_representation() -> Result<()> {
+        let mut budget = ArtifactTransactionLimits::new(1, 10);
+        charge_export(&file()?, &mut budget)?;
+        let error = charge_export(&file()?, &mut budget).err();
+        assert_eq!(
+            error.map(|error| error.code.as_str().to_owned()),
+            Some("offprint.export.files".to_owned())
+        );
+        assert_eq!(budget, ArtifactTransactionLimits::new(0, 7));
+        Ok(())
+    }
 }

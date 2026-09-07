@@ -3,10 +3,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use offprint_browser::ResourceObservationLimits;
-use offprint_model::{
-    BrowserEnvironment, ColorScheme, ErrorStage, OffprintError, ReducedMotion, Result,
-    UserAgentPolicy,
-};
+use offprint_model::{BrowserEnvironment, ErrorStage, OffprintError, Result, UserAgentPolicy};
 use serde_json::{Value, json};
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
@@ -194,6 +191,7 @@ impl ChromiumPage {
             ObservedResources::start(client.clone(), Arc::clone(&sessions), resource_observation);
         let page = Self {
             client,
+            environment: environment.clone(),
             browser_context_id,
             session_id,
             sessions,
@@ -289,25 +287,10 @@ impl ChromiumPage {
         self.client
             .command(
                 "Emulation.setEmulatedMedia",
-                json!({
-                    "media": "",
-                    "features": [
-                        {
-                            "name": "prefers-color-scheme",
-                            "value": match environment.color_scheme {
-                                ColorScheme::Light => "light",
-                                ColorScheme::Dark => "dark",
-                            },
-                        },
-                        {
-                            "name": "prefers-reduced-motion",
-                            "value": match environment.reduced_motion {
-                                ReducedMotion::Reduce => "reduce",
-                                ReducedMotion::NoPreference => "no-preference",
-                            },
-                        },
-                    ],
-                }),
+                crate::offline::emulated_media_parameters(
+                    environment,
+                    offprint_browser::RenderingMedia::Screen,
+                ),
                 session,
             )
             .await?;

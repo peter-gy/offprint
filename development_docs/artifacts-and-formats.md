@@ -19,9 +19,16 @@ Static verification owns `VerifiedHtmlProof`. `OfflineHtmlArtifact` combines
 that proof with a digest-matching offline `VerificationReport`. Export requires
 this offline source boundary.
 
-`ArtifactService::export` obtains fresh offline evidence. `export_capture`
-revalidates static bytes and reuses the receipt's offline evidence when the
-schema, mode, byte count, digest, and zero-request record agree.
+`ArtifactService::export` obtains fresh offline evidence in screen media before
+encoding any format. `export_capture` revalidates static bytes and reuses the
+receipt's screen-media evidence when the schema, mode, byte count, digest, and
+zero-request record agree. PDF rendering verifies a separate print-media
+reopen. Its observation belongs to PDF preparation.
+
+Browser verification selects `RenderingMedia::Screen` for HTML and
+`RenderingMedia::Print` for PDF. Print verification activates print styles
+before navigation, eagerly loads images across document, shadow, and frame
+roots, and waits for image decoding and font readiness before printing.
 
 ## Safe-static invariant
 
@@ -79,6 +86,15 @@ visibility, not unconditional crash durability for the directory entry.
 
 ## Multi-output transaction
 
+The service owns a request-wide budget of 256 MiB and 10,001 files. It charges
+each verified representation before retaining it for delivery and passes the
+remaining allowance to Markdown preparation and PDF metadata encoding.
+Markdown charges unique asset content and retained text buffers before growth.
+Its temporary data-URL decoding buffer has the same byte ceiling. Document
+parsing, transferred text buffers, and temporary escaping strings can allocate in proportion to source
+input size. ZIP, self-extracting HTML, MHTML, and PDF can allocate
+one representation before the service checks the request-wide total.
+
 Source and format validation finish before output preparation. Output
 preparation can create the requested directory. The transaction then validates
 the destination path, name, entrypoint, file count, and byte total. An empty
@@ -98,8 +114,11 @@ error details.
 - HTML artifact input: 64 MiB
 - Decoded container HTML: 64 MiB
 - Decoded manifest: 16 MiB
-- Each exported payload: 256 MiB
-- Markdown assets: 10,000
+- All formats in one service export request: 256 MiB and 10,001 files combined
+- Markdown assets: 10,000 unique files, within the request's file budget
+
+`ArtifactTransactionLimits` remains a per-payload staging and recovery
+contract. The service enforces the aggregate request budget before staging.
 
 Review changes to these constants as public compatibility and denial-of-service
 decisions.

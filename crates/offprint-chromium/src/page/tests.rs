@@ -334,6 +334,7 @@ async fn remote_pages_accept_only_unrestricted_network_policy() -> AsyncTestResu
         .verify_offline_url(
             &Url::parse("file:///tmp/offprint-test.html")?,
             Duration::from_secs(1),
+            offprint_browser::RenderingMedia::Screen,
         )
         .await;
     assert_eq!(

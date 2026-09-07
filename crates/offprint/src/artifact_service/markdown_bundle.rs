@@ -30,16 +30,18 @@ pub(super) async fn read_markdown_bundle_with_limits(
             "Markdown assets must be stored in a directly addressed directory",
         )
         .await?;
-        let asset_names = directory_names(asset_directory.as_std_path(), "Markdown assets").await?;
+        let asset_names = directory_names(
+            asset_directory.as_std_path(),
+            "Markdown assets",
+            maximum_assets,
+        )
+        .await?;
         if asset_names.is_empty() {
             return Err(export_error(
                 "offprint.export.verify",
                 ErrorStage::Verification,
                 "Markdown assets directory must contain at least one asset",
             ));
-        }
-        if asset_names.len() > maximum_assets {
-            return Err(markdown_file_limit_error(ErrorStage::Verification));
         }
         for name in &asset_names {
             let remaining = maximum_bytes.saturating_sub(total_bytes);
@@ -58,7 +60,14 @@ pub(super) async fn read_markdown_bundle_with_limits(
             "Markdown assets must be stored in a directly addressed directory",
         )
         .await?;
-        if directory_names(asset_directory.as_std_path(), "Markdown assets").await? != asset_names {
+        if directory_names(
+            asset_directory.as_std_path(),
+            "Markdown assets",
+            maximum_assets,
+        )
+        .await?
+            != asset_names
+        {
             return Err(export_error(
                 "offprint.export.verify",
                 ErrorStage::Verification,
@@ -86,7 +95,7 @@ async fn markdown_root_entries(path: &Path) -> Result<BTreeSet<String>> {
         "Markdown verification requires a directly addressed directory",
     )
     .await?;
-    let entries = directory_names(path, "Markdown directory").await?;
+    let entries = directory_names(path, "Markdown directory", 2).await?;
     let has_index = entries.contains("index.md");
     let has_assets = entries.contains("assets");
     let expected_entries = 1_usize.saturating_add(usize::from(has_assets));
@@ -100,7 +109,11 @@ async fn markdown_root_entries(path: &Path) -> Result<BTreeSet<String>> {
     Ok(entries)
 }
 
-async fn directory_names(path: &Path, subject: &'static str) -> Result<BTreeSet<String>> {
+async fn directory_names(
+    path: &Path,
+    subject: &'static str,
+    maximum_entries: usize,
+) -> Result<BTreeSet<String>> {
     let mut directory = tokio::fs::read_dir(path).await.map_err(|error| {
         export_error(
             "offprint.export.verify",
@@ -116,6 +129,9 @@ async fn directory_names(path: &Path, subject: &'static str) -> Result<BTreeSet<
             format!("failed to enumerate {subject}: {error}"),
         )
     })? {
+        if names.len() >= maximum_entries {
+            return Err(markdown_file_limit_error(ErrorStage::Verification));
+        }
         let name = entry.file_name().into_string().map_err(|_| {
             export_error(
                 "offprint.export.verify",
