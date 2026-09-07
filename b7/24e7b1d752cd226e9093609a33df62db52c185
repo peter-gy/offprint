@@ -1,0 +1,23 @@
+sdk/node/test/lifecycle-processes.mjs
+  s_c15eeb5af092d4::t_45d740c91b927f 21,42-44
+sdk/node/test/lifecycle-runner.mjs
+  s_c15eeb5af092d4::t_45d740c91b927f 7
+sdk/python/tests/lifecycle_support.py
+  s_c15eeb5af092d4::t_45d740c91b927f 42,72
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "b724e7b1d752cd226e9093609a33df62db52c185",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
