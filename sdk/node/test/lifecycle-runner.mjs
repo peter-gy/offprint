@@ -76,7 +76,7 @@ export async function runLifecycleScenario({
     if (profiles.length === 0) {
       throw new Error(`${scenario} did not expose its owned browser profile`);
     }
-    tracked.push(...processes.map((candidate) => candidate.pid));
+    tracked.push(...processes);
     await writeFile(proceed, "continue\n", "utf8");
 
     const remaining = Math.max(deadline - Date.now(), 1);

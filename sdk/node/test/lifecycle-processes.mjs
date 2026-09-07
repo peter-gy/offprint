@@ -9,7 +9,10 @@ async function windowsProcesses() {
   const script = [
     "$ErrorActionPreference = 'Stop'",
     "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)",
-    "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress",
+    "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine," +
+      "@{Name='CreationTime';Expression={" +
+      "if ($null -ne $_.CreationDate) { $_.CreationDate.ToUniversalTime().ToString('o') } " +
+      "else { '' }}} | ConvertTo-Json -Compress",
   ].join("; ");
   const { stdout } = await execFileAsync(
     "powershell.exe",
@@ -35,6 +38,7 @@ async function windowsProcesses() {
       parentPid: record.ParentProcessId,
       name: typeof record.Name === "string" ? record.Name : "",
       commandLine: typeof record.CommandLine === "string" ? record.CommandLine : "",
+      creationTime: typeof record.CreationTime === "string" ? record.CreationTime : "",
     }));
 }
 
@@ -61,7 +65,7 @@ function isBrowser(process) {
   );
 }
 
-export function findOwnedProcesses(directory, processes) {
+export function findOwnedProcesses(directory, processes, trackedProcesses = []) {
   const marker = process.platform === "win32" ? directory.toLowerCase() : directory;
   let owned = new Set(
     processes
@@ -74,10 +78,36 @@ export function findOwnedProcesses(directory, processes) {
       })
       .map((candidate) => candidate.pid),
   );
+  const tracked = new Map(trackedProcesses.map((candidate) => [candidate.pid, candidate]));
+  const byPid = new Map(processes.map((candidate) => [candidate.pid, candidate]));
+  for (const candidate of processes) {
+    const previous = tracked.get(candidate.pid);
+    if (
+      previous &&
+      (previous.creationTime && candidate.creationTime
+        ? previous.creationTime === candidate.creationTime
+        : previous.name === candidate.name && previous.commandLine === candidate.commandLine)
+    ) {
+      owned.add(candidate.pid);
+    }
+  }
   for (;;) {
     const expanded = new Set(owned);
     for (const candidate of processes) {
       if (owned.has(candidate.parentPid)) {
+        const parent = byPid.get(candidate.parentPid);
+        if (!parent) {
+          continue;
+        }
+        // Windows preserves a dead parent's PID after that PID is reused.
+        if (parent.creationTime !== undefined || candidate.creationTime !== undefined) {
+          if (!parent.creationTime || !candidate.creationTime) {
+            continue;
+          }
+          if (parent.creationTime > candidate.creationTime) {
+            continue;
+          }
+        }
         expanded.add(candidate.pid);
       }
     }
@@ -93,18 +123,9 @@ async function systemProcesses() {
   return process.platform === "win32" ? await windowsProcesses() : await unixProcesses();
 }
 
-export async function ownedProcesses(directory, trackedPids = []) {
+export async function ownedProcesses(directory, trackedProcesses = []) {
   const processes = await systemProcesses();
-  const tracked = new Set(trackedPids);
-  const owned = new Map(
-    findOwnedProcesses(directory, processes).map((candidate) => [candidate.pid, candidate]),
-  );
-  for (const candidate of processes) {
-    if (tracked.has(candidate.pid)) {
-      owned.set(candidate.pid, candidate);
-    }
-  }
-  return processes.filter((candidate) => owned.has(candidate.pid));
+  return findOwnedProcesses(directory, processes, trackedProcesses);
 }
 
 export async function ownedProfiles(directory) {
@@ -123,13 +144,13 @@ export async function ownedProfiles(directory) {
     .sort();
 }
 
-export async function waitForLifecycleCleanup(directory, trackedPids = []) {
+export async function waitForLifecycleCleanup(directory, trackedProcesses = []) {
   let processes = [];
   let profiles = [];
   const deadline = Date.now() + 10_000;
   for (;;) {
     [processes, profiles] = await Promise.all([
-      ownedProcesses(directory, trackedPids),
+      ownedProcesses(directory, trackedProcesses),
       ownedProfiles(directory),
     ]);
     if (processes.length === 0 && profiles.length === 0) {

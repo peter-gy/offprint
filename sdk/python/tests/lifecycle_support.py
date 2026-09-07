@@ -15,6 +15,7 @@ class ProcessRecord:
     parent_pid: int
     name: str
     command_line: str
+    creation_time: str | None = None
 
 
 def _windows_processes() -> list[ProcessRecord]:
@@ -23,7 +24,10 @@ def _windows_processes() -> list[ProcessRecord]:
         "[Console]::OutputEncoding = "
         "[System.Text.UTF8Encoding]::new($false); "
         "Get-CimInstance Win32_Process | "
-        "Select-Object ProcessId,ParentProcessId,Name,CommandLine | "
+        "Select-Object ProcessId,ParentProcessId,Name,CommandLine,"
+        "@{Name='CreationTime';Expression={"
+        "if ($null -ne $_.CreationDate) { $_.CreationDate.ToUniversalTime().ToString('o') } "
+        "else { '' }}} | "
         "ConvertTo-Json -Compress"
     )
     result = subprocess.run(
@@ -55,12 +59,14 @@ def _windows_processes() -> list[ProcessRecord]:
             continue
         name = record.get("Name")
         command_line = record.get("CommandLine")
+        creation_time = record.get("CreationTime")
         processes.append(
             ProcessRecord(
                 pid=pid,
                 parent_pid=parent_pid,
                 name=name if isinstance(name, str) else "",
                 command_line=(command_line if isinstance(command_line, str) else ""),
+                creation_time=creation_time if isinstance(creation_time, str) else "",
             )
         )
     return processes
@@ -107,9 +113,33 @@ def _is_browser(process: ProcessRecord) -> bool:
     )
 
 
+def _descendants(roots: set[int], processes: list[ProcessRecord]) -> set[int]:
+    by_pid = {process.pid: process for process in processes}
+    owned = roots
+    while True:
+        expanded = set(owned)
+        for process in processes:
+            if process.parent_pid not in owned:
+                continue
+            parent = by_pid.get(process.parent_pid)
+            if parent is None:
+                continue
+            # Windows preserves a dead parent's PID after that PID is reused.
+            if parent.creation_time is not None or process.creation_time is not None:
+                if not parent.creation_time or not process.creation_time:
+                    continue
+                if parent.creation_time > process.creation_time:
+                    continue
+            expanded.add(process.pid)
+        if expanded == owned:
+            return owned
+        owned = expanded
+
+
 def _owned_processes(
     directory: Path,
     processes: list[ProcessRecord],
+    tracked_processes: Iterable[ProcessRecord] = (),
 ) -> list[ProcessRecord]:
     marker = str(directory)
     if sys.platform == "win32":
@@ -122,24 +152,29 @@ def _owned_processes(
         and marker
         in (process.command_line.casefold() if sys.platform == "win32" else process.command_line)
     }
-    while True:
-        descendants = {process.pid for process in processes if process.parent_pid in owned}
-        expanded = owned | descendants
-        if expanded == owned:
-            break
-        owned = expanded
+    tracked = {record.pid: record for record in tracked_processes}
+    for process in processes:
+        previous = tracked.get(process.pid)
+        if previous is None:
+            continue
+        if previous.creation_time and process.creation_time:
+            same_process = previous.creation_time == process.creation_time
+        else:
+            same_process = (
+                previous.name == process.name and previous.command_line == process.command_line
+            )
+        if same_process:
+            owned.add(process.pid)
+    owned = _descendants(owned, processes)
     return [process for process in processes if process.pid in owned]
 
 
 def owned_processes(
     directory: Path,
-    tracked_pids: Iterable[int] = (),
+    tracked_processes: Iterable[ProcessRecord] = (),
 ) -> list[ProcessRecord]:
     processes = _windows_processes() if sys.platform == "win32" else _unix_processes()
-    tracked = set(tracked_pids)
-    owned = {process.pid: process for process in _owned_processes(directory, processes)}
-    owned.update((process.pid, process) for process in processes if process.pid in tracked)
-    return [process for process in processes if process.pid in owned]
+    return _owned_processes(directory, processes, tracked_processes)
 
 
 def owned_profiles(directory: Path) -> list[Path]:
@@ -150,14 +185,7 @@ def owned_profiles(directory: Path) -> list[Path]:
 
 def _lifecycle_process_snapshot(parent_pid: int, directory: Path) -> str:
     processes = _windows_processes() if sys.platform == "win32" else _unix_processes()
-    descendants = {parent_pid}
-    while True:
-        expanded = descendants | {
-            process.pid for process in processes if process.parent_pid in descendants
-        }
-        if expanded == descendants:
-            break
-        descendants = expanded
+    descendants = _descendants({parent_pid}, processes)
     records = [
         {
             "pid": process.pid,
@@ -176,9 +204,9 @@ def _lifecycle_process_snapshot(parent_pid: int, directory: Path) -> str:
 
 def wait_for_lifecycle_cleanup(
     directory: Path,
-    tracked_pids: Iterable[int] = (),
+    tracked_processes: Iterable[ProcessRecord] = (),
 ) -> None:
-    tracked = tuple(tracked_pids)
+    tracked = tuple(tracked_processes)
     processes: list[ProcessRecord] = []
     profiles: list[Path] = []
     deadline = time.monotonic() + 10
@@ -271,7 +299,7 @@ def run_lifecycle_child(
         try:
             wait_for_lifecycle_cleanup(
                 directory,
-                (record.pid for record in tracked),
+                tracked,
             )
         except Exception as error:
             errors.append(str(error))
