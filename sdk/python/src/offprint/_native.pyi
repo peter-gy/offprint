@@ -1,5 +1,7 @@
 from collections.abc import Awaitable
 
+def run_cli(arguments: list[str]) -> int: ...
+
 class NativeCaptureEvents:
     def next_json(self) -> Awaitable[str | None]: ...
 

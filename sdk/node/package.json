@@ -12,8 +12,12 @@
     "url": "git+https://github.com/peter-gy/offprint.git",
     "directory": "sdk/node"
   },
+  "bin": {
+    "offprint": "./cli.cjs"
+  },
   "files": [
     "api.cjs",
+    "cli.cjs",
     "contracts.generated.d.ts",
     "index.cjs",
     "index.d.ts",

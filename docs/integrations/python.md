@@ -3,8 +3,14 @@
 The `offprint` Python package exposes `asyncio` services over the native Rust
 runtime. It supports Python 3.10 through 3.14.
 
-Build the current checkout with the steps in [Install Offprint](../start/install.md).
-Tagged releases install from PyPI as `offprint==VERSION`.
+Install the package from [PyPI](https://pypi.org/project/offprint/), the Python
+package index, with [uv](https://docs.astral.sh/uv/):
+
+```console
+uv add offprint
+```
+
+For shell commands, use [the packaged CLI](../start/install.md#run-the-cli).
 
 ## Capture one file
 

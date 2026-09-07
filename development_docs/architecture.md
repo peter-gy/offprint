@@ -21,6 +21,11 @@ adapter        formats           transaction
 The public language packages live in `sdk/node` and `sdk/python`. They build
 native adapters from the Rust workspace and keep host behavior in SDK source.
 
+Both packages expose the `offprint` shell command. Their launchers pass process
+arguments to `offprint_cli::run_process` through private native entrypoints.
+The Rust command owns parsing, streams, runtime, cancellation, and exit status.
+SDK methods call the service API directly.
+
 The root pnpm workspace groups `collector`, `sdk/node`, and `docs`. Shared
 formatting and linting belong at that root. Build and runtime dependencies
 belong to the package that consumes them. Python keeps its own uv lockfile and

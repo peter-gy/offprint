@@ -196,7 +196,8 @@ fn allowed_workspace_dependencies(package: &str) -> &'static [&'static str] {
             "offprint-protocol",
             "offprint-transform",
         ],
-        "offprint-cli" | "offprint-node" | "offprint-python" => &["offprint"],
+        "offprint-cli" => &["offprint"],
+        "offprint-node" | "offprint-python" => &["offprint", "offprint-cli"],
         "offprint-bench" => &[
             "offprint",
             "offprint-capture",

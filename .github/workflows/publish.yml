@@ -81,16 +81,24 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
           uv sync --directory sdk/python --frozen
-      - name: Verify signed release tag
+      - name: Verify release source
         if: startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag_object="$(git rev-parse "$GITHUB_REF_NAME^{tag}")"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object" \
-            --jq '.verification.verified')" = "true"
-          test "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object" \
-            --jq '.object.sha')" = "$GITHUB_SHA"
+          git rev-parse "$GITHUB_REF_NAME^{tag}" >/dev/null
+          test "$(git rev-parse "$GITHUB_REF_NAME^{commit}")" = "$GITHUB_SHA"
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+          for workflow in ci.yml browser.yml pages.yml; do
+            conclusion="$(gh api --method GET \
+              "repos/$GITHUB_REPOSITORY/actions/workflows/$workflow/runs" \
+              -f branch=main -f event=push -f head_sha="$GITHUB_SHA" \
+              --jq '.workflow_runs[0].conclusion')"
+            if [[ "$conclusion" != success ]]; then
+              echo "$workflow has no successful main run for $GITHUB_SHA" >&2
+              exit 1
+            fi
+          done
       - name: Verify release version
         if: startsWith(github.ref, 'refs/tags/v')
         run: just repo-check
@@ -98,6 +106,9 @@ jobs:
         uses: ./.github/actions/setup-chromium
       - name: Run release gate
         run: just release-check
+    permissions:
+      contents: read
+      actions: read
   browser-fixtures:
     name: Release fixtures ${{ matrix.group }}
     needs: validate
@@ -867,6 +878,9 @@ jobs:
             "offprint@$VERSION"
           cp "$GITHUB_WORKSPACE/sdk/node/test/package-smoke.mjs" smoke.mjs
           node smoke.mjs
+          npx --yes "offprint@$VERSION" capture https://example.com \
+            --output "$RUNNER_TEMP/offprint-npx.html" --quiet
+          npx --yes "offprint@$VERSION" artifact inspect "$RUNNER_TEMP/offprint-npx.html"
   verify-python:
     name: Verify PyPI release
     needs:
@@ -918,6 +932,9 @@ jobs:
           PY
           release-venv/bin/python sdk/python/tests/wheel_smoke.py
           release-venv/bin/python sdk/python/tests/package_lifecycle.py
+          uvx --from "offprint==$VERSION" offprint capture https://example.com \
+            --output "$RUNNER_TEMP/offprint-uvx.html" --quiet
+          uvx --from "offprint==$VERSION" offprint artifact inspect "$RUNNER_TEMP/offprint-uvx.html"
   release-notes:
     name: Publish GitHub release
     needs:

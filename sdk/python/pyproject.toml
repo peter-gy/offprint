@@ -27,6 +27,9 @@ Source = "https://github.com/peter-gy/offprint"
 Issues = "https://github.com/peter-gy/offprint/issues"
 Documentation = "https://peter-gy.github.io/offprint/"
 
+[project.scripts]
+offprint = "offprint._cli:main"
+
 [dependency-groups]
 dev = [
   "maturin==1.15.0",

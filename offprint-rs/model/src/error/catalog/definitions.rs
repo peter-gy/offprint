@@ -197,6 +197,7 @@ pub const ERROR_CODE_REGISTRY: &[ErrorCodeDefinition] = error_codes![
     ("offprint.runtime.lock", Internal, false, "A runtime state lock is poisoned."),
     ("offprint.runtime.shutdown", Shutdown, false, "Runtime shutdown did not complete cleanly."),
     ("offprint.runtime.signal", Shutdown, false, "The command could not subscribe to interruption signals."),
+    ("offprint.runtime.start", Internal, false, "The command runtime could not be started."),
     ("offprint.runtime.state_transition", Internal, false, "The capture state machine rejected a transition."),
     ("offprint.runtime.terminal_event", Internal, false, "A capture emitted more than one terminal event."),
     ("offprint.runtime.timeout", Shutdown, true, "The requested operation exceeded its total deadline."),

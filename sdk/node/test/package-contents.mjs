@@ -30,6 +30,9 @@ const root = archiveEntries(await readFile(rootPath));
 assert.deepEqual(root.get("package/LICENSE"), expectedLicense);
 assert(root.has("package/contracts.generated.d.ts"));
 assert(root.has("package/native.d.ts"));
+const manifest = JSON.parse(root.get("package/package.json").toString("utf8"));
+assert.equal(typeof manifest.bin.offprint, "string");
+assert(root.has(`package/${manifest.bin.offprint.replace(/^\.\//u, "")}`));
 assert.equal(root.get("package/native.d.ts").includes(Buffer.from("testPanic")), false);
 assert.deepEqual(
   [...root.keys()]
