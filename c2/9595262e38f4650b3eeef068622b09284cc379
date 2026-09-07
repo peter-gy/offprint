@@ -1,0 +1,43 @@
+offprint-rs/chromium/src/discovery.rs
+  s_c15eeb5af092d4::t_67758c3c9ced00 247-250,252-254,307-313
+  s_c15eeb5af092d4::t_855a05816e4ba1 261-270,272
+  s_c15eeb5af092d4::t_569fb0d918b9ef 453-456,474-475
+  s_c15eeb5af092d4::t_94a600fb334787 2,14,20,185,226-246,251,255-259,271,273-306,314-316
+  s_c15eeb5af092d4::t_ec77364fe0239c 450-452,457-464,471-473,476-514
+sdk/python/tests/lifecycle_support.py
+  s_c15eeb5af092d4::t_c9c8dc7cc033db 149,247
+  s_c15eeb5af092d4::t_cd2f46bd35366f 70,150-174,245-246,248
+sdk/node/test/lifecycle.test.js
+  s_c15eeb5af092d4::t_d52868a93d8646 2-3,9,11,51-62,64-65,67-71
+  s_c15eeb5af092d4::t_c9c8dc7cc033db 63,66
+offprint-rs/chromium/src/managed/cache.rs
+  s_c15eeb5af092d4::t_347859b95270f2 90,210-232
+sdk/python/tests/test_lifecycle.py
+  s_c15eeb5af092d4::t_d52868a93d8646 4,13,53-71
+.github/workflows/browser.yml
+  s_c15eeb5af092d4::t_74fdba454ab65e 177-178
+.github/workflows/scheduled.yml
+  s_c15eeb5af092d4::t_74fdba454ab65e 164-165,218-219,257-258,350-351
+sdk/node/test/lifecycle-processes.mjs
+  s_c15eeb5af092d4::t_cd2f46bd35366f 43
+offprint-rs/chromium/src/managed/leases.rs
+  s_c15eeb5af092d4::t_347859b95270f2 115
+offprint-rs/chromium/src/managed.rs
+  s_c15eeb5af092d4::t_cbf64424ef1f7f 252-257
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "c29595262e38f4650b3eeef068622b09284cc379",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
