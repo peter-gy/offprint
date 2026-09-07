@@ -1,0 +1,73 @@
+README.md
+  s_c15eeb5af092d4::t_87bdd4b7f635d4 21,24-25,28-29,32-33,36-37
+sdk/python/tests/wheel_smoke.py
+  s_c15eeb5af092d4::t_60b3cf36575556 6,16-18,22-25,28-30,111,114-141
+  s_c15eeb5af092d4::t_db1523392db6b8 8,56-59,112-113
+sdk/python/README.md
+  s_c15eeb5af092d4::t_b110254bc34bec 12-20
+sdk/python/src/offprint/_cli.py
+  s_c15eeb5af092d4::t_e7b0cd837e4504 2-10
+docs/integrations/python.md
+  s_c15eeb5af092d4::t_b110254bc34bec 6-13
+sdk/node/test/package-contents.mjs
+  s_c15eeb5af092d4::t_dcbeb0157602f3 34-35
+offprint-rs/node/Cargo.toml
+  s_c15eeb5af092d4::t_076e7aaea75717 27
+development_docs/architecture.md
+  s_c15eeb5af092d4::t_74b1d55a2eb13c 24-28
+sdk/python/tests/package_contents.py
+  s_c15eeb5af092d4::t_dcbeb0157602f3 27
+offprint-rs/python/Cargo.toml
+  s_c15eeb5af092d4::t_076e7aaea75717 28
+offprint-rs/node/src/lib.rs
+  s_c15eeb5af092d4::t_e7b0cd837e4504 23-24,26,28,30-31
+sdk/python/src/offprint/_native.pyi
+  s_c15eeb5af092d4::t_e7b0cd837e4504 3-4
+offprint-rs/xtask/src/repository/structure.rs
+  s_c15eeb5af092d4::t_e7b0cd837e4504 199-200
+docs/integrations/node.md
+  s_c15eeb5af092d4::t_b110254bc34bec 6-12
+sdk/python/src/offprint/__main__.py
+  s_c15eeb5af092d4::t_e7b0cd837e4504 1-3
+offprint-rs/cli/src/process.rs
+  s_c15eeb5af092d4::t_e7b0cd837e4504 1,3-38,51-66
+offprint-rs/python/src/lib.rs
+  s_c15eeb5af092d4::t_e7b0cd837e4504 22-26,636
+docs/start/quickstart.md
+  s_c15eeb5af092d4::t_87bdd4b7f635d4 4-5
+offprint-rs/cli/src/lib.rs
+  s_c15eeb5af092d4::t_e7b0cd837e4504 14,22
+sdk/node/cli.cjs
+  s_c15eeb5af092d4::t_e7b0cd837e4504 1-3,9
+  s_c15eeb5af092d4::t_d0f4f157727230 4-7
+docs/start/install.md
+  s_c15eeb5af092d4::t_0c93f57d593ad1 3-5,7,9,12,15-16,19,22-28,31,35-40,42-43,46,54-61,64,66,69,72-89,91,94-101,104-105,111-118
+  s_c15eeb5af092d4::t_c68209745768be 48-52
+sdk/node/README.md
+  s_c15eeb5af092d4::t_b110254bc34bec 12-20
+offprint-rs/cli/src/main.rs
+  s_c15eeb5af092d4::t_e7b0cd837e4504 3-4
+sdk/python/pyproject.toml
+  s_c15eeb5af092d4::t_e7b0cd837e4504 30-31
+  s_c15eeb5af092d4::t_076e7aaea75717 32
+sdk/node/test/package-smoke.mjs
+  s_c15eeb5af092d4::t_60b3cf36575556 31,33-34,36-38,77-139,142
+sdk/node/package.json
+  s_c15eeb5af092d4::t_e7b0cd837e4504 20
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "679630b5749ce3dfd3aa6aae9d00c975a3ca91aa",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
