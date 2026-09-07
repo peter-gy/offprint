@@ -710,6 +710,7 @@ jobs:
           merge-multiple: true
       - name: Generate dependency license report
         run: |
+          cp LICENSE THIRD_PARTY_NOTICES.txt release/
           license_report="$(mktemp)"
           cargo deny --manifest-path offprint-rs/Cargo.toml list --format json --layout crate > "$license_report"
           test -s "$license_report"
