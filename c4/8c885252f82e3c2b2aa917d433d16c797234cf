@@ -1,0 +1,23 @@
+.github/workflows/publish.yml
+  s_c15eeb5af092d4::t_1c232316d55e67 711-712,725
+offprint-rs/core/tests/repeated_capture.rs
+  s_c15eeb5af092d4::t_10a5ebcac9a868 252-275
+  s_c15eeb5af092d4::t_40a0d56255fa19 176-189
+  s_c15eeb5af092d4::t_59b6c8faa50458 9,198-206
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "c48c885252f82e3c2b2aa917d433d16c797234cf",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
