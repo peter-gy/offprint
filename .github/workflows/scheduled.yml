@@ -8,7 +8,6 @@ permissions:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: "1"
-  XDG_CACHE_HOME: ${{ github.workspace }}/.cache
 jobs:
   fuzz:
     name: Fuzz smoke

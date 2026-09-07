@@ -12,7 +12,6 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   SOURCE_DATE_EPOCH: "0"
-  XDG_CACHE_HOME: ${{ github.workspace }}/.cache
 jobs:
   validate:
     name: Validate release candidate
