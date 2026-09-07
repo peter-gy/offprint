@@ -3,16 +3,9 @@ name: Browser contracts
   push:
     branches:
       - main
-  pull_request:
-    paths:
-      - offprint-rs/**
-      - collector/**
-      - fixtures/**
-      - justfile
-      - rust-toolchain.toml
-      - versions.toml
-      - .github/workflows/browser.yml
+  pull_request: null
   workflow_dispatch: null
+  merge_group: null
 permissions:
   contents: read
 concurrency:
@@ -49,6 +42,7 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Set up Chromium runtime
         uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
@@ -103,6 +97,7 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Set up Chromium runtime
         uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
@@ -174,6 +169,7 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Set up Chromium runtime
         uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium

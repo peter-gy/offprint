@@ -34,6 +34,7 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Install repository tools
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
@@ -137,6 +138,7 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Test native workspace
         run: cargo test --manifest-path offprint-rs/Cargo.toml --workspace --locked
       - name: Build release CLI
@@ -165,6 +167,7 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
@@ -191,17 +194,25 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           package-manager-cache: false
-      - name: Import ESM and CommonJS package surfaces
-        working-directory: sdk/node
+      - name: Capture through installed npm package and CLI
+        shell: bash
         run: |
-          node -e "import('./index.js').then(m => { if (!m.Offprint) process.exit(1) })"
-          node -e "if (!require('./index.cjs').Offprint) process.exit(1)"
-      - name: Capture through Node.js runtime
+          package_dir="$RUNNER_TEMP/offprint-node-package"
+          install_dir="$RUNNER_TEMP/offprint-node-install"
+          mkdir "$package_dir" "$install_dir"
+          node scripts/package-license.mjs sync
+          trap 'node "$GITHUB_WORKSPACE/sdk/node/scripts/package-license.mjs" clean' EXIT
+          root_package="$package_dir/$(npm pack --ignore-scripts --silent --pack-destination "$package_dir")"
+          node test/package-contents.mjs "$root_package" "$GITHUB_WORKSPACE/LICENSE" offprint-native.linux-x64-gnu.node
+          cp test/package-smoke.mjs "$install_dir/smoke.mjs"
+          cd "$install_dir"
+          npm init --yes >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund "$root_package"
+          node -e "if (!require('offprint').Offprint) process.exit(1)"
+          node --input-type=module -e "import { Offprint } from 'offprint'; if (!Offprint) process.exit(1)"
+          npm exec --offline -- offprint --version
+          node smoke.mjs
         working-directory: sdk/node
-        run: node test/package-smoke.mjs
-      - name: Inspect npm package
-        working-directory: sdk/node
-        run: npm pack --dry-run
   python:
     name: Python ${{ matrix.python }}
     runs-on: ubuntu-24.04
@@ -228,11 +239,13 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
         with:
           python-version: ${{ matrix.python }}
           enable-cache: true
+          save-cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
@@ -241,7 +254,7 @@ jobs:
         run: just python-check
       - name: Build wheel
         working-directory: sdk/python
-        run: uv run --frozen maturin build --release --out dist
+        run: uv run --frozen maturin build --release --locked --out dist
       - name: Install wheel in a clean environment
         shell: bash
         working-directory: sdk/python
@@ -250,3 +263,6 @@ jobs:
           uv pip install --python .wheel-test/bin/python dist/*.whl
           .wheel-test/bin/python -c "import offprint; assert offprint.Offprint"
           .wheel-test/bin/python tests/wheel_smoke.py
+          wheels=("$PWD"/dist/*.whl)
+          test "${#wheels[@]}" = "1"
+          uvx --from "${wheels[0]}" offprint --version
