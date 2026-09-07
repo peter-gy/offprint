@@ -1,0 +1,33 @@
+offprint-rs/chromium/src/managed/installed.rs
+  s_c15eeb5af092d4::t_d28a95c4ad738a 201-202
+  s_c15eeb5af092d4::t_697578a8e26b6a 181-183,185,187-192,196-200,203-209
+  s_c15eeb5af092d4::t_beeac78134eaa2 184,186,193-195
+  s_c15eeb5af092d4::t_6d9255319aacf1 71,102-103
+.github/workflows/browser.yml
+  s_c15eeb5af092d4::t_619ce522e94011 196,198,200
+  s_c15eeb5af092d4::t_6d98493fa19fc0 195,197,199,201-202
+offprint-rs/chromium/src/managed/cache.rs
+  s_c15eeb5af092d4::t_6d9255319aacf1 122-130
+development_docs/testing.md
+  s_c15eeb5af092d4::t_fceba4ee8707c6 75-76
+.github/actions/setup-chromium/action.yml
+  s_c15eeb5af092d4::t_6d98493fa19fc0 18-20
+offprint-rs/chromium/src/managed.rs
+  s_c15eeb5af092d4::t_6d9255319aacf1 88,102
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "860fb18aade8147e7d0af172807a5974e6073052",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
