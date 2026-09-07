@@ -72,6 +72,8 @@ to install browser libraries and an AppArmor profile for the managed Chromium
 cache path. The profile permits the user namespaces Chromium needs for its
 sandbox. See [Linux sandbox setup](../docs/operations/troubleshooting.md#chromium-reports-no-usable-sandbox-on-linux)
 when reproducing startup failures on Ubuntu.
+The headed-browser smoke suite runs under [Xvfb](https://www.x.org/releases/current/doc/man/man1/Xvfb.1.xhtml),
+a virtual X display whose lifetime is bounded by the smoke command.
 
 Use one owned fixture during development:
 

@@ -15,7 +15,9 @@ runs:
           libgbm1 \
           libgtk-3-0 \
           libnss3 \
-          libxkbcommon0
+          libxkbcommon0 \
+          xauth \
+          xvfb
     - name: Allow managed Chromium sandbox namespaces
       if: runner.os == 'Linux'
       shell: bash

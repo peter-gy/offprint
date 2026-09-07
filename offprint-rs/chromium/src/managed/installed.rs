@@ -68,7 +68,7 @@ pub(super) async fn probe_entry(
     Ok(Some(browser))
 }
 
-pub(super) fn write_metadata(staging: &Path, entry: &ManagedBrowserCatalogEntry) -> Result<()> {
+pub(super) fn write_metadata(staging: &Path, entry: &ManagedBrowserCatalogEntry) -> Result<File> {
     let metadata = metadata_for(entry);
     let path = staging.join(METADATA_FILE);
     let mut file = OpenOptions::new()
@@ -99,7 +99,8 @@ pub(super) fn write_metadata(staging: &Path, entry: &ManagedBrowserCatalogEntry)
             format!("failed to sync managed browser metadata: {error}"),
         )
     })?;
-    set_owner_file_permissions(&path)
+    set_owner_file_permissions(&path)?;
+    Ok(file)
 }
 
 pub(super) fn validate_installation(
@@ -175,5 +176,34 @@ fn metadata_for(entry: &ManagedBrowserCatalogEntry) -> InstallationMetadata {
         archive_sha256: entry.archive_sha256.to_owned(),
         archive_bytes: entry.archive_bytes,
         executable: entry.executable.to_owned(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{fs, validate_installation, write_metadata};
+    use crate::managed::cache;
+    use crate::managed::catalog::managed_browser_catalog;
+
+    #[test]
+    fn staged_metadata_survives_the_durable_directory_commit()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let directory = tempfile::tempdir()?;
+        let staging = tempfile::tempdir_in(directory.path())?;
+        let entry = managed_browser_catalog()
+            .first()
+            .ok_or("managed browser catalog is empty")?;
+        let executable = staging.path().join(entry.executable);
+        fs::create_dir_all(executable.parent().ok_or("executable has no parent")?)?;
+        fs::write(executable, b"browser fixture")?;
+        let metadata = write_metadata(staging.path(), entry)?;
+        let destination = directory.path().join("installed");
+        let destination =
+            camino::Utf8Path::from_path(&destination).ok_or("destination is not UTF-8")?;
+
+        cache::sync_staging(staging.path(), metadata)?;
+        cache::commit_staging(staging, destination)?;
+        validate_installation(destination, entry)?;
+        Ok(())
     }
 }

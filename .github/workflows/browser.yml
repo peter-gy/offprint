@@ -192,6 +192,13 @@ jobs:
             );
           '
       - name: Run managed browser smoke
-        run: cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint-chromium --test browser_smoke -- --ignored --test-threads=1
+        run: |
+          smoke_command=(cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint-chromium --test browser_smoke -- --ignored --test-threads=1)
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            xvfb-run --auto-servernum "${smoke_command[@]}"
+          else
+            "${smoke_command[@]}"
+          fi
+        shell: bash
       - name: Run static capture fixture
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- test-fixture static-article

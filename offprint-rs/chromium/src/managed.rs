@@ -85,7 +85,7 @@ impl ManagedBrowserManager {
                 )
             })??;
 
-        installed::write_metadata(staging.path(), entry)?;
+        let metadata_file = installed::write_metadata(staging.path(), entry)?;
         let staged_executable = cache::utf8_join(staging.path(), entry.executable)?;
         let mut browser = probe(&staged_executable, BrowserSource::Managed).await?;
         if browser.version != entry.version {
@@ -99,7 +99,7 @@ impl ManagedBrowserManager {
             .with_detail("revision", entry.revision));
         }
 
-        cache::sync_staging(staging.path(), installed::METADATA_FILE)?;
+        cache::sync_staging(staging.path(), metadata_file)?;
         cache::commit_staging(staging, &final_dir)?;
         cache::sync_cache(&self.cache_dir)?;
 

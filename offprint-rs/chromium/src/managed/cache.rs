@@ -119,16 +119,15 @@ pub(super) fn commit_staging(staging: TempDir, destination: &Utf8Path) -> Result
     })
 }
 
-pub(super) fn sync_staging(staging: &Path, metadata_file: &str) -> Result<()> {
-    let metadata = staging.join(metadata_file);
-    File::open(&metadata)
-        .and_then(|file| file.sync_all())
-        .map_err(|error| {
-            managed_error(
-                "offprint.browser.install",
-                format!("failed to sync managed browser commit metadata: {error}"),
-            )
-        })?;
+pub(super) fn sync_staging(staging: &Path, metadata_file: File) -> Result<()> {
+    // Flush the original writable handle, then release it before the directory
+    // rename. Windows requires write access for FlushFileBuffers.
+    metadata_file.sync_all().map_err(|error| {
+        managed_error(
+            "offprint.browser.install",
+            format!("failed to sync managed browser commit metadata: {error}"),
+        )
+    })?;
     sync_directory(staging)
 }
 
