@@ -1,0 +1,75 @@
+.github/workflows/scheduled.yml
+  s_c15eeb5af092d4::t_710545dab15a14 2,4-5
+offprint-rs/artifact/src/transaction.rs
+  s_c15eeb5af092d4::t_36e3a0fca88729 718
+  s_c15eeb5af092d4::t_49c201f55aed02 293,326-330
+  s_c15eeb5af092d4::t_553d3b9f8a6a80 285,304,307-308,312-316,318-325,334-335
+  s_c15eeb5af092d4::t_4444ade958b41e 387
+README.md
+  s_c15eeb5af092d4::t_ad199106d5846f 2,41,55-57,59-66,70-72
+offprint-rs/artifact/Cargo.toml
+  s_c15eeb5af092d4::t_553d3b9f8a6a80 18-21
+offprint-rs/artifact/src/multi_output/durable.rs
+  s_c15eeb5af092d4::t_4444ade958b41e 1-3,209
+sdk/python/tests/lifecycle_child.py
+  s_c15eeb5af092d4::t_4d230f829496c1 52-54
+sdk/node/test/lifecycle.test.js
+  s_c15eeb5af092d4::t_96a823cc502b08 49-66
+  s_c15eeb5af092d4::t_2ee6fd79fc5205 69
+  s_c15eeb5af092d4::t_096b070f7df9fa 70
+offprint-rs/Cargo.lock
+  ai_agent 1661-1662
+docs/operations/troubleshooting.md
+  s_c15eeb5af092d4::t_46c55e83d1fa18 33-43
+offprint-rs/chromium/src/managed/catalog.rs
+  s_c15eeb5af092d4::t_538e5f47476401 143
+.github/workflows/publish.yml
+  s_c15eeb5af092d4::t_289a713cab26c9 98-99,126-127,163-164,206-207,345-346,456-457,511-512,612-613,819-820,869-870
+  s_c15eeb5af092d4::t_5367bfa25ec9d0 70-80
+sdk/node/package.json
+  s_c15eeb5af092d4::t_ad199106d5846f 5
+offprint-rs/chromium/src/managed.rs
+  s_c15eeb5af092d4::t_538e5f47476401 154,168
+  s_c15eeb5af092d4::t_aa8dad67878b27 242-243,246
+sdk/python/README.md
+  s_c15eeb5af092d4::t_ad199106d5846f 10,67-69
+sdk/node/README.md
+  s_c15eeb5af092d4::t_ad199106d5846f 10,60-62
+development_docs/testing.md
+  s_c15eeb5af092d4::t_46c55e83d1fa18 70-75
+sdk/node/test/package-lifecycle.mjs
+  s_c15eeb5af092d4::t_2ee6fd79fc5205 10
+sdk/python/pyproject.toml
+  s_c15eeb5af092d4::t_37f9ee0358d172 28
+sdk/python/tests/test_lifecycle.py
+  s_c15eeb5af092d4::t_fc01398364caa8 5,84-101
+  s_c15eeb5af092d4::t_1dffcd8bfbad07 51-70
+sdk/node/test/lifecycle-child.mjs
+  s_c15eeb5af092d4::t_fc01398364caa8 42,45,49-51
+.github/workflows/ci.yml
+  s_c15eeb5af092d4::t_5367bfa25ec9d0 2,4-8,40-50,151-154,179-180,212-217
+sdk/python/tests/package_lifecycle.py
+  s_c15eeb5af092d4::t_fc01398364caa8 13
+.github/workflows/browser.yml
+  s_c15eeb5af092d4::t_289a713cab26c9 2,4-5,15,52-53,106-107
+offprint-rs/chromium/tests/browser_smoke.rs
+  s_c15eeb5af092d4::t_5a9ad8096daea4 2172,2176
+offprint-rs/fuzz/Cargo.lock
+  ai_agent 692-693,1258,1429-1436
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "c7729d43c03e64feabecc4ee9d877b5b90983c75",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
