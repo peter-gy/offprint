@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 use offprint::{BrowserInfo, CaptureArtifact, Offprint};
 use offprint_test_support::{FixtureResponse, FixtureServer};
 use serde::Serialize;
-use sysinfo::{Pid, ProcessesToUpdate, System, get_current_pid};
+use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind, get_current_pid};
 
 type TestResult<T = ()> = std::result::Result<T, Box<dyn Error + Send + Sync>>;
 
@@ -139,20 +139,6 @@ async fn repeated_capture_memory_and_process_use_remain_bounded() -> TestResult 
     let warm_rust_rss = samples.first().map_or(baseline.rust_rss_bytes, |sample| {
         sample.memory.rust_rss_bytes
     });
-    assert!(
-        peak.rust_rss_bytes.saturating_sub(warm_rust_rss) <= MAXIMUM_RUST_GROWTH_BYTES,
-        "Rust RSS grew from {warm_rust_rss} to {} bytes",
-        peak.rust_rss_bytes
-    );
-    assert!(
-        peak.browser_rss_bytes <= MAXIMUM_BROWSER_RSS_BYTES,
-        "browser RSS reached {} bytes",
-        peak.browser_rss_bytes
-    );
-    assert_eq!(
-        final_sample.browser_processes, 0,
-        "browser processes survived Offprint close"
-    );
     let profile_path = process_tracker
         .profile_path
         .as_ref()
@@ -187,6 +173,20 @@ async fn repeated_capture_memory_and_process_use_remain_bounded() -> TestResult 
         final_sample,
         samples,
     })?;
+    assert!(
+        peak.rust_rss_bytes.saturating_sub(warm_rust_rss) <= MAXIMUM_RUST_GROWTH_BYTES,
+        "Rust RSS grew from {warm_rust_rss} to {} bytes",
+        peak.rust_rss_bytes
+    );
+    assert!(
+        peak.browser_rss_bytes <= MAXIMUM_BROWSER_RSS_BYTES,
+        "browser RSS reached {} bytes",
+        peak.browser_rss_bytes
+    );
+    assert_eq!(
+        final_sample.browser_processes, 0,
+        "browser processes survived Offprint close"
+    );
     Ok(())
 }
 
@@ -195,7 +195,15 @@ fn memory_sample(
     root_pid: Pid,
     tracker: &mut BrowserProcessTracker,
 ) -> MemorySample {
-    system.refresh_processes(ProcessesToUpdate::All, true);
+    // Linux thread entries share their process's RSS and must not be summed again.
+    system.refresh_processes_specifics(
+        ProcessesToUpdate::All,
+        true,
+        ProcessRefreshKind::nothing()
+            .with_memory()
+            .with_cmd(UpdateKind::OnlyIfNotSet)
+            .without_tasks(),
+    );
     let rust_rss_bytes = system.process(root_pid).map_or(0, sysinfo::Process::memory);
     if tracker.profile_path.is_none() {
         tracker.profile_path = system.processes().iter().find_map(|(pid, process)| {
@@ -239,6 +247,30 @@ fn memory_sample(
 fn is_browser_process(process: &sysinfo::Process) -> bool {
     let name = process.name().to_string_lossy().to_ascii_lowercase();
     name.contains("chrome") || name.contains("chromium")
+}
+
+#[test]
+fn memory_sample_excludes_browser_named_threads() -> TestResult {
+    let (ready_tx, ready_rx) = std::sync::mpsc::channel();
+    let (stop_tx, stop_rx) = std::sync::mpsc::channel();
+    let thread = std::thread::Builder::new()
+        .name("chrome-worker".to_owned())
+        .spawn(move || {
+            let _ready = ready_tx.send(());
+            let _stop = stop_rx.recv_timeout(Duration::from_secs(10));
+        })?;
+    ready_rx.recv_timeout(Duration::from_secs(2))?;
+    let sample = memory_sample(
+        &mut System::new(),
+        get_current_pid()?,
+        &mut BrowserProcessTracker::default(),
+    );
+    stop_tx.send(())?;
+    thread.join().map_err(|_| "browser-named thread panicked")?;
+
+    assert_eq!(sample.browser_processes, 0);
+    assert_eq!(sample.browser_rss_bytes, 0);
+    Ok(())
 }
 
 fn browser_profile_path(pid: Pid, process: &sysinfo::Process) -> Option<PathBuf> {

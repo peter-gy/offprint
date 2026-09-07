@@ -670,7 +670,6 @@ jobs:
       - repeated-capture
       - sanitizer
       - crates
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     permissions:
@@ -709,6 +708,8 @@ jobs:
           path: release
           format: spdx-json
           output-file: release/offprint.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
       - name: Generate release checksums
         working-directory: release
         run: |
@@ -721,6 +722,7 @@ jobs:
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
           subject-path: release/*
+        if: startsWith(github.ref, 'refs/tags/v')
       - name: Upload release artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
