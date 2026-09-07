@@ -1,0 +1,28 @@
+justfile
+  s_c15eeb5af092d4::t_723a667081657d 269,274,284-289,296,309,314-319
+sdk/python/pyproject.toml
+  s_c15eeb5af092d4::t_76642a9fe6d279 63,71
+.github/workflows/publish.yml
+  s_c15eeb5af092d4::t_06c6f0e3348c68 302,307,310,463,594-611,616,620,624,626
+  ai_agent 14
+sdk/python/scripts/prepare_sdist.py
+  s_c15eeb5af092d4::t_36fbce771eabf1 1-27,29-42,44-77,79-85
+  s_c15eeb5af092d4::t_2f621d6fd64a91 28
+  s_c15eeb5af092d4::t_5924d96104449c 43,78
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "0cd12ce80e11a2f356e17715a934ec5e120054a4",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
