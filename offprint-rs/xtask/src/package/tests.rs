@@ -11,7 +11,7 @@ use super::{
 };
 
 #[test]
-fn crate_packages_include_the_root_license_and_agpl_metadata() -> Result<(), String> {
+fn crate_packages_include_the_root_license_and_mit_metadata() -> Result<(), String> {
     let temporary = TempDir::new().map_err(|error| error.to_string())?;
     fs::create_dir_all(temporary.path().join("offprint-rs")).map_err(|error| error.to_string())?;
     fs::write(
@@ -38,11 +38,11 @@ fn crate_packages_include_the_root_license_and_agpl_metadata() -> Result<(), Str
         return Err("a divergent packaged license passed verification".to_owned());
     };
     assert!(mismatch.contains("LICENSE differs"));
-    write_crate(&packages, PUBLISHABLE_CRATES[0], license, "MIT")?;
+    write_crate(&packages, PUBLISHABLE_CRATES[0], license, "Apache-2.0")?;
     let Err(mismatch) = verify_crate_packages(temporary.path(), &packages) else {
         return Err("a package with different license metadata passed verification".to_owned());
     };
-    assert!(mismatch.contains("package license must be AGPL-3.0-or-later"));
+    assert!(mismatch.contains("package license must be MIT"));
     write_crate_source(
         &packages,
         PUBLISHABLE_CRATES[0],

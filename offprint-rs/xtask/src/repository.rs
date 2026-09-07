@@ -753,7 +753,7 @@ mod tests {
     use crate::package::{PUBLISHABLE_CRATES, crate_directory};
 
     #[test]
-    fn crate_packages_use_agpl_metadata_and_root_license_bytes() -> Result<(), String> {
+    fn crate_packages_use_mit_metadata_and_root_license_bytes() -> Result<(), String> {
         let temporary = TempDir::new().map_err(|error| error.to_string())?;
         fs::create_dir_all(temporary.path().join("offprint-rs"))
             .map_err(|error| error.to_string())?;
@@ -763,7 +763,7 @@ mod tests {
 members = ["test-support"]
 
 [workspace.package]
-license = "AGPL-3.0-or-later"
+license = "MIT"
 
 [workspace.dependencies]
 offprint-test-support = { path = "test-support" }

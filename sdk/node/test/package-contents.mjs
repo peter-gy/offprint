@@ -34,6 +34,7 @@ for (const name of ["LICENSE", "THIRD_PARTY_NOTICES.txt"]) {
 assert(root.has("package/contracts.generated.d.ts"));
 assert(root.has("package/native.d.ts"));
 const manifest = JSON.parse(root.get("package/package.json").toString("utf8"));
+assert.equal(manifest.license, "MIT");
 assert.equal(typeof manifest.bin.offprint, "string");
 assert(root.has(`package/${manifest.bin.offprint.replace(/^\.\//u, "")}`));
 assert.equal(root.get("package/native.d.ts").includes(Buffer.from("testPanic")), false);

@@ -19,10 +19,10 @@ npx offprint capture https://example.com --output example.html --quiet
 
 ## Use in an application
 
-Install version 0.0.1:
+Install version 0.0.2:
 
 ```console
-npm install offprint@0.0.1
+npm install offprint@0.0.2
 ```
 
 ```js

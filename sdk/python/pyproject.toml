@@ -4,11 +4,11 @@ build-backend = "maturin"
 
 [project]
 name = "offprint"
-version = "0.0.1"
+version = "0.0.2"
 description = "Capture rendered web pages as verified self-contained artifacts"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
-license = "AGPL-3.0-or-later"
+license = "MIT"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.txt"]
 classifiers = [
   "Development Status :: 3 - Alpha",

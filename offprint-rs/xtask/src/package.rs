@@ -36,7 +36,7 @@ pub(crate) const PUBLISHABLE_CRATES: &[&str] = &[
     "offprint-protocol",
     "offprint-transform",
 ];
-pub(crate) const CRATE_LICENSE: &str = "AGPL-3.0-or-later";
+pub(crate) const CRATE_LICENSE: &str = "MIT";
 
 pub(crate) fn crate_directory(name: &str) -> &str {
     if name == "offprint" {

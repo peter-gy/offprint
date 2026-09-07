@@ -30,6 +30,7 @@ def check_wheel(path: Path, notices: dict[str, bytes]) -> None:
             name for name in archive.namelist() if name.endswith(".dist-info/METADATA")
         )
         metadata = BytesParser().parsebytes(archive.read(metadata_path))
+        assert metadata["License-Expression"] == "MIT"
         assert set(metadata.get_all("License-File", [])) == set(notices)
         for name, content in notices.items():
             candidates = [
@@ -43,6 +44,18 @@ def check_wheel(path: Path, notices: dict[str, bytes]) -> None:
 
 def check_sdist(path: Path, notices: dict[str, bytes]) -> None:
     with tarfile.open(path, "r:gz") as archive:
+        metadata_files = [
+            member
+            for member in archive.getmembers()
+            if member.isfile()
+            and len(Path(member.name).parts) == 2
+            and Path(member.name).name == "PKG-INFO"
+        ]
+        assert len(metadata_files) == 1
+        metadata_file = archive.extractfile(metadata_files[0])
+        assert metadata_file is not None
+        metadata = BytesParser().parsebytes(metadata_file.read())
+        assert metadata["License-Expression"] == "MIT"
         for name, content in notices.items():
             candidates = [
                 member

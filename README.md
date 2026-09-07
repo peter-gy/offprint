@@ -76,4 +76,4 @@ and [architecture](https://github.com/peter-gy/offprint/blob/main/development_do
 extension boundaries. [Development docs](https://github.com/peter-gy/offprint/blob/main/development_docs/README.md) route
 changes to their source, tests, and generation commands.
 
-Licensed under [AGPL-3.0-or-later](./LICENSE).
+Licensed under [MIT](./LICENSE).

@@ -868,6 +868,7 @@ jobs:
             sleep 5
           done
           test "$(npx --yes npm@11.12.1 view "offprint@$NPM_TAG" version)" = "$VERSION"
+          test "$(npx --yes npm@11.12.1 view "offprint@$VERSION" license)" = MIT
           install_dir="$RUNNER_TEMP/offprint-npm-install"
           mkdir "$install_dir"
           cd "$install_dir"
@@ -926,10 +927,11 @@ jobs:
             sleep 5
           done
           EXPECTED_VERSION="$VERSION" release-venv/bin/python - <<'PY'
-          from importlib.metadata import version
+          from importlib.metadata import metadata, version
           import os
 
           assert version("offprint") == os.environ["EXPECTED_VERSION"]
+          assert metadata("offprint")["License-Expression"] == "MIT"
           PY
           release-venv/bin/python sdk/python/tests/wheel_smoke.py
           release-venv/bin/python sdk/python/tests/package_lifecycle.py

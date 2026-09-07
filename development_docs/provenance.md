@@ -13,11 +13,11 @@ distributed binary inputs with immutable revisions or catalog versions.
 | [Chrome DevTools Protocol](https://github.com/ChromeDevTools/devtools-protocol) | `58bb3629dd105e4aae45f3e308cfd1564bdde91b` | BSD-3-Clause              | Selected generated protocol definitions                   |
 | [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/)    | Catalog `2026-07-27`, revision `1654411`   | Chrome distribution terms | Managed browser archives                                  |
 
-Offprint's initial design selected AGPL-3.0-or-later after source inspection of
-SingleFile. The original design records this as a conservative licensing
-decision and reserves permissive relicensing for a review of source provenance
-and distribution rights. That record is in `SPEC.md`, section 28, at Offprint
-commit `6ed611b`.
+Offprint's original code is licensed under [MIT](../LICENSE). Its author confirms
+independent authorship, with SingleFile providing the capture idea and behavior
+reference. Source comparison found distinct collector and restoration
+implementations. Third-party components retain the licenses recorded here and
+in the distribution notices.
 
 SingleFile runs as a separate executable in the scheduled differential test.
 The collector bundles Offprint's TypeScript modules. The Rust dependency graph
