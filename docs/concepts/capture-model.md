@@ -1,18 +1,16 @@
 # The capture model
 
-A capture executes one `CaptureRequest` and ends with one terminal result. The
-model separates configuration, active work, browser observations, artifact
-delivery, and success evidence so callers can reason about each boundary.
+A **capture** saves one rendered page and produces one terminal result. A
+**capture request** describes the page, capture policies, and destination. A
+successful capture returns a **capture receipt** with the artifact, verification
+evidence, resources, warnings, and timings.
 
 ```text
-CaptureRequest
-    -> CaptureJob
-    -> Observation
-    -> Offprint HTML artifact
-    -> VerificationReport
-    -> file commit or memory return
-    -> CaptureReceipt
+request -> capture job -> verified artifact -> receipt
 ```
+
+Use a capture job when your application needs progress or cancellation. Reuse
+one `Offprint` service across requests so it can share its browser process.
 
 ## Capture request
 
@@ -34,17 +32,22 @@ each generated schema's `additionalProperties` value for its exact field
 extension contract. Validation runs before browser work when the required
 information is available.
 
-The Node.js and Python bindings expose a shorter capture method that writes one
-file. The CLI requires an output and can stream verified bytes to standard
-output. Rust exposes file and memory terminals on its fluent `Capture` value.
-Use a complete `CaptureRequest` with the capture service for credentials,
-custom network rules, complete limits, local file roots, diagnostic
-output, or an explicit per-request browser.
+Use the short capture method for a file in Node.js or Python, or `save` and
+`bytes` on Rust's fluent `Capture`. For credentials, custom network rules, full
+limits, local file roots, diagnostics, or an explicit per-request browser,
+create a complete request from the same defaults:
+
+- Rust: configure a `Capture`, then call `into_request()`.
+- Node.js and Python: call `captures.request(url)` with optional capture options.
+
+Adjust the request fields, then pass it to `captures.start(request)` or a batch.
+The CLI requires an output and can stream verified bytes to standard output.
 
 ## Capture and capture job
 
 The Rust `Capture` type is a pending fluent request. Calling `save`, `bytes`, or
-`start` begins browser work.
+`start` begins browser work. Set `output` before `start` to choose file delivery
+or a bounded memory result. `save` and `bytes` select that output directly.
 
 A **capture job** is the handle returned by `start` for an active or completed
 capture. It exposes:
@@ -57,6 +60,8 @@ capture. It exposes:
 
 Dropping a job handle does not cancel its capture. Call `cancel()` or close the
 parent `Offprint` service. Cloned job handles can await the same stored result.
+Rust `save` and `bytes` futures own their capture lifetime and request
+cancellation when dropped.
 
 ## Lifecycle and events
 

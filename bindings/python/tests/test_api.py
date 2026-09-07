@@ -272,3 +272,55 @@ async def test_contains_native_panics_and_keeps_the_host_alive() -> None:
 
         with pytest.raises(ValidationError):
             await offprint.capture("javascript:alert(1)")
+
+
+@pytest.mark.asyncio
+async def test_request_factory_uses_native_defaults_and_capture_options() -> None:
+    async with Offprint() as offprint:
+        request = offprint.captures.request(
+            "https://example.com",
+            output="capture.html",
+            profile="server",
+            conflict="replace",
+            wait_until="network-idle",
+            delay_ms=750,
+        )
+        assert request["url"] == "https://example.com/"
+        assert request["output"] == {
+            "kind": "file", "path": "capture.html", "conflict": "replace",
+        }
+        assert request["content"]["missingResources"] == "fail"
+        assert request["network"] == {"kind": "server"}
+        assert request["readiness"]["mode"] == "network-idle"
+        assert request["readiness"]["delay"] == 750
+        assert request["verification"] == "offline"
+
+        request["environment"]["viewport"]["width"] = 320
+        next_request = offprint.captures.request("https://example.com")
+        assert next_request["environment"]["viewport"]["width"] == 1440
+        assert next_request["output"] == {"kind": "memory", "maxBytes": 64 * 1024 * 1024}
+
+
+@pytest.mark.asyncio
+async def test_request_edits_are_validated_when_the_job_starts() -> None:
+    async with Offprint() as offprint:
+        request = offprint.captures.request("https://example.com")
+        request["limits"]["duration"] = 0
+        with pytest.raises(ValidationError) as captured:
+            await offprint.captures.start(request)
+
+    assert captured.value.code == "offprint.input.limit"
+
+
+@pytest.mark.asyncio
+async def test_request_construction_reports_structured_synchronous_errors() -> None:
+    async with Offprint() as offprint:
+        with pytest.raises(ValidationError) as captured:
+            offprint.captures.request("javascript:alert(1)")
+        assert captured.value.code == "offprint.input.url_scheme"
+        with pytest.raises(TypeError, match="timeot_ms"):
+            offprint.captures.request("https://example.com", timeot_ms=1)
+
+    with pytest.raises(_api.OffprintError) as captured:
+        offprint.captures.request("https://example.com")
+    assert captured.value.code == "offprint.runtime.closed"

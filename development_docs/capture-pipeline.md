@@ -104,3 +104,15 @@ For every new acquisition, record:
 Apply this to browser process, remote connection, managed lease, context,
 page, target manager, event task, resource stream, stored content, temporary
 artifact, staging writer, and export journal.
+
+## Consumer lifetime
+
+A `CaptureJob` is a shared handle. Dropping one handle leaves the job running
+for other observers. The one-shot `Capture::save` and `Capture::bytes` futures
+own cancellation while awaiting their job. Dropping either future requests
+cancellation before commit arbitration.
+
+Browser acquisition runs in a task guarded by its awaiting operation. Dropping
+the operation aborts acquisition and releases pending leases, contexts, and
+pages. Service shutdown attempts context and backend cleanup even if waiting
+for capture jobs reaches its deadline, then returns the first cleanup failure.

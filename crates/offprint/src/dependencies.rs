@@ -27,6 +27,9 @@ impl Clock for SystemClock {
 /// replay systems.
 pub trait CaptureIdGenerator: fmt::Debug + Send + Sync {
     /// Returns the identifier for the next capture.
+    ///
+    /// The identifier must differ from every active capture in the runtime.
+    /// Starting a capture with an active identifier fails with `offprint.runtime.job`.
     fn next_capture_id(&self) -> CaptureId;
 }
 

@@ -141,19 +141,40 @@ impl Capture {
     #[must_use]
     pub fn conflict(mut self, conflict: ConflictPolicy) -> Self {
         self.conflict = conflict;
+        self.request.output = self.request.output.with_conflict(conflict);
         self
+    }
+
+    /// Selects file delivery or bounded memory output for [`Self::start`].
+    #[must_use]
+    pub fn output(mut self, output: CaptureOutput) -> Self {
+        if let CaptureOutput::File { conflict, .. } = &output {
+            self.conflict = *conflict;
+        }
+        self.request.output = output;
+        self
+    }
+
+    /// Returns the configured request for further customization or scheduling.
+    ///
+    /// [`CaptureService::start`] validates the request before starting a job.
+    #[must_use]
+    pub fn into_request(self) -> CaptureRequest {
+        self.request
     }
 
     /// Writes, verifies, and commits an HTML artifact to `path`.
     ///
     /// The default conflict policy returns an error when `path` exists. Call
     /// [`Self::conflict`] to select replacement or a unique destination.
+    /// Dropping the future cancels capture before its atomic commit begins.
     pub async fn save(mut self, path: impl Into<PortablePath>) -> Result<CaptureReceipt> {
         self.request.output = CaptureOutput::File {
             path: path.into(),
             conflict: self.conflict,
         };
-        self.start().await?.result().await
+        let job = PendingCapture(self.start().await?);
+        job.0.result().await
     }
 
     #[allow(clippy::wrong_self_convention)]
@@ -161,16 +182,27 @@ impl Capture {
     ///
     /// Encoding fails before returning bytes when the artifact exceeds
     /// `maximum_bytes`.
+    /// Dropping the future cancels capture before its atomic commit begins.
     pub async fn bytes(mut self, maximum_bytes: u64) -> Result<CaptureReceipt> {
         self.request.output = CaptureOutput::Memory {
             max_bytes: maximum_bytes,
         };
-        self.start().await?.result().await
+        let job = PendingCapture(self.start().await?);
+        job.0.result().await
     }
 
     /// Starts the capture and returns its job handle.
     pub async fn start(self) -> Result<CaptureJob> {
         self.service.start(self.request).await
+    }
+}
+
+#[derive(Debug)]
+struct PendingCapture(CaptureJob);
+
+impl Drop for PendingCapture {
+    fn drop(&mut self) {
+        self.0.cancel();
     }
 }
 

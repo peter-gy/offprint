@@ -36,6 +36,49 @@ describe("Offprint Node.js binding", () => {
     expect(typeof offprint[Symbol.asyncDispose]).toBe("function");
   });
 
+  test("creates independent requests with native defaults and capture options", () => {
+    const offprint = service();
+    const request = offprint.captures.request("https://example.com", {
+      output: "capture.html",
+      profile: "server",
+      conflict: "replace",
+      waitUntil: "network-idle",
+      delayMs: 750,
+    });
+
+    expect(request.url).toBe("https://example.com/");
+    expect(request.output).toEqual({ kind: "file", path: "capture.html", conflict: "replace" });
+    expect(request.content.missingResources).toBe("fail");
+    expect(request.network).toEqual({ kind: "server" });
+    expect(request.readiness.mode).toBe("network-idle");
+    expect(request.readiness.delay).toBe(750);
+    expect(request.verification).toBe("offline");
+
+    request.environment.viewport.width = 320;
+    const next = offprint.captures.request("https://example.com");
+    expect(next.environment.viewport.width).toBe(1440);
+    expect(next.output).toEqual({ kind: "memory", maxBytes: 64 * 1024 * 1024 });
+  });
+
+  test("request edits are validated when the job starts", async () => {
+    const offprint = service();
+    const request = offprint.captures.request("https://example.com");
+    request.limits.duration = 0;
+
+    await expect(offprint.captures.start(request)).rejects.toMatchObject({
+      code: "offprint.input.limit",
+      stage: "validation",
+    });
+  });
+
+  test("request construction reports structured synchronous errors", async () => {
+    const offprint = service();
+    expect(() => offprint.captures.request("javascript:alert(1)")).toThrow(OffprintError);
+    expect(() => offprint.captures.request("https://example.com", { timeotMs: 1 })).toThrow(OffprintError);
+    await offprint.close();
+    expect(() => offprint.captures.request("https://example.com")).toThrow(OffprintError);
+  });
+
   test("maps validation failures to structured errors", async () => {
     const offprint = service();
 

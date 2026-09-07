@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
-    BrowserEnvironment, CaptureCredentials, CaptureLimits, CaptureOutput, ConflictPolicy,
-    ContentPolicy, DiagnosticsPolicy, ErrorStage, MAXIMUM_CAPTURE_NODES, NetworkPolicy,
-    OffprintError, PortablePath, ReadinessPolicy, Result, VerificationMode,
+    BrowserEnvironment, CaptureCredentials, CaptureLimits, CaptureOutput, ContentPolicy,
+    DiagnosticsPolicy, ErrorStage, MAXIMUM_CAPTURE_NODES, NetworkPolicy, OffprintError,
+    PortablePath, ReadinessPolicy, Result, VerificationMode,
 };
 
 #[derive(Clone, Debug, Deserialize, Eq, JsonSchema, PartialEq, Serialize)]
@@ -109,14 +109,8 @@ impl CaptureRequestBuilder {
     }
 
     #[must_use]
-    pub fn output(mut self, path: impl Into<PortablePath>) -> Self {
-        self.request.output = CaptureOutput::file(path.into());
-        self
-    }
-
-    #[must_use]
-    pub fn conflict(mut self, conflict: ConflictPolicy) -> Self {
-        self.request.output = self.request.output.with_conflict(conflict);
+    pub fn output(mut self, output: CaptureOutput) -> Self {
+        self.request.output = output;
         self
     }
 
@@ -466,7 +460,7 @@ mod tests {
     #[test]
     fn file_output_defaults_to_conflict_failure() {
         let request = CaptureRequest::builder("https://example.com")
-            .map(|builder| builder.output("capture.html"))
+            .map(|builder| builder.output(CaptureOutput::file("capture.html".into())))
             .and_then(|builder| builder.build());
         let conflict = request.as_ref().map(|request| match request.output {
             CaptureOutput::File { conflict, .. } => conflict,
@@ -477,12 +471,31 @@ mod tests {
     }
 
     #[test]
-    fn in_memory_output_has_no_filesystem_conflict_state() {
-        let result = CaptureRequest::builder("https://example.com")
-            .map(|builder| builder.conflict(ConflictPolicy::Fail))
-            .and_then(|builder| builder.build());
+    fn request_builder_preserves_file_conflict_policy() -> crate::Result<()> {
+        let request = CaptureRequest::builder("https://example.com")?
+            .output(
+                CaptureOutput::file("capture.html".into()).with_conflict(ConflictPolicy::Replace),
+            )
+            .build()?;
 
-        assert!(result.is_ok());
+        assert_eq!(
+            request.output,
+            CaptureOutput::File {
+                path: "capture.html".into(),
+                conflict: ConflictPolicy::Replace,
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn request_builder_accepts_bounded_memory_output() -> crate::Result<()> {
+        let request = CaptureRequest::builder("https://example.com")?
+            .output(CaptureOutput::memory(4096))
+            .build()?;
+
+        assert_eq!(request.output, CaptureOutput::Memory { max_bytes: 4096 });
+        Ok(())
     }
 
     #[test]

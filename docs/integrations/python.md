@@ -64,61 +64,19 @@ The generated module is the exact dictionary shape reference.
 
 ## Jobs and services
 
-This complete request uses memory output and disables lazy-load scrolling to
-keep the first job example short and deterministic:
+Create a request with `captures.request`, change the policies your task needs,
+then call `captures.start` for progress events and cancellation:
 
 ```python
 import asyncio
 
-from offprint import CaptureRequest, Offprint
-
-
-request: CaptureRequest = {
-    "schemaVersion": 2,
-    "url": "https://example.com/",
-    "output": {"kind": "memory", "maxBytes": 16 * 1024 * 1024},
-    "browser": {"kind": "auto"},
-    "environment": {
-        "viewport": {"width": 1440, "height": 900, "scale": 1},
-        "locale": "en-US",
-        "timezone": "UTC",
-        "colorScheme": "light",
-        "reducedMotion": "reduce",
-        "userAgent": {"kind": "browser-default"},
-    },
-    "readiness": {
-        "mode": "render-idle",
-        "networkQuiet": 500,
-        "mutationQuiet": 300,
-        "delay": 0,
-        "lazyLoad": {"kind": "disabled"},
-    },
-    "content": {
-        "missingResources": "warn",
-        "preservePasswordValues": False,
-    },
-    "network": {"kind": "standard"},
-    "limits": {
-        "duration": 120000,
-        "redirects": 20,
-        "frames": 256,
-        "nodes": 1000000,
-        "resources": 10000,
-        "resourceBytes": 64 * 1024 * 1024,
-        "totalResourceBytes": 512 * 1024 * 1024,
-        "collectorChunkBytes": 1024 * 1024,
-        "concurrentResources": 8,
-        "artifactBytes": 64 * 1024 * 1024,
-        "resourceRecursionDepth": 64,
-        "frameDepth": 64,
-    },
-    "verification": "offline",
-    "diagnostics": {},
-}
+from offprint import Offprint
 
 
 async def capture_memory() -> None:
     async with Offprint() as offprint:
+        request = offprint.captures.request("https://example.com")
+        request["output"] = {"kind": "memory", "maxBytes": 16 * 1024 * 1024}
         job = await offprint.captures.start(request)
         async for event in job.events():
             if event["type"] == "warning":
@@ -135,6 +93,12 @@ async def capture_memory() -> None:
 asyncio.run(capture_memory())
 ```
 
+`captures.request(url, **options)` returns a fresh canonical request using the
+same profiles and options as `capture`. Its default output is bounded memory.
+Set credentials, network rules, browser environment, diagnostics, or exact
+limits directly on the request. `start` validates the completed request before
+acquiring a browser.
+
 Canonical dictionaries represent in-memory content as `list[int]`. Convert it
 to `bytes` before passing the artifact to byte-oriented Python APIs.
 The same example lives in
@@ -143,7 +107,7 @@ type-checked by `just python-check`.
 
 | Property | Methods |
 | --- | --- |
-| `captures` | `start`, `batch`, `crawl` |
+| `captures` | `request`, `start`, `batch`, `crawl` |
 | `artifacts` | `inspect`, `verify`, `export`, `verify_format` |
 | `browsers` | `ensure`, `install`, `list`, `remove`, `doctor`, `close_idle` |
 

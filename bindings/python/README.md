@@ -44,33 +44,26 @@ downloads and verifies its pinned
 [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/)
 build.
 
-## Services and lifecycle
+## Requests and jobs
 
-`Offprint` exposes:
+Inside the service context, create a request with native defaults, choose
+memory output, and start a job:
 
-- `captures` for jobs, events, cancellation, batches, and crawls
-- `artifacts` for manifest inspection, HTML verification, export, and
-  format-specific verification
-- `browsers` for discovery, managed installation, inventory, removal,
-  diagnosis, and idle close
+```python
+request = offprint.captures.request("https://example.com")
+request["output"] = {"kind": "memory", "maxBytes": 16 * 1024 * 1024}
+job = await offprint.captures.start(request)
+receipt = await job.result()
+```
 
-The shorthand `capture` method writes one file. Pass a complete
-`CaptureRequest` dictionary to `captures.start` for memory output, credentials,
-a custom network policy, complete environment control, diagnostics, or exact
-limits.
+Use `job.events()` for progress and `job.cancel()` to request cancellation.
+Use `async with` for a bounded lifetime, or await `close()` during shutdown.
+`offprint.artifacts` inspects, verifies, and exports saved captures.
+`offprint.browsers` manages browser discovery and installations.
 
-Use `async with` for a bounded service lifetime. A long-running service can
-reuse one instance and await `close()` during shutdown.
-
-## Naming and errors
-
-Python methods and keyword arguments use snake_case. Canonical request, event,
-result, manifest, browser, batch, crawl, and error dictionaries remain
-camelCase.
-
-Python maps failure stages to subclasses of `OffprintError`. Every exception
-also exposes the stable code, stage, retryability, details, optional diagnostics
-path, and nested source.
+Methods and keyword arguments use snake_case. Request and result dictionaries
+use camelCase. Failures raise `OffprintError` subclasses with a stable `code`,
+`stage`, and `retryable` flag.
 
 Read the complete [Python integration guide](https://github.com/peter-gy/offprint/blob/main/docs/integrations/python.md),
 [record reference](https://github.com/peter-gy/offprint/blob/main/docs/reference/records.md),

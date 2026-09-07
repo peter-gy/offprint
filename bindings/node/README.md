@@ -40,34 +40,25 @@ downloads and verifies its pinned
 [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/)
 build.
 
-## Services and lifecycle
+## Requests and jobs
 
-`Offprint` exposes:
+Inside the `try` block, create a request with native defaults, choose memory
+output, and start a job:
 
-- `captures` for jobs, events, cancellation, batches, and crawls
-- `artifacts` for manifest inspection, HTML verification, export, and
-  format-specific verification
-- `browsers` for discovery, managed installation, inventory, removal,
-  diagnosis, and idle close
+```js
+const request = offprint.captures.request("https://example.com");
+request.output = { kind: "memory", maxBytes: 16 * 1024 * 1024 };
+const job = await offprint.captures.start(request);
+const receipt = await job.result();
+```
 
-The shorthand `capture` method writes one file. Pass a complete
-`CaptureRequest` to `captures.start` for memory output, credentials, a custom
-network policy, complete environment control, diagnostics, or exact limits.
+Use `job.events()` for progress and `job.cancel()` to request cancellation.
+Always await `offprint.close()` or use `Symbol.asyncDispose` during shutdown.
+`offprint.artifacts` inspects, verifies, and exports saved captures.
+`offprint.browsers` manages browser discovery and installations.
 
-Every `job.events()` call creates an independent asynchronous iterator.
-`job.cancel()` is idempotent. `job.result()` resolves once with a
-`CaptureReceipt` or rejects with `OffprintError`.
-
-Always await `close()` or use `Symbol.asyncDispose` during orderly shutdown.
-Finalization and process-exit handling are fallback safeguards.
-
-## Records and errors
-
-Host options and methods use camelCase. Canonical request, event, result,
-manifest, browser, batch, crawl, and error records also use camelCase.
-
-`OffprintError` exposes `code`, `stage`, `retryable`, `details`,
-`diagnosticsPath`, and an optional nested `source`.
+Native failures reject with `OffprintError`, including a stable `code`,
+`stage`, and `retryable` flag.
 
 Read the complete [Node.js integration guide](https://github.com/peter-gy/offprint/blob/main/docs/integrations/node.md),
 [record reference](https://github.com/peter-gy/offprint/blob/main/docs/reference/records.md),

@@ -76,10 +76,12 @@ use runtime::{RuntimeOptions, RuntimeState};
 /// Extension contracts implemented by browser adapters.
 pub mod ports {
     pub use offprint_browser::{
-        BrowserAcquireRequest, BrowserBackend, BrowserContext, BrowserContextRequest, BrowserLease,
-        FrameObservation, FrameOwnerObservation, ObservationLimits, ObservationViewport,
-        ObservationWarning, ObservedFrame, PageSession, SelectionObservation, VisualFallback,
-        VisualFallbackKind,
+        AddressClass, AttachedFrame, BodyStream, BrowserAcquireRequest, BrowserBackend,
+        BrowserContext, BrowserContextRequest, BrowserLease, FrameObservation,
+        FrameOwnerObservation, LoadedResource, NavigationRedirect, NavigationResult, NetworkGuard,
+        ObservationLimits, ObservationViewport, ObservationWarning, ObservedFrame,
+        OfflineBrowserObservation, PageSession, ReadinessObservation,
+        ResourceObservationLimits, SelectionObservation, VisualFallback, VisualFallbackKind,
     };
 }
 

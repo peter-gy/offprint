@@ -42,6 +42,7 @@ image.workspace = true
 lopdf.workspace = true
 offprint-test-support = { path = "../offprint-test-support" }
 sysinfo.workspace = true
+tokio = { workspace = true, features = ["test-util"] }
 
 [lints]
 workspace = true

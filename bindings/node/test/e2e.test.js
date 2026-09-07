@@ -11,11 +11,6 @@ import { join } from "node:path";
 
 import { Offprint, OffprintError } from "../index.js";
 
-const requestFixture = new URL(
-  "../../../schemas/examples/capture-request.json",
-  import.meta.url,
-);
-
 let directory;
 let server;
 let sourceUrl;
@@ -52,13 +47,6 @@ afterAll(async () => {
   server.stop(true);
   await rm(directory, { recursive: true, force: true });
 });
-
-async function request(output) {
-  const value = JSON.parse(await readFile(requestFixture, "utf8"));
-  value.url = sourceUrl;
-  value.output = { kind: "file", path: output, conflict: "replace" };
-  return value;
-}
 
 async function nextEvent(events) {
   return await Promise.race([
@@ -129,7 +117,7 @@ test(
         expect(verified.sha256).toBe(artifact.sha256);
       }
 
-      const captureRequest = await request(cancelledOutput);
+      const captureRequest = offprint.captures.request(sourceUrl, { output: cancelledOutput });
       captureRequest.readiness.delay = 30_000;
       const job = await offprint.captures.start(captureRequest);
       const events = job.events();
@@ -187,3 +175,23 @@ test("validation errors keep the typed binding contract", async () => {
     await offprint.close();
   }
 });
+
+
+test("a configured request captures rendered HTML to bounded memory", async () => {
+  const offprint = new Offprint();
+  try {
+    const request = offprint.captures.request(sourceUrl, { selector: "#capture" });
+    request.output = { kind: "memory", maxBytes: 1024 * 1024 };
+    const job = await offprint.captures.start(request);
+    const receipt = await job.result();
+
+    expect(receipt.artifact.kind).toBe("bytes");
+    const html = new TextDecoder().decode(Uint8Array.from(receipt.artifact.content));
+    expect(html).toContain("binding rendered");
+    expect(receipt.artifact.bytes).toBeLessThanOrEqual(1024 * 1024);
+    expect(receipt.verification.mode).toBe("offline");
+    expect(receipt.verification.networkRequests).toBe(0);
+  } finally {
+    await offprint.close();
+  }
+}, 30_000);

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -12,7 +11,6 @@ import pytest
 from offprint import Offprint, ShutdownError
 
 
-EXAMPLES = Path(__file__).parents[3] / "schemas" / "examples"
 ASYNC_OPERATION_TIMEOUT = 15.0
 
 
@@ -54,20 +52,6 @@ def source_url() -> Any:
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
-
-
-def capture_request(url: str, output: Path) -> dict[str, Any]:
-    value = json.loads(
-        (EXAMPLES / "capture-request.json").read_text(encoding="utf-8")
-    )
-    assert isinstance(value, dict)
-    value["url"] = url
-    value["output"] = {
-        "kind": "file",
-        "path": str(output),
-        "conflict": "replace",
-    }
-    return value
 
 
 @pytest.mark.asyncio
@@ -140,7 +124,7 @@ async def test_capture_event_cancellation_and_close_contract(
             )
             assert verified["sha256"] == artifact["sha256"]
 
-        request = capture_request(source_url, cancelled_output)
+        request = offprint.captures.request(source_url, output=cancelled_output)
         request["readiness"]["delay"] = 30_000
         job = await offprint.captures.start(request)
         events = job.events()
@@ -179,3 +163,21 @@ async def test_capture_event_cancellation_and_close_contract(
     finally:
         await offprint.close()
         await offprint.close()
+
+
+@pytest.mark.asyncio
+async def test_configured_request_captures_rendered_html_to_bounded_memory(
+    source_url: str,
+) -> None:
+    async with Offprint() as offprint:
+        request = offprint.captures.request(source_url, selector="#capture")
+        request["output"] = {"kind": "memory", "maxBytes": 1024 * 1024}
+        job = await offprint.captures.start(request)
+        receipt = await asyncio.wait_for(job.result(), timeout=30)
+
+        assert receipt["artifact"]["kind"] == "bytes"
+        html = bytes(receipt["artifact"]["content"]).decode("utf-8")
+        assert "binding rendered" in html
+        assert receipt["artifact"]["bytes"] <= 1024 * 1024
+        assert receipt["verification"]["mode"] == "offline"
+        assert receipt["verification"]["networkRequests"] == 0

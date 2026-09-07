@@ -136,6 +136,14 @@ class CaptureService {
     this.#owner = owner;
   }
 
+  request(url, options) {
+    try {
+      return this.#native.request(url, options);
+    } catch (error) {
+      throw translateError(error);
+    }
+  }
+
   async start(request) {
     const job = await invoke(() => this.#native.start(request));
     return new CaptureJob(job, this.#owner);

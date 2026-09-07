@@ -7,6 +7,11 @@ use std::time::Duration;
 use bytes::Bytes;
 use data_url::DataUrl;
 use offprint::ports::{
+    AttachedFrame, FrameObservation, LoadedResource, NavigationResult, NetworkGuard,
+    ObservationLimits, ObservationViewport, ObservedFrame, OfflineBrowserObservation,
+    ReadinessObservation, SelectionObservation, VisualFallback,
+};
+use offprint::ports::{
     BrowserAcquireRequest, BrowserBackend, BrowserContext, BrowserContextRequest, BrowserLease,
     PageSession,
 };
@@ -17,11 +22,6 @@ use offprint::{
     NetworkPolicySummary, Offprint, OffprintError, OutputCapability, PortablePath, ReadinessMode,
     ReadinessPolicy, RequestHeader, ResourceRetrievalSource, Result, ResumeOptions,
     VerificationMode,
-};
-use offprint_browser::{
-    AttachedFrame, FrameObservation, LoadedResource, NavigationResult, NetworkGuard,
-    ObservationLimits, ObservationViewport, ObservedFrame, OfflineBrowserObservation,
-    ReadinessObservation, SelectionObservation, VisualFallback,
 };
 use tokio::sync::Semaphore;
 use tokio_util::sync::CancellationToken;
@@ -88,7 +88,6 @@ enum AcquisitionStage {
 struct AcquisitionGate {
     stage: AcquisitionStage,
     entered: Semaphore,
-    release: Semaphore,
 }
 
 impl AcquisitionGate {
@@ -96,7 +95,6 @@ impl AcquisitionGate {
         Self {
             stage,
             entered: Semaphore::new(0),
-            release: Semaphore::new(0),
         }
     }
 
@@ -105,9 +103,7 @@ impl AcquisitionGate {
             return;
         }
         self.entered.add_permits(1);
-        if let Ok(permit) = self.release.acquire().await {
-            permit.forget();
-        }
+        std::future::pending::<()>().await;
     }
 
     async fn wait_until_entered(&self) -> TestResult {
@@ -115,10 +111,6 @@ impl AcquisitionGate {
             .await??
             .forget();
         Ok(())
-    }
-
-    fn resume(&self) {
-        self.release.add_permits(1);
     }
 }
 
@@ -749,11 +741,56 @@ async fn cancellation_during_each_acquisition_stage_releases_every_owner() -> Te
             .into());
         };
         assert_eq!(error.code.as_str(), "offprint.runtime.cancelled");
-        gate.resume();
-        wait_for_owner_cleanup(&counts).await?;
-        assert_owner_counts(&counts, 1, 0);
+        let (contexts, leases) = match stage {
+            AcquisitionStage::Lease => (0, 0),
+            AcquisitionStage::Context => (0, 1),
+            AcquisitionStage::Page => (1, 1),
+        };
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while counts.context_closes.load(Ordering::Acquire) != contexts
+                || counts.lease_closes.load(Ordering::Acquire) != leases
+            {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
         offprint.close().await?;
+        assert_eq!(counts.page_closes.load(Ordering::Acquire), 0);
+        assert_eq!(counts.backend_closes.load(Ordering::Acquire), 1);
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn dropping_one_shot_capture_releases_owners_and_staging() -> TestResult {
+    for file_output in [false, true] {
+        let output = tempfile::tempdir()?;
+        let destination = PortablePath::from_path_buf(output.path().join("capture.html"))?;
+        let (backend, counts) = FixtureBackend::new(false);
+        let offprint = Offprint::builder().browser_backend(backend).build()?;
+        let capture = offprint.capture("http://127.0.0.1/stall-freeze")?;
+        let task = tokio::spawn(async move {
+            if file_output {
+                capture.save(destination).await
+            } else {
+                capture.bytes(1024 * 1024).await
+            }
+        });
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while counts.freeze_entries.load(Ordering::Acquire) == 0 {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await?;
+
+        task.abort();
+        assert!(task.await.is_err_and(|error| error.is_cancelled()));
+        let cleanup = wait_for_owner_cleanup(&counts).await;
+        offprint.close().await?;
+        cleanup?;
+
         assert_owner_counts(&counts, 1, 1);
+        assert_eq!(std::fs::read_dir(output.path())?.count(), 0);
     }
     Ok(())
 }

@@ -1,13 +1,14 @@
 use futures_util::StreamExt as _;
-use offprint::{CaptureOutput, CaptureRequest, Offprint};
+use offprint::{CaptureOutput, Offprint};
 
 #[tokio::main]
 async fn main() -> offprint::Result<()> {
     let offprint = Offprint::new()?;
-    let mut request = CaptureRequest::builder("https://example.com")?.build()?;
-    request.output = CaptureOutput::memory(16 * 1024 * 1024);
-
-    let job = offprint.captures().start(request).await?;
+    let job = offprint
+        .capture("https://example.com")?
+        .output(CaptureOutput::memory(16 * 1024 * 1024))
+        .start()
+        .await?;
     let mut events = job.events();
     while let Some(event) = events.next().await {
         if event.is_terminal() {

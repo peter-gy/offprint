@@ -105,6 +105,27 @@ class CaptureJob:
     async def result(self) -> CaptureReceipt: ...
 
 class CaptureService:
+    def request(
+        self,
+        url: str,
+        *,
+        output: str | PathLike[str] | None = None,
+        profile: str | None = None,
+        timeout_ms: int | None = None,
+        wait_until: CaptureRequestReadinessMode | None = None,
+        delay_ms: int | None = None,
+        viewport: Viewport | None = None,
+        strict: bool = False,
+        headed: bool | None = None,
+        conflict: ConflictPolicy | None = None,
+        network_policy: Literal["standard", "server", "unrestricted"] | None = None,
+        verification: VerificationMode | None = None,
+        scope: CaptureScope | None = None,
+        selector: str | None = None,
+        remove_unused_css: bool = False,
+        remove_unused_fonts: bool = False,
+        remove_hidden_elements: bool = False,
+    ) -> CaptureRequest: ...
     async def start(self, request: CaptureRequest) -> CaptureJob: ...
     async def batch(
         self,

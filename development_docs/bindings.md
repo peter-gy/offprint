@@ -18,11 +18,21 @@ Each host exposes:
 - Root `Offprint` runtime
 - Capture, artifact, and browser services
 - Shorthand file capture
-- Complete `CaptureRequest` jobs
+- Defaulted request construction and complete `CaptureRequest` jobs
 - Events, cancellation, batch, and crawl
 - Inspect, HTML verify, export, and format verify
 - Browser ensure, list, install, remove, doctor, and idle close
 - Explicit shutdown and process-exit fallback
+
+## Request construction
+
+`captures.request(url, options)` builds a canonical `CaptureRequest` through
+Rust's fluent `Capture` path. The request inherits the selected service profile.
+The host receives an owned record it can edit, reuse, or submit to `start` and
+`batch`. Constructing a request performs no browser work.
+
+The file-capture shorthand and request factory share native option application.
+Host code maps names and values. Rust owns defaults and validation.
 
 ## Node.js
 

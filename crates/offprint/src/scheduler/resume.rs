@@ -597,7 +597,7 @@ mod tests {
     fn batch_manifest_binds_succeeded_records_to_the_requested_artifact()
     -> Result<(), Box<dyn std::error::Error>> {
         let capture = CaptureRequest::builder("https://example.com")?
-            .output("expected.html")
+            .output(offprint_model::CaptureOutput::file("expected.html".into()))
             .build()?;
         let digest = super::super::digest_serializable(&capture)?;
         let request = BatchRequest {

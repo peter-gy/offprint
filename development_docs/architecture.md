@@ -70,9 +70,10 @@ reexports an intentional service-facing set. Document-repair internals such as
 `NodeId`, `RepairNode`, and `StructuralRepairTree` remain behind their owning
 lower-crate boundary.
 
-`offprint::ports` reexports the main backend traits. A complete external backend
-also needs observation and network types from `offprint-browser`. That direct
-dependency is the current advanced integration contract.
+`offprint::ports` exposes the backend traits and their observation, resource,
+and network types. An external adapter can implement the complete browser
+contract through the service facade. The custom-backend integration suite
+compiles and exercises that public path.
 
 Several lower crates are published as dependency units and expose public Rust
 types. Those types are not automatically part of the supported `offprint`

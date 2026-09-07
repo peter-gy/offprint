@@ -94,13 +94,21 @@ impl NativeOffprint {
         .await
     }
 
+    #[napi(js_name = "request")]
+    pub fn request(&self, url: String, options: Option<Value>) -> napi::Result<Value> {
+        contained_sync(|| {
+            let offprint = self.inner.as_ref().map_err(Clone::clone)?;
+            let options = decode_options::<CaptureOptions>(options, "capture options")?;
+            to_value(configure_capture(offprint, url, options)?.into_request())
+        })
+    }
+
     #[napi(js_name = "start")]
     pub async fn start(&self, request: Value) -> napi::Result<NativeCaptureJob> {
         let offprint = self.inner.clone().map_err(native_error)?;
         contained(async move {
             let request: CaptureRequest = serde_json::from_value(request)
                 .map_err(|error| invalid_input("capture request", error))?;
-            request.validate()?;
             let job = offprint.captures().start(request).await?;
             Ok(NativeCaptureJob { inner: job })
         })
@@ -414,14 +422,24 @@ async fn run_capture(
     url: String,
     options: CaptureOptions,
 ) -> offprint::Result<Value> {
-    let mut capture = offprint.capture(url)?;
-    let output = options.output.ok_or_else(|| {
+    let output = options.output.clone();
+    let capture = configure_capture(&offprint, url, options)?;
+    let output = output.ok_or_else(|| {
         OffprintError::new(
             "offprint.input.output",
             ErrorStage::Validation,
             "capture requires an output path",
         )
     })?;
+    to_value(capture.save(output).await?)
+}
+
+fn configure_capture(
+    offprint: &Offprint,
+    url: String,
+    options: CaptureOptions,
+) -> offprint::Result<offprint::Capture> {
+    let mut capture = offprint.capture(url)?;
     if let Some(profile) = options.profile {
         capture = capture.profile(profile)?;
     }
@@ -449,6 +467,9 @@ async fn run_capture(
     if let Some(verification) = options.verification {
         capture = capture.verification(verification);
     }
+    if let Some(output) = options.output {
+        capture = capture.output(offprint::CaptureOutput::file(output.into()));
+    }
     if let Some(conflict) = options.conflict {
         capture = capture.conflict(conflict);
     }
@@ -467,8 +488,7 @@ async fn run_capture(
     if options.remove_hidden_elements {
         capture = capture.remove_hidden_elements();
     }
-    let result = capture.save(output).await?;
-    to_value(result)
+    Ok(capture)
 }
 
 fn decode_options<T>(value: Option<Value>, label: &str) -> offprint::Result<T>
@@ -505,6 +525,14 @@ where
     F: Future<Output = offprint::Result<T>> + Send + 'static,
 {
     match AssertUnwindSafe(future).catch_unwind().await {
+        Ok(Ok(value)) => Ok(value),
+        Ok(Err(error)) => Err(native_error(error)),
+        Err(_) => Err(native_error(panic_error())),
+    }
+}
+
+fn contained_sync<T>(operation: impl FnOnce() -> offprint::Result<T>) -> napi::Result<T> {
+    match catch_unwind(AssertUnwindSafe(operation)) {
         Ok(Ok(value)) => Ok(value),
         Ok(Err(error)) => Err(native_error(error)),
         Err(_) => Err(native_error(panic_error())),

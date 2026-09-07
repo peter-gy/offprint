@@ -288,7 +288,7 @@ fn example_documents() -> Result<BTreeMap<&'static str, Vec<u8>>, String> {
     let mut documents = BTreeMap::new();
     let request = offprint_model::CaptureRequest::builder("https://example.com/")
         .map_err(|error| error.to_string())?
-        .output("example.html")
+        .output(offprint_model::CaptureOutput::file("example.html".into()))
         .build()
         .map_err(|error| error.to_string())?;
     insert_example(

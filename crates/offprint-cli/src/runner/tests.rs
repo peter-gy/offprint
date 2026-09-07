@@ -1067,8 +1067,7 @@ async fn interrupted_capture_preserves_the_existing_destination_and_redacts_prog
         .to_str()
         .ok_or_else(|| std::io::Error::other("artifact path is not UTF-8"))?;
     let mut request = CaptureRequest::builder(url.as_str())?
-        .output(destination_text)
-        .conflict(ConflictPolicy::Replace)
+        .output(CaptureOutput::file(destination_text.into()).with_conflict(ConflictPolicy::Replace))
         .build()?;
     request.readiness.delay = Milliseconds::new(30_000);
     request.readiness.lazy_load = LazyLoadPolicy::Disabled;

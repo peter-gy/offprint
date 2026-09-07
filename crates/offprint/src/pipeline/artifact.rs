@@ -306,11 +306,13 @@ mod tests {
     #[test]
     fn capture_policy_digest_excludes_delivery_configuration() -> offprint_model::Result<()> {
         let first = offprint_model::CaptureRequest::builder("https://example.com")?
-            .output("first.html")
+            .output(offprint_model::CaptureOutput::file("first.html".into()))
             .build()?;
         let second = offprint_model::CaptureRequest::builder("https://example.com")?
-            .output("second.html")
-            .conflict(offprint_model::ConflictPolicy::Uniquify)
+            .output(
+                offprint_model::CaptureOutput::file("second.html".into())
+                    .with_conflict(offprint_model::ConflictPolicy::Uniquify),
+            )
             .build()?;
 
         assert_eq!(

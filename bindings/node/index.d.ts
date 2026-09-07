@@ -139,6 +139,7 @@ export declare class CaptureJob {
 export declare class CaptureService {
   private constructor();
 
+  request(url: string, options?: Partial<CaptureOptions>): CaptureRequest;
   start(request: CaptureRequest): Promise<CaptureJob>;
   batch(request: BatchRequest): Promise<BatchResult>;
   crawl(request: CrawlRequest): Promise<CrawlResult>;

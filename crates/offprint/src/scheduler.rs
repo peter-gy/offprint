@@ -728,7 +728,7 @@ mod tests {
     fn resumable_batch_rejects_credentials_before_digesting_the_plan()
     -> Result<(), Box<dyn std::error::Error>> {
         let mut capture = CaptureRequest::builder("https://example.com")?
-            .output("capture.html")
+            .output(offprint_model::CaptureOutput::file("capture.html".into()))
             .build()?;
         capture.credentials.headers.push(RequestHeader {
             name: "authorization".to_owned(),

@@ -93,13 +93,20 @@ impl NativeOffprint {
         })
     }
 
+    #[pyo3(signature = (url, options_json=None))]
+    fn request_json(&self, url: String, options_json: Option<&str>) -> PyResult<String> {
+        contained_sync(|| {
+            let options = decode_options::<CaptureOptions>(options_json, "capture options")?;
+            to_json(configure_capture(&self.inner, url, options)?.into_request())
+        })
+    }
+
     fn start<'py>(&self, py: Python<'py>, request_json: String) -> PyResult<Bound<'py, PyAny>> {
         let offprint = self.inner.clone();
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             contained(async move {
                 let request: CaptureRequest = serde_json::from_str(&request_json)
                     .map_err(|error| invalid_input("capture request", error))?;
-                request.validate()?;
                 let job = offprint.captures().start(request).await?;
                 Ok(NativeCaptureJob { inner: job })
             })
@@ -467,14 +474,24 @@ async fn run_capture(
     url: String,
     options: CaptureOptions,
 ) -> offprint::Result<String> {
-    let mut capture = offprint.capture(url)?;
-    let output = options.output.ok_or_else(|| {
+    let output = options.output.clone();
+    let capture = configure_capture(&offprint, url, options)?;
+    let output = output.ok_or_else(|| {
         OffprintError::new(
             "offprint.input.output",
             ErrorStage::Validation,
             "capture requires an output path",
         )
     })?;
+    to_json(capture.save(output).await?)
+}
+
+fn configure_capture(
+    offprint: &Offprint,
+    url: String,
+    options: CaptureOptions,
+) -> offprint::Result<offprint::Capture> {
+    let mut capture = offprint.capture(url)?;
     if let Some(profile) = options.profile {
         capture = capture.profile(profile)?;
     }
@@ -502,6 +519,9 @@ async fn run_capture(
     if let Some(verification) = options.verification {
         capture = capture.verification(verification);
     }
+    if let Some(output) = options.output {
+        capture = capture.output(offprint::CaptureOutput::file(output.into()));
+    }
     if let Some(conflict) = options.conflict {
         capture = capture.conflict(conflict);
     }
@@ -520,8 +540,7 @@ async fn run_capture(
     if options.remove_hidden_elements {
         capture = capture.remove_hidden_elements();
     }
-    let result = capture.save(output).await?;
-    to_json(result)
+    Ok(capture)
 }
 
 fn decode_options<T>(json: Option<&str>, label: &str) -> offprint::Result<T>

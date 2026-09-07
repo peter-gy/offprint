@@ -16,6 +16,7 @@ export declare class NativeOffprint {
   static create(options?: any | undefined | null): NativeOffprint
   get initializationError(): any | null
   capture(url: string, options?: any | undefined | null): Promise<any>
+  request(url: string, options?: any | undefined | null): any
   start(request: any): Promise<NativeCaptureJob>
   batch(request: any): Promise<any>
   crawl(request: any): Promise<any>

@@ -235,6 +235,20 @@ class CaptureService:
         self._native = native
         self._owner = owner
 
+    def request(self, url: str, **options: Any) -> dict[str, Any]:
+        options_json = _json_options(
+            options,
+            _CAPTURE_OPTION_NAMES,
+            _CAPTURE_PATH_OPTIONS,
+        )
+        try:
+            return _decode_record(self._native.request_json(url, options_json))
+        except BaseException as error:
+            translated = _translate_error(error)
+            if translated is error:
+                raise
+            raise translated from error
+
     async def start(self, request: Mapping[str, Any]) -> CaptureJob:
         native_job = await _invoke(
             self._native.start(json.dumps(request, separators=(",", ":")))

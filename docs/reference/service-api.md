@@ -54,10 +54,29 @@ Node.js receives `number[]` and can convert it with `Uint8Array.from(content)`.
 Python receives `list[int]` and can convert it with `bytes(content)`. Rust keeps
 the content as `Vec<u8>`.
 
-Rust's pending `Capture` validates fluent values as they are applied. Browser
-work begins at `save`, `bytes`, or `start`.
+Rust's pending `Capture` accepts `output(CaptureOutput)` before `start`.
+`into_request()` returns the configured canonical request for further edits or
+scheduling. URL parsing happens during construction. `start` validates all
+request policies before browser work begins. `save` and `bytes` select an
+output and await the terminal result. Dropping either pending operation
+requests cancellation.
 
 ## `CaptureService`
+
+### `request(url, options?)` in Node.js and Python
+
+Returns a fresh `CaptureRequest` with native defaults and the same options as
+`capture`. The optional `output` names a file. Omitting it selects bounded
+memory using the profile's artifact byte limit. Python accepts the options as
+snake_case keyword arguments.
+
+Request construction is synchronous and starts no browser work. Invalid URLs,
+missing profiles, and a closed service raise structured errors. Unknown
+options raise `OffprintError` in Node.js and `TypeError` in Python. Edit the
+returned record, then pass it to `start` or include it in a batch or crawl
+request. The execution method validates the completed request.
+
+Rust uses `offprint.capture(url)?.into_request()` for the same workflow.
 
 ### `start(request)`
 
@@ -198,8 +217,8 @@ top-level page. `PageSession` implements credentials, network guard setup,
 navigation, readiness, frame observation, visual fallback, bounded resource
 loading, offline reopen, optional PDF printing, and close.
 
-The port types live in the `offprint-browser` crate. `offprint::ports` reexports
-the principal traits and observation types. The repository's
+`offprint::ports` reexports the browser traits and every request, observation,
+network, and resource type needed to implement them. The repository's
 [`custom_backend.rs`](../../crates/offprint/tests/custom_backend.rs) is the
 compiling end-to-end adapter example. Run it with:
 

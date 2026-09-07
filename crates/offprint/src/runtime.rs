@@ -84,13 +84,17 @@ impl RuntimeState {
             )
         })?;
         self.lifecycle.ensure_open()?;
-        jobs.insert(
-            capture_id,
-            ActiveJob {
-                control,
-                task: None,
-            },
-        );
+        let std::collections::btree_map::Entry::Vacant(entry) = jobs.entry(capture_id) else {
+            return Err(OffprintError::new(
+                "offprint.runtime.job",
+                ErrorStage::Internal,
+                "capture ID generator returned an active capture ID",
+            ));
+        };
+        entry.insert(ActiveJob {
+            control,
+            task: None,
+        });
         self.jobs_changed.notify_waiters();
         Ok(())
     }
@@ -157,6 +161,12 @@ impl RuntimeState {
     pub(crate) async fn close(self: &Arc<Self>) -> Result<()> {
         let (result, leader) = self.lifecycle.begin_close();
         if leader {
+            // Claim capture cancellation before waking operation observers.
+            if let Ok(jobs) = self.jobs.lock() {
+                for job in jobs.values() {
+                    job.control.request_cancel();
+                }
+            }
             self.shutdown.cancel();
             let runtime = Arc::clone(self);
             tokio::spawn(async move {
@@ -177,11 +187,6 @@ impl RuntimeState {
     }
 
     async fn finish_close(&self) -> Result<()> {
-        if let Ok(jobs) = self.jobs.lock() {
-            for job in jobs.values() {
-                job.control.request_cancel();
-            }
-        }
         let jobs = tokio::time::timeout(RUNTIME_SHUTDOWN_TIMEOUT, async {
             loop {
                 let notified = self.jobs_changed.notified();
@@ -203,7 +208,7 @@ impl RuntimeState {
             }
         })
         .await
-        .map_err(|_| shutdown_deadline_error("capture jobs"))?;
+        .unwrap_or_else(|_| Err(shutdown_deadline_error("capture jobs")));
         let contexts = tokio::time::timeout(RUNTIME_SHUTDOWN_TIMEOUT, async {
             loop {
                 let notified = self.contexts_changed.notified();
@@ -218,7 +223,7 @@ impl RuntimeState {
         self.context_slots.close();
         let backend = tokio::time::timeout(RUNTIME_SHUTDOWN_TIMEOUT, self.browser_backend.close())
             .await
-            .map_err(|_| shutdown_deadline_error("browser backend"))?;
+            .unwrap_or_else(|_| Err(shutdown_deadline_error("browser backend")));
         jobs.and(contexts).and(backend)
     }
 }
@@ -263,11 +268,17 @@ struct ActiveJob {
 
 #[cfg(test)]
 mod tests {
+    use async_trait::async_trait;
     use chrono::{DateTime, Utc};
-    use offprint_model::{BrowserInstallationPolicy, BrowserSourcePolicy, CaptureId};
+    use offprint_browser::{BrowserAcquireRequest, BrowserBackend, BrowserLease};
+    use offprint_model::{
+        BrowserDoctorReport, BrowserInstallationPolicy, BrowserSourcePolicy, BrowserSpec,
+        CaptureId, CaptureRequest, CaptureStatus, Result,
+    };
     use std::error::Error;
     use std::sync::Arc;
-    use std::sync::atomic::Ordering;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use tokio_util::sync::CancellationToken;
 
     use crate::capture_service::JobControl;
     use crate::{CaptureIdGenerator, Clock, Offprint};
@@ -290,6 +301,51 @@ mod tests {
         fn next_capture_id(&self) -> CaptureId {
             self.0.clone()
         }
+    }
+
+    #[derive(Debug)]
+    struct ShutdownBackend {
+        acquiring: tokio::sync::Semaphore,
+        closes: AtomicUsize,
+        stall: bool,
+        doctor: BrowserDoctorReport,
+    }
+
+    #[async_trait]
+    impl BrowserBackend for ShutdownBackend {
+        async fn acquire(
+            &self,
+            _request: BrowserAcquireRequest,
+            cancellation: CancellationToken,
+        ) -> Result<Box<dyn BrowserLease>> {
+            self.acquiring.add_permits(1);
+            cancellation.cancelled().await;
+            Err(super::closed_error())
+        }
+
+        async fn doctor(&self, _browser: &BrowserSpec) -> BrowserDoctorReport {
+            self.doctor.clone()
+        }
+
+        async fn close(&self) -> Result<()> {
+            self.closes.fetch_add(1, Ordering::AcqRel);
+            if self.stall {
+                std::future::pending().await
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    fn shutdown_backend(stall: bool) -> TestResult<Arc<ShutdownBackend>> {
+        Ok(Arc::new(ShutdownBackend {
+            acquiring: tokio::sync::Semaphore::new(0),
+            closes: AtomicUsize::new(0),
+            stall,
+            doctor: serde_json::from_str(include_str!(
+                "../../../schemas/examples/browser-doctor-report.json"
+            ))?,
+        }))
     }
 
     #[test]
@@ -336,6 +392,58 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test(start_paused = true)]
+    async fn close_releases_backend_after_capture_shutdown_deadline() -> TestResult {
+        let backend = shutdown_backend(false)?;
+        let offprint = Offprint::builder()
+            .browser_backend(backend.clone())
+            .build()?;
+        let control = Arc::new(JobControl::new(offprint.state.operation_cancellation()));
+        offprint
+            .state
+            .register_job(CaptureId::new(), control.clone())?;
+
+        let error = offprint.close().await.err().ok_or_else(|| {
+            std::io::Error::other("shutdown succeeded while a capture remained registered")
+        })?;
+
+        assert_eq!(error.code.as_str(), "offprint.runtime.shutdown");
+        assert_eq!(
+            error.message,
+            "capture jobs did not stop before the shutdown deadline"
+        );
+        assert!(control.cancellation().is_cancelled());
+        assert_eq!(backend.closes.load(Ordering::Acquire), 1);
+        let repeated =
+            offprint.close().await.err().ok_or_else(|| {
+                std::io::Error::other("repeated shutdown lost its terminal failure")
+            })?;
+        assert_eq!(repeated.message, error.message);
+        assert_eq!(backend.closes.load(Ordering::Acquire), 1);
+        Ok(())
+    }
+
+    #[tokio::test(start_paused = true)]
+    async fn close_preserves_context_failure_when_backend_also_exceeds_deadline() -> TestResult {
+        let backend = shutdown_backend(true)?;
+        let offprint = Offprint::builder()
+            .browser_backend(backend.clone())
+            .build()?;
+        let _permit = offprint.state.context_slots.clone().acquire_owned().await?;
+
+        let error = offprint.close().await.err().ok_or_else(|| {
+            std::io::Error::other("shutdown succeeded while a browser context remained owned")
+        })?;
+
+        assert_eq!(error.code.as_str(), "offprint.runtime.shutdown");
+        assert_eq!(
+            error.message,
+            "browser contexts did not stop before the shutdown deadline"
+        );
+        assert_eq!(backend.closes.load(Ordering::Acquire), 1);
+        Ok(())
+    }
+
     #[tokio::test]
     async fn duplicate_job_cleanup_counts_one_completion() -> TestResult {
         let offprint = Offprint::builder().build()?;
@@ -349,6 +457,42 @@ mod tests {
 
         assert_eq!(offprint.state.completed_jobs.load(Ordering::Acquire), 1);
         offprint.close().await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn duplicate_capture_id_preserves_active_job_shutdown() -> TestResult {
+        let backend = shutdown_backend(false)?;
+        let capture_id = CaptureId::new();
+        let offprint = Offprint::builder()
+            .browser_backend(backend.clone())
+            .capture_id_generator(Arc::new(FixedCaptureId(capture_id.clone())))
+            .build()?;
+        let request = CaptureRequest::builder("https://example.com")?.build()?;
+        let job = offprint.captures().start(request.clone()).await?;
+        tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            backend.acquiring.acquire(),
+        )
+        .await??
+        .forget();
+
+        let error = offprint
+            .captures()
+            .start(request)
+            .await
+            .err()
+            .ok_or_else(|| {
+                std::io::Error::other("a second capture acquired an active capture ID")
+            })?;
+        assert_eq!(error.code.as_str(), "offprint.runtime.job");
+        assert_eq!(job.id(), &capture_id);
+
+        tokio::time::timeout(std::time::Duration::from_secs(2), offprint.close()).await??;
+        let result = tokio::time::timeout(std::time::Duration::from_secs(2), job.result()).await?;
+        assert!(result.is_err_and(|error| error.code.as_str() == "offprint.runtime.cancelled"));
+        assert_eq!(job.status(), CaptureStatus::Cancelled);
+        assert_eq!(backend.closes.load(Ordering::Acquire), 1);
         Ok(())
     }
 }

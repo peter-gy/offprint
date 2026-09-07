@@ -7,6 +7,7 @@ use offprint_model::{
     OffprintError, Result,
 };
 use tokio_util::sync::CancellationToken;
+use tokio_util::task::AbortOnDropHandle;
 
 use super::{
     ContextPermit, PendingRuntimePage, RuntimePage, RuntimeState, closed_error,
@@ -57,7 +58,9 @@ impl RuntimeState {
         let permit = ContextPermit::new(permit, self);
         self.ensure_open()?;
         let runtime = Arc::clone(self);
-        let mut task = tokio::spawn(async move { runtime.acquire_page(request, permit).await });
+        let mut task = AbortOnDropHandle::new(tokio::spawn(async move {
+            runtime.acquire_page(request, permit).await
+        }));
         tokio::select! {
             biased;
             () = cancellation.cancelled() => {

@@ -46,25 +46,27 @@ checked by `just docs-check`.
 ```rust
 use offprint::{ConflictPolicy, Offprint};
 
-# async fn capture() -> offprint::Result<()> {
-let offprint = Offprint::new()?;
-let receipt = offprint
-    .capture("https://example.com")?
-    .bytes(16 * 1024 * 1024)
-    .await?;
+#[tokio::main]
+async fn main() -> offprint::Result<()> {
+    let offprint = Offprint::new()?;
+    let receipt = offprint
+        .capture("https://example.com")?
+        .bytes(16 * 1024 * 1024)
+        .await?;
 
-let name = offprint
-    .artifacts()
-    .suggested_capture_file_name(&receipt, "html")?;
-let receipt = offprint.artifacts().commit_capture(
-    receipt,
-    name,
-    ConflictPolicy::Fail,
-)?;
-assert!(matches!(receipt.artifact, offprint::CaptureArtifact::File { .. }));
-offprint.close().await?;
-# Ok(())
-# }
+    let name = offprint
+        .artifacts()
+        .suggested_capture_file_name(&receipt, "html")?;
+    let receipt = offprint
+        .artifacts()
+        .commit_capture(receipt, name, ConflictPolicy::Fail)?;
+    assert!(matches!(
+        receipt.artifact,
+        offprint::CaptureArtifact::File { .. }
+    ));
+    offprint.close().await?;
+    Ok(())
+}
 ```
 
 `commit_capture` requires an in-memory receipt whose content, byte count,
@@ -94,36 +96,52 @@ browser backends support deterministic hosts and advanced adapters.
 
 ## Use a complete request and job
 
-Use `CaptureRequest` and `CaptureService::start` for the full policy surface:
+Select an output and call `start` to observe progress or cancel the capture:
 
 ```rust
-use offprint::{CaptureOutput, CaptureRequest, Offprint};
+use offprint::{CaptureOutput, Offprint};
 
-# async fn run() -> offprint::Result<()> {
-let offprint = Offprint::new()?;
-let mut request = CaptureRequest::builder("https://example.com")?.build()?;
-request.output = CaptureOutput::memory(16 * 1024 * 1024);
+#[tokio::main]
+async fn main() -> offprint::Result<()> {
+    let offprint = Offprint::new()?;
+    let job = offprint
+        .capture("https://example.com")?
+        .output(CaptureOutput::memory(16 * 1024 * 1024))
+        .start()
+        .await?;
+    let mut events = job.events();
 
-let job = offprint.captures().start(request).await?;
-let mut events = job.events();
-
-use futures_util::StreamExt as _;
-while let Some(event) = events.next().await {
-    if event.is_terminal() {
-        break;
+    use futures_util::StreamExt as _;
+    while let Some(event) = events.next().await {
+        if event.is_terminal() {
+            break;
+        }
     }
-}
 
-let receipt = job.result().await?;
-assert!(receipt.resources.is_complete());
-offprint.close().await?;
-# Ok(())
-# }
+    let receipt = job.result().await?;
+    assert!(receipt.resources.is_complete());
+    offprint.close().await?;
+    Ok(())
+}
 ```
 
-The complete request also owns credentials, custom network rules, browser
-environment, diagnostics, local file roots, lazy-load behavior, and every
-limit. See [records](../reference/records.md).
+Call `into_request` to configure credentials, custom network rules, diagnostics,
+or exact limits, then submit the request through `captures().start` or
+`captures().batch`:
+
+```rust
+async fn configured(offprint: &offprint::Offprint) -> offprint::Result<()> {
+    let mut request = offprint.capture("https://example.com")?.into_request();
+    request.limits.resources = 500;
+    let job = offprint.captures().start(request).await?;
+    let receipt = job.result().await?;
+    Ok(())
+}
+```
+
+`CaptureRequest::builder(url)` constructs a service-independent request. Its
+`output(CaptureOutput)` method accepts file or memory delivery, with file
+conflict behavior carried by `CaptureOutput`. See [records](../reference/records.md).
 
 The complete typed example lives in
 [`capture_memory.rs`](../../crates/offprint/examples/capture_memory.rs).
