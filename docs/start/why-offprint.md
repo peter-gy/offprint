@@ -1,70 +1,48 @@
 # Why Offprint?
 
-Downloading a response body does not preserve the page a browser displayed.
-The visible result may depend on later scripts, live stylesheet rules, lazy
-requests, nested frames, form state, canvas pixels, authentication, browser
-layout, and time.
+Offprint preserves rendered content, packages its rendering dependencies, and
+checks the result before saving it. These guarantees support research records,
+reviewable reports, regression evidence, and page inputs to a larger archive.
 
-## A rendered page is more than its first response
+## Preserve the rendered state
 
-Consider a page that loads an empty application shell, fetches data, renders a
-chart into a canvas, and opens a detail panel after user interaction. Saving the
-initial HTML loses the data, chart pixels, and open panel. Saving the live
-[Document Object Model](https://dom.spec.whatwg.org/), the browser's in-memory
-document tree, still leaves stylesheets, fonts, images, and frames on the
-network.
+A page may start as an empty application shell, fetch data, and draw a chart
+into a canvas. Its initial HTML response cannot represent that final state.
+Saving the live [Document Object Model](https://dom.spec.whatwg.org/), the
+browser's document tree, still leaves fonts, images, stylesheets, and frames on
+the network.
 
-Offprint handles that page in distinct stages:
+Offprint observes the rendered page and resolves each rendering resource. It
+materializes captured controls and disclosure state, embeds resource bytes,
+and freezes canvas or media content into visual fallbacks. The saved page
+represents the state at capture time. Continued application interaction or
+live data updates require the original application.
 
-| Problem | Offprint action | Evidence |
-| --- | --- | --- |
-| Content appears after load | Wait for observable readiness, then read browser state | Readiness events and timings |
-| Rendering depends on external bytes | Resolve each resource reference and embed its bytes | Resource records and outcomes |
-| Page code can keep running | Remove captured page code and permit exact restoration programs | Static verification and content policy digest |
-| A file can still request the network | Reopen it in a network-denied browser context | Offline verification report |
-| Failure can corrupt an existing file | Stage and verify before committing the destination | File conflict and transaction result |
+## Check what was saved
 
-The stages expose different guarantees. Resource acquisition can finish with
-warnings while the artifact remains self-contained because failed references
-are replaced with inert fallbacks. Use the strict missing-resource policy when
-the capture must fail on any such fidelity gap.
+A file can contain every expected element and still request a font, image, or
+frame when reopened. Offprint's default offline verification checks its static
+format and reopens the artifact with network access denied.
 
-## Verification is part of capture success
+| Question | Evidence |
+| --- | --- |
+| Did the artifact pass the selected checks? | Verification report bound to the exact file digest |
+| Were rendering resources unavailable? | Resource counts and warnings in the capture receipt |
+| Which reference failed, and why? | Resource records in the embedded manifest |
+| Which browser and capture conditions produced it? | Browser, environment, source, and policy provenance in the manifest |
 
-Encoding bytes proves that serialization finished. It does not prove that the
-artifact follows Offprint's structure or reopens without requests.
+Self-containment and complete acquisition are separate properties. A failed
+resource becomes an inert fallback under the default warning policy, so the
+artifact can pass verification while losing visual content. Use
+`--missing-resources fail` when that loss should reject the capture.
 
-Static verification checks the manifest, content policy, exact owned scripts,
-embedded resources, frame accounting, digests, and forbidden request
-references. Offline verification performs those checks and then reopens the
-artifact with network access denied. Offline is the default mode.
+## Save after verification
 
-The capture commits a file after the selected verification mode succeeds. A
-failed or cancelled capture leaves the requested destination unchanged.
+Offprint stages the artifact and verifies it before committing the destination.
+The default conflict policy preserves an existing file. Explicit replacement
+installs the new artifact after it passes verification. Cancellation before
+commit leaves the destination unchanged.
 
-## The request and receipt make the result inspectable
-
-A capture request makes environment, readiness, network, fidelity, limit, and
-output choices explicit. A capture receipt records what happened without
-requiring callers to parse logs.
-
-The embedded artifact manifest keeps the longer-lived provenance beside the
-saved page. It records the redacted source, source digests, browser, browser
-environment, resource records, warning codes, frame count, policy digest, and
-requested verification mode. The capture receipt carries the full warning
-records.
-
-## Where Offprint fits
-
-Offprint fits workflows that need a bounded rendered-page artifact, including
-research capture, regression evidence, CI snapshots, authenticated internal
-pages, and input to a larger archive.
-
-The product captures pages, bounded batches, and breadth-first crawls as
-independent page captures. It is not a network-traffic archive, a general
-browser automation API, or a guarantee of pixel-perfect replay for protected
-media.
-
-Run the [quickstart](./quickstart.md) to create and verify one artifact. Read
-[the capture model](../concepts/capture-model.md) when integrating a long-lived
-service or consuming events.
+The [quickstart](./quickstart.md) produces one artifact. The
+[capture model](../concepts/capture-model.md) explains jobs, cancellation,
+receipts, and service lifetime for application integrations.

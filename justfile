@@ -45,26 +45,41 @@ fmt-check:
     taplo format --check Cargo.toml rust-toolchain.toml deny.toml versions.toml
     cd collector && bun run format:check
 
-lint *args:
-    cargo clippy --workspace --all-targets --all-features --locked -- -D warnings {{args}}
-
-check target="":
+# Lint one Cargo package, or the workspace when omitted.
+lint package="":
     #!/usr/bin/env bash
     set -euo pipefail
-    if [[ -n "{{target}}" ]]; then
-      cargo check --locked -p "{{target}}"
-    else
-      cargo check --locked --workspace
+    selection=(--workspace)
+    if [[ -n "$1" ]]; then
+      selection=(-p "$1")
     fi
+    cargo clippy --locked "${selection[@]}" --all-targets --all-features -- -D warnings
 
-test target="":
+# Typecheck one Cargo package, including tests and examples, or the workspace.
+check package="":
     #!/usr/bin/env bash
     set -euo pipefail
-    if [[ -n "{{target}}" ]]; then
-      cargo test --locked -p "{{target}}"
-    else
-      cargo test --locked --workspace
+    selection=(--workspace)
+    if [[ -n "$1" ]]; then
+      selection=(-p "$1")
     fi
+    cargo check --locked "${selection[@]}" --all-targets --all-features
+
+# Test one Cargo package or the workspace, optionally matching a test name.
+test package="" filter="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    selection=(--workspace)
+    if [[ -n "$1" ]]; then
+      selection=(-p "$1")
+    fi
+    cargo test --locked "${selection[@]}" "$2"
+
+# Check formatting, lint, and tests for one Rust package.
+quick package:
+    cargo fmt -p "$1" -- --check
+    just lint "$1"
+    just test "$1"
 
 test-fixture fixture_id:
     cargo run --locked -p xtask -- test-fixture "{{fixture_id}}"

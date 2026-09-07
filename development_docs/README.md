@@ -1,7 +1,21 @@
 # Offprint development documentation
 
-These pages describe the current implementation, ownership boundaries, and
-maintenance workflows. User-facing behavior lives in [`docs/`](../docs/README.md).
+Start with [contributor setup](./setup.md) to build and check a change.
+User-facing behavior and runnable capture workflows live in
+[`docs/`](../docs/README.md).
+
+## Find the owner
+
+| I need to… | Read |
+| --- | --- |
+| Make a change and get feedback | [Setup](./setup.md), then [testing](./testing.md) |
+| Understand what Offprint promises | [Product contract](./product-contract.md) |
+| Trace a capture or cleanup failure | [Capture pipeline](./capture-pipeline.md) |
+| Add or change a public API | [Architecture](./architecture.md), [bindings](./bindings.md), [schemas](./schemas-and-versioning.md) |
+| Change browser or network behavior | [Browser and network](./browser-and-network.md) |
+| Change an artifact representation | [Artifacts and formats](./artifacts-and-formats.md) |
+| Regenerate a checked-in artifact | [Generated files](./generated-files.md) |
+| Prepare packages for release | [Release process](./release.md) |
 
 ## Product and architecture
 

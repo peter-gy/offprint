@@ -1,13 +1,18 @@
 # Artifacts and verification
 
-An **artifact** is an encoded user-visible representation. An **Offprint HTML
-artifact** is the canonical capture. An **export artifact** is a derived PDF,
-Markdown, ZIP, self-extracting HTML, or MHTML representation.
+An **Offprint HTML artifact** is the saved page with its embedded capture
+manifest. A **capture receipt** reports the operation that produced it. Keep the
+artifact for later viewing and provenance, and use the receipt to decide
+whether capture warnings or verification results meet your requirements.
 
-Offprint separates the representation from the evidence used to accept it.
-The canonical representation is Offprint HTML. Its artifact manifest
-travels inside the file, while a capture receipt reports the result of the
-operation that created it.
+```console
+offprint artifact inspect example.html --json
+offprint artifact verify example.html --json
+```
+
+Inspection reads the manifest. Verification checks the complete artifact and,
+by default, reopens it with network access denied. Exports derive PDF,
+Markdown, ZIP, self-extracting HTML, or MHTML from the HTML artifact.
 
 ## Safe-static HTML
 
@@ -105,7 +110,7 @@ original request to prove that provenance independently.
 ## Export formats
 
 Exports derive from a verified Offprint HTML artifact. They are alternate
-representations rather than new captures. Each format preserves a different
+representations of the saved HTML. Each format preserves a different
 subset of content and provenance.
 
 HTML appears in `ArtifactFormat`, but it is not accepted by `FormatSpec` or

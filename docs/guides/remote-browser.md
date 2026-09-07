@@ -1,8 +1,9 @@
 # Use a remote Chromium browser
 
-Offprint can attach to a caller-owned browser through the Chrome DevTools
-Protocol (CDP). This path trades local process ownership and offline
-verification for remote browser control.
+Offprint can capture through a browser running on another host. It connects
+through the [Chrome DevTools Protocol (CDP)](https://chromedevtools.github.io/devtools-protocol/),
+the browser's automation interface. The caller owns the browser process and
+network controls. Remote captures use static verification.
 
 ```console
 offprint capture https://example.com \

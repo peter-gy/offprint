@@ -120,9 +120,11 @@ structured value before a failure status.
 | ---: | --- |
 | `0` | Requested operation completed |
 | `1` | Runtime, browser, scheduler, artifact input, or output operation failed |
-| `2` | Arguments or configuration were invalid |
+| `2` | Arguments, configuration, or request validation failed |
 | `3` | Artifact verification rejected the input |
 | `130` | Operation was interrupted |
 
-Artifact readability and size failures return `1`, even when discovered during
-a verification command. See [errors](./errors.md) for structured recovery.
+Error stage determines the status. Validation failures return `2`, including
+`offprint.output.exists` when the destination already exists. Artifact
+readability and size failures return `1`, even when discovered during a
+verification command. See [errors](./errors.md) for structured recovery.

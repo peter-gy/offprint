@@ -57,27 +57,29 @@ use std::collections::BTreeSet;
 
 use offprint::{NetworkPolicy, NetworkRules, Offprint};
 
-# async fn configure() -> offprint::Result<()> {
-let network = NetworkPolicy::Custom(NetworkRules {
-    allowed_hosts: BTreeSet::from(["capture.internal".to_owned()]),
-    allowed_cidrs: BTreeSet::from(["10.20.0.0/16".to_owned()]),
-    allow_loopback: false,
-    allow_private: false,
-    allow_link_local: false,
-});
+async fn configure() -> offprint::Result<()> {
+    let network = NetworkPolicy::Custom(NetworkRules {
+        allowed_hosts: BTreeSet::from(["capture.internal".to_owned()]),
+        allowed_cidrs: BTreeSet::from(["10.20.0.0/16".to_owned()]),
+        allow_loopback: false,
+        allow_private: false,
+        allow_link_local: false,
+    });
 
-let offprint = Offprint::new()?;
-let capture = offprint.capture("https://example.com")?.network(network);
-drop(capture);
-offprint.close().await?;
-# Ok(())
-# }
+    let offprint = Offprint::new()?;
+    let capture = offprint.capture("https://example.com")?.network(network);
+    drop(capture);
+    offprint.close().await?;
+    Ok(())
+}
 ```
 
-Public addresses remain permitted. `allowed_hosts` matches a host name without
-changing its address class. `allowed_cidrs` permits addresses inside a parsed
-range. The three switches permit every address in their respective loopback,
-private, or link-local class. All answers for a resolved host must pass.
+Public addresses remain permitted. `allowed_hosts` permits every resolved
+address for an exact, case-insensitive host-name match, including private and
+loopback addresses. Trust the named host's DNS operator when using this option.
+Use `allowed_cidrs` to permit specific address ranges. The three switches permit
+every address in their respective loopback, private, or link-local class. All
+answers for a resolved host must pass the resulting policy.
 The compiling source is
 [`custom_network.rs`](../../crates/offprint/examples/custom_network.rs).
 

@@ -1,89 +1,74 @@
 # Capture and verify one page
 
-This quickstart builds the current alpha CLI, captures one rendered page, reads
-its artifact manifest, and repeats offline verification.
+Save a page, open the HTML file, and inspect the evidence that travels with it.
+[Install the CLI](./install.md#build-the-cli-from-source) before starting.
 
-## Prerequisites
-
-- A checkout of this repository
-- Rust 1.97, selected automatically by `rust-toolchain.toml`
-- Network access for the page and, when needed, the pinned managed browser
-
-Offprint uses a compatible Chrome, Chromium, or Microsoft Edge installation
-when discovery finds one. Otherwise the first capture downloads the pinned
+Offprint needs network access to the page. It uses a compatible local browser
+or downloads and verifies the pinned
 [Chrome for Testing](https://googlechromelabs.github.io/chrome-for-testing/)
-archive, verifies its SHA-256 digest, and stores it in the managed cache.
-
-## Build the CLI
-
-Run from the repository root:
-
-```console
-cargo build --release --locked -p offprint-cli
-```
-
-Check browser discovery, collector compatibility, the configured network-policy
-summary, and atomic output capabilities in the current directory:
-
-```console
-./target/release/offprint doctor
-```
-
-`doctor` can launch a short-lived local browser probe or create a temporary
-context on a configured remote endpoint. It does not install a browser or
-start a capture.
+build on first use. Chrome for Testing is Google's versioned Chromium browser
+distribution.
 
 ## Capture the page
 
 ```console
-./target/release/offprint capture https://example.com \
-  --output example.html \
-  --quiet
+offprint capture https://example.com --output example.html --quiet
 ```
 
-The command prints the committed path to standard output:
+The command prints the saved path:
 
 ```text
 example.html
 ```
 
-The file appears after capture and verification succeed. The default conflict
-policy returns an error when `example.html` already exists. Use
-`--on-exists replace` to replace it after verification, or
-`--on-exists uniquify` to choose the first available numbered name.
+Open `example.html` in your browser. The file contains the rendered page and its
+rendering resources. Offprint already reopened it with network access denied
+before committing the file. Offline verification is the default.
 
-Offprint executes the source page inside an isolated browser context. Treat the
-URL, page, artifact, and any diagnostics as untrusted content.
+A capture runs the source page's code inside an isolated browser context. The
+saved HTML retains captured content and state, while captured page scripts are
+stripped. Captured private content remains private data.
 
-## Inspect the artifact manifest
+## Repeat a capture
 
-```console
-./target/release/offprint artifact inspect example.html
-```
-
-Inspection parses and validates the embedded artifact manifest. It reports the
-format version, redacted source, browser, environment, policy digest, frame and
-resource counts, warning codes, and requested verification mode. Inspection
-does not verify the rest of the artifact.
-
-## Repeat offline verification
+By default, an existing destination produces an error. Replace it after the new
+capture verifies successfully:
 
 ```console
-./target/release/offprint artifact verify example.html \
-  --verification offline
+offprint capture https://example.com \
+  --output example.html \
+  --on-exists replace
 ```
 
-Offline verification first applies static checks, then reopens the file in a
-fresh Chromium context with network access denied. A successful run reports
-zero observed network requests.
+Use `--on-exists uniquify` to keep both captures under distinct file names.
 
-Verification establishes Offprint's self-containment and structural policy. It
-does not certify the page's truth or make private captured content safe to
-share.
+## Read the saved evidence
+
+```console
+offprint artifact inspect example.html
+```
+
+Inspection reads the embedded **artifact manifest**: source, capture time,
+browser, resource counts, warning codes, and requested verification mode. It
+validates the manifest. To check the complete file again, run:
+
+```console
+offprint artifact verify example.html
+```
+
+Verification checks the HTML structure and embedded resources, then reopens the
+file in a fresh browser context with network access denied. A successful run
+reports zero observed network requests.
+
+A self-contained artifact can still have missing content. The default resource
+policy records warnings and substitutes inert fallbacks when an image, font,
+or other resource cannot be captured. Use `--missing-resources fail` when a
+missing resource must fail the capture.
 
 ## Continue
 
-- [Control readiness, selection, and fidelity](../guides/control-capture.md)
+- [Wait for content or select part of a page](../guides/control-capture.md)
 - [Capture authenticated pages](../guides/authenticated-pages.md)
-- [Inspect, verify, and export artifacts](../guides/inspect-verify-export.md)
-- [Automate captures and consume JSON](../guides/automation.md)
+- [Create PDF, Markdown, and other exports](../guides/inspect-verify-export.md)
+- [Read JSON results in automation](../guides/automation.md)
+- [Diagnose browser or capture failures](../operations/troubleshooting.md)

@@ -19,7 +19,8 @@ the rendered state.
 | `load` | Browser load event |
 | `dom-content-loaded` | Browser DOM content loaded event |
 
-The Document Object Model (DOM) is the browser's live tree for the page.
+The [Document Object Model (DOM)](https://dom.spec.whatwg.org/) is the browser's
+live tree for the page.
 `network-idle` excludes WebSocket, EventSource, `blob:`, and `data:` lifetimes
 from its finite request count.
 

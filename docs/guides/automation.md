@@ -45,17 +45,23 @@ classifies the process result:
 | ---: | --- |
 | `0` | Operation succeeded |
 | `1` | Capture, browser, artifact input, output, scheduler, or runtime failure |
-| `2` | Arguments or configuration were invalid |
+| `2` | Arguments, configuration, or request validation failed |
 | `3` | Artifact verification rejected the input |
 | `130` | Operation was interrupted |
+
+Output conflicts such as `offprint.output.exists` fail validation and return
+`2`. Use the structured error code to choose recovery within a status family.
 
 Batch, crawl, and doctor can write a result before returning status `1`. Their
 records preserve partial outcomes or recovery details.
 
 ## Consume capture events
 
-Use `captures.start(request)` from Rust, Node.js, or Python when automation
-needs progress or cancellation. Every subscription is independent. Resource
+Create a request with `Capture::into_request()` in Rust or
+`captures.request(url)` in Node.js and Python, then pass it to
+`captures.start(request)` when automation needs progress or cancellation.
+[Language integrations](../README.md#use-offprint-in-an-application) show complete
+event-consumption examples. Every subscription is independent. Resource
 progress can be coalesced, so treat its counts as the latest snapshot rather
 than a complete event log.
 
@@ -75,4 +81,4 @@ For example, Python calls `verify_format(...)`, while an `ExportRequest`
 dictionary still uses `outputDirectory`, `baseName`, and `frontMatter`.
 
 Use the [record reference](../reference/records.md) and generated
-[`schemas/`](../../schemas) rather than translating field names by convention.
+[`schemas/`](../../schemas) for the exact field names.

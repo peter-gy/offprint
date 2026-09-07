@@ -41,8 +41,8 @@ be measured separately.
 
 `CaptureReceipt.timings` reports validation, browser acquisition, navigation,
 readiness, collection, resource, transform, encoding, verification, commit, and
-total durations. Compare those values beside the receipt's frame, resource, and
-byte counts.
+total durations. Compare those values beside the receipt's resource and byte
+counts and the artifact manifest's frame count.
 
 Use one shared `Offprint` service when measuring repeated captures. Record the
 browser source and version, capture profile, host, concurrency, and input set so

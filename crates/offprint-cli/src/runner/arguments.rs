@@ -104,7 +104,6 @@ pub(super) fn apply_capture_arguments(
     if let Some(directory) = &arguments.diagnostics {
         request.diagnostics = DiagnosticsPolicy {
             directory: Some(directory.as_str().into()),
-            ..DiagnosticsPolicy::default()
         };
     }
     request.validate()

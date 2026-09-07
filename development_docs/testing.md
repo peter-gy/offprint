@@ -1,10 +1,38 @@
 # Testing and validation
 
-Tests protect public behavior, ownership, security, and package boundaries.
-Choose the nearest supported boundary and keep resource-heavy browser work
-explicit.
+Run the package that owns the behavior after each change:
 
-## Main commands
+```console
+just quick offprint-model
+```
+
+This checks package formatting, lints every target and feature with warnings
+denied, and runs the default-feature tests. Dependencies compile as needed.
+Ignored browser fixtures run through their dedicated recipes.
+
+## Focus a failing check
+
+```console
+just check offprint-model
+just lint offprint-model
+just test offprint-model
+```
+
+`check` typechecks library, binary, test, example, and benchmark targets with
+every feature enabled. `lint` applies the same scope through
+[Clippy](https://doc.rust-lang.org/clippy/), Rust's linter. `test` accepts a
+test-name substring as its second argument:
+
+```console
+just test offprint-model serialization
+```
+
+Cargo reports the matching test count. Use `test-fixture` for browser fixture
+selection, which requires exactly one owner.
+
+## Validate the workspace
+
+Omit the package to run `check`, `lint`, or `test` across the workspace:
 
 ```console
 just fmt-check
@@ -22,15 +50,16 @@ just docs-check
 just release-check
 ```
 
-`just clean` removes Cargo targets, JavaScript installations, Python virtual
-environments and caches, package output, native addons, and other generated
-residue.
+`just repo-check` checks handwritten source size, Cargo dependency direction,
+documentation routes and links, version alignment, and package metadata.
+`just release-check` runs the release gates, including extracted package checks
+and dependency audits. Select browser groups, fuzzing, ownership checks, and
+benchmarks by the change boundary.
 
-`just docs-check` verifies that every public and development page is routed
-from its index, every local Markdown target exists, text satisfies repository
-rules, Rust documentation builds with warnings denied, and Rust examples pass
-as doctests. Binding examples are exercised by `node-check`,
-`node-package-check`, `python-check`, and `python-wheel-check`.
+`just docs-check` runs repository checks, builds Rust documentation with warnings
+denied, executes documentation tests, compiles Rust examples, and typechecks
+binding examples. Runtime and packaged binding examples run through
+`node-check`, `node-package-check`, `python-check`, and `python-wheel-check`.
 
 ## Browser fixtures
 
@@ -53,7 +82,7 @@ The fixture server provides controlled HTTP and HTTPS origins, redirects,
 authentication, frames, service workers, compression, partial streams,
 WebSocket and EventSource behavior, and oversized inputs.
 
-## Boundary selection
+## Choose the checks for your change
 
 | Change | Required evidence |
 | --- | --- |
@@ -66,6 +95,10 @@ WebSocket and EventSource behavior, and oversized inputs.
 | Output transaction | Failure injection, conflict modes, recovery, package path |
 | Measured capture path | Benchmark comparison and repeated-capture evidence |
 | Workflow or release | Workflow lint, repository checks, package dry runs |
+
+Run `just repo-check` before every handoff. A focused package check compiles its
+dependencies and tests the selected owner. Changes to a shared contract also
+require the consumer suites listed in the table.
 
 Package checks build and exercise extracted package graphs. Source-tree tests
 do not establish package contents.

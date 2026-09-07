@@ -1,119 +1,52 @@
-# Executable capture scenarios
+# Capture examples
 
-Offprint's hermetic browser fixtures are small rendered pages with named
-artifact expectations. Each scenario maps input state to a capture decision and
-observable result.
+Start with a file capture, then use the matching memory example when your
+application needs bytes or progress events.
 
-These are repository evidence scenarios. Install the contributor tools through
-[Contributor setup](../../development_docs/setup.md) before running `just`.
-Use the [quickstart](../start/quickstart.md) to produce an artifact through the
-end-user CLI path.
+## Save a page
 
-Run one scenario from the repository root:
+```console
+offprint capture https://example.com --output example.html
+```
+
+The [quickstart](../start/quickstart.md) covers installation, opening the result,
+and inspecting its evidence.
+
+Complete programs in each language create a service, capture the page, and
+close the service:
+
+| Language | Write a file | Return bytes and observe events | Setup |
+| --- | --- | --- | --- |
+| Rust | [`capture_file.rs`](../../crates/offprint/examples/capture_file.rs) | [`capture_memory.rs`](../../crates/offprint/examples/capture_memory.rs) | [Rust integration](../integrations/rust.md) |
+| Node.js | [`capture.ts`](../../bindings/node/examples/capture.ts) | [`capture-memory.ts`](../../bindings/node/examples/capture-memory.ts) | [Node.js integration](../integrations/node.md) |
+| Python | [`capture.py`](../../bindings/python/examples/capture.py) | [`capture_memory.py`](../../bindings/python/examples/capture_memory.py) | [Python integration](../integrations/python.md) |
+
+## Adapt the capture
+
+| Task | Example |
+| --- | --- |
+| Capture the first matching article | [Selector capture](../guides/control-capture.md#choose-document-scope) |
+| Wait for data and rendered content | [Readiness](../guides/control-capture.md#choose-when-collection-begins) |
+| Pass an authorization header or session cookie | [Authenticated pages](../guides/authenticated-pages.md) |
+| Fail when a rendering resource is missing | [Resource policy](../guides/control-capture.md#choose-missing-resource-behavior) |
+| Capture a local HTML file | [Allowed file roots](../guides/control-capture.md#capture-local-files) |
+| Permit a controlled private network | [Custom network rules](../operations/security.md#network-policies) |
+| Export PDF, Markdown, or an archive | [Export representations](../guides/inspect-verify-export.md#export-alternate-representations) |
+| Capture a list of URLs or follow links | [Batch and crawl](../guides/batch-and-crawl.md) |
+
+## Inspect preservation evidence
+
+The repository also contains browser fixtures for script-rendered content,
+frames, shadow roots, stylesheets, form state, canvas pixels, resource failures,
+and offline verification. Each fixture has one executable test owner.
+
+After [contributor setup](../../development_docs/setup.md), run a named fixture
+from the repository root:
 
 ```console
 just test-fixture script-rendered-document
 ```
 
-The fixture selector resolves exactly one test owner and runs it with one test
-thread.
-
-## Script-rendered content
-
-Starting page state:
-
-```html
-<h1 id="state">waiting</h1>
-<script>
-  document.querySelector("#state").textContent = "rendered";
-</script>
-```
-
-After capture, the artifact contains the rendered heading text and excludes the
-captured page script. Static verification accepts only the Offprint-owned
-restoration programs. Offline verification reopens the artifact with zero
-observed requests.
-
-Evidence: `script-rendered-document` in
-[`fixtures.json`](../../fixtures/manifest/fixtures.json) and the browser fixture
-matrix in [`fixture_matrix.rs`](../../crates/offprint/tests/fixture_matrix.rs).
-
-## Selected content
-
-Starting page state contains content inside and outside a target element. A CSS
-selector capture keeps the document head, matching element, and ancestor chain.
-Run the hermetic selection scenario:
-
-```console
-just test-fixture selection-scope
-```
-
-The resulting artifact retains target styles and omits sibling body content.
-The same fixture also checks active document selection and empty-selection
-failure.
-
-Evidence: `selection-scope` in the fixture catalog and its executable owner in
-[`fixture_matrix.rs`](../../crates/offprint/tests/fixture_matrix.rs).
-
-## Frames and shadow roots
-
-These scenarios vary one browser boundary at a time:
-
-| Scenario | Preserved state |
-| --- | --- |
-| `same-origin-iframe` | Child document and resource references |
-| `cross-origin-oopif` | Out-of-process frame ownership and content |
-| `srcdoc-frame` | Inline frame content |
-| `open-shadow-root` | Declarative shadow content |
-| `closed-shadow-root` | Closed root observed by the document-start hook |
-| `adopted-stylesheet` | Stylesheet content in its owning shadow scope |
-
-```console
-just test-fixture cross-origin-oopif
-just test-fixture closed-shadow-root
-```
-
-## Resource fidelity
-
-`external-stylesheet-resources`, `css-imports`, `font-loading`, `blob-resource`,
-`data-resource`, and `svg-resource-graph` verify recursive resource discovery
-and embedding.
-
-`missing-resource-deduplication` shows the warning path. Each failed reference
-receives a failed resource record and inert fallback. Repeated attempts for the
-same unavailable resource stop after the first acquisition batch.
-
-```console
-just test-fixture missing-resource-deduplication
-```
-
-## Browser state and visual fallbacks
-
-| Scenario | Observable artifact state |
-| --- | --- |
-| `form-state` | Current values, checks, selections, and disclosure state |
-| `rendered-view-state` | Document and element scroll positions |
-| `canvas-2d` | Canvas pixels encoded as image data |
-| `tainted-canvas` | Clipped browser screenshot fallback |
-| `webgl-canvas` | Composited WebGL pixels |
-| `video-poster` | Media poster or current-frame fallback |
-
-These scenarios use DOM assertions and controlled pixel comparison where visual
-state carries the contract.
-
-## Commit and verification
-
-- `explicit-output-conflict` preserves an existing destination.
-- `atomic-replacement` exposes the new file after verification.
-- `cancellation-every-stage` rolls back each pipeline stage.
-- `network-denied-reopen` requires zero requests from the reopened artifact.
-- `cli-committed-path` checks the command output boundary.
-
-```console
-just test-fixture atomic-replacement
-just test-fixture network-denied-reopen
-```
-
-Use the [capture model](../concepts/capture-model.md) to interpret the lifecycle
-and [resources and fidelity](../concepts/resources-and-fidelity.md) to interpret
-resource records and warnings.
+Browse the [fixture catalog](../../fixtures/manifest/fixtures.json) and
+[testing guide](../../development_docs/testing.md) to check a specific
+preservation contract or add a regression case.

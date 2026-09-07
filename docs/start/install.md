@@ -1,23 +1,21 @@
 # Install Offprint
 
-Choose the interface that owns your application boundary. Every interface calls
-the same native Rust service and uses the same canonical records.
+Build the command-line interface (CLI) to capture pages from a shell, or choose
+a language integration for your application. Each interface uses the same
+capture engine and verification defaults.
 
-Offprint is currently an alpha project before its first tagged release. Build
-the CLI and language bindings from this checkout. The release workflow is
-prepared to publish native archives and versioned registry packages from a
-signed tag.
+Offprint is an alpha project. Build the CLI and language bindings from source.
 
 ## Choose an interface
 
 | Interface | Distribution | Runtime baseline |
 | --- | --- | --- |
-| CLI | Source build, then native archive | Supported host and Chromium-based browser |
-| Rust | Path dependency, then crates.io | Rust 1.97 |
-| Node.js | Source build, then npm package with native addons | Node.js 22 or newer |
-| Python | Source build, then PyPI stable-ABI wheel | Python 3.10 through 3.14 |
+| [CLI](#build-the-cli-from-source) | Source build | Supported host and Chromium-based browser |
+| [Rust](#add-the-rust-crate) | Path dependency | Rust 1.97 |
+| [Node.js](#build-nodejs-from-source) | Source build | Node.js 22 or newer |
+| [Python](#build-python-from-source) | Source build | Python 3.10 through 3.14 |
 
-Native release targets are Linux x86-64 with glibc, macOS arm64, macOS x86-64,
+Supported native targets are Linux x86-64 with glibc, macOS arm64, macOS x86-64,
 and Windows x86-64.
 
 Source builds require [Git](https://git-scm.com/), the repository's pinned
@@ -69,9 +67,7 @@ Add that directory to the shell's persistent `PATH` when the command should be
 available in later sessions. On Windows, place `offprint.exe` in a directory
 already listed in `PATH`.
 
-Release archives contain the executable, license, README, shell completions,
-checksums, and build metadata. Verify the published checksum before installing
-the executable on `PATH`.
+Continue with [your first capture](./quickstart.md).
 
 ## Add the Rust crate
 
@@ -93,7 +89,6 @@ bun run build
 bun run examples/capture.ts
 ```
 
-The release package contains the native addons for every supported target.
 Continue with the [Node.js integration](../integrations/node.md).
 
 ## Build Python from source
