@@ -16,7 +16,11 @@ use tokio::process::Command;
 use tokio::time::timeout;
 
 const MINIMUM_CHROMIUM_MAJOR: u32 = 120;
+#[cfg(not(windows))]
 const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
+// Allow for PowerShell and .NET startup before reading Windows file metadata.
+#[cfg(windows)]
+const PROBE_TIMEOUT: Duration = Duration::from_secs(15);
 const MAX_PROBE_BYTES: u64 = 4096;
 
 #[derive(Clone, Debug)]
