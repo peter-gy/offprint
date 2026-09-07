@@ -2,25 +2,28 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const bindingDirectory = fileURLToPath(new URL("../", import.meta.url));
-const source = fileURLToPath(new URL("../../../LICENSE", import.meta.url));
-
-const destination = new URL("../LICENSE", import.meta.url);
+const files = ["LICENSE", "THIRD_PARTY_NOTICES.txt"];
 
 export async function syncLicense() {
-  const license = await readFile(source);
-  await writeFile(destination, license);
+  for (const name of files) {
+    const content = await readFile(new URL(`../../../${name}`, import.meta.url));
+    await writeFile(new URL(`../${name}`, import.meta.url), content);
+  }
 }
 
 export async function cleanLicense() {
-  const license = await readFile(source);
-  try {
-    const current = await readFile(destination);
-    if (current.equals(license)) {
-      await rm(destination);
-    }
-  } catch (error) {
-    if (error.code !== "ENOENT") {
-      throw error;
+  for (const name of files) {
+    const content = await readFile(new URL(`../../../${name}`, import.meta.url));
+    const destination = new URL(`../${name}`, import.meta.url);
+    try {
+      const current = await readFile(destination);
+      if (current.equals(content)) {
+        await rm(destination);
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        throw error;
+      }
     }
   }
 }

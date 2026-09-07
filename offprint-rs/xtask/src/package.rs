@@ -338,6 +338,10 @@ fn verify_packaged_workspace(packages: &[VerifiedCrate]) -> Result<(), String> {
         "--examples",
         "--locked",
     ]);
+    // Archive timestamps can predate cached fingerprints from another extraction.
+    command
+        .arg("--target-dir")
+        .arg(staging.path().join("target"));
     let output = command
         .output()
         .map_err(|error| format!("failed to build packaged crates: {error}"))?;
@@ -519,6 +523,10 @@ pub fn create(root: &Path, target: &str, binary: &Path, output: &Path) -> Result
     copy_regular(binary, &staged_root.join(binary_name))?;
     copy_regular(&root.join("README.md"), &staged_root.join("README.md"))?;
     copy_regular(&root.join("LICENSE"), &staged_root.join("LICENSE"))?;
+    copy_regular(
+        &root.join("THIRD_PARTY_NOTICES.txt"),
+        &staged_root.join("THIRD_PARTY_NOTICES.txt"),
+    )?;
     let metadata = build_metadata(root, target, &versions)?;
     let mut metadata_bytes =
         serde_json::to_vec_pretty(&metadata).map_err(|error| error.to_string())?;

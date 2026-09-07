@@ -1,0 +1,62 @@
+accepted = [
+  "AGPL-3.0-or-later",
+  "Apache-2.0",
+  "Apache-2.0 WITH LLVM-exception",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "CDLA-Permissive-2.0",
+  "ISC",
+  "MIT",
+  "MPL-2.0",
+  "Unicode-3.0",
+  "Zlib",
+]
+ignore-dev-dependencies = true
+
+[aws-lc-rs.clarify]
+license = "ISC AND (Apache-2.0 OR ISC)"
+[[aws-lc-rs.clarify.files]]
+path = "LICENSE"
+checksum = "b50b376e7d24a0598488b730c3034ffcd0b58dd36c0913a24b9903a3cfd04bf7"
+
+[aws-lc-sys.clarify]
+license = "ISC AND (Apache-2.0 OR ISC) AND Apache-2.0 AND MIT AND BSD-3-Clause AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR ISC OR MIT-0)"
+[[aws-lc-sys.clarify.files]]
+path = "LICENSE"
+checksum = "728536b4160e051f86d7c9c388f704866b3d512cd7df97ac3516c65279523c4e"
+
+[napi.clarify]
+license = "MIT"
+[[napi.clarify.git]]
+path = "LICENSE"
+checksum = "3f1ce66533302df3a32edbfdfc0b78f0dd34659e4c1f5817162e5ea3c2297215"
+
+[napi-build.clarify]
+license = "MIT"
+[[napi-build.clarify.git]]
+path = "LICENSE"
+checksum = "3f1ce66533302df3a32edbfdfc0b78f0dd34659e4c1f5817162e5ea3c2297215"
+
+[napi-derive.clarify]
+license = "MIT"
+[[napi-derive.clarify.git]]
+path = "LICENSE"
+checksum = "3f1ce66533302df3a32edbfdfc0b78f0dd34659e4c1f5817162e5ea3c2297215"
+
+[napi-derive-backend.clarify]
+license = "MIT"
+[[napi-derive-backend.clarify.git]]
+path = "LICENSE"
+checksum = "3f1ce66533302df3a32edbfdfc0b78f0dd34659e4c1f5817162e5ea3c2297215"
+
+[napi-sys.clarify]
+license = "MIT"
+[[napi-sys.clarify.git]]
+path = "LICENSE"
+checksum = "3f1ce66533302df3a32edbfdfc0b78f0dd34659e4c1f5817162e5ea3c2297215"
+
+[mutants.clarify]
+license = "MIT"
+[[mutants.clarify.git]]
+path = "LICENSE"
+checksum = "479cbeb2506157776cf80abe31df18065d0fe50b5816ff77bfd75d5deb04ab5c"

@@ -23,6 +23,7 @@
     "index.d.ts",
     "index.js",
     "LICENSE",
+    "THIRD_PARTY_NOTICES.txt",
     "native.cjs",
     "native.d.ts",
     "offprint-native.*.node",

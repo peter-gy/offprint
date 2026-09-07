@@ -1,8 +1,7 @@
 {
   "schemaVersion": 1,
   "name": "Datawrapper article corpus",
-  "source": "gildas-lormeau/SingleFile datawrapper-posts",
-  "sourceRevision": "7d556e71fa3a700d833116f77d31a8b9c3669643",
+  "source": "Local Datawrapper article capture research",
   "entries": [
     {
       "id": "fewer-colors",

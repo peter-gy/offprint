@@ -38,7 +38,7 @@ jobs:
       - name: Install repository tools
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
-          tool: just,taplo-cli,cargo-deny,cargo-machete,cargo-semver-checks
+          tool: just,taplo-cli,cargo-deny,cargo-machete,cargo-semver-checks,cargo-about@0.9.2
       - name: Install actionlint
         run: |
           curl --fail --silent --show-error --location \

@@ -38,12 +38,12 @@ clean:
 
 fmt:
     cargo fmt --manifest-path offprint-rs/Cargo.toml --all
-    taplo format offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml versions.toml
+    taplo format offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml offprint-rs/about.toml versions.toml
     pnpm run format
 
 fmt-check:
     cargo fmt --manifest-path offprint-rs/Cargo.toml --all -- --check
-    taplo format --check offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml versions.toml
+    taplo format --check offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml offprint-rs/about.toml versions.toml
     pnpm run format:check
 
 # Lint one Cargo package, or the workspace when omitted.
@@ -153,6 +153,35 @@ workflow-check:
 dependency-check:
     cd offprint-rs && cargo deny check advisories bans licenses sources
     cargo machete offprint-rs
+    just licenses-check
+
+licenses:
+    just _generate-notices THIRD_PARTY_NOTICES.txt
+    cp LICENSE sdk/python/LICENSE
+    cp THIRD_PARTY_NOTICES.txt sdk/python/THIRD_PARTY_NOTICES.txt
+
+_generate-notices output:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    test "$(cargo about --version)" = "cargo-about 0.9.2"
+    notice_tmp="$(mktemp)"
+    trap 'rm -f "$notice_tmp"' EXIT
+    cargo about generate --manifest-path offprint-rs/Cargo.toml \
+      --workspace --locked --fail offprint-rs/about.hbs --output-file "$notice_tmp"
+    cat offprint-rs/chromium/NOTICE offprint-rs/xtask/NOTICE "$notice_tmp" > "$1"
+
+licenses-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    notice_tmp="$(mktemp)"
+    trap 'rm -f "$notice_tmp"' EXIT
+    just _generate-notices "$notice_tmp"
+    if ! cmp -s THIRD_PARTY_NOTICES.txt "$notice_tmp"; then
+      echo "Dependency notices are stale. Run just licenses." >&2
+      exit 1
+    fi
+    cmp LICENSE sdk/python/LICENSE
+    cmp THIRD_PARTY_NOTICES.txt sdk/python/THIRD_PARTY_NOTICES.txt
 
 semver-check:
     #!/usr/bin/env bash
@@ -270,7 +299,7 @@ python-wheel-check:
     mkdir "$wheel_tmp/source"
     tar -xzf "$wheel_tmp"/dist/*.tar.gz -C "$wheel_tmp/source" --strip-components=1
     cd "$wheel_tmp/source"
-    CARGO_TARGET_DIR="$workspace/offprint-rs/target" \
+    CARGO_TARGET_DIR="$wheel_tmp/target" \
       "$workspace/sdk/python/.venv/bin/maturin" build --release --locked --offline \
         --out "$wheel_tmp/dist"
     cd "$workspace/sdk/python"
@@ -366,6 +395,7 @@ package-check:
     archive="$(find "$package_tmp" -maxdepth 1 -name '*.tar.gz' -print -quit)"
     tar -xzf "$archive" -C "$package_tmp"
     root="$(find "$package_tmp" -mindepth 1 -maxdepth 1 -type d -name 'offprint-*' -print -quit)"
+    cmp THIRD_PARTY_NOTICES.txt "$root/THIRD_PARTY_NOTICES.txt"
     (cd "$root" && shasum -a 256 -c SHA256SUMS)
     "$root/offprint" --version
     test -s "$root/completions/offprint.bash"

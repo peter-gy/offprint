@@ -114,7 +114,8 @@ Run `just codegen` after changing canonical records, fixture metadata, CDP
 selection, or collector source, then run `just codegen-check`.
 
 [Testing](./testing.md) maps changes to required evidence. The complete release
-gate also needs `actionlint`, Taplo, cargo-deny, cargo-machete, and
-cargo-semver-checks. [CI](../.github/workflows/ci.yml) records their installation.
+gate also needs `actionlint`, Taplo, cargo-deny, cargo-machete,
+cargo-semver-checks, and cargo-about 0.9.2. [CI](../.github/workflows/ci.yml)
+records their installation.
 
 `just clean` clears build outputs, package installations, and generated caches.

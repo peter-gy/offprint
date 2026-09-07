@@ -246,14 +246,6 @@ fn generate_contracts(check: bool) -> Result<(), String> {
             &mut changed,
         )?;
     }
-    let license = fs::read(root.join("LICENSE"))
-        .map_err(|error| format!("failed to read repository LICENSE: {error}"))?;
-    update_file(
-        &root.join("sdk/python/LICENSE"),
-        &license,
-        check,
-        &mut changed,
-    )?;
     for (name, content) in example_documents()? {
         let path = schemas.join("examples").join(name);
         update_file(&path, &content, check, &mut changed)?;

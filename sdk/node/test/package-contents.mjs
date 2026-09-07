@@ -1,5 +1,6 @@
 import { strict as assert } from "node:assert";
 import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { gunzipSync } from "node:zlib";
 
 function archiveEntries(bytes) {
@@ -24,10 +25,12 @@ function archiveEntries(bytes) {
 
 const [rootPath, licensePath, ...nativeFiles] = process.argv.slice(2);
 assert(rootPath && licensePath && nativeFiles.length > 0);
-const expectedLicense = await readFile(licensePath);
 const root = archiveEntries(await readFile(rootPath));
 
-assert.deepEqual(root.get("package/LICENSE"), expectedLicense);
+for (const name of ["LICENSE", "THIRD_PARTY_NOTICES.txt"]) {
+  const expected = await readFile(join(dirname(licensePath), name));
+  assert.deepEqual(root.get(`package/${name}`), expected, `packaged ${name} differs`);
+}
 assert(root.has("package/contracts.generated.d.ts"));
 assert(root.has("package/native.d.ts"));
 const manifest = JSON.parse(root.get("package/package.json").toString("utf8"));
