@@ -1,9 +1,4 @@
-import type {
-  Capability,
-  InlineSnapshot,
-  InlineSnapshotRequest,
-  PrepareOptions,
-} from "./types";
+import type { Capability, InlineSnapshot, InlineSnapshotRequest, PrepareOptions } from "./types";
 import { SafeTypeError } from "./primordials";
 
 interface Collector {
@@ -43,10 +38,7 @@ export function dispatchCollector(
     case "positionVisualFallback":
       return collector.positionVisualFallback(arguments_[0] as string);
     case "describe":
-      return collector.describe(
-        arguments_[0] as string,
-        arguments_[1] as number,
-      );
+      return collector.describe(arguments_[0] as string, arguments_[1] as number);
     case "read":
       return collector.read(
         arguments_[0] as string,
@@ -60,10 +52,7 @@ export function dispatchCollector(
         arguments_[2] as number,
       );
     case "release":
-      return collector.release(
-        arguments_[0] as string,
-        arguments_[1] as number,
-      );
+      return collector.release(arguments_[0] as string, arguments_[1] as number);
     case "snapshotInline":
       return collector.snapshotInline(arguments_[0] as InlineSnapshotRequest);
     default:

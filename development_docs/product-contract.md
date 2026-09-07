@@ -19,32 +19,32 @@ boundary.
 
 ## Canonical nouns
 
-| Term | Meaning |
-| --- | --- |
-| Capture | One request execution ending in one terminal result |
-| Capture request | Source, browser, environment, readiness, content, credentials, network, limits, verification, diagnostics, and output |
-| Capture job | Cancellable handle for an active or completed capture |
-| Capture receipt | Successful terminal summary |
-| Observation | Provider-neutral browser facts collected before transformation |
-| Document | Internal arena-backed page model |
-| Resource reference | One render-affecting document location |
-| Resource record | Artifact-manifest entry for one reference |
-| Resource outcome | Terminal state recorded for a resource reference |
-| Artifact | Encoded user-visible representation |
-| Offprint HTML artifact | Canonical safe-static capture representation |
-| Export artifact | Derived PDF, Markdown, ZIP, self-extracting HTML, or MHTML representation |
-| Artifact delivery | File or bounded bytes returned in `CaptureArtifact` |
-| Artifact manifest | Embedded `ArtifactManifest` provenance record |
-| Export format | PDF, Markdown, ZIP, self-extracting HTML, or MHTML |
-| Verification mode | Requested `static` or `offline` HTML check |
-| Verification report | Digest-bound HTML evidence |
-| Format verification | Export-format verifier evidence |
-| Commit | Install verified filesystem output at its destination |
-| Publish | Upload packages or release assets to a registry |
-| Capture profile | Named bundle of capture defaults |
-| Browser environment | Viewport, locale, timezone, color scheme, reduced motion, and user agent |
-| Network policy | Address and redirect classification rules |
-| Resume manifest | Persisted batch or crawl checkpoint |
+| Term                   | Meaning                                                                                                               |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Capture                | One request execution ending in one terminal result                                                                   |
+| Capture request        | Source, browser, environment, readiness, content, credentials, network, limits, verification, diagnostics, and output |
+| Capture job            | Cancellable handle for an active or completed capture                                                                 |
+| Capture receipt        | Successful terminal summary                                                                                           |
+| Observation            | Provider-neutral browser facts collected before transformation                                                        |
+| Document               | Internal arena-backed page model                                                                                      |
+| Resource reference     | One render-affecting document location                                                                                |
+| Resource record        | Artifact-manifest entry for one reference                                                                             |
+| Resource outcome       | Terminal state recorded for a resource reference                                                                      |
+| Artifact               | Encoded user-visible representation                                                                                   |
+| Offprint HTML artifact | Canonical safe-static capture representation                                                                          |
+| Export artifact        | Derived PDF, Markdown, ZIP, self-extracting HTML, or MHTML representation                                             |
+| Artifact delivery      | File or bounded bytes returned in `CaptureArtifact`                                                                   |
+| Artifact manifest      | Embedded `ArtifactManifest` provenance record                                                                         |
+| Export format          | PDF, Markdown, ZIP, self-extracting HTML, or MHTML                                                                    |
+| Verification mode      | Requested `static` or `offline` HTML check                                                                            |
+| Verification report    | Digest-bound HTML evidence                                                                                            |
+| Format verification    | Export-format verifier evidence                                                                                       |
+| Commit                 | Install verified filesystem output at its destination                                                                 |
+| Publish                | Upload packages or release assets to a registry                                                                       |
+| Capture profile        | Named bundle of capture defaults                                                                                      |
+| Browser environment    | Viewport, locale, timezone, color scheme, reduced motion, and user agent                                              |
+| Network policy         | Address and redirect classification rules                                                                             |
+| Resume manifest        | Persisted batch or crawl checkpoint                                                                                   |
 
 Qualify overloaded implementation names in prose. `CaptureJob` and `BatchJob`
 are different objects. `BrowserSpec`, `BrowserSourcePolicy`, and `BrowserSource`

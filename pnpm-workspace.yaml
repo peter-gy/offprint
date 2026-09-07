@@ -1,0 +1,14 @@
+packages:
+  - collector
+  - sdk/node
+  - docs
+
+catalog:
+  "@types/node": 24.10.3
+  typescript: 5.9.3
+  vitest: 4.1.11
+  vite: 8.2.2
+
+ignoreScripts: true
+
+minimumReleaseAge: 4320

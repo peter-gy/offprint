@@ -37,11 +37,11 @@ Selectors follow the source page's structure. Choose an element that contains
 the complete article and its figures. A selector that matches nothing fails
 the capture.
 
-| Layout | Export option |
-| --- | --- |
-| Landscape pages | `--landscape` |
-| Use the page's CSS `@page` size | `--prefer-css-page-size` |
-| Replace an existing export after verification | `--on-exists replace` |
+| Layout                                        | Export option            |
+| --------------------------------------------- | ------------------------ |
+| Landscape pages                               | `--landscape`            |
+| Use the page's CSS `@page` size               | `--prefer-css-page-size` |
+| Replace an existing export after verification | `--on-exists replace`    |
 
 Keep print styles and print-only content when preparing the source. Capture
 optimizers that remove hidden elements, unused CSS, or unused fonts evaluate

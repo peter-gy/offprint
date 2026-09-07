@@ -9,11 +9,7 @@ import {
 } from "./dom";
 import { mapGet, SafeTypeError } from "./primordials";
 import { selectorInvalidError, selectorNotFoundError } from "./protocol";
-import type {
-  CollectorProtocolError,
-  PrepareOptions,
-  SnapshotOptions,
-} from "./types";
+import type { CollectorProtocolError, PrepareOptions, SnapshotOptions } from "./types";
 
 export function resolveSelector(
   source: Document,
@@ -28,9 +24,7 @@ export function resolveSelector(
   } catch {
     return { error: selectorInvalidError(options.captureId) };
   }
-  return target
-    ? { target }
-    : { error: selectorNotFoundError(options.captureId) };
+  return target ? { target } : { error: selectorNotFoundError(options.captureId) };
 }
 
 export function snapshotOptionsFor(options: PrepareOptions): SnapshotOptions {

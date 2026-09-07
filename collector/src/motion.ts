@@ -118,10 +118,7 @@ export function freezeDocument(source: Document): true {
   return true;
 }
 
-export function reportMotionCaptureFailure(
-  source: Document,
-  context: SnapshotContext,
-): void {
+export function reportMotionCaptureFailure(source: Document, context: SnapshotContext): void {
   if (weakSetHas(failedDocuments, source)) {
     arrayPush(context.warnings, {
       code: "offprint.animation.capture_failed",
@@ -178,10 +175,7 @@ export function materializeMotionState(
   });
 }
 
-export function appendMotionStyles(
-  root: Element | DocumentFragment,
-  rules: string[],
-): void {
+export function appendMotionStyles(root: Element | DocumentFragment, rules: string[]): void {
   if (rules.length === 0) {
     return;
   }
@@ -205,17 +199,9 @@ function animationsWithin(source: Document): Animation[] {
   const roots = composedRoots(source);
   for (let rootIndex = 0; rootIndex < roots.length; rootIndex += 1) {
     const elements = querySelectorAll(roots[rootIndex], "*");
-    for (
-      let elementIndex = 0;
-      elementIndex < elements.length;
-      elementIndex += 1
-    ) {
+    for (let elementIndex = 0; elementIndex < elements.length; elementIndex += 1) {
       const observed = elementAnimations(elements[elementIndex]);
-      for (
-        let animationIndex = 0;
-        animationIndex < observed.length;
-        animationIndex += 1
-      ) {
+      for (let animationIndex = 0; animationIndex < observed.length; animationIndex += 1) {
         setAdd(animations, observed[animationIndex]);
       }
     }
@@ -227,9 +213,7 @@ function animationsWithin(source: Document): Animation[] {
   return result;
 }
 
-function motionProperties(
-  animations: Animation[],
-): Map<Element, Map<string, Set<string>>> {
+function motionProperties(animations: Animation[]): Map<Element, Map<string, Set<string>>> {
   const properties = new SafeMap<Element, Map<string, Set<string>>>();
   for (let index = 0; index < animations.length; index += 1) {
     const effect = animationEffect(animations[index]);
@@ -244,8 +228,7 @@ function motionProperties(
     if (pseudo && !regExpTest(/^::[a-z-]+$/i, pseudo)) {
       continue;
     }
-    const byPseudo =
-      mapGet(properties, target) ?? new SafeMap<string, Set<string>>();
+    const byPseudo = mapGet(properties, target) ?? new SafeMap<string, Set<string>>();
     const names = mapGet(byPseudo, pseudo) ?? new SafeSet<string>();
     const frames = keyframes(effect);
     for (let frameIndex = 0; frameIndex < frames.length; frameIndex += 1) {
@@ -298,30 +281,18 @@ function captureCurrentMotion(live: Element): CapturedMotion | undefined {
 }
 
 function matchesKeyframeMetadata(name: string): boolean {
-  return arrayIncludes(
-    ["offset", "computedOffset", "easing", "composite"],
-    name,
-  );
+  return arrayIncludes(["offset", "computedOffset", "easing", "composite"], name);
 }
 
 function cssPropertyName(name: string): string {
   if (stringStartsWith(name, "--")) {
     return name;
   }
-  const kebab = stringReplacePattern(
-    name,
-    /[A-Z]/g,
-    (letter) => `-${stringToLowerCase(letter)}`,
-  );
+  const kebab = stringReplacePattern(name, /[A-Z]/g, (letter) => `-${stringToLowerCase(letter)}`);
   return stringStartsWith(kebab, "webkit-") ? `-${kebab}` : kebab;
 }
 
-function supportsInlineStyle(
-  element: Element,
-): element is HTMLElement | SVGElement {
+function supportsInlineStyle(element: Element): element is HTMLElement | SVGElement {
   const namespace = namespaceUri(element);
-  return (
-    namespace === "http://www.w3.org/1999/xhtml" ||
-    namespace === "http://www.w3.org/2000/svg"
-  );
+  return namespace === "http://www.w3.org/1999/xhtml" || namespace === "http://www.w3.org/2000/svg";
 }

@@ -41,13 +41,13 @@ An `OffprintError` contains:
 In JSON mode, the error record is written to standard error. Exit status
 classifies the process result:
 
-| Status | Meaning |
-| ---: | --- |
-| `0` | Operation succeeded |
-| `1` | Capture, browser, artifact input, output, scheduler, or runtime failure |
-| `2` | Arguments, configuration, or request validation failed |
-| `3` | Artifact verification rejected the input |
-| `130` | Operation was interrupted |
+| Status | Meaning                                                                 |
+| -----: | ----------------------------------------------------------------------- |
+|    `0` | Operation succeeded                                                     |
+|    `1` | Capture, browser, artifact input, output, scheduler, or runtime failure |
+|    `2` | Arguments, configuration, or request validation failed                  |
+|    `3` | Artifact verification rejected the input                                |
+|  `130` | Operation was interrupted                                               |
 
 Output conflicts such as `offprint.output.exists` fail validation and return
 `2`. Use the structured error code to choose recovery within a status family.
@@ -60,7 +60,7 @@ records preserve partial outcomes or recovery details.
 Create a request with `Capture::into_request()` in Rust or
 `captures.request(url)` in Node.js and Python, then pass it to
 `captures.start(request)` when automation needs progress or cancellation.
-[Language integrations](../README.md#use-offprint-in-an-application) show complete
+[Language examples](../examples/index.md#save-a-page) show complete
 event-consumption examples. Every subscription is independent. Resource
 progress can be coalesced, so treat its counts as the latest snapshot rather
 than a complete event log.
@@ -81,4 +81,4 @@ For example, Python calls `verify_format(...)`, while an `ExportRequest`
 dictionary still uses `outputDirectory`, `baseName`, and `frontMatter`.
 
 Use the [record reference](../reference/records.md) and generated
-[`schemas/`](../../schemas) for the exact field names.
+[`schemas/`](https://github.com/peter-gy/offprint/tree/main/schemas) for the exact field names.

@@ -17,14 +17,14 @@ You can open that file from disk with network access disabled.
 
 ## What a capture preserves
 
-| Page content | Saved representation |
-| --- | --- |
-| Text and elements created by scripts | Rendered HTML |
-| Stylesheets, fonts, images, and SVG | Embedded rendering resources |
-| Nested frames and shadow roots | Captured documents and shadow content |
-| Form controls, disclosure elements, and scroll positions | State observed at capture time |
-| Canvas and media | Pixels, posters, or current-frame fallbacks |
-| Source and capture conditions | Embedded artifact manifest |
+| Page content                                             | Saved representation                        |
+| -------------------------------------------------------- | ------------------------------------------- |
+| Text and elements created by scripts                     | Rendered HTML                               |
+| Stylesheets, fonts, images, and SVG                      | Embedded rendering resources                |
+| Nested frames and shadow roots                           | Captured documents and shadow content       |
+| Form controls, disclosure elements, and scroll positions | State observed at capture time              |
+| Canvas and media                                         | Pixels, posters, or current-frame fallbacks |
+| Source and capture conditions                            | Embedded artifact manifest                  |
 
 Password input values are redacted by default. Resource failures can reduce
 fidelity and appear as warnings. Choose `--missing-resources fail` when every

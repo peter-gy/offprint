@@ -1,0 +1,155 @@
+[workspace]
+exclude = ["fuzz"]
+members = [
+  "benches",
+  "node",
+  "python",
+  "core",
+  "artifact",
+  "browser",
+  "capture",
+  "chromium",
+  "cli",
+  "document",
+  "export",
+  "html",
+  "model",
+  "protocol",
+  "test-support",
+  "transform",
+  "xtask",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.97"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/peter-gy/offprint"
+
+[workspace.dependencies]
+async-trait = "0.1.91"
+base64 = "0.22.1"
+bytes = { version = "1.12.1", features = ["serde"] }
+camino = { version = "1.2.4", features = ["serde1"] }
+chrono = { version = "0.4.45", default-features = false, features = [
+  "clock",
+  "serde",
+  "std",
+] }
+clap = { version = "4.6.4", features = ["derive", "env", "string"] }
+clap_complete = "4.6.7"
+crc32fast = "1.5.0"
+cssparser = "0.37.0"
+data-url = "0.3.2"
+directories = "6.0.0"
+futures-core = "0.3.33"
+futures-util = "0.3.33"
+flate2 = "1.1.9"
+fs2 = "0.4.3"
+hex = "0.4.3"
+html5ever = "0.39.0"
+image = { version = "0.25.9", default-features = false, features = ["png"] }
+ipnet = "2.12.0"
+lightningcss = { version = "1.0.0-alpha.70", default-features = false }
+lopdf = { version = "0.44.0", default-features = false }
+markup5ever = "0.39.0"
+napi = { version = "3.7.0", features = ["async", "napi4", "serde-json"] }
+napi-build = "2.2.2"
+napi-derive = "3.4.0"
+pyo3 = "0.29.0"
+pyo3-async-runtimes = { version = "0.29.0", features = ["tokio-runtime"] }
+rcgen = { version = "0.14.7", default-features = false, features = [
+  "aws_lc_rs",
+  "crypto",
+  "pem",
+] }
+reqwest = { version = "0.13.1", default-features = false, features = [
+  "blocking",
+  "rustls",
+  "stream",
+] }
+rustls = { version = "0.23.42", default-features = false, features = [
+  "aws_lc_rs",
+  "std",
+  "tls12",
+] }
+schemars = { version = "1.2.1", features = ["chrono04", "url2"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.11.0"
+sha1 = "0.11.0"
+tempfile = "3.27.0"
+sysinfo = { version = "0.39.6", default-features = false, features = [
+  "system",
+] }
+tar = "0.4.44"
+thiserror = "2.0.19"
+tokio = { version = "1.53.1", features = [
+  "fs",
+  "io-util",
+  "macros",
+  "net",
+  "process",
+  "rt-multi-thread",
+  "signal",
+  "sync",
+  "time",
+] }
+tokio-stream = { version = "0.1.18", features = ["sync"] }
+tokio-tungstenite = { version = "0.30.0", features = [
+  "rustls-tls-webpki-roots",
+] }
+tokio-rustls = { version = "0.26.4", default-features = false, features = [
+  "aws_lc_rs",
+  "tls12",
+] }
+tokio-util = { version = "0.7.18", features = ["rt"] }
+toml = "1.1.4"
+ulid = { version = "3.0.0", features = ["serde"] }
+url = { version = "2.5.8", features = ["serde"] }
+zeroize = "1.8.2"
+zip = { version = "8.2.0", default-features = false, features = ["deflate"] }
+
+offprint = { version = "0.0.1", path = "core" }
+offprint-artifact = { version = "0.0.1", path = "artifact" }
+offprint-browser = { version = "0.0.1", path = "browser" }
+offprint-capture = { version = "0.0.1", path = "capture" }
+offprint-chromium = { version = "0.0.1", path = "chromium" }
+offprint-cli = { version = "0.0.1", path = "cli" }
+offprint-document = { version = "0.0.1", path = "document" }
+offprint-export = { version = "0.0.1", path = "export" }
+offprint-html = { version = "0.0.1", path = "html" }
+offprint-model = { version = "0.0.1", path = "model" }
+offprint-protocol = { version = "0.0.1", path = "protocol" }
+offprint-test-support = { version = "0.0.1", path = "test-support" }
+offprint-transform = { version = "0.0.1", path = "transform" }
+processkit = "3.0.2"
+proptest = "1.9.0"
+pulldown-cmark = { version = "0.13.4", default-features = false }
+quick-xml = "0.41.0"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+unused_must_use = "deny"
+rust_2018_idioms = { level = "deny", priority = -1 }
+
+[workspace.lints.clippy]
+await_holding_lock = "deny"
+dbg_macro = "deny"
+expect_used = "deny"
+manual_let_else = "deny"
+panic = "deny"
+print_stderr = "deny"
+print_stdout = "deny"
+redundant_clone = "deny"
+todo = "deny"
+unimplemented = "deny"
+unwrap_used = "deny"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+debug = "line-tables-only"
+strip = "none"

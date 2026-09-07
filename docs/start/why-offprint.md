@@ -24,11 +24,11 @@ A file can contain every expected element and still request a font, image, or
 frame when reopened. Offprint's default offline verification checks its static
 format and reopens the artifact with network access denied.
 
-| Question | Evidence |
-| --- | --- |
-| Did the artifact pass the selected checks? | Verification report bound to the exact file digest |
-| Were rendering resources unavailable? | Resource counts and warnings in the capture receipt |
-| Which reference failed, and why? | Resource records in the embedded manifest |
+| Question                                          | Evidence                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------- |
+| Did the artifact pass the selected checks?        | Verification report bound to the exact file digest                  |
+| Were rendering resources unavailable?             | Resource counts and warnings in the capture receipt                 |
+| Which reference failed, and why?                  | Resource records in the embedded manifest                           |
 | Which browser and capture conditions produced it? | Browser, environment, source, and policy provenance in the manifest |
 
 Self-containment and complete acquisition are separate properties. A failed

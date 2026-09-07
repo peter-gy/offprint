@@ -57,7 +57,7 @@ boundary. See [control capture](../guides/control-capture.md).
 Check the first selector match in the live page:
 
 ```js
-document.querySelector("main article")
+document.querySelector("main article");
 ```
 
 Selector and active-selection capture do not search inside child frames.

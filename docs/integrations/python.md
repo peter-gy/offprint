@@ -54,7 +54,7 @@ exported = await offprint.artifacts.export(
 ```
 
 Canonical record types are importable from the package root and from generated
-[`contracts.py`](../../bindings/python/python/offprint/contracts.py):
+[`contracts.py`](https://github.com/peter-gy/offprint/blob/main/sdk/python/src/offprint/contracts.py):
 
 ```python
 from offprint import CaptureRequest, CaptureReceipt, ExportRequest
@@ -102,14 +102,14 @@ acquiring a browser.
 Canonical dictionaries represent in-memory content as `list[int]`. Convert it
 to `bytes` before passing the artifact to byte-oriented Python APIs.
 The same example lives in
-[`capture_memory.py`](../../bindings/python/examples/capture_memory.py) and is
+[`capture_memory.py`](https://github.com/peter-gy/offprint/blob/main/sdk/python/examples/capture_memory.py) and is
 type-checked by `just python-check`.
 
-| Property | Methods |
-| --- | --- |
-| `captures` | `request`, `start`, `batch`, `crawl` |
-| `artifacts` | `inspect`, `verify`, `export`, `verify_format` |
-| `browsers` | `ensure`, `install`, `list`, `remove`, `doctor`, `close_idle` |
+| Property    | Methods                                                       |
+| ----------- | ------------------------------------------------------------- |
+| `captures`  | `request`, `start`, `batch`, `crawl`                          |
+| `artifacts` | `inspect`, `verify`, `export`, `verify_format`                |
+| `browsers`  | `ensure`, `install`, `list`, `remove`, `doctor`, `close_idle` |
 
 The [service API reference](../reference/service-api.md) defines constructor
 options, defaults, each method's return and failure boundary, and lifecycle.

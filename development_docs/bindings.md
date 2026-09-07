@@ -11,6 +11,20 @@ offprint       -> service behavior
       `-> PyO3 Python adapter
 ```
 
+## Source and package boundaries
+
+Native adapters live in `offprint-rs/node` and `offprint-rs/python`, within the
+same Cargo workspace as the service. `sdk/node` contains the npm host API and
+package loader. `sdk/python/src/offprint` contains the Python host API and type
+contracts. Maturin reads `sdk/python/pyproject.toml` and builds the separate
+Rust manifest selected there.
+
+`just node-package-check` installs a packed npm package and exercises Node.
+`just python-wheel-check` builds a wheel from the extracted source distribution,
+installs it in a fresh environment, and performs a browser capture. Cargo can
+prune unrelated workspace packages from the source distribution's bundled
+lockfile during its offline build.
+
 ## Shared surface
 
 Each host exposes:

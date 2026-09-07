@@ -29,13 +29,7 @@ import {
   templateContent,
 } from "./dom";
 import { isGeneratedMotionStyle } from "./motion";
-import {
-  arrayIncludes,
-  arrayPop,
-  arrayPush,
-  SafeString,
-  SafeTypeError,
-} from "./primordials";
+import { arrayIncludes, arrayPop, arrayPush, SafeString, SafeTypeError } from "./primordials";
 import {
   type BoundedResult,
   escapeScriptDataBounded,
@@ -51,16 +45,10 @@ export function removeReservedMetadata(root: Element): void {
   walkElements(root, (element) => {
     if (
       arrayIncludes(
-        [
-          manifestElementId,
-          repairDataElementId,
-          repairScriptElementId,
-          stateScriptElementId,
-        ],
+        [manifestElementId, repairDataElementId, repairScriptElementId, stateScriptElementId],
         getAttribute(element, "id") ?? "",
       ) ||
-      (hasAttribute(element, animationStyleAttribute) &&
-        !isGeneratedMotionStyle(element))
+      (hasAttribute(element, animationStyleAttribute) && !isGeneratedMotionStyle(element))
     ) {
       arrayPush(remove, element);
     }
@@ -82,10 +70,7 @@ export function serializeDocumentWithRepair(
   }
   const structuralRepair = structuralRepairFor(root, initial.value);
   if (structuralRepair) {
-    const repairJson = serializeJsonStringBounded(
-      structuralRepair,
-      maximumBytes,
-    );
+    const repairJson = serializeJsonStringBounded(structuralRepair, maximumBytes);
     if (repairJson.kind === "limit") {
       return repairJson;
     }
@@ -100,10 +85,7 @@ export function serializeDocumentWithRepair(
   return serializeHtmlBounded(root, maximumBytes);
 }
 
-function structuralRepairFor(
-  root: Element,
-  serialized: string,
-): StructuralRepairTree | undefined {
+function structuralRepairFor(root: Element, serialized: string): StructuralRepairTree | undefined {
   const reparsed = parseHtml(serialized);
   if (repairNodesEqual(root, documentElement(reparsed))) {
     return undefined;
@@ -136,8 +118,7 @@ function repairNodesEqual(left: Node, right: Node): boolean {
     if (
       getAttribute(leftNode, repairMarkerAttribute) !==
         getAttribute(rightNode, repairMarkerAttribute) ||
-      (namespaceUri(leftNode) ?? htmlNamespace) !==
-        (namespaceUri(rightNode) ?? htmlNamespace) ||
+      (namespaceUri(leftNode) ?? htmlNamespace) !== (namespaceUri(rightNode) ?? htmlNamespace) ||
       (localName(leftNode) ?? "") !== (localName(rightNode) ?? "") ||
       shadowModeFor(leftNode) !== shadowModeFor(rightNode)
     ) {
@@ -171,9 +152,7 @@ function repairNode(node: Node): RepairNode {
     return { kind: "comment", value: nodeValue(node) ?? "" };
   }
   if (!isElement(node)) {
-    throw new SafeTypeError(
-      "structural repair supports element, text, and comment nodes",
-    );
+    throw new SafeTypeError("structural repair supports element, text, and comment nodes");
   }
   const marker = getAttribute(node, repairMarkerAttribute) ?? "";
   const children = repairChildren(node);
@@ -202,15 +181,11 @@ function repairNodes(nodes: Node[]): RepairNode[] {
 }
 
 function templateChildren(node: Element): ChildNode[] {
-  return isHtmlTemplate(node)
-    ? childNodes(templateContent(node as HTMLTemplateElement))
-    : [];
+  return isHtmlTemplate(node) ? childNodes(templateContent(node as HTMLTemplateElement)) : [];
 }
 
 function shadowModeFor(node: Element): string | undefined {
-  return isHtmlTemplate(node)
-    ? (getAttribute(node, "shadowrootmode") ?? undefined)
-    : undefined;
+  return isHtmlTemplate(node) ? (getAttribute(node, "shadowrootmode") ?? undefined) : undefined;
 }
 
 function isHtmlTemplate(node: Element): boolean {
@@ -253,11 +228,7 @@ function walkElements(root: Element, visit: (element: Element) => void): void {
   }
 }
 
-function appendRepairData(
-  source: Document,
-  root: Element,
-  repairData: string,
-): void {
+function appendRepairData(source: Document, root: Element, repairData: string): void {
   const head = querySelector(root, "head");
   if (!head) {
     throw new SafeTypeError("structural repair requires an HTML head element");

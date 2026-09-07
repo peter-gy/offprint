@@ -60,13 +60,13 @@ Duplicate formats and an empty format list are rejected.
 
 For base name `example`, the default paths are:
 
-| Format | Output path | Entrypoint |
-| --- | --- | --- |
-| PDF | `exports/example.pdf` | `exports/example.pdf` |
-| Markdown | `exports/example-markdown/` | `exports/example-markdown/index.md` |
-| ZIP | `exports/example.zip` | `exports/example.zip` |
-| Self-extracting HTML | `exports/example.compressed.html` | `exports/example.compressed.html` |
-| MHTML | `exports/example.mhtml` | `exports/example.mhtml` |
+| Format               | Output path                       | Entrypoint                          |
+| -------------------- | --------------------------------- | ----------------------------------- |
+| PDF                  | `exports/example.pdf`             | `exports/example.pdf`               |
+| Markdown             | `exports/example-markdown/`       | `exports/example-markdown/index.md` |
+| ZIP                  | `exports/example.zip`             | `exports/example.zip`               |
+| Self-extracting HTML | `exports/example.compressed.html` | `exports/example.compressed.html`   |
+| MHTML                | `exports/example.mhtml`           | `exports/example.mhtml`             |
 
 The export result distinguishes `path`, which can be a file or directory, from
 `entrypoint`, which is the item a user opens.

@@ -5,19 +5,19 @@ types, CLI JSON, Node.js values, and Python dictionaries share these serialized
 shapes.
 
 Unknown fields are rejected for many closed request and policy records. Use the
-generated [JSON Schemas](../../schemas) for exhaustive field types and enum
+generated [JSON Schemas](https://github.com/peter-gy/offprint/tree/main/schemas) for exhaustive field types and enum
 values.
 
 ## Capture input and result
 
-| Record | Contract | Schema |
-| --- | --- | --- |
-| `CaptureRequest` | Complete one-page input | [`capture-request.schema.json`](../../schemas/capture-request.schema.json) |
-| `ContentPolicy` | Resource, password, scope, selector, optimization, and file-root policy | [`content-policy.schema.json`](../../schemas/content-policy.schema.json) |
-| `CaptureEvent` | Tagged progress or terminal event | [`capture-event.schema.json`](../../schemas/capture-event.schema.json) |
-| `CaptureReceipt` | Successful terminal result | [`capture-receipt.schema.json`](../../schemas/capture-receipt.schema.json) |
-| `VerificationReport` | Static or offline HTML evidence | [`verification-report.schema.json`](../../schemas/verification-report.schema.json) |
-| `OffprintError` | Structured failure | [`error.schema.json`](../../schemas/error.schema.json) |
+| Record               | Contract                                                                | Schema                                                                                                                      |
+| -------------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `CaptureRequest`     | Complete one-page input                                                 | [`capture-request.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/capture-request.schema.json)         |
+| `ContentPolicy`      | Resource, password, scope, selector, optimization, and file-root policy | [`content-policy.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/content-policy.schema.json)           |
+| `CaptureEvent`       | Tagged progress or terminal event                                       | [`capture-event.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/capture-event.schema.json)             |
+| `CaptureReceipt`     | Successful terminal result                                              | [`capture-receipt.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/capture-receipt.schema.json)         |
+| `VerificationReport` | Static or offline HTML evidence                                         | [`verification-report.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/verification-report.schema.json) |
+| `OffprintError`      | Structured failure                                                      | [`error.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/error.schema.json)                             |
 
 `CaptureRequest` contains `schemaVersion`, `url`, `output`, `browser`, optional
 `headed`, `environment`, `readiness`, `content`, optional `credentials`,
@@ -55,13 +55,13 @@ under backpressure.
 
 ## Artifact records
 
-| Record | Contract | Schema |
-| --- | --- | --- |
-| `ArtifactManifest` | Embedded HTML provenance and resource inventory | [`artifact-manifest.schema.json`](../../schemas/artifact-manifest.schema.json) |
-| `ArtifactVerification` | Uniform CLI verification result | [`artifact-verification.schema.json`](../../schemas/artifact-verification.schema.json) |
-| `FormatVerification` | Export-format verifier evidence | [`format-verification.schema.json`](../../schemas/format-verification.schema.json) |
-| `ExportRequest` | Requested export set | [`export-request.schema.json`](../../schemas/export-request.schema.json) |
-| `ExportResult` | Committed exported representations | [`export-result.schema.json`](../../schemas/export-result.schema.json) |
+| Record                 | Contract                                        | Schema                                                                                                                          |
+| ---------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `ArtifactManifest`     | Embedded HTML provenance and resource inventory | [`artifact-manifest.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/artifact-manifest.schema.json)         |
+| `ArtifactVerification` | Uniform CLI verification result                 | [`artifact-verification.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/artifact-verification.schema.json) |
+| `FormatVerification`   | Export-format verifier evidence                 | [`format-verification.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/format-verification.schema.json)     |
+| `ExportRequest`        | Requested export set                            | [`export-request.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/export-request.schema.json)               |
+| `ExportResult`         | Committed exported representations              | [`export-result.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/export-result.schema.json)                 |
 
 The artifact manifest contains individual `resourceRecords`. The capture receipt
 contains only their aggregate `ResourceSummary` and capture warnings.
@@ -80,10 +80,10 @@ Warning codes are not an exhaustive subset of the error registry.
 
 ## Browser records
 
-| Record | Contract | Schema |
-| --- | --- | --- |
-| `BrowserDoctorReport` | Readiness, candidates, cache, collector, output, configuration, network, recovery | [`browser-doctor-report.schema.json`](../../schemas/browser-doctor-report.schema.json) |
-| `BrowserOperationResult` | Install, list, or remove result | [`browser-operation-result.schema.json`](../../schemas/browser-operation-result.schema.json) |
+| Record                   | Contract                                                                          | Schema                                                                                                                                |
+| ------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `BrowserDoctorReport`    | Readiness, candidates, cache, collector, output, configuration, network, recovery | [`browser-doctor-report.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/browser-doctor-report.schema.json)       |
+| `BrowserOperationResult` | Install, list, or remove result                                                   | [`browser-operation-result.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/browser-operation-result.schema.json) |
 
 `BrowserInfo.source` records `managed`, `system`, `explicit`, or `remote`.
 Candidate state records `selected`, `compatible`, or `shadowed` with a reason
@@ -91,13 +91,13 @@ code, priority, and active lease count.
 
 ## Batch, crawl, and resume
 
-| Record | Contract | Schema |
-| --- | --- | --- |
-| `BatchRequest` | Named complete requests plus concurrency and resume options | [`batch-request.schema.json`](../../schemas/batch-request.schema.json) |
-| `BatchResult` | Ordered scheduled outcomes and counts | [`batch-result.schema.json`](../../schemas/batch-result.schema.json) |
-| `CrawlRequest` | Seed request, bounds, origin rule, output, resume options | [`crawl-request.schema.json`](../../schemas/crawl-request.schema.json) |
-| `CrawlResult` | Breadth-first page outcomes and counts | [`crawl-result.schema.json`](../../schemas/crawl-result.schema.json) |
-| `ResumeManifest` | Atomic persisted scheduler checkpoint | [`resume-manifest.schema.json`](../../schemas/resume-manifest.schema.json) |
+| Record           | Contract                                                    | Schema                                                                                                              |
+| ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `BatchRequest`   | Named complete requests plus concurrency and resume options | [`batch-request.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/batch-request.schema.json)     |
+| `BatchResult`    | Ordered scheduled outcomes and counts                       | [`batch-result.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/batch-result.schema.json)       |
+| `CrawlRequest`   | Seed request, bounds, origin rule, output, resume options   | [`crawl-request.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/crawl-request.schema.json)     |
+| `CrawlResult`    | Breadth-first page outcomes and counts                      | [`crawl-result.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/crawl-result.schema.json)       |
+| `ResumeManifest` | Atomic persisted scheduler checkpoint                       | [`resume-manifest.schema.json`](https://github.com/peter-gy/offprint/blob/main/schemas/resume-manifest.schema.json) |
 
 `BatchJob` is a serialized descriptor. It is distinct from the live
 `CaptureJob` handle. `ScheduledCaptureOutcome` is tagged `succeeded`, `failed`,

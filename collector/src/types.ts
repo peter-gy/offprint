@@ -116,14 +116,8 @@ export interface SnapshotBudget {
     frames: number,
   ): void;
   rejectPayload(attempted: number): never;
-  rejectPayloadAllocation(
-    reservation: SnapshotReservation,
-    attemptedBytes: number,
-  ): never;
-  reservePayloadAllocation(
-    reservation: SnapshotReservation,
-    payloadBytes: number,
-  ): void;
+  rejectPayloadAllocation(reservation: SnapshotReservation, attemptedBytes: number): never;
+  reservePayloadAllocation(reservation: SnapshotReservation, payloadBytes: number): void;
   reserveDocument(source: Document, frameDepth: number): SnapshotReservation;
   settlePayloadAllocation(
     reservation: SnapshotReservation,

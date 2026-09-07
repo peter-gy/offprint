@@ -1,10 +1,4 @@
-import {
-  mapClear,
-  mapGet,
-  objectFreeze,
-  SafeMap,
-  SafeTypeError,
-} from "./primordials";
+import { mapClear, mapGet, objectFreeze, SafeMap, SafeTypeError } from "./primordials";
 import { positionVisualFallback } from "./state";
 
 const targets = new SafeMap<string, Element>();

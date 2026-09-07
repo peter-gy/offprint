@@ -1,0 +1,21 @@
+{
+  "name": "offprint-workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "format": "oxfmt collector sdk/node docs package.json pnpm-workspace.yaml .oxfmtrc.json .oxlintrc.json README.md development_docs .github",
+    "format:check": "oxfmt --check collector sdk/node docs package.json pnpm-workspace.yaml .oxfmtrc.json .oxlintrc.json README.md development_docs .github",
+    "lint": "oxlint --deny-warnings --report-unused-disable-directives collector sdk/node docs",
+    "typecheck": "pnpm --recursive --if-present run typecheck",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck",
+    "test": "pnpm --filter @offprint/collector test && pnpm --filter offprint run build:test && pnpm --filter offprint test"
+  },
+  "devDependencies": {
+    "oxfmt": "0.66.0",
+    "oxlint": "1.81.0"
+  },
+  "engines": {
+    "node": ">=24.14.1"
+  },
+  "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457"
+}

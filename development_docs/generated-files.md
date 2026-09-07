@@ -2,16 +2,16 @@
 
 Edit each generated artifact through its owning source and generator.
 
-| Output | Source and command |
-| --- | --- |
-| `schemas/**` | Rust records through `cargo run --locked -p xtask -- codegen` |
-| `fixtures/manifest/**` | Fixture catalog through the same schema command |
-| `bindings/node/contracts.generated.d.ts` | Rust schemas through the same schema command |
-| `bindings/python/python/offprint/contracts.py` | Rust schemas through the same schema command |
-| `crates/offprint-chromium/src/cdp/generated/*.rs` | Pinned official CDP JSON through `cargo run --locked -p xtask -- codegen-cdp` |
-| `collector/dist/collector.js` and digest | Collector TypeScript through `bun run build` in `collector` |
-| Packaged collector copy and digest | Same collector build copied into `offprint-chromium` |
-| `benches/baseline.json` | `just benchmark benches/baseline.json` |
+| Output                                        | Source and command                                                                                                   |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `schemas/**`                                  | Rust records through `cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- codegen`                 |
+| `fixtures/manifest/**`                        | Fixture catalog through the same schema command                                                                      |
+| `sdk/node/contracts.generated.d.ts`           | Rust schemas through the same schema command                                                                         |
+| `sdk/python/src/offprint/contracts.py`        | Rust schemas through the same schema command                                                                         |
+| `offprint-rs/chromium/src/cdp/generated/*.rs` | Pinned official CDP JSON through `cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- codegen-cdp` |
+| `collector/dist/collector.js` and digest      | Collector TypeScript through `pnpm --filter @offprint/collector build`                                               |
+| Packaged collector copy and digest            | Same collector build copied into `offprint-chromium`                                                                 |
+| `offprint-rs/benches/baseline.json`           | `just benchmark offprint-rs/benches/baseline.json`                                                                   |
 
 Run:
 

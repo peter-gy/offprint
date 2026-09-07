@@ -11,98 +11,56 @@ import {
 
 const styleSheetListPrototype =
   typeof StyleSheetList === "undefined" ? undefined : StyleSheetList.prototype;
-const cssRuleListPrototype =
-  typeof CSSRuleList === "undefined" ? undefined : CSSRuleList.prototype;
+const cssRuleListPrototype = typeof CSSRuleList === "undefined" ? undefined : CSSRuleList.prototype;
 const cssStyleSheetPrototype =
   typeof CSSStyleSheet === "undefined" ? undefined : CSSStyleSheet.prototype;
-const styleSheetPrototype =
-  typeof StyleSheet === "undefined" ? undefined : StyleSheet.prototype;
-const mediaListPrototype =
-  typeof MediaList === "undefined" ? undefined : MediaList.prototype;
-const cssRulePrototype =
-  typeof CSSRule === "undefined" ? undefined : CSSRule.prototype;
+const styleSheetPrototype = typeof StyleSheet === "undefined" ? undefined : StyleSheet.prototype;
+const mediaListPrototype = typeof MediaList === "undefined" ? undefined : MediaList.prototype;
+const cssRulePrototype = typeof CSSRule === "undefined" ? undefined : CSSRule.prototype;
 const cssStyleRulePrototype =
   typeof CSSStyleRule === "undefined" ? undefined : CSSStyleRule.prototype;
 const cssFontFaceRulePrototype =
-  typeof CSSFontFaceRule === "undefined"
-    ? undefined
-    : CSSFontFaceRule.prototype;
+  typeof CSSFontFaceRule === "undefined" ? undefined : CSSFontFaceRule.prototype;
 const cssStyleDeclarationPrototype =
-  typeof CSSStyleDeclaration === "undefined"
-    ? undefined
-    : CSSStyleDeclaration.prototype;
-const windowPrototype =
-  typeof Window === "undefined" ? undefined : Window.prototype;
+  typeof CSSStyleDeclaration === "undefined" ? undefined : CSSStyleDeclaration.prototype;
+const windowPrototype = typeof Window === "undefined" ? undefined : Window.prototype;
 const windowObject = typeof window === "undefined" ? undefined : window;
 const windowPropertySource = windowObject ?? windowPrototype;
-const animationPrototype =
-  typeof Animation === "undefined" ? undefined : Animation.prototype;
+const animationPrototype = typeof Animation === "undefined" ? undefined : Animation.prototype;
 const keyframeEffectPrototype =
   typeof KeyframeEffect === "undefined" ? undefined : KeyframeEffect.prototype;
-const elementPrototype =
-  typeof Element === "undefined" ? undefined : Element.prototype;
-const htmlElementPrototype =
-  typeof HTMLElement === "undefined" ? undefined : HTMLElement.prototype;
+const elementPrototype = typeof Element === "undefined" ? undefined : Element.prototype;
+const htmlElementPrototype = typeof HTMLElement === "undefined" ? undefined : HTMLElement.prototype;
 const styleElementPrototype =
-  typeof HTMLStyleElement === "undefined"
-    ? undefined
-    : HTMLStyleElement.prototype;
+  typeof HTMLStyleElement === "undefined" ? undefined : HTMLStyleElement.prototype;
 const svgStyleElementPrototype =
-  typeof SVGStyleElement === "undefined"
-    ? undefined
-    : SVGStyleElement.prototype;
+  typeof SVGStyleElement === "undefined" ? undefined : SVGStyleElement.prototype;
 const linkElementPrototype =
-  typeof HTMLLinkElement === "undefined"
-    ? undefined
-    : HTMLLinkElement.prototype;
+  typeof HTMLLinkElement === "undefined" ? undefined : HTMLLinkElement.prototype;
 const inputPrototype =
-  typeof HTMLInputElement === "undefined"
-    ? undefined
-    : HTMLInputElement.prototype;
+  typeof HTMLInputElement === "undefined" ? undefined : HTMLInputElement.prototype;
 const textAreaPrototype =
-  typeof HTMLTextAreaElement === "undefined"
-    ? undefined
-    : HTMLTextAreaElement.prototype;
+  typeof HTMLTextAreaElement === "undefined" ? undefined : HTMLTextAreaElement.prototype;
 const optionPrototype =
-  typeof HTMLOptionElement === "undefined"
-    ? undefined
-    : HTMLOptionElement.prototype;
+  typeof HTMLOptionElement === "undefined" ? undefined : HTMLOptionElement.prototype;
 const detailsPrototype =
-  typeof HTMLDetailsElement === "undefined"
-    ? undefined
-    : HTMLDetailsElement.prototype;
+  typeof HTMLDetailsElement === "undefined" ? undefined : HTMLDetailsElement.prototype;
 const imagePrototype =
-  typeof HTMLImageElement === "undefined"
-    ? undefined
-    : HTMLImageElement.prototype;
+  typeof HTMLImageElement === "undefined" ? undefined : HTMLImageElement.prototype;
 const canvasPrototype =
-  typeof HTMLCanvasElement === "undefined"
-    ? undefined
-    : HTMLCanvasElement.prototype;
+  typeof HTMLCanvasElement === "undefined" ? undefined : HTMLCanvasElement.prototype;
 const mediaPrototype =
-  typeof HTMLMediaElement === "undefined"
-    ? undefined
-    : HTMLMediaElement.prototype;
+  typeof HTMLMediaElement === "undefined" ? undefined : HTMLMediaElement.prototype;
 const videoPrototype =
-  typeof HTMLVideoElement === "undefined"
-    ? undefined
-    : HTMLVideoElement.prototype;
-const selectionPrototype =
-  typeof Selection === "undefined" ? undefined : Selection.prototype;
-const rangePrototype =
-  typeof Range === "undefined" ? undefined : Range.prototype;
-const treeWalkerPrototype =
-  typeof TreeWalker === "undefined" ? undefined : TreeWalker.prototype;
+  typeof HTMLVideoElement === "undefined" ? undefined : HTMLVideoElement.prototype;
+const selectionPrototype = typeof Selection === "undefined" ? undefined : Selection.prototype;
+const rangePrototype = typeof Range === "undefined" ? undefined : Range.prototype;
+const treeWalkerPrototype = typeof TreeWalker === "undefined" ? undefined : TreeWalker.prototype;
 const context2dPrototype =
-  typeof CanvasRenderingContext2D === "undefined"
-    ? undefined
-    : CanvasRenderingContext2D.prototype;
+  typeof CanvasRenderingContext2D === "undefined" ? undefined : CanvasRenderingContext2D.prototype;
 const domRectPrototype =
-  typeof DOMRectReadOnly === "undefined"
-    ? undefined
-    : DOMRectReadOnly.prototype;
-const locationPrototype =
-  typeof Location === "undefined" ? undefined : Location.prototype;
+  typeof DOMRectReadOnly === "undefined" ? undefined : DOMRectReadOnly.prototype;
+const locationPrototype = typeof Location === "undefined" ? undefined : Location.prototype;
 const locationObject = typeof location === "undefined" ? undefined : location;
 const locationPropertySource = locationObject ?? locationPrototype;
 
@@ -111,11 +69,7 @@ const styleSheetListLength = captureGetter<StyleSheetList, number>(
   "length",
   (list) => list.length,
 );
-const styleSheetListItem = captureMethod<
-  StyleSheetList,
-  [number],
-  CSSStyleSheet | null
->(
+const styleSheetListItem = captureMethod<StyleSheetList, [number], CSSStyleSheet | null>(
   styleSheetListPrototype,
   "item",
   (list, index) => list.item(index) as CSSStyleSheet | null,
@@ -163,11 +117,7 @@ const getMediaText = captureGetter<MediaList, string>(
 export function styleSheetMedia(sheet: CSSStyleSheet): string {
   return getMediaText(getStyleSheetMedia(sheet));
 }
-const getRuleType = captureGetter<CSSRule, number>(
-  cssRulePrototype,
-  "type",
-  (rule) => rule.type,
-);
+const getRuleType = captureGetter<CSSRule, number>(cssRulePrototype, "type", (rule) => rule.type);
 const getRuleText = captureGetter<CSSRule, string>(
   cssRulePrototype,
   "cssText",
@@ -178,26 +128,31 @@ const getSelectorText = captureGetter<CSSStyleRule, string>(
   "selectorText",
   (rule) => rule.selectorText,
 );
-const getStyleRuleDeclaration = captureGetter<
-  CSSStyleRule,
-  CSSStyleDeclaration
->(cssStyleRulePrototype, "style", (rule) => rule.style);
-const getFontFaceDeclaration = captureGetter<
-  CSSFontFaceRule,
-  CSSStyleDeclaration
->(cssFontFaceRulePrototype, "style", (rule) => rule.style);
-const getStyleSheetFromStyle = captureGetter<
-  HTMLStyleElement,
-  CSSStyleSheet | null
->(styleElementPrototype, "sheet", (element) => element.sheet);
-const getStyleSheetFromSvgStyle = captureGetter<
-  SVGStyleElement,
-  CSSStyleSheet | null
->(svgStyleElementPrototype, "sheet", (element) => element.sheet);
-const getStyleSheetFromLink = captureGetter<
-  HTMLLinkElement,
-  CSSStyleSheet | null
->(linkElementPrototype, "sheet", (element) => element.sheet);
+const getStyleRuleDeclaration = captureGetter<CSSStyleRule, CSSStyleDeclaration>(
+  cssStyleRulePrototype,
+  "style",
+  (rule) => rule.style,
+);
+const getFontFaceDeclaration = captureGetter<CSSFontFaceRule, CSSStyleDeclaration>(
+  cssFontFaceRulePrototype,
+  "style",
+  (rule) => rule.style,
+);
+const getStyleSheetFromStyle = captureGetter<HTMLStyleElement, CSSStyleSheet | null>(
+  styleElementPrototype,
+  "sheet",
+  (element) => element.sheet,
+);
+const getStyleSheetFromSvgStyle = captureGetter<SVGStyleElement, CSSStyleSheet | null>(
+  svgStyleElementPrototype,
+  "sheet",
+  (element) => element.sheet,
+);
+const getStyleSheetFromLink = captureGetter<HTMLLinkElement, CSSStyleSheet | null>(
+  linkElementPrototype,
+  "sheet",
+  (element) => element.sheet,
+);
 
 export function styleSheetsFromList(list: StyleSheetList): CSSStyleSheet[] {
   const sheets: CSSStyleSheet[] = [];
@@ -282,26 +237,18 @@ export function cssRuleSelector(rule: CSSStyleRule): string {
   return getSelectorText(rule);
 }
 
-export function cssRuleDeclaration(
-  rule: CSSStyleRule | CSSFontFaceRule,
-): CSSStyleDeclaration {
+export function cssRuleDeclaration(rule: CSSStyleRule | CSSFontFaceRule): CSSStyleDeclaration {
   return cssRuleType(rule) === 1
     ? getStyleRuleDeclaration(rule as CSSStyleRule)
     : getFontFaceDeclaration(rule as CSSFontFaceRule);
 }
 
-export const stylePropertyValue = captureMethod<
-  CSSStyleDeclaration,
-  [string],
-  string
->(cssStyleDeclarationPrototype, "getPropertyValue", (style, name) =>
-  style.getPropertyValue(name),
+export const stylePropertyValue = captureMethod<CSSStyleDeclaration, [string], string>(
+  cssStyleDeclarationPrototype,
+  "getPropertyValue",
+  (style, name) => style.getPropertyValue(name),
 );
-export const setStyleProperty = captureMethod<
-  CSSStyleDeclaration,
-  [string, string, string],
-  void
->(
+export const setStyleProperty = captureMethod<CSSStyleDeclaration, [string, string, string], void>(
   cssStyleDeclarationPrototype,
   "setProperty",
   (style, name, value, priority) => {
@@ -313,30 +260,27 @@ export const styleText = captureGetter<CSSStyleDeclaration, string>(
   "cssText",
   (style) => style.cssText,
 );
-const getElementStyle = captureGetter<
-  HTMLElement | SVGElement,
-  CSSStyleDeclaration
->(htmlElementPrototype, "style", (element) => element.style);
+const getElementStyle = captureGetter<HTMLElement | SVGElement, CSSStyleDeclaration>(
+  htmlElementPrototype,
+  "style",
+  (element) => element.style,
+);
 const getSvgElementStyle = captureGetter<SVGElement, CSSStyleDeclaration>(
   typeof SVGElement === "undefined" ? undefined : SVGElement.prototype,
   "style",
   (element) => element.style,
 );
 
-export function elementStyle(
-  element: HTMLElement | SVGElement,
-): CSSStyleDeclaration {
+export function elementStyle(element: HTMLElement | SVGElement): CSSStyleDeclaration {
   return namespaceUri(element) === "http://www.w3.org/2000/svg"
     ? getSvgElementStyle(element as SVGElement)
     : getElementStyle(element);
 }
 
-export const computedStyle = captureMethod<
-  Window,
-  [Element, string | null],
-  CSSStyleDeclaration
->(windowPropertySource, "getComputedStyle", (view, element, pseudo) =>
-  view.getComputedStyle(element, pseudo),
+export const computedStyle = captureMethod<Window, [Element, string | null], CSSStyleDeclaration>(
+  windowPropertySource,
+  "getComputedStyle",
+  (view, element, pseudo) => view.getComputedStyle(element, pseudo),
 );
 
 export const elementAnimations = captureMethod<Element, [], Animation[]>(
@@ -344,13 +288,13 @@ export const elementAnimations = captureMethod<Element, [], Animation[]>(
   "getAnimations",
   (element) => element.getAnimations(),
 );
-export const elementScrollIntoView = captureMethod<
-  Element,
-  [ScrollIntoViewOptions],
-  void
->(elementPrototype, "scrollIntoView", (element, options) => {
-  element.scrollIntoView(options);
-});
+export const elementScrollIntoView = captureMethod<Element, [ScrollIntoViewOptions], void>(
+  elementPrototype,
+  "scrollIntoView",
+  (element, options) => {
+    element.scrollIntoView(options);
+  },
+);
 export const pauseAnimation = captureMethod<Animation, [], void>(
   animationPrototype,
   "pause",
@@ -368,19 +312,18 @@ export const keyframeTarget = captureGetter<KeyframeEffect, Element | null>(
   "target",
   (effect) => effect.target,
 );
-export const keyframePseudo = captureOptionalGetter<
-  KeyframeEffect,
-  string | null
->(keyframeEffectPrototype, "pseudoElement", null);
+export const keyframePseudo = captureOptionalGetter<KeyframeEffect, string | null>(
+  keyframeEffectPrototype,
+  "pseudoElement",
+  null,
+);
 export const keyframes = captureMethod<KeyframeEffect, [], ComputedKeyframe[]>(
   keyframeEffectPrototype,
   "getKeyframes",
   (effect) => effect.getKeyframes(),
 );
 
-export function isKeyframeEffect(
-  effect: AnimationEffect | null,
-): effect is KeyframeEffect {
+export function isKeyframeEffect(effect: AnimationEffect | null): effect is KeyframeEffect {
   if (!effect) {
     return false;
   }

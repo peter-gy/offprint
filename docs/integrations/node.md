@@ -68,16 +68,16 @@ idempotent. Await `result()` to observe terminal cleanup.
 Canonical JSON represents in-memory content as `number[]`. Convert it to a
 `Uint8Array` before passing the artifact to byte-oriented Node.js APIs.
 The typed version lives in
-[`capture-memory.ts`](../../bindings/node/examples/capture-memory.ts) and is
+[`capture-memory.ts`](https://github.com/peter-gy/offprint/blob/main/sdk/node/examples/capture-memory.ts) and is
 checked by `just node-check`.
 
 ## Public services
 
-| Property | Methods |
-| --- | --- |
-| `captures` | `request`, `start`, `batch`, `crawl` |
-| `artifacts` | `inspect`, `verify`, `export`, `verifyFormat` |
-| `browsers` | `ensure`, `install`, `list`, `remove`, `doctor`, `closeIdle` |
+| Property    | Methods                                                      |
+| ----------- | ------------------------------------------------------------ |
+| `captures`  | `request`, `start`, `batch`, `crawl`                         |
+| `artifacts` | `inspect`, `verify`, `export`, `verifyFormat`                |
+| `browsers`  | `ensure`, `install`, `list`, `remove`, `doctor`, `closeIdle` |
 
 The [service API reference](../reference/service-api.md) defines constructor
 options, defaults, each method's return and failure boundary, and lifecycle.
@@ -104,5 +104,5 @@ The finalizer and process-exit handling are fallback safeguards. Child
 services, jobs, and event iterators retain the root runtime until their work
 completes.
 
-[`index.d.ts`](../../bindings/node/index.d.ts) is the exact Node API and record
+[`index.d.ts`](https://github.com/peter-gy/offprint/blob/main/sdk/node/index.d.ts) is the exact Node API and record
 reference. Canonical record fields remain camelCase.

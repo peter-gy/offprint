@@ -1,68 +1,120 @@
 # Contributor setup
 
-Start with the Rust package that owns your change:
+Install the workspace dependencies, then check the area you are changing:
 
 ```console
-just setup
+pnpm install --frozen-lockfile
+uv sync --directory sdk/python --frozen --no-install-project
 just quick offprint-model
 ```
 
-`quick` checks that package's formatting, lints its targets with warnings denied,
-and runs its tests. Find the owner in the
-[architecture map](./architecture.md).
+[Rustup](https://rust-lang.github.io/rustup/) selects Rust 1.97 from the root
+`rust-toolchain.toml`. Use [Node.js](https://nodejs.org/) 24.14.1 or newer,
+[pnpm](https://pnpm.io/) 12.3.4, [uv](https://docs.astral.sh/uv/), and
+[just](https://just.systems/). Ensure `cargo` and `rustc` resolve through Rustup.
 
-## Required tools
+## Choose the check loop
 
-- [Rustup](https://rust-lang.github.io/rustup/) to select the Rust toolchain pinned
-  in [`rust-toolchain.toml`](../rust-toolchain.toml)
-- [just](https://just.systems/) to run repository recipes
-- [Bun](https://bun.sh/docs) for collector and Node.js binding development
-- [Node.js](https://nodejs.org/) 22 or newer for package checks
-- [uv](https://docs.astral.sh/uv/) and Python 3.14 for Python development
-- `actionlint`, Taplo, cargo-deny, cargo-machete, and cargo-semver-checks for the
-  complete release gate
+| Change             | Fast feedback                              | Runtime or package evidence                    |
+| ------------------ | ------------------------------------------ | ---------------------------------------------- |
+| Rust crate         | `just check PACKAGE`, `just quick PACKAGE` | Owning browser fixture or package check        |
+| Shared JavaScript  | `just js-check`                            | `pnpm test`                                    |
+| Collector          | `just collector-check`                     | `just test-fixture FIXTURE_ID`                 |
+| Node.js SDK        | `pnpm --filter offprint check`             | `just node-check`, `just node-package-check`   |
+| Python SDK         | `just python-qa`                           | `just python-check`, `just python-wheel-check` |
+| User documentation | `just docs-dev`, `just site-check`         | `just docs-check` and browser inspection       |
 
-[`ci.yml`](../.github/workflows/ci.yml) records the continuous integration
-toolchain and commands. Ensure `cargo` and `rustc` resolve through Rustup so the
-repository's toolchain pin takes effect.
+`just quick PACKAGE` checks Rust formatting, lints every target and feature,
+and runs the package's default-feature tests. `just test PACKAGE FILTER`
+selects tests by name. Browser fixture selection requires exactly one owner.
 
-Install the dependencies for the surface you are editing:
+## Repository layout
+
+- `offprint-rs/` owns Cargo configuration, Rust source, native adapters,
+  benchmarks, fuzz targets, and repository automation.
+- `sdk/node/` owns the npm package and its JavaScript API.
+- `sdk/python/` owns the Python package, its uv lockfile, and Python QA.
+- `collector/` owns the browser collector and its generated JavaScript bundle.
+- `docs/` owns the VitePress site and its authored pages.
+- `schemas/` and `fixtures/` hold shared generated contracts and browser inputs.
+
+Run Cargo directly with `--manifest-path offprint-rs/Cargo.toml`, or enter
+`offprint-rs/` first. Cargo outputs belong to `offprint-rs/target/`.
+
+## Shared tooling
+
+The root pnpm workspace owns one lockfile and shared Oxfmt/Oxlint configuration.
+Each JavaScript package declares the build and test tools it uses. Catalogs
+keep shared TypeScript, Vite, and Vitest versions aligned.
+
+`pnpm format` formats JavaScript, TypeScript, and site sources. `just fmt`
+also formats Rust. Python uses `just python-format`. Generated declarations
+and collector bundles are formatted by their owning generators.
+
+`just python-qa` runs Ruff formatting/linting, ty, and Pyrefly across Python
+source, stubs, examples, and tests. It uses the locked development environment without
+changing the installed native adapter. `just python-check` then builds that adapter and
+runs pytest.
+
+Dependency installation uses exact pins, frozen lockfiles, a three-day pnpm
+release-age gate, and disabled package lifecycle scripts. Review an upstream
+package before changing those boundaries. See [dependency policy](./dependencies.md).
+
+## Documentation site
 
 ```console
-bun install --cwd collector --frozen-lockfile
-bun install --cwd bindings/node --frozen-lockfile
-uv sync --directory bindings/python --frozen
+just docs-dev
+just site-check
+pnpm --filter @offprint/docs preview
 ```
 
-Keep the checked-in lockfiles unchanged during setup. Review dependency and
-license changes through the checks in [Dependency policy](./dependencies.md).
+`just docs-dev` runs [Portless](https://github.com/vercel-labs/portless), a local
+reverse proxy, at `https://docs.offprint.localhost`. It assigns VitePress a free
+upstream port and prefixes the hostname in linked Git worktrees. The printed
+URL reflects the active proxy configuration.
 
-## Focused development loop
+The first Portless run may request administrator access to trust its local
+certificate and bind the HTTPS proxy. Stop the docs process with Ctrl+C to
+release its route. Use `PORTLESS=0 just docs-dev` to run VitePress directly.
 
-Use individual steps while resolving a failure:
+The production site is written to `docs/.vitepress/dist`. To verify a host
+subpath, pass VitePress's native base option to both commands:
 
 ```console
-just check offprint-model
-just lint offprint-model
-just test offprint-model
+pnpm --filter @offprint/docs build --base /offprint/
+pnpm --filter @offprint/docs preview --base /offprint/
 ```
 
-`check` and `lint` include tests, examples, and every package feature. `test`
-runs the default-feature suite and accepts a test-name filter as its second
-argument. Omit the package to check, lint, or test the workspace.
+The [Pages workflow](../.github/workflows/pages.yml) checks pull requests and
+deploys `main` to GitHub Pages. It uses `configure-pages`'s `origin` as
+`SITE_URL` and passes `base_path` through `BASE_PATH` to VitePress's `--base`
+option. Project sites and custom domains use the URL configured by GitHub.
 
-Use the [validation table](./testing.md#choose-the-checks-for-your-change)
-before handoff. Browser changes start with one fixture, then one serialized
-group. `just --list` shows the available recipes.
+Set `SITE_URL` to the deployment origin to include absolute canonical and
+social preview URLs. The base option supplies any path prefix:
 
-## Generated output
+```console
+SITE_URL=https://example.com pnpm --filter @offprint/docs build --base /offprint/
+```
+
+This build points social previews to `https://example.com/offprint/og.png`.
+The theme selects light and dark artwork from `docs/public/brand/`.
+
+Edit the landing page through VitePress's `hero` and `features` frontmatter in
+`docs/index.md`. Card icons are static SVGs from [Lucide](https://lucide.dev/),
+distributed through [Iconify](https://iconify.design/), in each card's `icon`
+field. Their license is in `docs/public/icons/LUCIDE-LICENSE.txt`.
+
+The site build checks that every documentation page appears in the sidebar
+defined in `docs/.vitepress/config.ts`.
+
+## Generated output and complete gates
 
 Run `just codegen` after changing canonical records, fixture metadata, CDP
-selection, or collector source. Review generated diffs beside their owner and
-finish with `just codegen-check`.
+selection, or collector source, then run `just codegen-check`.
 
-## Clean the workspace
+[Testing](./testing.md) maps changes to required evidence. The complete release
+gate also needs `actionlint`, Taplo, cargo-deny, cargo-machete, and
+cargo-semver-checks. [CI](../.github/workflows/ci.yml) records their installation.
 
-`just clean` removes Cargo targets, local JavaScript dependencies, Python
-virtual environments and caches, native addons, and package output. It leaves
-tracked source unchanged.
+`just clean` clears build outputs, package installations, and generated caches.

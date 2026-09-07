@@ -12,12 +12,12 @@ offprint capture https://example.com --output example.html
 The readiness mode controls when Offprint stops waiting and begins collecting
 the rendered state.
 
-| Mode | Condition before collection |
-| --- | --- |
-| `render-idle` | Document completion, bounded lazy-load sweep, bounded font and DOM-mutation observations, and stable finite network activity |
-| `network-idle` | DOM content loaded, then zero finite requests for the network quiet window |
-| `load` | Browser load event |
-| `dom-content-loaded` | Browser DOM content loaded event |
+| Mode                 | Condition before collection                                                                                                  |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `render-idle`        | Document completion, bounded lazy-load sweep, bounded font and DOM-mutation observations, and stable finite network activity |
+| `network-idle`       | DOM content loaded, then zero finite requests for the network quiet window                                                   |
+| `load`               | Browser load event                                                                                                           |
+| `dom-content-loaded` | Browser DOM content loaded event                                                                                             |
 
 The [Document Object Model (DOM)](https://dom.spec.whatwg.org/) is the browser's
 live tree for the page.
@@ -84,11 +84,11 @@ interpreting self-containment as complete acquisition.
 
 Three opt-in transformations can reduce output:
 
-| Option | Action | Fidelity risk |
-| --- | --- | --- |
-| `--remove-unused-css` | Removes rules that cannot match the captured state | Later state changes cannot use removed rules |
-| `--remove-unused-fonts` | Removes font faces unused by the captured state | Later text or style changes may fall back |
-| `--remove-hidden-elements` | Removes elements whose computed display is `none` | Hidden content cannot be revealed from the artifact |
+| Option                     | Action                                             | Fidelity risk                                       |
+| -------------------------- | -------------------------------------------------- | --------------------------------------------------- |
+| `--remove-unused-css`      | Removes rules that cannot match the captured state | Later state changes cannot use removed rules        |
+| `--remove-unused-fonts`    | Removes font faces unused by the captured state    | Later text or style changes may fall back           |
+| `--remove-hidden-elements` | Removes elements whose computed display is `none`  | Hidden content cannot be revealed from the artifact |
 
 These transformations use the observed capture state. Compare the result with
 the default artifact before applying them to an archival workflow.

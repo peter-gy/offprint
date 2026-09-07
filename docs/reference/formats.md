@@ -6,14 +6,14 @@ are export formats derived from a verified HTML source.
 
 ## Choose a format
 
-| Format | Output shape | Open with | Executable content | Provenance |
-| --- | --- | --- | --- | --- |
-| Offprint HTML | One `.html` file | Modern browser | Exact Offprint restoration programs | Full embedded artifact manifest |
-| PDF | One `.pdf` file | PDF reader | Rejected by verifier | Selected document metadata, source provenance, and resource summary |
-| Markdown | Directory with `index.md` and assets | Markdown reader | Raw HTML rejected | Source, capture time, and policy digest front matter by default |
-| ZIP | One `.zip` file | Archive tool | Contained Offprint HTML owns its normal restoration programs | Full embedded and sidecar manifests |
-| Self-extracting HTML | One `.compressed.html` file | Browser with `DecompressionStream` | Inline Offprint decompression loader | Full manifest inside compressed Offprint HTML |
-| MHTML | One `.mhtml` file | Browser with MHTML import | Restoration execution removed | Full embedded and sidecar manifests |
+| Format               | Output shape                         | Open with                          | Executable content                                           | Provenance                                                          |
+| -------------------- | ------------------------------------ | ---------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------- |
+| Offprint HTML        | One `.html` file                     | Modern browser                     | Exact Offprint restoration programs                          | Full embedded artifact manifest                                     |
+| PDF                  | One `.pdf` file                      | PDF reader                         | Rejected by verifier                                         | Selected document metadata, source provenance, and resource summary |
+| Markdown             | Directory with `index.md` and assets | Markdown reader                    | Raw HTML rejected                                            | Source, capture time, and policy digest front matter by default     |
+| ZIP                  | One `.zip` file                      | Archive tool                       | Contained Offprint HTML owns its normal restoration programs | Full embedded and sidecar manifests                                 |
+| Self-extracting HTML | One `.compressed.html` file          | Browser with `DecompressionStream` | Inline Offprint decompression loader                         | Full manifest inside compressed Offprint HTML                       |
+| MHTML                | One `.mhtml` file                    | Browser with MHTML import          | Restoration execution removed                                | Full embedded and sidecar manifests                                 |
 
 ## Offprint HTML
 

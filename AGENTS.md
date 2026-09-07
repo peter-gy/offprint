@@ -8,23 +8,25 @@ file or bounded memory value. Offline verification is the default.
 
 | Area | Owner | Contract |
 | --- | --- | --- |
-| `crates/offprint-model` | Canonical records | Public request, event, result, error, browser, resource, and artifact records |
-| `crates/offprint-browser` | Browser seam | Backend traits, sessions, network policy, and readiness observations |
-| `crates/offprint-chromium` | Chromium adapter | Discovery, managed installs, process ownership, CDP transport, targets, and collection |
-| `crates/offprint-protocol` | Collector protocol | Handshake, version negotiation, chunk envelopes, checksums, and message records |
-| `crates/offprint-capture` | Capture primitives | Validation, reusable state and cancellation types, budgets, and content store |
-| `crates/offprint-document` | Document model | Arena DOM, reference discovery, CSS rewriting, state materialization, and sanitization |
-| `crates/offprint-html` | HTML artifact | Encoding, manifest embedding, owned restoration programs, content policy, structural repair, static verification, and fallbacks |
-| `crates/offprint-transform` | Safe-static transform | Document freeze, sanitization, repair, and HTML format orchestration |
-| `crates/offprint-export` | Alternate representations | Format encoders, source metadata preservation, and representation-specific verification |
-| `crates/offprint-artifact` | Delivery | Bounded memory output and transactional file output |
-| `crates/offprint` | Service API | Runtime ownership, production job control, resource materialization, pipeline, diagnostics, browser service, inspect, and verify |
-| `crates/offprint-cli` | Command boundary | Commands, configuration precedence, output routing, diagnostics, and exit status |
+| `offprint-rs/model` | Canonical records | Public request, event, result, error, browser, resource, and artifact records |
+| `offprint-rs/browser` | Browser seam | Backend traits, sessions, network policy, and readiness observations |
+| `offprint-rs/chromium` | Chromium adapter | Discovery, managed installs, process ownership, CDP transport, targets, and collection |
+| `offprint-rs/protocol` | Collector protocol | Handshake, version negotiation, chunk envelopes, checksums, and message records |
+| `offprint-rs/capture` | Capture primitives | Validation, reusable state and cancellation types, budgets, and content store |
+| `offprint-rs/document` | Document model | Arena DOM, reference discovery, CSS rewriting, state materialization, and sanitization |
+| `offprint-rs/html` | HTML artifact | Encoding, manifest embedding, owned restoration programs, content policy, structural repair, static verification, and fallbacks |
+| `offprint-rs/transform` | Safe-static transform | Document freeze, sanitization, repair, and HTML format orchestration |
+| `offprint-rs/export` | Alternate representations | Format encoders, source metadata preservation, and representation-specific verification |
+| `offprint-rs/artifact` | Delivery | Bounded memory output and transactional file output |
+| `offprint-rs/core` | Service API | Runtime ownership, production job control, resource materialization, pipeline, diagnostics, browser service, inspect, and verify |
+| `offprint-rs/cli` | Command boundary | Commands, configuration precedence, output routing, diagnostics, and exit status |
 | `collector` | Page observation | Document-start hooks and bounded pull-based collection |
-| `bindings/node` | Node.js binding | ESM, CommonJS, async jobs, events, errors, and packaged native addon selection |
-| `bindings/python` | Python binding | Async context manager, jobs, events, errors, and wheel module |
-| `benches` | Performance evidence | Microbenchmarks, browser corpora, normalized comparison, and recorded baseline |
-| `xtask` | Repository automation | Schema generation, CDP generation, fixture selection, and release checks |
+| `offprint-rs/node` | Native Node.js adapter | Node-API transport into the Rust service |
+| `offprint-rs/python` | Native Python adapter | Python extension transport into the Rust service |
+| `sdk/node` | Node.js SDK | ESM, CommonJS, async jobs, events, errors, and packaged native addon selection |
+| `sdk/python` | Python SDK | Async context manager, jobs, events, errors, and wheel module |
+| `offprint-rs/benches` | Performance evidence | Microbenchmarks, browser corpora, normalized comparison, and recorded baseline |
+| `offprint-rs/xtask` | Repository automation | Schema generation, CDP generation, fixture selection, and release checks |
 
 The service crate is the production composition root. Parser, protocol, and
 CDP types stay behind their owning crate boundaries.
@@ -90,10 +92,20 @@ development gap in [`development_docs/testing.md`](./development_docs/testing.md
 - A **managed browser** is a catalog entry whose revision and archive digest
   are pinned in `versions.toml`.
 
+## Repository layout
+
+`offprint-rs/` owns the Rust workspace and its target directory. `sdk/` owns
+public language packages. `collector/` and `docs/` are private JavaScript
+workspace packages. Root pnpm configuration owns shared Oxfmt and Oxlint rules
+and exact shared tooling versions. Python QA belongs to `sdk/python/pyproject.toml`.
+
 ## Commands
 
 ```console
 just fmt-check
+just js-check
+just python-qa
+just site-check
 just clean
 just lint
 just test
@@ -114,23 +126,23 @@ Run `just exploratory-corpus` to capture the versioned Datawrapper URL corpus
 through one browser service and write a machine-readable outcome report.
 Run `just fuzz-smoke` after parser, serializer, resource graph, or protocol
 changes. Run `just miri` after changes to FFI-free ownership or state code.
-Run `just benchmark-compare benches/baseline.json` after changing a measured
+Run `just benchmark-compare offprint-rs/benches/baseline.json` after changing a measured
 capture path.
 
 ## Generated files
 
-- `schemas/**` comes from `cargo run -p xtask -- codegen`.
+- `schemas/**` comes from `cargo run --manifest-path offprint-rs/Cargo.toml -p xtask -- codegen`.
 - `fixtures/manifest/**` comes from the same schema command.
-- `bindings/node/contracts.generated.d.ts` and
-  `bindings/python/python/offprint/contracts.py` come from the same schema
+- `sdk/node/contracts.generated.d.ts` and
+  `sdk/python/src/offprint/contracts.py` come from the same schema
   command.
-- `crates/offprint-chromium/src/cdp/generated/*.rs` comes from
-  `cargo run -p xtask -- codegen-cdp`.
+- `offprint-rs/chromium/src/cdp/generated/*.rs` comes from
+  `cargo run --manifest-path offprint-rs/Cargo.toml -p xtask -- codegen-cdp`.
 - `collector/dist/collector.js` and `collector/dist/collector.sha256` come from
-  `bun run build` in `collector`.
-- `crates/offprint-chromium/generated/collector.js` and
+  `pnpm --filter @offprint/collector build`.
+- `offprint-rs/chromium/generated/collector.js` and
   `collector.sha256` are the packaged copies from the same collector build.
-- `benches/baseline.json` comes from the benchmark recipe with that file as its
+- `offprint-rs/benches/baseline.json` comes from the benchmark recipe with that file as its
   output.
 
 Edit the source model, generator, collector source, or benchmark corpus.
@@ -185,6 +197,6 @@ example near the behavior it demonstrates. Comments explain lifecycle order,
 security boundaries, generated ownership, compatibility constraints, or the
 reason for a bailout.
 
-User documentation lives in [`docs/`](./docs/README.md). Current architecture,
+User documentation is authored in [`docs/`](./docs/index.md) and built with VitePress. Current architecture,
 pipeline, generation, validation, dependency, provenance, and release contracts
 live in [`development_docs/`](./development_docs/README.md).

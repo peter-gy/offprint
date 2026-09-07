@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.vitepress/cache/**",
+    "**/.vitepress/dist/**",
+    "**/contracts.generated.d.ts",
+    "**/native.d.ts"
+  ],
+  "printWidth": 100
+}

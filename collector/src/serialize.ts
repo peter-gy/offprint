@@ -78,9 +78,7 @@ class BoundedWriter {
   }
 }
 
-type HtmlTask =
-  | { kind: "close"; name: string }
-  | { kind: "node"; node: Node; rawText: boolean };
+type HtmlTask = { kind: "close"; name: string } | { kind: "node"; node: Node; rawText: boolean };
 
 function safeStringSet(values: string[]): Set<string> {
   const result = new SafeSet<string>();
@@ -108,19 +106,9 @@ const voidElements = safeStringSet([
   "track",
   "wbr",
 ]);
-const rawTextElements = safeStringSet([
-  "script",
-  "style",
-  "xmp",
-  "iframe",
-  "noembed",
-  "noframes",
-]);
+const rawTextElements = safeStringSet(["script", "style", "xmp", "iframe", "noembed", "noframes"]);
 
-export function serializeHtmlBounded(
-  root: Element,
-  maximumBytes: number,
-): BoundedResult<string> {
+export function serializeHtmlBounded(root: Element, maximumBytes: number): BoundedResult<string> {
   const writer = new BoundedWriter(maximumBytes);
   const pending: HtmlTask[] = [{ kind: "node", node: root, rawText: false }];
   while (pending.length > 0) {
@@ -137,19 +125,11 @@ export function serializeHtmlBounded(
     const node = task.node;
     const type = nodeType(node);
     if (type === 3) {
-      writeEscaped(
-        writer,
-        nodeValue(node) ?? "",
-        task.rawText ? "raw" : "text",
-      );
+      writeEscaped(writer, nodeValue(node) ?? "", task.rawText ? "raw" : "text");
       continue;
     }
     if (type === 8) {
-      if (
-        !writer.write("<!--") ||
-        !writer.write(nodeValue(node) ?? "") ||
-        !writer.write("-->")
-      ) {
+      if (!writer.write("<!--") || !writer.write(nodeValue(node) ?? "") || !writer.write("-->")) {
         break;
       }
       continue;
@@ -191,14 +171,8 @@ export function serializeHtmlBounded(
     arrayPush(pending, { kind: "close", name });
     const rawText = isHtml && setHas(rawTextElements, name);
     const childRoot =
-      isHtml && name === "template"
-        ? templateContent(element as HTMLTemplateElement)
-        : element;
-    for (
-      let child = lastChild(childRoot);
-      child;
-      child = previousSibling(child)
-    ) {
+      isHtml && name === "template" ? templateContent(element as HTMLTemplateElement) : element;
+    for (let child = lastChild(childRoot); child; child = previousSibling(child)) {
       arrayPush(pending, { kind: "node", node: child, rawText });
     }
   }
@@ -251,10 +225,7 @@ export function escapeScriptDataBounded(
     if (replacement === undefined) {
       continue;
     }
-    if (
-      !writer.write(stringSlice(value, start, index)) ||
-      !writer.write(replacement)
-    ) {
+    if (!writer.write(stringSlice(value, start, index)) || !writer.write(replacement)) {
       return writer.resultString();
     }
     start = index + 1;
@@ -277,11 +248,7 @@ function writeJson(writer: BoundedWriter, value: unknown): void {
       continue;
     }
     if (task.kind === "string") {
-      if (
-        !writer.write('"') ||
-        !writeEscaped(writer, task.value, "json") ||
-        !writer.write('"')
-      ) {
+      if (!writer.write('"') || !writeEscaped(writer, task.value, "json") || !writer.write('"')) {
         return;
       }
       continue;
@@ -335,11 +302,7 @@ function writeJson(writer: BoundedWriter, value: unknown): void {
 
 type EscapeMode = "attribute" | "json" | "raw" | "text";
 
-function writeEscaped(
-  writer: BoundedWriter,
-  value: string,
-  mode: EscapeMode,
-): boolean {
+function writeEscaped(writer: BoundedWriter, value: string, mode: EscapeMode): boolean {
   let start = 0;
   for (let index = 0; index < value.length; index += 1) {
     const code = stringCharCodeAt(value, index);
@@ -352,10 +315,7 @@ function writeEscaped(
     if (replacement === undefined) {
       continue;
     }
-    if (
-      !writer.write(stringSlice(value, start, index)) ||
-      !writer.write(replacement)
-    ) {
+    if (!writer.write(stringSlice(value, start, index)) || !writer.write(replacement)) {
       return false;
     }
     start = index + 1;
@@ -394,9 +354,7 @@ function jsonEscape(code: number): string | undefined {
       return "\\\\";
     default:
       return code < 32
-        ? `\\u00${"0123456789abcdef"[(code >>> 4) & 0xf]}${
-            "0123456789abcdef"[code & 0xf]
-          }`
+        ? `\\u00${"0123456789abcdef"[(code >>> 4) & 0xf]}${"0123456789abcdef"[code & 0xf]}`
         : undefined;
   }
 }

@@ -6,20 +6,20 @@ flag inventory in the installed version.
 
 ## Command tree
 
-| Command | Input | Result |
-| --- | --- | --- |
-| `capture <URL>` | HTTP, HTTPS, or allowed `file:` URL plus required output | Verified Offprint HTML file or raw bytes |
-| `artifact inspect <ARTIFACT>` | HTML path or standard input | Embedded `ArtifactManifest` |
-| `artifact verify <ARTIFACT>` | HTML path or standard input | Static or offline `ArtifactVerification` |
-| `artifact verify <PATH> --format <FORMAT>` | Exported artifact path | Format-specific `ArtifactVerification` |
-| `artifact export <ARTIFACT>` | HTML path or standard input, output directory, formats | Verified `ExportResult` |
-| `batch <BATCH_REQUEST>` | Versioned JSON file or standard input | `BatchResult` with one outcome per descriptor |
-| `crawl <URL>` | Seed URL, output directory, bounds | `CrawlResult` in breadth-first order |
-| `doctor` | Resolved configuration and optional browser override | `BrowserDoctorReport` and recovery actions |
-| `browser install` | Optional catalog revision | Installed managed-browser record |
-| `browser list` | Optional cache directory | Browser candidate inventory |
-| `browser remove <REVISION>` | Installed managed revision | Removal record |
-| `completion <SHELL>` | Bash, Elvish, Fish, PowerShell, or Zsh | Completion script |
+| Command                                    | Input                                                    | Result                                        |
+| ------------------------------------------ | -------------------------------------------------------- | --------------------------------------------- |
+| `capture <URL>`                            | HTTP, HTTPS, or allowed `file:` URL plus required output | Verified Offprint HTML file or raw bytes      |
+| `artifact inspect <ARTIFACT>`              | HTML path or standard input                              | Embedded `ArtifactManifest`                   |
+| `artifact verify <ARTIFACT>`               | HTML path or standard input                              | Static or offline `ArtifactVerification`      |
+| `artifact verify <PATH> --format <FORMAT>` | Exported artifact path                                   | Format-specific `ArtifactVerification`        |
+| `artifact export <ARTIFACT>`               | HTML path or standard input, output directory, formats   | Verified `ExportResult`                       |
+| `batch <BATCH_REQUEST>`                    | Versioned JSON file or standard input                    | `BatchResult` with one outcome per descriptor |
+| `crawl <URL>`                              | Seed URL, output directory, bounds                       | `CrawlResult` in breadth-first order          |
+| `doctor`                                   | Resolved configuration and optional browser override     | `BrowserDoctorReport` and recovery actions    |
+| `browser install`                          | Optional catalog revision                                | Installed managed-browser record              |
+| `browser list`                             | Optional cache directory                                 | Browser candidate inventory                   |
+| `browser remove <REVISION>`                | Installed managed revision                               | Removal record                                |
+| `completion <SHELL>`                       | Bash, Elvish, Fish, PowerShell, or Zsh                   | Completion script                             |
 
 ## `capture`
 
@@ -29,16 +29,16 @@ offprint capture <URL> --output <PATH|-> [OPTIONS]
 
 Major option groups:
 
-| Group | Options |
-| --- | --- |
-| Output | `--output`, `--on-exists` |
-| Configuration | `--config`, `--profile` |
-| Browser | `--browser-path`, `--cdp-url`, `--headed` |
-| Environment | `--viewport`, `--locale`, `--timezone`, `--color-scheme` |
-| Readiness | `--timeout`, `--wait-until`, `--delay` |
-| Content | `--missing-resources`, `--scope`, `--selector`, optimization flags |
-| Trust | `--headers`, `--cookies`, `--network-policy`, `--verification` |
-| Output protocol | `--json`, `--quiet`, `--color`, `--diagnostics` |
+| Group           | Options                                                            |
+| --------------- | ------------------------------------------------------------------ |
+| Output          | `--output`, `--on-exists`                                          |
+| Configuration   | `--config`, `--profile`                                            |
+| Browser         | `--browser-path`, `--cdp-url`, `--headed`                          |
+| Environment     | `--viewport`, `--locale`, `--timezone`, `--color-scheme`           |
+| Readiness       | `--timeout`, `--wait-until`, `--delay`                             |
+| Content         | `--missing-resources`, `--scope`, `--selector`, optimization flags |
+| Trust           | `--headers`, `--cookies`, `--network-policy`, `--verification`     |
+| Output protocol | `--json`, `--quiet`, `--color`, `--diagnostics`                    |
 
 `--browser-path` conflicts with `--cdp-url`. `--selector` conflicts with any
 explicit `--scope` value. `--json` conflicts with raw artifact output. Standard
@@ -104,25 +104,25 @@ and requires another compatible browser when removing the selected revision.
 
 ## Standard output and standard error
 
-| Mode | Standard output | Standard error |
-| --- | --- | --- |
-| Human success | Paths, summaries, reports, or completion script | Progress and warnings |
-| `--quiet` | Same command data | Errors |
-| `--json` | One versioned JSON value | One structured error on failure |
-| `--output -` | Verified artifact bytes | Diagnostics |
+| Mode          | Standard output                                 | Standard error                  |
+| ------------- | ----------------------------------------------- | ------------------------------- |
+| Human success | Paths, summaries, reports, or completion script | Progress and warnings           |
+| `--quiet`     | Same command data                               | Errors                          |
+| `--json`      | One versioned JSON value                        | One structured error on failure |
+| `--output -`  | Verified artifact bytes                         | Diagnostics                     |
 
 Capture JSON suppresses human progress. Batch, crawl, and doctor may return a
 structured value before a failure status.
 
 ## Exit statuses
 
-| Status | Contract |
-| ---: | --- |
-| `0` | Requested operation completed |
-| `1` | Runtime, browser, scheduler, artifact input, or output operation failed |
-| `2` | Arguments, configuration, or request validation failed |
-| `3` | Artifact verification rejected the input |
-| `130` | Operation was interrupted |
+| Status | Contract                                                                |
+| -----: | ----------------------------------------------------------------------- |
+|    `0` | Requested operation completed                                           |
+|    `1` | Runtime, browser, scheduler, artifact input, or output operation failed |
+|    `2` | Arguments, configuration, or request validation failed                  |
+|    `3` | Artifact verification rejected the input                                |
+|  `130` | Operation was interrupted                                               |
 
 Error stage determines the status. Validation failures return `2`, including
 `offprint.output.exists` when the destination already exists. Artifact

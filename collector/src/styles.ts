@@ -79,10 +79,7 @@ export function copyCssRules(
         return { attempted: maximumBytes + 1, kind: "limit" };
       }
       const rule = cssRuleAt(rules, index);
-      if (
-        rule &&
-        keepCssRule(rule, root, context, usedFonts, inheritedFontFaces)
-      ) {
+      if (rule && keepCssRule(rule, root, context, usedFonts, inheritedFontFaces)) {
         const separatorBytes = copied.length > 0 ? 1 : 0;
         if (bytes > maximumBytes - separatorBytes) {
           return { attempted: maximumBytes + 1, kind: "limit" };
@@ -116,39 +113,23 @@ export function materializeCssRules(
   context: SnapshotContext,
   allocatePayload: boolean,
 ): string | undefined {
-  const unclaimedPayloadBytes = context.budget.maximumPayloadAllocation(
-    context.reservation,
-  );
+  const unclaimedPayloadBytes = context.budget.maximumPayloadAllocation(context.reservation);
   const maximumBytes = allocatePayload
     ? unclaimedPayloadBytes
     : context.budget.maximumDocumentBytes(context.reservation);
   // Web CSSOM exposes native rule serialization as one atomic string. Source
   // document bytes are already reserved, so holding every unclaimed byte
   // completes the document allowance before cssText can materialize it.
-  context.budget.reservePayloadAllocation(
-    context.reservation,
-    unclaimedPayloadBytes,
-  );
+  context.budget.reservePayloadAllocation(context.reservation, unclaimedPayloadBytes);
   const copied = copyCssRules(sheet, root, context, maximumBytes);
   if (!copied) {
-    context.budget.settlePayloadAllocation(
-      context.reservation,
-      unclaimedPayloadBytes,
-      0,
-    );
+    context.budget.settlePayloadAllocation(context.reservation, unclaimedPayloadBytes, 0);
     return undefined;
   }
   if (copied.kind === "limit") {
-    context.budget.settlePayloadAllocation(
-      context.reservation,
-      unclaimedPayloadBytes,
-      0,
-    );
+    context.budget.settlePayloadAllocation(context.reservation, unclaimedPayloadBytes, 0);
     if (allocatePayload) {
-      context.budget.rejectPayloadAllocation(
-        context.reservation,
-        copied.attempted,
-      );
+      context.budget.rejectPayloadAllocation(context.reservation, copied.attempted);
     }
     context.budget.rejectPayload(copied.attempted);
   }
@@ -186,23 +167,14 @@ function keepCssRule(
   }
   // A shadow tree can resolve a global font name from its host tree when it
   // does not define the same face locally.
-  if (
-    kind === 5 &&
-    inheritedFontFaces &&
-    setHas(inheritedFontFaces, cssRuleText(rule))
-  ) {
+  if (kind === 5 && inheritedFontFaces && setHas(inheritedFontFaces, cssRuleText(rule))) {
     return false;
   }
   if (
     usedFonts &&
     kind === 5 &&
     !hasUsedFont(
-      fontFamilies(
-        stylePropertyValue(
-          cssRuleDeclaration(rule as CSSFontFaceRule),
-          "font-family",
-        ),
-      ),
+      fontFamilies(stylePropertyValue(cssRuleDeclaration(rule as CSSFontFaceRule), "font-family")),
       usedFonts,
     )
   ) {
@@ -211,10 +183,7 @@ function keepCssRule(
   return true;
 }
 
-function usedFontsForRoot(
-  root: Document | ShadowRoot,
-  context: SnapshotContext,
-): Set<string> {
+function usedFontsForRoot(root: Document | ShadowRoot, context: SnapshotContext): Set<string> {
   const cached = mapGet(context.usedFontsByRoot, root);
   if (cached) {
     return cached;
@@ -236,32 +205,14 @@ function usedFontFamilies(root: Document | ShadowRoot): Set<string> {
     }
     const style = computedStyle(view, element, null);
     const elementFonts = fontFamilies(stylePropertyValue(style, "font-family"));
-    for (
-      let familyIndex = 0;
-      familyIndex < elementFonts.length;
-      familyIndex += 1
-    ) {
+    for (let familyIndex = 0; familyIndex < elementFonts.length; familyIndex += 1) {
       setAdd(families, elementFonts[familyIndex]);
     }
-    for (
-      let pseudoIndex = 0;
-      pseudoIndex < pseudoElements.length;
-      pseudoIndex += 1
-    ) {
-      const pseudoStyle = computedStyle(
-        view,
-        element,
-        pseudoElements[pseudoIndex],
-      );
+    for (let pseudoIndex = 0; pseudoIndex < pseudoElements.length; pseudoIndex += 1) {
+      const pseudoStyle = computedStyle(view, element, pseudoElements[pseudoIndex]);
       if (stylePropertyValue(pseudoStyle, "content") !== "none") {
-        const pseudoFonts = fontFamilies(
-          stylePropertyValue(pseudoStyle, "font-family"),
-        );
-        for (
-          let familyIndex = 0;
-          familyIndex < pseudoFonts.length;
-          familyIndex += 1
-        ) {
+        const pseudoFonts = fontFamilies(stylePropertyValue(pseudoStyle, "font-family"));
+        for (let familyIndex = 0; familyIndex < pseudoFonts.length; familyIndex += 1) {
           setAdd(families, pseudoFonts[familyIndex]);
         }
       }

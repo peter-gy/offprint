@@ -1,8 +1,4 @@
-import {
-  cssBaseAttribute,
-  documentScrollXAttribute,
-  documentScrollYAttribute,
-} from "./constants";
+import { cssBaseAttribute, documentScrollXAttribute, documentScrollYAttribute } from "./constants";
 import {
   appendChild,
   childNodes,
@@ -50,11 +46,7 @@ import {
 } from "./primordials";
 import { removeReservedMetadata, serializeDocumentWithRepair } from "./repair";
 import { applySelectorScope } from "./scope";
-import {
-  copyState,
-  prepareElementState,
-  type InlineSnapshotter,
-} from "./state";
+import { copyState, prepareElementState, type InlineSnapshotter } from "./state";
 import { appendAdoptedStyles, applyCssom } from "./styles";
 import type {
   FrameOwnerSnapshot,
@@ -80,11 +72,7 @@ import {
   windowScrollY,
 } from "./web";
 
-function copyShadowRoot(
-  liveRoot: ShadowRoot,
-  cloneHost: Element,
-  context: SnapshotContext,
-): void {
+function copyShadowRoot(liveRoot: ShadowRoot, cloneHost: Element, context: SnapshotContext): void {
   const template = createInspectableShadowTemplate(liveRoot);
   const document = ownerDocument(liveRoot);
   if (!document) {
@@ -124,9 +112,7 @@ function materializePairs(
     const liveChildren = childNodes(live);
     const cloneChildren = childNodes(clone);
     const count =
-      liveChildren.length < cloneChildren.length
-        ? liveChildren.length
-        : cloneChildren.length;
+      liveChildren.length < cloneChildren.length ? liveChildren.length : cloneChildren.length;
     for (let index = count - 1; index >= 0; index -= 1) {
       arrayPush(stack, [liveChildren[index], cloneChildren[index]]);
     }
@@ -149,10 +135,7 @@ function materializePairs(
       if (shadow) {
         copyShadowRoot(shadow, clone as Element, context);
       }
-      if (
-        context.options.removeHiddenElements &&
-        isLayoutlessHiddenElement(liveElement)
-      ) {
+      if (context.options.removeHiddenElements && isLayoutlessHiddenElement(liveElement)) {
         removeNode(clone);
       }
     }
@@ -166,16 +149,11 @@ function isLayoutlessHiddenElement(element: Element): boolean {
   const body = document ? documentBody(document) : null;
   return (
     (body ? contains(body, element) : false) &&
-    (view
-      ? stylePropertyValue(computedStyle(view, element, null), "display")
-      : "") === "none"
+    (view ? stylePropertyValue(computedStyle(view, element, null), "display") : "") === "none"
   );
 }
 
-function applySelectionScope(
-  source: Document,
-  clones: Map<Node, Node>,
-): SelectionSnapshot {
+function applySelectionScope(source: Document, clones: Map<Node, Node>): SelectionSnapshot {
   const selection = getSelection(source);
   const ranges: Range[] = [];
   if (selection) {
@@ -222,11 +200,7 @@ function applySelectionScope(
 
   for (let index = 0; index < nodes.length; index += 1) {
     const node = nodes[index];
-    if (
-      !setHas(selected, node) &&
-      parentNode(node) &&
-      setHas(selected, parentNode(node) as Node)
-    ) {
+    if (!setHas(selected, node) && parentNode(node) && setHas(selected, parentNode(node) as Node)) {
       const clone = mapGet(clones, node);
       if (clone) {
         removeNode(clone);
@@ -239,11 +213,7 @@ function applySelectionScope(
   }
   return {
     ranges: ranges.length,
-    nodes:
-      1 +
-      (cloneBody && isElement(cloneBody)
-        ? querySelectorAll(cloneBody, "*").length
-        : 0),
+    nodes: 1 + (cloneBody && isElement(cloneBody) ? querySelectorAll(cloneBody, "*").length : 0),
   };
 }
 
@@ -259,10 +229,7 @@ export function snapshotDocument(
   subtreeNodes: number;
   frameOwners: FrameOwnerSnapshot[];
 } {
-  const reservation = rootContext.budget.reserveDocument(
-    source,
-    rootContext.frameDepth,
-  );
+  const reservation = rootContext.budget.reserveDocument(source, rootContext.frameDepth);
   const context: SnapshotContext = {
     ...rootContext,
     documentFontFaces: documentFontFaces(source),
@@ -275,28 +242,12 @@ export function snapshotDocument(
   const liveDocumentElement = documentElement(source);
   const clone = cloneNode(liveDocumentElement, true) as Element;
   const motionRules: string[] = [];
-  const clones = materializePairs(
-    liveDocumentElement,
-    clone,
-    context,
-    motionRules,
-  );
+  const clones = materializePairs(liveDocumentElement, clone, context, motionRules);
   const view = documentDefaultView(source);
-  setAttribute(
-    clone,
-    documentScrollXAttribute,
-    SafeString(view ? windowScrollX(view) : 0),
-  );
-  setAttribute(
-    clone,
-    documentScrollYAttribute,
-    SafeString(view ? windowScrollY(view) : 0),
-  );
+  setAttribute(clone, documentScrollXAttribute, SafeString(view ? windowScrollX(view) : 0));
+  setAttribute(clone, documentScrollYAttribute, SafeString(view ? windowScrollY(view) : 0));
   const liveFrameOwners = querySelectorAll(source, "iframe, frame");
-  const removableSources = querySelectorAll(
-    clone,
-    "picture source, video source, audio source",
-  );
+  const removableSources = querySelectorAll(clone, "picture source, video source, audio source");
   for (let index = 0; index < removableSources.length; index += 1) {
     removeNode(removableSources[index]);
   }
@@ -319,11 +270,7 @@ export function snapshotDocument(
   removeReservedMetadata(clone);
   const frameOwners: FrameOwnerSnapshot[] = [];
   let retainedIndex = 0;
-  for (
-    let originalIndex = 0;
-    originalIndex < liveFrameOwners.length;
-    originalIndex += 1
-  ) {
+  for (let originalIndex = 0; originalIndex < liveFrameOwners.length; originalIndex += 1) {
     const liveOwner = liveFrameOwners[originalIndex];
     const cloneOwner = mapGet(clones, liveOwner);
     if (cloneOwner && isElement(cloneOwner) && contains(clone, cloneOwner)) {
@@ -339,11 +286,7 @@ export function snapshotDocument(
     }
   }
   const maximumDocumentBytes = context.budget.maximumDocumentBytes(reservation);
-  const serialized = serializeDocumentWithRepair(
-    source,
-    clone,
-    maximumDocumentBytes,
-  );
+  const serialized = serializeDocumentWithRepair(source, clone, maximumDocumentBytes);
   if (serialized.kind === "limit") {
     context.budget.rejectPayload(serialized.attempted);
   }
@@ -374,18 +317,10 @@ export function frameOwnerMappings(
     const originalPath = [originalIndex];
     const retainedPath = [retainedIndex];
     const nestedMapping = nested[index];
-    for (
-      let pathIndex = 0;
-      pathIndex < nestedMapping.originalPath.length;
-      pathIndex += 1
-    ) {
+    for (let pathIndex = 0; pathIndex < nestedMapping.originalPath.length; pathIndex += 1) {
       arrayPush(originalPath, nestedMapping.originalPath[pathIndex]);
     }
-    for (
-      let pathIndex = 0;
-      pathIndex < nestedMapping.retainedPath.length;
-      pathIndex += 1
-    ) {
+    for (let pathIndex = 0; pathIndex < nestedMapping.retainedPath.length; pathIndex += 1) {
       arrayPush(retainedPath, nestedMapping.retainedPath[pathIndex]);
     }
     arrayPush(mappings, { originalPath, retainedPath });

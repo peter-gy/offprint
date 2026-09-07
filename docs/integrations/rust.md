@@ -7,12 +7,10 @@ From this checkout, add the path dependency to a project:
 
 ```toml
 [dependencies]
-offprint = { path = "/path/to/offprint/crates/offprint" }
+offprint = { path = "/path/to/offprint/offprint-rs/core" }
 futures-util = "=0.3.33"
 tokio = { version = "=1.53.1", features = ["macros", "rt-multi-thread"] }
 ```
-
-Tagged releases use the matching `offprint` version from crates.io.
 
 ## Capture one file
 
@@ -38,7 +36,7 @@ async fn main() -> offprint::Result<()> {
 default.
 
 The same program lives in
-[`capture_file.rs`](../../crates/offprint/examples/capture_file.rs) and is
+[`capture_file.rs`](https://github.com/peter-gy/offprint/blob/main/offprint-rs/core/examples/capture_file.rs) and is
 checked by `just docs-check`.
 
 ## Capture to memory and commit later
@@ -77,19 +75,19 @@ not establish that a caller-constructed receipt came from Offprint.
 
 `OffprintBuilder` configures runtime-wide behavior:
 
-| Method | Default | Contract |
-| --- | --- | --- |
-| `browser_path` | Discovery | Select a local executable |
-| `cdp_url` | Unset | Attach to a trusted [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) endpoint. Requests must select unrestricted networking and static verification |
-| `cache_dir` | Platform cache | Store managed browsers and service cache |
-| `browser_source` | `Auto` | Limit discovery to automatic, managed, or system sources |
-| `browser_installation` | `InstallManaged` | Permit or forbid first-use managed installation |
-| `maximum_contexts` | `4` | Bound concurrent browser contexts |
-| `browser_recycle_after_jobs` | `100` | Restart the shared process after completed jobs |
-| `headed` | `false` | Show locally launched browser windows |
-| `profile` | `default` | Select the profile applied by `Offprint::capture` |
-| `register_profile` | None | Add a named `CaptureProfile` |
-| `default_network_policy` | `Standard` | Select address policy for existing-artifact verification |
+| Method                       | Default          | Contract                                                                                                                                                                           |
+| ---------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `browser_path`               | Discovery        | Select a local executable                                                                                                                                                          |
+| `cdp_url`                    | Unset            | Attach to a trusted [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) endpoint. Requests must select unrestricted networking and static verification |
+| `cache_dir`                  | Platform cache   | Store managed browsers and service cache                                                                                                                                           |
+| `browser_source`             | `Auto`           | Limit discovery to automatic, managed, or system sources                                                                                                                           |
+| `browser_installation`       | `InstallManaged` | Permit or forbid first-use managed installation                                                                                                                                    |
+| `maximum_contexts`           | `4`              | Bound concurrent browser contexts                                                                                                                                                  |
+| `browser_recycle_after_jobs` | `100`            | Restart the shared process after completed jobs                                                                                                                                    |
+| `headed`                     | `false`          | Show locally launched browser windows                                                                                                                                              |
+| `profile`                    | `default`        | Select the profile applied by `Offprint::capture`                                                                                                                                  |
+| `register_profile`           | None             | Add a named `CaptureProfile`                                                                                                                                                       |
+| `default_network_policy`     | `Standard`       | Select address policy for existing-artifact verification                                                                                                                           |
 
 Custom clocks, capture ID generators, effective configuration records, and
 browser backends support deterministic hosts and advanced adapters.
@@ -144,7 +142,7 @@ async fn configured(offprint: &offprint::Offprint) -> offprint::Result<()> {
 conflict behavior carried by `CaptureOutput`. See [records](../reference/records.md).
 
 The complete typed example lives in
-[`capture_memory.rs`](../../crates/offprint/examples/capture_memory.rs).
+[`capture_memory.rs`](https://github.com/peter-gy/offprint/blob/main/offprint-rs/core/examples/capture_memory.rs).
 
 ## Service APIs
 
@@ -154,7 +152,7 @@ defaults, every service method, returns, errors, and lifecycle across hosts.
 Generated rustdoc is the exact symbol inventory:
 
 ```console
-cargo doc --open -p offprint
+cargo doc --manifest-path offprint-rs/Cargo.toml --open -p offprint
 ```
 
 The advanced browser traits originate in `offprint-browser`. The service

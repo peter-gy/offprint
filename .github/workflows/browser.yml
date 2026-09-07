@@ -5,16 +5,13 @@ on:
     branches: [main]
   pull_request:
     paths:
-      - "Cargo.lock"
-      - "Cargo.toml"
-      - "collector/**"
-      - "crates/**"
-      - "fixtures/**"
-      - "justfile"
-      - "rust-toolchain.toml"
-      - "versions.toml"
-      - "xtask/**"
-      - ".github/workflows/browser.yml"
+      - offprint-rs/**
+      - collector/**
+      - fixtures/**
+      - justfile
+      - rust-toolchain.toml
+      - versions.toml
+      - .github/workflows/browser.yml
   workflow_dispatch:
 
 permissions:
@@ -56,6 +53,8 @@ jobs:
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: offprint-rs -> target
 
       - name: Install Chromium runtime libraries
         run: |
@@ -71,12 +70,12 @@ jobs:
       - name: Install pinned managed Chromium
         shell: bash
         run: |
-          mkdir -p target
-          cargo run --locked -p offprint-cli -- browser install --json \
-            > target/managed-browser.json
+          mkdir -p offprint-rs/target
+          cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install --json \
+            > offprint-rs/target/managed-browser.json
           node -e '
             const fs = require("node:fs");
-            const result = JSON.parse(fs.readFileSync("target/managed-browser.json", "utf8"));
+            const result = JSON.parse(fs.readFileSync("offprint-rs/target/managed-browser.json", "utf8"));
             if (typeof result.browser?.executablePath !== "string") process.exit(1);
             fs.appendFileSync(
               process.env.GITHUB_ENV,
@@ -85,7 +84,7 @@ jobs:
           '
 
       - name: Run fixture group
-        run: cargo run --locked -p xtask -- e2e "${{ matrix.group }}"
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- e2e "${{ matrix.group }}"
 
       - name: Audit browser process cleanup
         if: always()
@@ -102,8 +101,8 @@ jobs:
         with:
           name: browser-fixture-failure-${{ matrix.group }}
           path: |
-            target/benchmark-evidence
-            target/diagnostics
+            offprint-rs/target/benchmark-evidence
+            offprint-rs/target/diagnostics
           if-no-files-found: ignore
           retention-days: 14
 
@@ -124,6 +123,8 @@ jobs:
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: offprint-rs -> target
 
       - name: Install Chromium runtime libraries
         run: |
@@ -139,12 +140,12 @@ jobs:
       - name: Install pinned managed Chromium
         shell: bash
         run: |
-          mkdir -p target
-          cargo run --locked -p offprint-cli -- browser install --json \
-            > target/managed-browser.json
+          mkdir -p offprint-rs/target
+          cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install --json \
+            > offprint-rs/target/managed-browser.json
           node -e '
             const fs = require("node:fs");
-            const result = JSON.parse(fs.readFileSync("target/managed-browser.json", "utf8"));
+            const result = JSON.parse(fs.readFileSync("offprint-rs/target/managed-browser.json", "utf8"));
             if (typeof result.browser?.executablePath !== "string") process.exit(1);
             fs.appendFileSync(
               process.env.GITHUB_ENV,
@@ -154,7 +155,7 @@ jobs:
 
       - name: Run ignored browser integration suites
         run: |
-          cargo test --locked -p offprint \
+          cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint \
             --test artifact_exports \
             --test diagnostics \
             --test capture_regressions \
@@ -175,8 +176,8 @@ jobs:
         with:
           name: browser-integration-failure
           path: |
-            target/benchmark-evidence
-            target/diagnostics
+            offprint-rs/target/benchmark-evidence
+            offprint-rs/target/diagnostics
           if-no-files-found: ignore
           retention-days: 14
 
@@ -209,16 +210,18 @@ jobs:
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: offprint-rs -> target
 
       - name: Install pinned managed Chromium
         shell: bash
         run: |
-          mkdir -p target
-          cargo run --locked -p offprint-cli -- browser install --json \
-            > target/managed-browser.json
+          mkdir -p offprint-rs/target
+          cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install --json \
+            > offprint-rs/target/managed-browser.json
           node -e '
             const fs = require("node:fs");
-            const result = JSON.parse(fs.readFileSync("target/managed-browser.json", "utf8"));
+            const result = JSON.parse(fs.readFileSync("offprint-rs/target/managed-browser.json", "utf8"));
             if (typeof result.browser?.executablePath !== "string") process.exit(1);
             fs.appendFileSync(
               process.env.GITHUB_ENV,
@@ -227,7 +230,7 @@ jobs:
           '
 
       - name: Run managed browser smoke
-        run: cargo test --locked -p offprint-chromium --test browser_smoke -- --ignored --test-threads=1
+        run: cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint-chromium --test browser_smoke -- --ignored --test-threads=1
 
       - name: Run static capture fixture
-        run: cargo run --locked -p xtask -- test-fixture static-article
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- test-fixture static-article

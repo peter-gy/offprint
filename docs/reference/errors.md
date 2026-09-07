@@ -3,15 +3,15 @@
 `OffprintError` is the canonical failure record. Callers can branch on stable
 codes and stages without matching message prose.
 
-| Field | Contract |
-| --- | --- |
-| `code` | Stable lowercase `offprint.*` identifier |
-| `message` | Redacted human description |
-| `stage` | Owning failure stage |
-| `retryable` | Whether retry can succeed without changing invalid input or policy |
-| `details` | Optional structured stage-specific values. Node.js and Python expose an empty mapping when absent |
-| `diagnosticsPath` | Optional sanitized diagnostic bundle |
-| `source` | Optional nested `OffprintError` |
+| Field             | Contract                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------- |
+| `code`            | Stable lowercase `offprint.*` identifier                                                          |
+| `message`         | Redacted human description                                                                        |
+| `stage`           | Owning failure stage                                                                              |
+| `retryable`       | Whether retry can succeed without changing invalid input or policy                                |
+| `details`         | Optional structured stage-specific values. Node.js and Python expose an empty mapping when absent |
+| `diagnosticsPath` | Optional sanitized diagnostic bundle                                                              |
+| `source`          | Optional nested `OffprintError`                                                                   |
 
 ## Error stages
 
@@ -33,29 +33,29 @@ The stage classifies failure ownership. It does not correspond one-to-one with
 
 ## Code families
 
-| Family | Typical owner |
-| --- | --- |
-| `offprint.input.*` | Request, path, credentials, or schema input |
-| `offprint.config.*` | Configuration parsing and resolution |
-| `offprint.browser.*` | Discovery, launch, managed cache, CDP, or capability |
-| `offprint.navigation.*` | Page navigation and redirect behavior |
-| `offprint.readiness.*` | Readiness condition or deadline |
-| `offprint.collector.*` | Page-observation protocol |
-| `offprint.frame.*` | Frame attachment or observation |
-| `offprint.resource.*` | Resource retrieval, identity, stream, or limit |
-| `offprint.transform.*` | Document transformation |
-| `offprint.artifact.*` | Artifact reading or model validation |
-| `offprint.verification.*` | Static or offline rejection |
-| `offprint.output.*` | Staging, conflict, commit, rollback, or recovery |
-| `offprint.runtime.*` | Cancellation, timeout, interruption, or closed service |
-| `offprint.internal.*` | Contained internal defect |
-| `offprint.export.*` | Export encoding, representation validation, or format verification |
-| `offprint.scheduler.*` | Batch, crawl, plan, resume, or partial failure |
+| Family                    | Typical owner                                                      |
+| ------------------------- | ------------------------------------------------------------------ |
+| `offprint.input.*`        | Request, path, credentials, or schema input                        |
+| `offprint.config.*`       | Configuration parsing and resolution                               |
+| `offprint.browser.*`      | Discovery, launch, managed cache, CDP, or capability               |
+| `offprint.navigation.*`   | Page navigation and redirect behavior                              |
+| `offprint.readiness.*`    | Readiness condition or deadline                                    |
+| `offprint.collector.*`    | Page-observation protocol                                          |
+| `offprint.frame.*`        | Frame attachment or observation                                    |
+| `offprint.resource.*`     | Resource retrieval, identity, stream, or limit                     |
+| `offprint.transform.*`    | Document transformation                                            |
+| `offprint.artifact.*`     | Artifact reading or model validation                               |
+| `offprint.verification.*` | Static or offline rejection                                        |
+| `offprint.output.*`       | Staging, conflict, commit, rollback, or recovery                   |
+| `offprint.runtime.*`      | Cancellation, timeout, interruption, or closed service             |
+| `offprint.internal.*`     | Contained internal defect                                          |
+| `offprint.export.*`       | Export encoding, representation validation, or format verification |
+| `offprint.scheduler.*`    | Batch, crawl, plan, resume, or partial failure                     |
 
 Additional exact families cover bindings, selectors, active selection,
 screenshots, and visual fallbacks. The registry is authoritative.
 
-The exhaustive registry is [`schemas/error-codes.json`](../../schemas/error-codes.json).
+The exhaustive registry is [`schemas/error-codes.json`](https://github.com/peter-gy/offprint/blob/main/schemas/error-codes.json).
 
 ## Host-language mapping
 

@@ -1,0 +1,21 @@
+{
+  "name": "@offprint/docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "portless run --name docs.offprint vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview",
+    "format": "oxfmt --config ../.oxfmtrc.json .",
+    "format:check": "oxfmt --check --config ../.oxfmtrc.json .",
+    "lint": "oxlint --config ../.oxlintrc.json --deny-warnings .",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "portless": "0.15.6",
+    "typescript": "catalog:",
+    "vitepress": "2.0.0-alpha.19"
+  }
+}

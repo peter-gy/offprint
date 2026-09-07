@@ -1,0 +1,73 @@
+{
+  "name": "offprint",
+  "version": "0.0.1",
+  "description": "Capture rendered web pages as verified self-contained artifacts",
+  "bugs": {
+    "url": "https://github.com/peter-gy/offprint/issues"
+  },
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/peter-gy/offprint.git",
+    "directory": "sdk/node"
+  },
+  "files": [
+    "api.cjs",
+    "contracts.generated.d.ts",
+    "index.cjs",
+    "index.d.ts",
+    "index.js",
+    "LICENSE",
+    "native.cjs",
+    "native.d.ts",
+    "offprint-native.*.node",
+    "README.md"
+  ],
+  "type": "module",
+  "main": "./index.cjs",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js",
+      "require": "./index.cjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "napi build --manifest-path ../../offprint-rs/node/Cargo.toml --output-dir . --platform --release --no-js --dts native.d.ts -- --locked",
+    "build:debug": "napi build --manifest-path ../../offprint-rs/node/Cargo.toml --output-dir . --platform --no-js --dts native.d.ts -- --locked",
+    "build:test": "napi build --manifest-path ../../offprint-rs/node/Cargo.toml --output-dir . --platform --no-js --dts ../../offprint-rs/target/offprint-node-test.d.ts --features binding-test-hooks -- --locked",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prepack": "node scripts/package-license.mjs sync",
+    "postpack": "node scripts/package-license.mjs clean",
+    "format": "oxfmt --config ../../.oxfmtrc.json .",
+    "format:check": "oxfmt --check --config ../../.oxfmtrc.json .",
+    "lint": "oxlint --config ../../.oxlintrc.json --deny-warnings --report-unused-disable-directives .",
+    "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "3.8.6",
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  },
+  "napi": {
+    "binaryName": "offprint-native",
+    "packageName": "offprint",
+    "targets": [
+      "x86_64-unknown-linux-gnu",
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-pc-windows-msvc"
+    ]
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

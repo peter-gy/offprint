@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "import"],
+  "categories": {
+    "correctness": "error"
+  },
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.vitepress/cache/**",
+    "**/.vitepress/dist/**",
+    "**/contracts.generated.d.ts",
+    "**/native.d.ts"
+  ]
+}

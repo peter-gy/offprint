@@ -5,45 +5,46 @@ default:
 
 setup:
     rustup show active-toolchain
-    cargo fetch --locked
+    cargo fetch --manifest-path offprint-rs/Cargo.toml --locked
 
 clean:
     #!/usr/bin/env bash
     set -euo pipefail
-    cargo clean
-    cargo clean --manifest-path fuzz/Cargo.toml
+    cargo clean --manifest-path offprint-rs/Cargo.toml
+    cargo clean --manifest-path offprint-rs/fuzz/Cargo.toml
     rm -rf -- \
-      .cargo-deny \
-      .nextest \
-      .mypy_cache \
+      offprint-rs/.cargo-deny \
+      offprint-rs/.nextest \
       .pytest_cache \
       .ruff_cache \
-      collector/.bun \
+      node_modules \
       collector/node_modules \
-      bindings/node/coverage \
-      bindings/node/node_modules \
-      bindings/python/.mypy_cache \
-      bindings/python/.pytest_cache \
-      bindings/python/.ruff_cache \
-      bindings/python/.venv \
-      bindings/python/dist \
-      bindings/python/target \
+      docs/node_modules \
+      docs/.vitepress/cache \
+      docs/.vitepress/dist \
+      sdk/node/coverage \
+      sdk/node/node_modules \
+      sdk/python/.pytest_cache \
+      sdk/python/.ruff_cache \
+      sdk/python/.venv \
+      sdk/python/dist \
+      sdk/python/target \
       dist
-    find bindings/node -maxdepth 1 -type f -name '*.node' -delete
-    find bindings/python/python/offprint -maxdepth 1 -type f \
+    find sdk/node -maxdepth 1 -type f -name '*.node' -delete
+    find sdk/python/src/offprint -maxdepth 1 -type f \
       \( -name '_native*.so' -o -name '_native*.dylib' -o -name '_native*.pyd' \) \
       -delete
-    find bindings/python -type d -name '__pycache__' -prune -exec rm -rf -- {} +
+    find sdk/python -type d -name '__pycache__' -prune -exec rm -rf -- {} +
 
 fmt:
-    cargo fmt --all
-    taplo format Cargo.toml rust-toolchain.toml deny.toml versions.toml
-    cd collector && bun run format
+    cargo fmt --manifest-path offprint-rs/Cargo.toml --all
+    taplo format offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml versions.toml
+    pnpm run format
 
 fmt-check:
-    cargo fmt --all -- --check
-    taplo format --check Cargo.toml rust-toolchain.toml deny.toml versions.toml
-    cd collector && bun run format:check
+    cargo fmt --manifest-path offprint-rs/Cargo.toml --all -- --check
+    taplo format --check offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml versions.toml
+    pnpm run format:check
 
 # Lint one Cargo package, or the workspace when omitted.
 lint package="":
@@ -53,7 +54,7 @@ lint package="":
     if [[ -n "$1" ]]; then
       selection=(-p "$1")
     fi
-    cargo clippy --locked "${selection[@]}" --all-targets --all-features -- -D warnings
+    cargo clippy --manifest-path offprint-rs/Cargo.toml --locked "${selection[@]}" --all-targets --all-features -- -D warnings
 
 # Typecheck one Cargo package, including tests and examples, or the workspace.
 check package="":
@@ -63,7 +64,7 @@ check package="":
     if [[ -n "$1" ]]; then
       selection=(-p "$1")
     fi
-    cargo check --locked "${selection[@]}" --all-targets --all-features
+    cargo check --manifest-path offprint-rs/Cargo.toml --locked "${selection[@]}" --all-targets --all-features
 
 # Test one Cargo package or the workspace, optionally matching a test name.
 test package="" filter="":
@@ -73,48 +74,48 @@ test package="" filter="":
     if [[ -n "$1" ]]; then
       selection=(-p "$1")
     fi
-    cargo test --locked "${selection[@]}" "$2"
+    cargo test --manifest-path offprint-rs/Cargo.toml --locked "${selection[@]}" "$2"
 
 # Check formatting, lint, and tests for one Rust package.
 quick package:
-    cargo fmt -p "$1" -- --check
+    cargo fmt --manifest-path offprint-rs/Cargo.toml -p "$1" -- --check
     just lint "$1"
     just test "$1"
 
 test-fixture fixture_id:
-    cargo run --locked -p xtask -- test-fixture "{{fixture_id}}"
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- test-fixture "{{fixture_id}}"
 
 e2e group:
-    cargo run --locked -p xtask -- e2e "{{group}}"
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- e2e "{{group}}"
 
 differential singlefile:
-    OFFPRINT_SINGLEFILE_EXECUTABLE="{{singlefile}}" cargo test --release --locked -p offprint --test differential -- --ignored --test-threads=1
+    OFFPRINT_SINGLEFILE_EXECUTABLE="{{singlefile}}" cargo test --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint --test differential -- --ignored --test-threads=1
 
-exploratory-corpus manifest="fixtures/corpora/datawrapper.json" output="target/benchmark-evidence/datawrapper-corpus.json":
-    cargo run --release --locked -p xtask -- exploratory-corpus \
+exploratory-corpus manifest="fixtures/corpora/datawrapper.json" output="offprint-rs/target/benchmark-evidence/datawrapper-corpus.json":
+    cargo run --manifest-path offprint-rs/Cargo.toml --release --locked -p xtask -- exploratory-corpus \
       --manifest "{{manifest}}" \
       --output "{{output}}"
 
-benchmark-micro output="target/benchmark-evidence/performance-micro.json":
-    cargo run --release --locked -p offprint-bench -- \
+benchmark-micro output="offprint-rs/target/benchmark-evidence/performance-micro.json":
+    cargo run --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint-bench -- \
       --suite micro \
       --output "{{output}}"
 
-benchmark-browser output="target/benchmark-evidence/performance-browser.json" browser_path="":
+benchmark-browser output="offprint-rs/target/benchmark-evidence/performance-browser.json" browser_path="":
     #!/usr/bin/env bash
     set -euo pipefail
     arguments=(--suite browser --output "{{output}}")
     if [[ -n "{{browser_path}}" ]]; then
       arguments+=(--browser-path "{{browser_path}}")
     fi
-    cargo run --release --locked -p offprint-bench -- "${arguments[@]}"
+    cargo run --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint-bench -- "${arguments[@]}"
 
-benchmark output="target/benchmark-evidence/performance.json":
-    cargo run --release --locked -p offprint-bench -- \
+benchmark output="offprint-rs/target/benchmark-evidence/performance.json":
+    cargo run --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint-bench -- \
       --suite all \
       --output "{{output}}"
 
-benchmark-compare baseline output="target/benchmark-evidence/performance.json" allow_environment_mismatch="false":
+benchmark-compare baseline output="offprint-rs/target/benchmark-evidence/performance.json" allow_environment_mismatch="false":
     #!/usr/bin/env bash
     set -euo pipefail
     arguments=(
@@ -125,33 +126,33 @@ benchmark-compare baseline output="target/benchmark-evidence/performance.json" a
     if [[ "{{allow_environment_mismatch}}" == "true" ]]; then
       arguments+=(--allow-environment-mismatch)
     fi
-    cargo run --release --locked -p offprint-bench -- "${arguments[@]}"
+    cargo run --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint-bench -- "${arguments[@]}"
 
 codegen:
-    cargo run --locked -p xtask -- codegen
-    cargo run --locked -p xtask -- codegen-cdp
-    cd collector && bun run build
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- codegen
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- codegen-cdp
+    pnpm --filter @offprint/collector run build
 
 codegen-check:
-    cargo run --locked -p xtask -- codegen --check
-    cargo run --locked -p xtask -- codegen-cdp --check
-    cd collector && bun run build:check
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- codegen --check
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- codegen-cdp --check
+    pnpm --filter @offprint/collector run build:check
 
 codegen-cdp:
-    cargo run --locked -p xtask -- codegen-cdp
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- codegen-cdp
 
 codegen-cdp-check:
-    cargo run --locked -p xtask -- codegen-cdp --check
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- codegen-cdp --check
 
 repo-check:
-    cargo run --locked -p xtask -- check-repository
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- check-repository
 
 workflow-check:
     actionlint .github/workflows/*.yml
 
 dependency-check:
-    cargo deny check advisories bans licenses sources
-    cargo machete
+    cd offprint-rs && cargo deny check advisories bans licenses sources
+    cargo machete offprint-rs
 
 semver-check:
     #!/usr/bin/env bash
@@ -172,6 +173,7 @@ semver-check:
       echo "No prior release tag is available for SemVer comparison."
       exit 0
     fi
+    cd offprint-rs
     cargo semver-checks check-release \
       --workspace \
       --exclude offprint-node \
@@ -179,33 +181,33 @@ semver-check:
       --exclude xtask \
       --baseline-rev "$baseline"
 
+# Shared JavaScript formatting, linting, and type checks.
+js-check:
+    pnpm run check
+
 collector-check:
-    cd collector && bun install --frozen-lockfile
-    cd collector && bun run format:check
-    cd collector && bun run typecheck
-    cd collector && bun run check
-    cd collector && bun test
-    cd collector && bun run build:check
+    pnpm --filter @offprint/collector run check
+    pnpm --filter @offprint/collector test
+    pnpm --filter @offprint/collector run build:check
 
 node-check:
-    cd bindings/node && bun install --frozen-lockfile
-    cd bindings/node && bun run build:test
-    cd bindings/node && bun run typecheck
-    cd bindings/node && bun test
+    pnpm --filter offprint run check
+    pnpm --filter offprint run build:test
+    pnpm --filter offprint test
 
 node-package-check:
     #!/usr/bin/env bash
     set -euo pipefail
     workspace="$(pwd)"
     package_tmp="$(mktemp -d)"
-    cd bindings/node
+    cd sdk/node
     cleanup() {
-      node "$workspace/bindings/node/scripts/package-license.mjs" clean
+      node "$workspace/sdk/node/scripts/package-license.mjs" clean
       rm -rf "$package_tmp"
     }
     trap cleanup EXIT
     node scripts/package-license.mjs sync
-    bun run build
+    pnpm run build
     suffix="$(node -e '
       const suffix =
         process.platform === "darwin" &&
@@ -236,21 +238,25 @@ node-package-check:
     node -e "if (!require('offprint').Offprint) process.exit(1)"
     node --input-type=module -e \
       "import { Offprint } from 'offprint'; if (!Offprint) process.exit(1)"
-    cp "$workspace/bindings/node/test/package-smoke.mjs" smoke.mjs
+    cp "$workspace/sdk/node/test/package-smoke.mjs" smoke.mjs
     node smoke.mjs
 
+# Check Python source and public types without compiling the native adapter.
+python-qa:
+    cd sdk/python && uv run --frozen --no-sync ruff format --check .
+    cd sdk/python && uv run --frozen --no-sync ruff check .
+    cd sdk/python && uv run --frozen --no-sync ty check
+    cd sdk/python && uv run --frozen --no-sync pyrefly check
+
+python-format:
+    cd sdk/python && uv run --frozen --no-sync ruff format .
+
 python-check:
-    cd bindings/python && uv sync --frozen
-    cd bindings/python && uv run --frozen maturin develop \
+    cd sdk/python && uv sync --frozen --no-install-project
+    just python-qa
+    cd sdk/python && uv run --frozen --no-sync maturin develop \
       --features extension-module,binding-test-hooks
-    cd bindings/python && uv run --frozen pytest
-    cd bindings/python && uv run --frozen mypy
-    cd bindings/python && uv run --frozen mypy --strict \
-      python/offprint/__init__.pyi python/offprint/contracts.py
-    cd bindings/python && uv run --frozen mypy --config-file=/dev/null \
-      --no-incremental --strict tests/typing_contract.py
-    cd bindings/python && uv run --frozen mypy --config-file=/dev/null \
-      --no-incremental --strict examples/capture_memory.py
+    cd sdk/python && uv run --frozen --no-sync pytest
 
 python-wheel-check:
     #!/usr/bin/env bash
@@ -258,18 +264,23 @@ python-wheel-check:
     workspace="$(pwd)"
     wheel_tmp="$(mktemp -d)"
     trap 'rm -rf "$wheel_tmp"' EXIT
-    cd bindings/python
-    uv run --frozen maturin build --release --sdist --out "$wheel_tmp/dist"
-    uv run --frozen python tests/package_contents.py \
+    cd sdk/python
+    uv run --frozen --no-sync maturin sdist --out "$wheel_tmp/dist"
+    mkdir "$wheel_tmp/source"
+    tar -xzf "$wheel_tmp"/dist/*.tar.gz -C "$wheel_tmp/source" --strip-components=1
+    cd "$wheel_tmp/source"
+    CARGO_TARGET_DIR="$workspace/offprint-rs/target" \
+      "$workspace/sdk/python/.venv/bin/maturin" build --release --offline \
+        --out "$wheel_tmp/dist"
+    cd "$workspace/sdk/python"
+    uv run --frozen --no-sync python tests/package_contents.py \
       "$workspace/LICENSE" "$wheel_tmp"/dist/*
     uv venv "$wheel_tmp/venv"
     uv pip install --python "$wheel_tmp/venv/bin/python" "$wheel_tmp"/dist/*.whl
-    "$wheel_tmp/venv/bin/python" -c \
-      "import offprint; assert offprint.Offprint"
     "$wheel_tmp/venv/bin/python" tests/wheel_smoke.py
 
 fuzz-check:
-    cd fuzz && nightly_cargo="$(rustup which cargo --toolchain nightly)" && PATH="$(dirname "$nightly_cargo"):$PATH" rustup run nightly "$nightly_cargo" fuzz build
+    cd offprint-rs/fuzz && nightly_cargo="$(rustup which cargo --toolchain nightly)" && PATH="$(dirname "$nightly_cargo"):$PATH" rustup run nightly "$nightly_cargo" fuzz build
 
 fuzz-smoke seconds="3":
     #!/usr/bin/env bash
@@ -288,12 +299,12 @@ fuzz-smoke seconds="3":
       srcset
     )
     for target in "${targets[@]}"; do
-      rustup run nightly "$nightly_cargo" fuzz run --fuzz-dir fuzz "$target" -- \
+      rustup run nightly "$nightly_cargo" fuzz run --fuzz-dir offprint-rs/fuzz "$target" -- \
         -max_total_time="{{seconds}}" -timeout=10 -rss_limit_mb=2048
     done
 
 fuzz-target target seconds="300":
-    nightly_cargo="$(rustup which cargo --toolchain nightly)" && PATH="$(dirname "$nightly_cargo"):$PATH" rustup run nightly "$nightly_cargo" fuzz run --fuzz-dir fuzz "{{target}}" -- \
+    nightly_cargo="$(rustup which cargo --toolchain nightly)" && PATH="$(dirname "$nightly_cargo"):$PATH" rustup run nightly "$nightly_cargo" fuzz run --fuzz-dir offprint-rs/fuzz "{{target}}" -- \
       -max_total_time="{{seconds}}" -timeout=10 -rss_limit_mb=2048
 
 miri:
@@ -304,24 +315,27 @@ miri:
     export MIRIFLAGS="${MIRIFLAGS:+$MIRIFLAGS }-Zmiri-disable-isolation"
     export PROPTEST_CASES="${PROPTEST_CASES:-16}"
     rustup run nightly "$nightly_cargo" miri setup
-    rustup run nightly "$nightly_cargo" miri test --locked \
+    rustup run nightly "$nightly_cargo" miri test --manifest-path offprint-rs/Cargo.toml --locked \
       -p offprint-artifact \
       -p offprint-browser \
       -p offprint-capture \
       -p offprint-model \
       -p offprint-protocol
 
-docs-check:
-    cargo run --locked -p xtask -- check-repository
-    RUSTDOCFLAGS="-D warnings" cargo doc --locked --workspace --no-deps --lib
-    cargo test --locked --workspace --doc
-    cargo check --locked -p offprint --examples
-    cd bindings/node && bun run typecheck
-    cd bindings/python && uv run --frozen mypy --config-file=/dev/null \
-      --no-incremental --strict examples/capture_memory.py
+site-check:
+    pnpm --filter @offprint/docs run check
+    pnpm --filter @offprint/docs run build
+
+docs-dev:
+    pnpm --filter @offprint/docs dev
+
+docs-check: repo-check site-check
+    RUSTDOCFLAGS="-D warnings" cargo doc --manifest-path offprint-rs/Cargo.toml --locked --workspace --no-deps --lib
+    cargo test --manifest-path offprint-rs/Cargo.toml --locked --workspace --doc
+    cargo check --manifest-path offprint-rs/Cargo.toml --locked -p offprint --examples
 
 package target binary output="dist":
-    cargo run --locked -p xtask -- package \
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- package \
       --target "{{target}}" \
       --binary "{{binary}}" \
       --output "{{output}}"
@@ -332,10 +346,10 @@ package-check:
     package_tmp="$(mktemp -d)"
     trap 'rm -rf "$package_tmp"' EXIT
     target="$(rustc -vV | sed -n 's/^host: //p')"
-    cargo build --release --locked -p offprint-cli
-    cargo run --locked -p xtask -- package \
+    cargo build --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint-cli
+    cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- package \
       --target "$target" \
-      --binary target/release/offprint \
+      --binary offprint-rs/target/release/offprint \
       --output "$package_tmp"
     archive="$(find "$package_tmp" -maxdepth 1 -name '*.tar.gz' -print -quit)"
     tar -xzf "$archive" -C "$package_tmp"
@@ -345,7 +359,7 @@ package-check:
     test -s "$root/completions/offprint.bash"
     test -s "$root/completions/_offprint"
 
-crate-package-check:
+crate-package output="dist/crates":
     #!/usr/bin/env bash
     set -euo pipefail
     package_target="$(mktemp -d)"
@@ -359,24 +373,23 @@ crate-package-check:
       --exclude xtask
     )
     CARGO_TARGET_DIR="$package_target" \
-      cargo package \
+      cargo package --manifest-path offprint-rs/Cargo.toml \
         "${package_selection[@]}" \
         --locked \
         --allow-dirty \
         --no-verify
     CARGO_TARGET_DIR="$package_target" \
-      cargo run --locked -p xtask -- verify-crate-packages \
+      cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- verify-crate-packages \
         --directory "$package_target/package"
-    CARGO_TARGET_DIR="$package_target" \
-      cargo publish \
-        "${package_selection[@]}" \
-        --locked \
-        --dry-run \
-        --allow-dirty \
-        --no-verify
-    CARGO_TARGET_DIR="$package_target" \
-      cargo run --locked -p xtask -- verify-crate-packages \
-        --directory "$package_target/package"
+    mkdir -p "{{output}}"
+    cp "$package_target"/package/*.crate "{{output}}/"
+
+crate-package-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    package_output="$(mktemp -d)"
+    trap 'rm -rf "$package_output"' EXIT
+    just crate-package "$package_output"
 
 release-check:
     just fmt-check
@@ -385,6 +398,7 @@ release-check:
     just lint
     just test
     just codegen-check
+    just js-check
     just collector-check
     just node-check
     just node-package-check

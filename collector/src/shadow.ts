@@ -23,10 +23,7 @@ import {
 const closedRoots = new SafeWeakMap<Element, ShadowRoot>();
 const originalAttachShadow = Element.prototype.attachShadow;
 
-Element.prototype.attachShadow = function (
-  this: Element,
-  init: ShadowRootInit,
-): ShadowRoot {
+Element.prototype.attachShadow = function (this: Element, init: ShadowRootInit): ShadowRoot {
   const normalized: ShadowRootInit = {
     clonable: init.clonable,
     customElementRegistry: init.customElementRegistry,
@@ -35,9 +32,7 @@ Element.prototype.attachShadow = function (
     serializable: init.serializable,
     slotAssignment: init.slotAssignment,
   };
-  const root = safeReflectApply(originalAttachShadow, this, [
-    normalized,
-  ]) as ShadowRoot;
+  const root = safeReflectApply(originalAttachShadow, this, [normalized]) as ShadowRoot;
   if (normalized.mode === "closed") {
     weakMapSet(closedRoots, this, root);
   }
@@ -48,19 +43,13 @@ export function observedShadowRoot(element: Element): ShadowRoot | undefined {
   return shadowRoot(element) ?? weakMapGet(closedRoots, element);
 }
 
-export function composedRoots(
-  source: Document | ShadowRoot,
-): Array<Document | ShadowRoot> {
+export function composedRoots(source: Document | ShadowRoot): Array<Document | ShadowRoot> {
   const roots: Array<Document | ShadowRoot> = [source];
   const visited = new SafeSet<Document | ShadowRoot>();
   setAdd(visited, source);
   for (let index = 0; index < roots.length; index += 1) {
     const elements = querySelectorAll(roots[index], "*");
-    for (
-      let elementIndex = 0;
-      elementIndex < elements.length;
-      elementIndex += 1
-    ) {
+    for (let elementIndex = 0; elementIndex < elements.length; elementIndex += 1) {
       const element = elements[elementIndex];
       const shadow = observedShadowRoot(element);
       if (shadow && !setHas(visited, shadow)) {
@@ -72,9 +61,7 @@ export function composedRoots(
   return roots;
 }
 
-export function createInspectableShadowTemplate(
-  root: ShadowRoot,
-): HTMLTemplateElement {
+export function createInspectableShadowTemplate(root: ShadowRoot): HTMLTemplateElement {
   const document = ownerDocument(root);
   if (!document) {
     throw new SafeTypeError("a shadow root has no owner document");

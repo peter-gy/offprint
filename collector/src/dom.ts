@@ -7,45 +7,31 @@ import {
 } from "./primordials";
 
 const nodePrototype = typeof Node === "undefined" ? undefined : Node.prototype;
-const elementPrototype =
-  typeof Element === "undefined" ? undefined : Element.prototype;
-const documentPrototype =
-  typeof Document === "undefined" ? undefined : Document.prototype;
+const elementPrototype = typeof Element === "undefined" ? undefined : Element.prototype;
+const documentPrototype = typeof Document === "undefined" ? undefined : Document.prototype;
 const fragmentPrototype =
-  typeof DocumentFragment === "undefined"
-    ? undefined
-    : DocumentFragment.prototype;
+  typeof DocumentFragment === "undefined" ? undefined : DocumentFragment.prototype;
 const templatePrototype =
-  typeof HTMLTemplateElement === "undefined"
-    ? undefined
-    : HTMLTemplateElement.prototype;
+  typeof HTMLTemplateElement === "undefined" ? undefined : HTMLTemplateElement.prototype;
 const framePrototype =
-  typeof HTMLIFrameElement === "undefined"
-    ? undefined
-    : HTMLIFrameElement.prototype;
+  typeof HTMLIFrameElement === "undefined" ? undefined : HTMLIFrameElement.prototype;
 const documentTypePrototype =
   typeof DocumentType === "undefined" ? undefined : DocumentType.prototype;
-const nodeListPrototype =
-  typeof NodeList === "undefined" ? undefined : NodeList.prototype;
+const nodeListPrototype = typeof NodeList === "undefined" ? undefined : NodeList.prototype;
 const htmlCollectionPrototype =
   typeof HTMLCollection === "undefined" ? undefined : HTMLCollection.prototype;
 const namedNodeMapPrototype =
   typeof NamedNodeMap === "undefined" ? undefined : NamedNodeMap.prototype;
 const attrPrototype = typeof Attr === "undefined" ? undefined : Attr.prototype;
-const shadowRootPrototype =
-  typeof ShadowRoot === "undefined" ? undefined : ShadowRoot.prototype;
-const parserPrototype =
-  typeof DOMParser === "undefined" ? undefined : DOMParser.prototype;
+const shadowRootPrototype = typeof ShadowRoot === "undefined" ? undefined : ShadowRoot.prototype;
+const parserPrototype = typeof DOMParser === "undefined" ? undefined : DOMParser.prototype;
 
 export const SafeElement = typeof Element === "undefined" ? undefined : Element;
-export const SafeHTMLElement =
-  typeof HTMLElement === "undefined" ? undefined : HTMLElement;
-export const SafeSVGElement =
-  typeof SVGElement === "undefined" ? undefined : SVGElement;
+export const SafeHTMLElement = typeof HTMLElement === "undefined" ? undefined : HTMLElement;
+export const SafeSVGElement = typeof SVGElement === "undefined" ? undefined : SVGElement;
 export const SafeHTMLStyleElement =
   typeof HTMLStyleElement === "undefined" ? undefined : HTMLStyleElement;
-export const SafeDOMParser =
-  typeof DOMParser === "undefined" ? undefined : DOMParser;
+export const SafeDOMParser = typeof DOMParser === "undefined" ? undefined : DOMParser;
 export const capturedTreeWalkerNodes = 5;
 
 export const nodeType = captureGetter<Node, number>(
@@ -152,33 +138,25 @@ const documentQuerySelector = captureMethod<Document, [string], Element | null>(
   "querySelector",
   (document, selector) => document.querySelector(selector),
 );
-const fragmentQuerySelector = captureMethod<
-  DocumentFragment,
-  [string],
-  Element | null
->(fragmentPrototype, "querySelector", (fragment, selector) =>
-  fragment.querySelector(selector),
+const fragmentQuerySelector = captureMethod<DocumentFragment, [string], Element | null>(
+  fragmentPrototype,
+  "querySelector",
+  (fragment, selector) => fragment.querySelector(selector),
 );
-const elementQuerySelectorAll = captureMethod<
-  Element,
-  [string],
-  NodeListOf<Element>
->(elementPrototype, "querySelectorAll", (element, selector) =>
-  element.querySelectorAll(selector),
+const elementQuerySelectorAll = captureMethod<Element, [string], NodeListOf<Element>>(
+  elementPrototype,
+  "querySelectorAll",
+  (element, selector) => element.querySelectorAll(selector),
 );
-const documentQuerySelectorAll = captureMethod<
-  Document,
-  [string],
-  NodeListOf<Element>
->(documentPrototype, "querySelectorAll", (document, selector) =>
-  document.querySelectorAll(selector),
+const documentQuerySelectorAll = captureMethod<Document, [string], NodeListOf<Element>>(
+  documentPrototype,
+  "querySelectorAll",
+  (document, selector) => document.querySelectorAll(selector),
 );
-const fragmentQuerySelectorAll = captureMethod<
-  DocumentFragment,
-  [string],
-  NodeListOf<Element>
->(fragmentPrototype, "querySelectorAll", (fragment, selector) =>
-  fragment.querySelectorAll(selector),
+const fragmentQuerySelectorAll = captureMethod<DocumentFragment, [string], NodeListOf<Element>>(
+  fragmentPrototype,
+  "querySelectorAll",
+  (fragment, selector) => fragment.querySelectorAll(selector),
 );
 
 export function querySelector(
@@ -241,12 +219,10 @@ export const removeAttribute = captureMethod<Element, [string], void>(
     element.removeAttribute(name);
   },
 );
-export const toggleAttribute = captureMethod<
-  Element,
-  [string, boolean],
-  boolean
->(elementPrototype, "toggleAttribute", (element, name, force) =>
-  element.toggleAttribute(name, force),
+export const toggleAttribute = captureMethod<Element, [string, boolean], boolean>(
+  elementPrototype,
+  "toggleAttribute",
+  (element, name, force) => element.toggleAttribute(name, force),
 );
 export const contains = captureMethod<Node, [Node | null], boolean>(
   nodePrototype,
@@ -374,10 +350,7 @@ const getDocumentAdoptedStyleSheets = captureGetter<Document, CSSStyleSheet[]>(
   "adoptedStyleSheets",
   (document) => document.adoptedStyleSheets,
 );
-const getFragmentAdoptedStyleSheets = captureGetter<
-  DocumentFragment,
-  CSSStyleSheet[]
->(
+const getFragmentAdoptedStyleSheets = captureGetter<DocumentFragment, CSSStyleSheet[]>(
   shadowRootPrototype,
   "adoptedStyleSheets",
   (fragment) => (fragment as ShadowRoot).adoptedStyleSheets,
@@ -388,24 +361,20 @@ export const createElement = captureMethod<Document, [string], HTMLElement>(
   "createElement",
   (document, name) => document.createElement(name),
 );
-export const createDocumentFragment = captureMethod<
-  Document,
-  [],
-  DocumentFragment
->(documentPrototype, "createDocumentFragment", (document) =>
-  document.createDocumentFragment(),
+export const createDocumentFragment = captureMethod<Document, [], DocumentFragment>(
+  documentPrototype,
+  "createDocumentFragment",
+  (document) => document.createDocumentFragment(),
 );
 export const getSelection = captureMethod<Document, [], Selection | null>(
   documentPrototype,
   "getSelection",
   (document) => document.getSelection(),
 );
-export const createTreeWalker = captureMethod<
-  Document,
-  [Node, number],
-  TreeWalker
->(documentPrototype, "createTreeWalker", (document, root, show) =>
-  document.createTreeWalker(root, show),
+export const createTreeWalker = captureMethod<Document, [Node, number], TreeWalker>(
+  documentPrototype,
+  "createTreeWalker",
+  (document, root, show) => document.createTreeWalker(root, show),
 );
 
 export function documentElement(document: Document): HTMLElement {
@@ -444,9 +413,7 @@ export function styleSheets(document: Document): StyleSheetList {
   return getDocumentStyleSheets(document);
 }
 
-export function adoptedStyleSheets(
-  root: Document | ShadowRoot,
-): CSSStyleSheet[] {
+export function adoptedStyleSheets(root: Document | ShadowRoot): CSSStyleSheet[] {
   return nodeType(root) === 9
     ? getDocumentAdoptedStyleSheets(root as Document)
     : getFragmentAdoptedStyleSheets(root as ShadowRoot);
@@ -457,10 +424,11 @@ const getTemplateContent = captureGetter<HTMLTemplateElement, DocumentFragment>(
   "content",
   (template) => template.content,
 );
-const getFrameContentDocument = captureGetter<
-  HTMLIFrameElement,
-  Document | null
->(framePrototype, "contentDocument", (frame) => frame.contentDocument);
+const getFrameContentDocument = captureGetter<HTMLIFrameElement, Document | null>(
+  framePrototype,
+  "contentDocument",
+  (frame) => frame.contentDocument,
+);
 const getFrameContentWindow = captureGetter<HTMLIFrameElement, Window | null>(
   framePrototype,
   "contentWindow",
@@ -472,15 +440,11 @@ const getShadowMode = captureGetter<ShadowRoot, ShadowRootMode>(
   (root) => root.mode,
 );
 
-export function templateContent(
-  template: HTMLTemplateElement,
-): DocumentFragment {
+export function templateContent(template: HTMLTemplateElement): DocumentFragment {
   return getTemplateContent(template);
 }
 
-export function frameContentDocument(
-  frame: HTMLIFrameElement,
-): Document | null {
+export function frameContentDocument(frame: HTMLIFrameElement): Document | null {
   return getFrameContentDocument(frame);
 }
 
@@ -507,12 +471,10 @@ const htmlCollectionLength = captureGetter<HTMLCollection, number>(
   "length",
   (collection) => collection.length,
 );
-const htmlCollectionItem = captureMethod<
-  HTMLCollection,
-  [number],
-  Element | null
->(htmlCollectionPrototype, "item", (collection, index) =>
-  collection.item(index),
+const htmlCollectionItem = captureMethod<HTMLCollection, [number], Element | null>(
+  htmlCollectionPrototype,
+  "item",
+  (collection, index) => collection.item(index),
 );
 const namedNodeMapLength = captureGetter<NamedNodeMap, number>(
   namedNodeMapPrototype,
@@ -524,11 +486,7 @@ const namedNodeMapItem = captureMethod<NamedNodeMap, [number], Attr | null>(
   "item",
   (attributes, index) => attributes.item(index),
 );
-const attrName = captureGetter<Attr, string>(
-  attrPrototype,
-  "name",
-  (attribute) => attribute.name,
-);
+const attrName = captureGetter<Attr, string>(attrPrototype, "name", (attribute) => attribute.name);
 const attrValue = captureGetter<Attr, string>(
   attrPrototype,
   "value",
@@ -562,12 +520,10 @@ export function doctypeSystemId(doctype: DocumentType): string {
   return getDoctypeSystemId(doctype);
 }
 
-const parseFromString = captureMethod<
-  DOMParser,
-  [string, DOMParserSupportedType],
-  Document
->(parserPrototype, "parseFromString", (parser, source, type) =>
-  parser.parseFromString(source, type),
+const parseFromString = captureMethod<DOMParser, [string, DOMParserSupportedType], Document>(
+  parserPrototype,
+  "parseFromString",
+  (parser, source, type) => parser.parseFromString(source, type),
 );
 
 export function parseHtml(source: string): Document {

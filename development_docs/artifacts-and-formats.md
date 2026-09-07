@@ -43,14 +43,14 @@ must never be described as safe-static HTML itself.
 
 ## Format contracts
 
-| Format | Encoder and verifier boundary |
-| --- | --- |
-| HTML | Embedded manifest, owned programs, content security policy, recursive resources, frames, static and offline verification |
-| PDF | Chromium print, semantic and action checks, selected provenance in document properties and Extensible Metadata Platform metadata |
-| Markdown | Semantic HTML subset, content-addressed assets, safe link schemes, optional front matter |
-| ZIP | Exact `index.html` and manifest sidecar with static HTML proof |
-| Self-extracting HTML | Deterministic gzip and base64 shell, exact loader, decoded static HTML proof |
-| MHTML | Exact two-part MIME message, sandboxed HTML, matching manifest sidecar |
+| Format               | Encoder and verifier boundary                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| HTML                 | Embedded manifest, owned programs, content security policy, recursive resources, frames, static and offline verification         |
+| PDF                  | Chromium print, semantic and action checks, selected provenance in document properties and Extensible Metadata Platform metadata |
+| Markdown             | Semantic HTML subset, content-addressed assets, safe link schemes, optional front matter                                         |
+| ZIP                  | Exact `index.html` and manifest sidecar with static HTML proof                                                                   |
+| Self-extracting HTML | Deterministic gzip and base64 shell, exact loader, decoded static HTML proof                                                     |
+| MHTML                | Exact two-part MIME message, sandboxed HTML, matching manifest sidecar                                                           |
 
 The repository has per-format unit and integration tests. The common-harness
 gap and its completion condition live in

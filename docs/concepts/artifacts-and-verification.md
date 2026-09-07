@@ -61,12 +61,12 @@ behavior.
 
 ## Verification modes and methods
 
-| Check | Browser reopen | What it establishes |
-| --- | --- | --- |
-| Inspect | No | The embedded artifact manifest is present, parseable, and internally valid |
-| Static verification | No | Manifest, content policy, owned scripts, frames, resource records, embedded syntax, and digests satisfy the HTML format |
-| Offline verification | Yes | Static checks pass and a separate network-denied browser context reaches a stable page with zero observed requests |
-| Format-specific verification | No | The exported representation satisfies its format-owned structure and content checks |
+| Check                        | Browser reopen | What it establishes                                                                                                     |
+| ---------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Inspect                      | No             | The embedded artifact manifest is present, parseable, and internally valid                                              |
+| Static verification          | No             | Manifest, content policy, owned scripts, frames, resource records, embedded syntax, and digests satisfy the HTML format |
+| Offline verification         | Yes            | Static checks pass and a separate network-denied browser context reaches a stable page with zero observed requests      |
+| Format-specific verification | No             | The exported representation satisfies its format-owned structure and content checks                                     |
 
 A **verification mode** is the requested HTML check, `static` or `offline`.
 `VerificationReport` records the HTML result. `FormatVerification` records an
@@ -81,12 +81,12 @@ CLI zero.
 
 ## Capture receipt versus manifest
 
-| Record | Lifetime | Main purpose |
-| --- | --- | --- |
-| `CaptureReceipt` | Returned by one successful capture | Operation result, delivery, verification evidence, summary, warnings, timings |
-| `ArtifactManifest` | Embedded in Offprint HTML | Long-lived capture provenance and per-resource records |
-| `VerificationReport` | Returned by HTML verification | Digest-bound static or offline evidence |
-| `ArtifactVerification` | Emitted by CLI verification JSON | Uniform automation result for HTML and exported formats |
+| Record                 | Lifetime                           | Main purpose                                                                  |
+| ---------------------- | ---------------------------------- | ----------------------------------------------------------------------------- |
+| `CaptureReceipt`       | Returned by one successful capture | Operation result, delivery, verification evidence, summary, warnings, timings |
+| `ArtifactManifest`     | Embedded in Offprint HTML          | Long-lived capture provenance and per-resource records                        |
+| `VerificationReport`   | Returned by HTML verification      | Digest-bound static or offline evidence                                       |
+| `ArtifactVerification` | Emitted by CLI verification JSON   | Uniform automation result for HTML and exported formats                       |
 
 The manifest records the requested mode. It does not claim that a later
 verification run already succeeded. The verification report binds its evidence

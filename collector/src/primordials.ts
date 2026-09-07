@@ -11,8 +11,7 @@ type Method<Receiver, Arguments extends unknown[], Value> = (
 function uncurryThis<T extends (...arguments_: never[]) => unknown>(
   method: T,
 ): (receiver: unknown, ...arguments_: Parameters<T>) => ReturnType<T> {
-  return (receiver, ...arguments_) =>
-    reflectApply(method, receiver, arguments_) as ReturnType<T>;
+  return (receiver, ...arguments_) => reflectApply(method, receiver, arguments_) as ReturnType<T>;
 }
 
 export function captureGetter<Receiver, Value>(
@@ -37,12 +36,8 @@ export function captureOptionalGetter<Receiver, Value>(
   name: string,
   unavailable: Value,
 ): Getter<Receiver, Value> {
-  const getter = prototype
-    ? propertyDescriptor(prototype, name)?.get
-    : undefined;
-  return getter
-    ? (receiver) => reflectApply(getter, receiver, []) as Value
-    : () => unavailable;
+  const getter = prototype ? propertyDescriptor(prototype, name)?.get : undefined;
+  return getter ? (receiver) => reflectApply(getter, receiver, []) as Value : () => unavailable;
 }
 
 export function captureSetter<Receiver, Value>(
@@ -74,15 +69,15 @@ export function captureMethod<Receiver, Arguments extends unknown[], Value>(
   }
   const method = prototype
     ? (propertyDescriptor(prototype, name)?.value as
-        ((...arguments_: Arguments) => Value) | undefined)
+        | ((...arguments_: Arguments) => Value)
+        | undefined)
     : undefined;
   if (!method) {
     return () => {
       throw new SafeTypeError(`captured method is unavailable: ${name}`);
     };
   }
-  return (receiver, ...arguments_) =>
-    reflectApply(method, receiver, arguments_) as Value;
+  return (receiver, ...arguments_) => reflectApply(method, receiver, arguments_) as Value;
 }
 
 function propertyDescriptor(
@@ -145,9 +140,7 @@ export const stringSlice = uncurryThis(String.prototype.slice);
 export const stringStartsWith = uncurryThis(String.prototype.startsWith);
 export const stringTrim = uncurryThis(String.prototype.trim);
 export const stringToLowerCase = uncurryThis(String.prototype.toLowerCase);
-export const stringToLocaleLowerCase = uncurryThis(
-  String.prototype.toLocaleLowerCase,
-);
+export const stringToLocaleLowerCase = uncurryThis(String.prototype.toLocaleLowerCase);
 export const regExpTest = uncurryThis(RegExp.prototype.test);
 export const typedArraySubarray = uncurryThis(Uint8Array.prototype.subarray);
 export const safeReflectApply = reflectApply;
@@ -165,19 +158,11 @@ export function stringReplacePattern(
   search: RegExp,
   replacement: string | ((substring: string) => string),
 ): string {
-  return reflectApply(stringReplaceMethod, value, [
-    search,
-    replacement,
-  ]) as string;
+  return reflectApply(stringReplaceMethod, value, [search, replacement]) as string;
 }
 
-export function stringMatch(
-  value: string,
-  pattern: RegExp,
-): RegExpMatchArray | null {
-  return reflectApply(stringMatchMethod, value, [
-    pattern,
-  ]) as RegExpMatchArray | null;
+export function stringMatch(value: string, pattern: RegExp): RegExpMatchArray | null {
+  return reflectApply(stringMatchMethod, value, [pattern]) as RegExpMatchArray | null;
 }
 
 export function reflectCall(
@@ -191,19 +176,14 @@ export function reflectCall(
 const textEncoder = new TextEncoder();
 const textEncodeInto = uncurryThis(TextEncoder.prototype.encodeInto);
 
-export function encodeUtf8Chunks(
-  chunks: string[],
-  byteLength: number,
-): Uint8Array {
+export function encodeUtf8Chunks(chunks: string[], byteLength: number): Uint8Array {
   const bytes = new SafeUint8Array(byteLength);
   let offset = 0;
   for (let index = 0; index < chunks.length; index += 1) {
     const destination = typedArraySubarray(bytes, offset);
     const encoded = textEncodeInto(textEncoder, chunks[index], destination);
     if (encoded.read !== chunks[index].length) {
-      throw new SafeTypeError(
-        "bounded UTF-8 encoding did not consume its input",
-      );
+      throw new SafeTypeError("bounded UTF-8 encoding did not consume its input");
     }
     offset += encoded.written;
   }

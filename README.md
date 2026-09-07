@@ -1,4 +1,11 @@
-# Offprint
+<p align="center">
+  <a href="./docs/index.md">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/public/brand/offprint-lockup-horizontal-dark.svg">
+      <img alt="Offprint" src="docs/public/brand/offprint-lockup-horizontal-light.svg" width="360">
+    </picture>
+  </a>
+</p>
 
 **Save a rendered web page as self-contained HTML you can reopen offline.**
 
@@ -7,23 +14,22 @@ embeds its images, styles, fonts, and current browser state, then verifies the
 saved page with networking blocked. Its manifest records the source and
 resource outcomes, and the capture receipt reports verification evidence.
 
-Offprint is alpha, before its first tagged release. APIs and artifact formats
-can change.
+Offprint is alpha. APIs and artifact formats can change.
 
 ## Capture a page
 
 Build from this checkout with [Rust](https://www.rust-lang.org/tools/install):
 
 ```console
-cargo build --release --locked -p offprint-cli
-./target/release/offprint capture https://example.com --output example.html --quiet
+cargo build --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint-cli
+./offprint-rs/target/release/offprint capture https://example.com --output example.html --quiet
 ```
 
 The command prints `example.html`. Open that file in a browser, or inspect its
 manifest:
 
 ```console
-./target/release/offprint artifact inspect example.html
+./offprint-rs/target/release/offprint artifact inspect example.html
 ```
 
 Offprint uses an installed Chrome, Chromium, or Microsoft Edge. If none is
@@ -48,7 +54,7 @@ authenticated pages.
 
 [Install](./docs/start/install.md) ·
 [Quickstart](./docs/start/quickstart.md) ·
-[Documentation](./docs/README.md)
+[Documentation](./docs/index.md)
 
 - [Control readiness and page selection](./docs/guides/control-capture.md)
 - [Capture authenticated pages](./docs/guides/authenticated-pages.md)

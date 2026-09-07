@@ -3,15 +3,15 @@
 Offprint has independent product, public schema, artifact format, collector,
 browser, and protocol axes. `versions.toml` records the release-aligned values.
 
-| Axis | Owner | Current value |
-| --- | --- | --- |
-| Product | Workspace and package manifests | `0.1.0` |
-| Public schema | `offprint_model::PUBLIC_SCHEMA_VERSION` | `2` |
-| Artifact format | `offprint_model::ARTIFACT_FORMAT_VERSION` | `2` |
-| Collector protocol | `offprint-protocol` | `1.5` |
-| Collector bundle | `versions.toml` reservation | `1` |
-| Browser catalog | `offprint-chromium` managed catalog | `2026-07-27` |
-| CDP input | Pinned upstream revision and hashes | `versions.toml` |
+| Axis               | Owner                                     | Current value   |
+| ------------------ | ----------------------------------------- | --------------- |
+| Product            | Workspace and package manifests           | `0.0.1`         |
+| Public schema      | `offprint_model::PUBLIC_SCHEMA_VERSION`   | `2`             |
+| Artifact format    | `offprint_model::ARTIFACT_FORMAT_VERSION` | `2`             |
+| Collector protocol | `offprint-protocol`                       | `1.5`           |
+| Collector bundle   | `versions.toml` reservation               | `1`             |
+| Browser catalog    | `offprint-chromium` managed catalog       | `2026-07-27`    |
+| CDP input          | Pinned upstream revision and hashes       | `versions.toml` |
 
 Repository and package checks compare `versions.toml` with public model and
 collector constants before release metadata is written.

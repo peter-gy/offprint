@@ -5,14 +5,14 @@ counts, minimums, medians, 95th percentiles, maximums, throughput, and
 normalized medians in JSON.
 
 ```console
-just benchmark target/benchmark-evidence/performance.json
+just benchmark offprint-rs/target/benchmark-evidence/performance.json
 just benchmark-compare \
-  benches/baseline.json \
-  target/benchmark-evidence/performance.json \
+  offprint-rs/benches/baseline.json \
+  offprint-rs/target/benchmark-evidence/performance.json \
   true
 ```
 
-[`benches/baseline.json`](../benches/baseline.json) owns numerical baseline
+[`offprint-rs/benches/baseline.json`](../offprint-rs/benches/baseline.json) owns numerical baseline
 claims. Documentation links to that record instead of copying values.
 
 Each normalized median divides the case median by the SHA-256 calibration
@@ -30,7 +30,7 @@ zero-request offline reopen and expected rendered text, enforces Rust and
 Chromium memory ceilings, and requires process and temporary-profile cleanup.
 
 ```console
-cargo test --release --locked \
+cargo test --manifest-path offprint-rs/Cargo.toml --release --locked \
   -p offprint --test repeated_capture \
   -- --ignored --test-threads=1
 ```

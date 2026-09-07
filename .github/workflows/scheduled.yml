@@ -43,8 +43,8 @@ jobs:
         with:
           name: scheduled-fuzz-failure
           path: |
-            fuzz/artifacts
-            fuzz/corpus
+            offprint-rs/fuzz/artifacts
+            offprint-rs/fuzz/corpus
           if-no-files-found: ignore
           retention-days: 14
 
@@ -90,8 +90,8 @@ jobs:
         with:
           name: scheduled-fuzz-failure-${{ matrix.target }}
           path: |
-            fuzz/artifacts/${{ matrix.target }}
-            fuzz/corpus/${{ matrix.target }}
+            offprint-rs/fuzz/artifacts/${{ matrix.target }}
+            offprint-rs/fuzz/corpus/${{ matrix.target }}
           if-no-files-found: ignore
           retention-days: 14
 
@@ -135,7 +135,7 @@ jobs:
           toolchain: 1.97.0
 
       - name: Check workspace
-        run: cargo check --workspace --all-targets --all-features --locked
+        run: cargo check --manifest-path offprint-rs/Cargo.toml --workspace --all-targets --all-features --locked
 
   dependency-audit:
     name: Dependency audit
@@ -177,6 +177,8 @@ jobs:
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: offprint-rs -> target
 
       - name: Cache managed browser
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -190,10 +192,10 @@ jobs:
           tool: just
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p offprint-cli -- browser install
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
 
       - name: Run repeated capture suite
-        run: cargo test --release --locked -p offprint repeated_capture -- --ignored --test-threads=1
+        run: cargo test --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint repeated_capture -- --ignored --test-threads=1
 
       - name: Audit browser process cleanup
         if: always()
@@ -208,7 +210,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: scheduled-repeated-capture
-          path: target/benchmark-evidence/repeated-capture.json
+          path: offprint-rs/target/benchmark-evidence/repeated-capture.json
           if-no-files-found: error
           retention-days: 30
 
@@ -252,7 +254,7 @@ jobs:
           tool: just
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p offprint-cli -- browser install
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
 
       - name: Run differential fixture
         run: just differential "$GITHUB_WORKSPACE/.differential/single-file-cli/single-file"
@@ -262,7 +264,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: singlefile-differential
-          path: target/benchmark-evidence/singlefile-differential.json
+          path: offprint-rs/target/benchmark-evidence/singlefile-differential.json
           if-no-files-found: error
 
   datawrapper:
@@ -282,6 +284,8 @@ jobs:
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: offprint-rs -> target
 
       - name: Cache managed browser
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -295,7 +299,7 @@ jobs:
           tool: just
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p offprint-cli -- browser install
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
 
       - name: Capture exploratory corpus
         run: just exploratory-corpus
@@ -305,7 +309,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: datawrapper-corpus
-          path: target/benchmark-evidence/datawrapper-corpus.json
+          path: offprint-rs/target/benchmark-evidence/datawrapper-corpus.json
           if-no-files-found: error
 
   chromium-canary:
@@ -325,6 +329,8 @@ jobs:
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: offprint-rs -> target
 
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
@@ -355,16 +361,16 @@ jobs:
       - name: Run browser benchmark corpus on canary
         run: |
           just benchmark-browser \
-            target/benchmark-evidence/chromium-canary.json \
+            offprint-rs/target/benchmark-evidence/chromium-canary.json \
             "$OFFPRINT_CANARY_PATH"
-          test "$(jq -r '.environment.browserVersion' target/benchmark-evidence/chromium-canary.json)" = "$OFFPRINT_CANARY_VERSION"
+          test "$(jq -r '.environment.browserVersion' offprint-rs/target/benchmark-evidence/chromium-canary.json)" = "$OFFPRINT_CANARY_VERSION"
 
       - name: Upload canary evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: chromium-canary
-          path: target/benchmark-evidence/chromium-canary.json
+          path: offprint-rs/target/benchmark-evidence/chromium-canary.json
           if-no-files-found: error
 
   performance:
@@ -384,6 +390,8 @@ jobs:
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+        with:
+          workspaces: offprint-rs -> target
 
       - name: Cache managed browser
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -397,13 +405,13 @@ jobs:
           tool: just
 
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p offprint-cli -- browser install
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
 
       - name: Compare benchmark corpus
         run: |
           just benchmark-compare \
-            benches/baseline.json \
-            target/benchmark-evidence/performance.json \
+            offprint-rs/benches/baseline.json \
+            offprint-rs/target/benchmark-evidence/performance.json \
             true
 
       - name: Upload performance evidence
@@ -411,5 +419,5 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: performance-comparison
-          path: target/benchmark-evidence/performance.json
+          path: offprint-rs/target/benchmark-evidence/performance.json
           if-no-files-found: error

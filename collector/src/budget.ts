@@ -67,9 +67,7 @@ export class SnapshotLimitError extends Error {
 
 const snapshotLimitErrors = new SafeWeakSet<SnapshotLimitError>();
 
-export function snapshotLimitResponse(
-  error: unknown,
-): CollectorProtocolError | undefined {
+export function snapshotLimitResponse(error: unknown): CollectorProtocolError | undefined {
   if (
     typeof error !== "object" ||
     error === null ||
@@ -114,11 +112,7 @@ export class RecursiveSnapshotBudget {
     }
     if (this.remainingFrames < 1) {
       throw new SnapshotLimitError(
-        frameLimitError(
-          this.captureId,
-          this.consumedFrames + 1,
-          this.maximumFrames,
-        ),
+        frameLimitError(this.captureId, this.consumedFrames + 1, this.maximumFrames),
       );
     }
     const measured = preflightDocumentWithinLimits(
@@ -129,20 +123,14 @@ export class RecursiveSnapshotBudget {
     if (measured.kind !== "ok") {
       if (measured.kind === "nodes") {
         throw new SnapshotLimitError(
-          nodeLimitError(
-            this.captureId,
-            measured.attempted,
-            this.remainingNodes,
-          ),
+          nodeLimitError(this.captureId, measured.attempted, this.remainingNodes),
         );
       }
       throw new SnapshotLimitError(
         payloadLimitError(
           this.captureId,
           this.maximumPayloadBytes,
-          this.maximumPayloadBytes -
-            this.remainingPayloadBytes +
-            measured.attempted,
+          this.maximumPayloadBytes - this.remainingPayloadBytes + measured.attempted,
         ),
       );
     }
@@ -185,14 +173,9 @@ export class RecursiveSnapshotBudget {
     return this.remainingPayloadBytes;
   }
 
-  reservePayloadAllocation(
-    reservation: SnapshotReservation,
-    payloadBytes: number,
-  ): void {
+  reservePayloadAllocation(reservation: SnapshotReservation, payloadBytes: number): void {
     if (!numberIsSafeInteger(payloadBytes) || payloadBytes < 0) {
-      throw new SafeTypeError(
-        "payloadBytes must be a non-negative safe integer",
-      );
+      throw new SafeTypeError("payloadBytes must be a non-negative safe integer");
     }
     if (payloadBytes > this.remainingPayloadBytes) {
       throw new SnapshotLimitError(
@@ -238,8 +221,7 @@ export class RecursiveSnapshotBudget {
     const documentPayload = payloadBytes - reservation.nestedPayloadBytes;
     const ownPayloadBytes = documentPayload > 0 ? documentPayload : 0;
     const adjustment = ownPayloadBytes - reservation.sourcePayloadBytes;
-    const availablePayloadBytes =
-      this.remainingPayloadBytes + reservation.allocatedPayloadBytes;
+    const availablePayloadBytes = this.remainingPayloadBytes + reservation.allocatedPayloadBytes;
     if (adjustment > availablePayloadBytes) {
       throw new SnapshotLimitError(
         payloadLimitError(
@@ -259,10 +241,7 @@ export class RecursiveSnapshotBudget {
     );
   }
 
-  rejectPayloadAllocation(
-    _reservation: SnapshotReservation,
-    attemptedBytes: number,
-  ): never {
+  rejectPayloadAllocation(_reservation: SnapshotReservation, attemptedBytes: number): never {
     throw new SnapshotLimitError(
       payloadLimitError(
         this.captureId,
@@ -292,10 +271,7 @@ export function countCloneableNodesWithinLimit(
     if (!node) {
       continue;
     }
-    if (
-      node.nodeType !== documentNode &&
-      node.nodeType !== documentFragmentNode
-    ) {
+    if (node.nodeType !== documentNode && node.nodeType !== documentFragmentNode) {
       nodes += 1;
       if (nodes > maximumNodes) {
         return nodes;
@@ -311,11 +287,7 @@ export function countCloneableNodesWithinLimit(
     if (node.nodeType !== elementNode) {
       continue;
     }
-    if (
-      node.namespaceURI === htmlNamespace &&
-      node.localName === "template" &&
-      node.content
-    ) {
+    if (node.namespaceURI === htmlNamespace && node.localName === "template" && node.content) {
       arrayPush(pending, node.content);
     }
     const shadow = shadowFor(node);
@@ -326,15 +298,8 @@ export function countCloneableNodesWithinLimit(
   return nodes;
 }
 
-export function preflightDocumentNodes(
-  source: Document,
-  maximumNodes: number,
-): number {
-  const measured = preflightDocumentWithinLimits(
-    source,
-    maximumNodes,
-    9_007_199_254_740_991,
-  );
+export function preflightDocumentNodes(source: Document, maximumNodes: number): number {
+  const measured = preflightDocumentWithinLimits(source, maximumNodes, 9_007_199_254_740_991);
   if (measured.kind === "ok") {
     return measured.nodes;
   }
@@ -354,18 +319,12 @@ function preflightDocumentWithinLimits(
     if (!node) {
       continue;
     }
-    if (
-      nodeType(node) !== documentNode &&
-      nodeType(node) !== documentFragmentNode
-    ) {
+    if (nodeType(node) !== documentNode && nodeType(node) !== documentFragmentNode) {
       nodes += 1;
       if (nodes > maximumNodes) {
         return { attempted: nodes, kind: "nodes" };
       }
-      const measured = measureDomNodePayload(
-        node,
-        maximumPayloadBytes - payloadBytes,
-      );
+      const measured = measureDomNodePayload(node, maximumPayloadBytes - payloadBytes);
       if (measured === null) {
         return {
           attempted: maximumPayloadBytes + 1,
@@ -386,10 +345,7 @@ function preflightDocumentWithinLimits(
     if (nodeType(node) !== elementNode) {
       continue;
     }
-    if (
-      namespaceUri(node) === htmlNamespace &&
-      localName(node) === "template"
-    ) {
+    if (namespaceUri(node) === htmlNamespace && localName(node) === "template") {
       arrayPush(pending, templateContent(node as HTMLTemplateElement));
     }
     const shadow = observedShadowRoot(node as Element);
@@ -400,10 +356,7 @@ function preflightDocumentWithinLimits(
   return { kind: "ok", nodes, payloadBytes };
 }
 
-function measureDomNodePayload(
-  node: Node,
-  maximumBytes: number,
-): number | null {
+function measureDomNodePayload(node: Node, maximumBytes: number): number | null {
   let bytes = 0;
   const add = (value: string, fixedBytes = 0): boolean => {
     if (bytes > maximumBytes - fixedBytes) {
@@ -428,11 +381,7 @@ function measureDomNodePayload(
     const count = attributeCount(element);
     for (let index = 0; index < count; index += 1) {
       const attribute = attributeAt(element, index);
-      if (
-        attribute &&
-        (!add(attributeName(attribute), 1) ||
-          !add(attributeValue(attribute), 3))
-      ) {
+      if (attribute && (!add(attributeName(attribute), 1) || !add(attributeValue(attribute), 3))) {
         return null;
       }
     }

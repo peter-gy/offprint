@@ -1,0 +1,36 @@
+[package]
+name = "offprint-cli"
+description = "Command-line interface for Offprint"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "offprint"
+path = "src/main.rs"
+
+[dependencies]
+camino.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+directories.workspace = true
+futures-util.workspace = true
+offprint.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
+toml.workspace = true
+url.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+offprint-document.workspace = true
+offprint-html.workspace = true
+offprint-test-support = { path = "../test-support" }
+tempfile.workspace = true
+
+[lints]
+workspace = true

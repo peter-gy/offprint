@@ -11,16 +11,16 @@ await `close()` during shutdown. Closing rejects new work, cancels active
 captures, waits for their terminal cleanup, closes owned contexts, and closes
 the local process or remote protocol connection. A second close succeeds.
 
-| Runtime option | Default | Node.js | Python | Behavior |
-| --- | --- | --- | --- | --- |
-| Browser path | Discovery | `browserPath` | `browser_path` | Select a local Chromium-based executable |
-| Remote endpoint | Unset | `cdpUrl` | `cdp_url` | Attach to a trusted [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) endpoint |
-| Cache directory | Platform cache | `cacheDir` | `cache_dir` | Store managed browsers and service cache |
-| Browser source | `auto` | `browserSource` | `browser_source` | Restrict automatic discovery to `auto`, `managed`, or `system` |
-| Installation | `install-managed` | `browserInstallation` | `browser_installation` | Permit first-use managed installation or use an existing browser |
-| Context limit | `4` | `maximumContexts` | `maximum_contexts` | Bound live capture and verification contexts |
-| Recycle threshold | `100` | `browserRecycleAfterJobs` | `browser_recycle_after_jobs` | Recycle the shared process after completed jobs |
-| Headed mode | `false` | `headed` | `headed` | Show locally launched browser windows |
+| Runtime option    | Default           | Node.js                   | Python                       | Behavior                                                                                                     |
+| ----------------- | ----------------- | ------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Browser path      | Discovery         | `browserPath`             | `browser_path`               | Select a local Chromium-based executable                                                                     |
+| Remote endpoint   | Unset             | `cdpUrl`                  | `cdp_url`                    | Attach to a trusted [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) endpoint |
+| Cache directory   | Platform cache    | `cacheDir`                | `cache_dir`                  | Store managed browsers and service cache                                                                     |
+| Browser source    | `auto`            | `browserSource`           | `browser_source`             | Restrict automatic discovery to `auto`, `managed`, or `system`                                               |
+| Installation      | `install-managed` | `browserInstallation`     | `browser_installation`       | Permit first-use managed installation or use an existing browser                                             |
+| Context limit     | `4`               | `maximumContexts`         | `maximum_contexts`           | Bound live capture and verification contexts                                                                 |
+| Recycle threshold | `100`             | `browserRecycleAfterJobs` | `browser_recycle_after_jobs` | Recycle the shared process after completed jobs                                                              |
+| Headed mode       | `false`           | `headed`                  | `headed`                     | Show locally launched browser windows                                                                        |
 
 Browser path and remote endpoint are mutually exclusive. Context limit and
 recycle threshold must be greater than zero. A remote endpoint carries the
@@ -36,12 +36,12 @@ and effective-configuration records for host-owned configuration systems.
 The shorthand creates one request from the selected profile and starts it at a
 terminal operation.
 
-| Host | Call | Return | Output |
-| --- | --- | --- | --- |
-| Rust | `offprint.capture(url)?.save(path).await?` | `CaptureReceipt` | File, conflict fails by default |
-| Rust | `offprint.capture(url)?.bytes(maximum).await?` | `CaptureReceipt` | Bounded memory |
-| Node.js | `offprint.capture(url, options)` | `Promise<CaptureReceipt>` | File named by required `options.output` |
-| Python | `await offprint.capture(url, output=path)` | `CaptureReceipt` dictionary | File named by required `output` |
+| Host    | Call                                           | Return                      | Output                                  |
+| ------- | ---------------------------------------------- | --------------------------- | --------------------------------------- |
+| Rust    | `offprint.capture(url)?.save(path).await?`     | `CaptureReceipt`            | File, conflict fails by default         |
+| Rust    | `offprint.capture(url)?.bytes(maximum).await?` | `CaptureReceipt`            | Bounded memory                          |
+| Node.js | `offprint.capture(url, options)`               | `Promise<CaptureReceipt>`   | File named by required `options.output` |
+| Python  | `await offprint.capture(url, output=path)`     | `CaptureReceipt` dictionary | File named by required `output`         |
 
 The shorthand exposes profile, timeout, readiness mode, delay, viewport,
 strict resource handling, headed mode, conflict policy, network policy,
@@ -118,13 +118,13 @@ overwrite consequences.
 
 ## `CaptureJob`
 
-| Member | Contract |
-| --- | --- |
-| `id` | Stable capture identifier assigned before browser work |
-| `status` | Latest observable `CaptureStatus` |
+| Member     | Contract                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | Stable capture identifier assigned before browser work                                                                          |
+| `status`   | Latest observable `CaptureStatus`                                                                                               |
 | `events()` | New independent ordered subscription with guaranteed lifecycle events, up to 16,384 detail events, and latest resource progress |
-| `cancel()` | Idempotent cancellation request |
-| `result()` | Shared terminal `CaptureReceipt` or `OffprintError` |
+| `cancel()` | Idempotent cancellation request                                                                                                 |
+| `result()` | Shared terminal `CaptureReceipt` or `OffprintError`                                                                             |
 
 Dropping one job handle does not cancel capture. Multiple Rust clones can await
 the stored result. Each Node.js or Python event iterator retains the native
@@ -137,12 +137,12 @@ receipt and artifact manifest when the operation needs durable evidence.
 
 ## `ArtifactService`
 
-| Operation | Input | Return | Contract |
-| --- | --- | --- | --- |
-| `inspect` | Offprint HTML | `ArtifactManifest` | Parse and validate the embedded manifest within 64 MiB |
-| `verify` | Offprint HTML and mode | `VerificationReport` | Run static checks, then optional network-denied reopen |
-| `export` | Offprint HTML and `ExportRequest` | `ExportResult` | Obtain offline source evidence, encode each format, verify each result, commit the set |
-| `verifyFormat` or `verify_format` | Export path and format | `FormatVerification` | Run the format-owned verifier without browser reopen |
+| Operation                         | Input                             | Return               | Contract                                                                               |
+| --------------------------------- | --------------------------------- | -------------------- | -------------------------------------------------------------------------------------- |
+| `inspect`                         | Offprint HTML                     | `ArtifactManifest`   | Parse and validate the embedded manifest within 64 MiB                                 |
+| `verify`                          | Offprint HTML and mode            | `VerificationReport` | Run static checks, then optional network-denied reopen                                 |
+| `export`                          | Offprint HTML and `ExportRequest` | `ExportResult`       | Obtain offline source evidence, encode each format, verify each result, commit the set |
+| `verifyFormat` or `verify_format` | Export path and format            | `FormatVerification` | Run the format-owned verifier without browser reopen                                   |
 
 Node.js and Python artifact operations accept filesystem paths. Rust accepts
 `ArtifactSource::File` or bounded bytes for inspect and HTML verification.
@@ -151,12 +151,12 @@ format-specific verifier.
 
 Rust also exposes:
 
-| Operation | Contract |
-| --- | --- |
-| `verify_static` | Static HTML verification without browser acquisition |
+| Operation                     | Contract                                                              |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `verify_static`               | Static HTML verification without browser acquisition                  |
 | `suggested_capture_file_name` | Derive a portable name from an in-memory capture title or source host |
-| `commit_capture` | Validate an in-memory receipt and commit it under a conflict policy |
-| `export_capture` | Reuse matching offline evidence from a capture receipt before export |
+| `commit_capture`              | Validate an in-memory receipt and commit it under a conflict policy   |
+| `export_capture`              | Reuse matching offline evidence from a capture receipt before export  |
 
 `export_capture` rejects static evidence and mismatched bytes, digest, or byte
 count. `commit_capture` checks internal receipt consistency. It does not prove
@@ -168,14 +168,14 @@ representation-specific provenance and limits.
 
 ## `BrowserService`
 
-| Conceptual operation | Return | Contract |
-| --- | --- | --- |
-| Ensure | `BrowserInfo` | Resolve and acquire the configured browser, installing the managed revision when policy permits |
-| Install | `BrowserOperationResult` | Install the default or named catalog revision after archive verification |
-| List | `BrowserOperationResult` | List local selected and compatible system and managed candidates |
-| Remove | `BrowserOperationResult` | Remove a managed revision when lease and replacement rules permit |
-| Doctor | `BrowserDoctorReport` | Probe selection, collector compatibility, cache, output, configuration, network summary, and recovery actions |
-| Close idle | Nothing | Close an idle owned process while keeping the service open |
+| Conceptual operation | Return                   | Contract                                                                                                      |
+| -------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Ensure               | `BrowserInfo`            | Resolve and acquire the configured browser, installing the managed revision when policy permits               |
+| Install              | `BrowserOperationResult` | Install the default or named catalog revision after archive verification                                      |
+| List                 | `BrowserOperationResult` | List local selected and compatible system and managed candidates                                              |
+| Remove               | `BrowserOperationResult` | Remove a managed revision when lease and replacement rules permit                                             |
+| Doctor               | `BrowserDoctorReport`    | Probe selection, collector compatibility, cache, output, configuration, network summary, and recovery actions |
+| Close idle           | Nothing                  | Close an idle owned process while keeping the service open                                                    |
 
 Rust calls `ensure()`, `install(BrowserInstallRequest)`, `list()`,
 `remove(&str, bool)`, `doctor()`, and `close_idle()`. Node.js calls `ensure()`,
@@ -219,11 +219,11 @@ loading, offline reopen, optional PDF printing, and close.
 
 `offprint::ports` reexports the browser traits and every request, observation,
 network, and resource type needed to implement them. The repository's
-[`custom_backend.rs`](../../crates/offprint/tests/custom_backend.rs) is the
+[`custom_backend.rs`](https://github.com/peter-gy/offprint/blob/main/offprint-rs/core/tests/custom_backend.rs) is the
 compiling end-to-end adapter example. Run it with:
 
 ```console
-cargo test --locked -p offprint --test custom_backend
+cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint --test custom_backend
 ```
 
 Adapter implementations must honor cancellation, hard byte and count limits,
@@ -233,11 +233,11 @@ current executable contract.
 
 ## Exact host signatures
 
-- Rust: `cargo doc --open -p offprint`
-- Node.js: [`index.d.ts`](../../bindings/node/index.d.ts)
-- Python host API: [`__init__.pyi`](../../bindings/python/python/offprint/__init__.pyi)
-- Python record types: [`contracts.py`](../../bindings/python/python/offprint/contracts.py)
-- Canonical record fields: [generated JSON Schemas](../../schemas)
+- Rust: `cargo doc --manifest-path offprint-rs/Cargo.toml --open -p offprint`
+- Node.js: [`index.d.ts`](https://github.com/peter-gy/offprint/blob/main/sdk/node/index.d.ts)
+- Python host API: [`__init__.pyi`](https://github.com/peter-gy/offprint/blob/main/sdk/python/src/offprint/__init__.pyi)
+- Python record types: [`contracts.py`](https://github.com/peter-gy/offprint/blob/main/sdk/python/src/offprint/contracts.py)
+- Canonical record fields: [generated JSON Schemas](https://github.com/peter-gy/offprint/tree/main/schemas)
 
 Generated declarations own exact signatures. This page owns behavior,
 lifecycle, and cross-language differences.

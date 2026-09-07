@@ -10,11 +10,11 @@ concepts.
 
 A capture request chooses one `BrowserSpec`:
 
-| Selection | Meaning |
-| --- | --- |
-| `auto` | Use the service's configured discovery path |
-| `executable` | Launch the named local executable |
-| `remote` | Attach to the named HTTP, HTTPS, WebSocket, or secure WebSocket endpoint |
+| Selection    | Meaning                                                                  |
+| ------------ | ------------------------------------------------------------------------ |
+| `auto`       | Use the service's configured discovery path                              |
+| `executable` | Launch the named local executable                                        |
+| `remote`     | Attach to the named HTTP, HTTPS, WebSocket, or secure WebSocket endpoint |
 
 For automatic local discovery, Offprint considers an explicit service path,
 installed managed browsers, then compatible system browsers. The public

@@ -2,20 +2,20 @@
 
 Start with [contributor setup](./setup.md) to build and check a change.
 User-facing behavior and runnable capture workflows live in
-[`docs/`](../docs/README.md).
+[`docs/`](../docs/index.md).
 
 ## Find the owner
 
-| I need to… | Read |
-| --- | --- |
-| Make a change and get feedback | [Setup](./setup.md), then [testing](./testing.md) |
-| Understand what Offprint promises | [Product contract](./product-contract.md) |
-| Trace a capture or cleanup failure | [Capture pipeline](./capture-pipeline.md) |
-| Add or change a public API | [Architecture](./architecture.md), [bindings](./bindings.md), [schemas](./schemas-and-versioning.md) |
-| Change browser or network behavior | [Browser and network](./browser-and-network.md) |
-| Change an artifact representation | [Artifacts and formats](./artifacts-and-formats.md) |
-| Regenerate a checked-in artifact | [Generated files](./generated-files.md) |
-| Prepare packages for release | [Release process](./release.md) |
+| I need to…                         | Read                                                                                                 |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Make a change and get feedback     | [Setup](./setup.md), then [testing](./testing.md)                                                    |
+| Understand what Offprint promises  | [Product contract](./product-contract.md)                                                            |
+| Trace a capture or cleanup failure | [Capture pipeline](./capture-pipeline.md)                                                            |
+| Add or change a public API         | [Architecture](./architecture.md), [bindings](./bindings.md), [schemas](./schemas-and-versioning.md) |
+| Change browser or network behavior | [Browser and network](./browser-and-network.md)                                                      |
+| Change an artifact representation  | [Artifacts and formats](./artifacts-and-formats.md)                                                  |
+| Regenerate a checked-in artifact   | [Generated files](./generated-files.md)                                                              |
+| Prepare packages for release       | [Release process](./release.md)                                                                      |
 
 ## Product and architecture
 
@@ -52,16 +52,16 @@ User-facing behavior and runnable capture workflows live in
 
 ## Change routing
 
-| Change | Primary owner | Required companion review |
-| --- | --- | --- |
-| Public record or default | `offprint-model` | Schemas, bindings, CLI JSON, docs, [Semantic Versioning](https://semver.org/) review |
-| Browser observation or lifecycle | `offprint-browser`, `offprint-chromium` | Network policy, owner cleanup, browser fixtures |
-| Capture state or budget | `offprint-capture`, `offprint` | Cancellation, events, limit accounting |
-| Document or safe-static behavior | `offprint-document`, `offprint-html`, `offprint-transform` | Recursive resources, static and offline verification |
-| Export format | `offprint-export`, `offprint-artifact`, `offprint` | Format verifier, output transaction, bindings, docs |
-| CLI or configuration | `offprint-cli` | stdout, stderr, JSON, exit status, precedence |
-| Node.js or Python | Binding package | Generated record parity, package install, lifecycle |
-| Release or package layout | `xtask`, manifests, workflows | Extracted package tests and public install smoke |
+| Change                           | Primary owner                                              | Required companion review                                                            |
+| -------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Public record or default         | `offprint-model`                                           | Schemas, bindings, CLI JSON, docs, [Semantic Versioning](https://semver.org/) review |
+| Browser observation or lifecycle | `offprint-browser`, `offprint-chromium`                    | Network policy, owner cleanup, browser fixtures                                      |
+| Capture state or budget          | `offprint-capture`, `offprint`                             | Cancellation, events, limit accounting                                               |
+| Document or safe-static behavior | `offprint-document`, `offprint-html`, `offprint-transform` | Recursive resources, static and offline verification                                 |
+| Export format                    | `offprint-export`, `offprint-artifact`, `offprint`         | Format verifier, output transaction, bindings, docs                                  |
+| CLI or configuration             | `offprint-cli`                                             | stdout, stderr, JSON, exit status, precedence                                        |
+| Node.js or Python                | Binding package                                            | Generated record parity, package install, lifecycle                                  |
+| Release or package layout        | `xtask`, manifests, workflows                              | Extracted package tests and public install smoke                                     |
 
 Start with the smallest focused check, then use the commands assigned to the
 affected boundary in [Testing](./testing.md).

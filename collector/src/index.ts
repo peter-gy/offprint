@@ -1,8 +1,4 @@
-import {
-  doctypeText,
-  snapshotDocument,
-  snapshotInlineDocument,
-} from "./collection";
+import { doctypeText, snapshotDocument, snapshotInlineDocument } from "./collection";
 import { RecursiveSnapshotBudget, snapshotLimitResponse } from "./budget";
 import { availableCapabilities, buildSha256, protocol } from "./constants";
 import { dispatchCollector } from "./dispatch";
@@ -33,8 +29,6 @@ import {
   nodeLimitError,
   payloadLimitError,
   sha256,
-  sha256Fallback,
-  utf8LengthWithinLimit,
 } from "./protocol";
 import { resolveSelector, snapshotOptionsFor } from "./scope";
 import { serializeJsonBytesBounded } from "./serialize";
@@ -57,7 +51,6 @@ import {
   windowScrollY,
 } from "./web";
 
-export { sha256Fallback, utf8LengthWithinLimit };
 const observations = new SafeMap<string, StoredObservation>();
 
 function key(captureId: string, frameId: number): string {
@@ -93,30 +86,16 @@ const collector = objectFreeze({
   async prepare(options: PrepareOptions) {
     mapDelete(observations, key(options.captureId, options.frameId));
     fallbackTargets.clear();
-    if (
-      !numberIsSafeInteger(options.maximumChunkBytes) ||
-      options.maximumChunkBytes < 1
-    ) {
-      throw new SafeTypeError(
-        "maximumChunkBytes must be a positive safe integer",
-      );
+    if (!numberIsSafeInteger(options.maximumChunkBytes) || options.maximumChunkBytes < 1) {
+      throw new SafeTypeError("maximumChunkBytes must be a positive safe integer");
     }
-    if (
-      !numberIsSafeInteger(options.maximumPayloadBytes) ||
-      options.maximumPayloadBytes < 1
-    ) {
+    if (!numberIsSafeInteger(options.maximumPayloadBytes) || options.maximumPayloadBytes < 1) {
       return payloadLimitError(options.captureId, options.maximumPayloadBytes);
     }
-    if (
-      !numberIsSafeInteger(options.maximumNodes) ||
-      options.maximumNodes < 0
-    ) {
+    if (!numberIsSafeInteger(options.maximumNodes) || options.maximumNodes < 0) {
       return nodeLimitError(options.captureId, 0, options.maximumNodes);
     }
-    if (
-      !numberIsSafeInteger(options.maximumFrames) ||
-      options.maximumFrames < 0
-    ) {
+    if (!numberIsSafeInteger(options.maximumFrames) || options.maximumFrames < 0) {
       return frameLimitError(options.captureId, 0, options.maximumFrames);
     }
     if (
@@ -125,11 +104,7 @@ const collector = objectFreeze({
       !numberIsSafeInteger(options.maximumFrameDepth) ||
       options.maximumFrameDepth < 0
     ) {
-      return frameDepthError(
-        options.captureId,
-        options.frameDepth,
-        options.maximumFrameDepth,
-      );
+      return frameDepthError(options.captureId, options.frameDepth, options.maximumFrameDepth);
     }
     const budget = new RecursiveSnapshotBudget(
       options.captureId,
@@ -188,10 +163,7 @@ const collector = objectFreeze({
       selection: snapshot.selection,
       frameOwners: snapshot.frameOwners,
     };
-    const serialized = serializeJsonBytesBounded(
-      observation,
-      options.maximumPayloadBytes,
-    );
+    const serialized = serializeJsonBytesBounded(observation, options.maximumPayloadBytes);
     if (serialized.kind === "limit") {
       return payloadLimitError(
         options.captureId,
@@ -200,9 +172,7 @@ const collector = objectFreeze({
       );
     }
     const bytes = serialized.value;
-    const calculatedChunks = mathCeil(
-      typedArrayByteLength(bytes) / options.maximumChunkBytes,
-    );
+    const calculatedChunks = mathCeil(typedArrayByteLength(bytes) / options.maximumChunkBytes);
     const chunkCount = calculatedChunks > 1 ? calculatedChunks : 1;
     const stored: StoredObservation = {
       captureId: options.captureId,
@@ -248,11 +218,7 @@ const collector = objectFreeze({
       throw new SafeRangeError("observation chunk is unavailable");
     }
     const offset = sequence * stored.maximumChunkBytes;
-    const payload = typedArraySubarray(
-      stored.bytes,
-      offset,
-      offset + stored.maximumChunkBytes,
-    );
+    const payload = typedArraySubarray(stored.bytes, offset, offset + stored.maximumChunkBytes);
     const payloadValues: number[] = [];
     for (let index = 0; index < typedArrayByteLength(payload); index += 1) {
       arrayPush(payloadValues, payload[index]);

@@ -1,4 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { describe, expect, test } from "vitest";
 import ts from "typescript";
 
 if (typeof Element === "undefined") {
@@ -24,9 +26,9 @@ if (typeof Element === "undefined") {
   });
 }
 
-const { sha256Fallback, utf8LengthWithinLimit } = await import("../src/index");
-const { countCloneableNodesWithinLimit, RecursiveSnapshotBudget } =
-  await import("../src/budget");
+await import("../src/index");
+const { sha256Fallback, utf8LengthWithinLimit } = await import("../src/protocol");
+const { countCloneableNodesWithinLimit, RecursiveSnapshotBudget } = await import("../src/budget");
 const { frameOwnerMappings } = await import("../src/collection");
 const { copyCssRules, materializeCssRules } = await import("../src/styles");
 const { serializeJsonBytesBounded } = await import("../src/serialize");
@@ -65,12 +67,12 @@ function append(parent: TestNode, ...children: TestNode[]): void {
 
 describe("collector source", () => {
   test("dispatches the shared versioned wire contract", async () => {
-    const fixture = (await Bun.file(
-      new URL(
-        "../../crates/offprint-protocol/fixtures/collector-responses.json",
-        import.meta.url,
+    const fixture = JSON.parse(
+      await readFile(
+        new URL("../../offprint-rs/protocol/fixtures/collector-responses.json", import.meta.url),
+        "utf8",
       ),
-    ).json()) as Record<string, unknown>;
+    ) as Record<string, unknown>;
     const handshake = globalThis.__offprintCollector.call("handshake", [
       "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
       "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
@@ -81,8 +83,7 @@ describe("collector source", () => {
       "cap_01ARZ3NDEKTSV4RRFFQ69G5FAV",
       7,
     ]);
-    const { availableCapabilities, collectorBuildSha256, ...stableHandshake } =
-      handshake;
+    const { availableCapabilities, collectorBuildSha256, ...stableHandshake } = handshake;
     const {
       availableCapabilities: fixtureCapabilities,
       collectorBuildSha256: _fixtureBuildSha256,
@@ -90,14 +91,12 @@ describe("collector source", () => {
     } = fixture.handshake as Record<string, unknown>;
 
     expect(stableHandshake).toEqual(expectedHandshake);
-    expect(availableCapabilities).toBeArray();
+    expect(Array.isArray(availableCapabilities)).toBe(true);
     for (const capability of fixtureCapabilities as string[]) {
       expect(availableCapabilities as string[]).toContain(capability);
     }
-    expect(collectorBuildSha256).toBeString();
-    expect(released).toEqual(
-      fixture.released as { captureId: string; frameId: number },
-    );
+    expect(collectorBuildSha256).toBeTypeOf("string");
+    expect(released).toEqual(fixture.released as { captureId: string; frameId: number });
   });
 
   test("measures UTF-8 payloads at the configured boundary", () => {
@@ -198,16 +197,8 @@ describe("collector source", () => {
     text.nodeValue = "frame";
     append(source, text);
 
-    const frameBudget = new RecursiveSnapshotBudget(
-      "capture-frames",
-      10,
-      100,
-      1,
-      8,
-    );
-    expect(
-      frameBudget.reserveDocument(source as unknown as Document, 0),
-    ).toEqual({
+    const frameBudget = new RecursiveSnapshotBudget("capture-frames", 10, 100, 1, 8);
+    expect(frameBudget.reserveDocument(source as unknown as Document, 0)).toEqual({
       allocatedPayloadBytes: 0,
       nestedFrames: 0,
       nestedNodes: 0,
@@ -225,13 +216,7 @@ describe("collector source", () => {
       });
     }
 
-    const depthBudget = new RecursiveSnapshotBudget(
-      "capture-depth",
-      10,
-      100,
-      2,
-      0,
-    );
+    const depthBudget = new RecursiveSnapshotBudget("capture-depth", 10, 100, 2, 0);
     try {
       depthBudget.reserveDocument(source as unknown as Document, 1);
       throw new Error("expected the depth reservation to fail");
@@ -242,13 +227,7 @@ describe("collector source", () => {
       });
     }
 
-    const payloadBudget = new RecursiveSnapshotBudget(
-      "capture-payload",
-      10,
-      4,
-      2,
-      8,
-    );
+    const payloadBudget = new RecursiveSnapshotBudget("capture-payload", 10, 4, 2, 8);
     try {
       payloadBudget.reserveDocument(source as unknown as Document, 0);
       throw new Error("expected the payload reservation to fail");
@@ -292,21 +271,13 @@ describe("collector source", () => {
       },
     };
     append(document, element);
-    const budget = new RecursiveSnapshotBudget(
-      "capture-attributes",
-      10,
-      16,
-      1,
-      0,
-    );
+    const budget = new RecursiveSnapshotBudget("capture-attributes", 10, 16, 1, 0);
 
     try {
       budget.reserveDocument(document as unknown as Document, 0);
       throw new Error("expected attribute preflight to exceed the payload");
     } catch (error) {
-      expect(budget.limitResponse(error)?.payload.code).toBe(
-        "offprint.collector.payload_limit",
-      );
+      expect(budget.limitResponse(error)?.payload.code).toBe("offprint.collector.payload_limit");
     }
     expect(attributeValuesRead).toBe(1);
   });
@@ -316,17 +287,8 @@ describe("collector source", () => {
     const text = node(3);
     text.nodeValue = "frame";
     append(source, text);
-    const budget = new RecursiveSnapshotBudget(
-      "capture-allocation",
-      10,
-      32,
-      1,
-      0,
-    );
-    const reservation = budget.reserveDocument(
-      source as unknown as Document,
-      0,
-    );
+    const budget = new RecursiveSnapshotBudget("capture-allocation", 10, 32, 1, 0);
+    const reservation = budget.reserveDocument(source as unknown as Document, 0);
 
     budget.reservePayloadAllocation(reservation, 20);
     expect(budget.maximumPayloadAllocation(reservation)).toBe(7);
@@ -382,8 +344,7 @@ describe("collector source", () => {
   });
 
   test("omits adopted font faces already defined by the document", () => {
-    const fontFace =
-      '@font-face { font-family: "Fixture"; src: url("./fixture.woff2"); }';
+    const fontFace = '@font-face { font-family: "Fixture"; src: url("./fixture.woff2"); }';
     const copied = copyCssRules(
       {
         ownerNode: null,
@@ -446,8 +407,7 @@ describe("collector source", () => {
         item() {
           return {
             type: 5,
-            cssText:
-              '@font-face { font-family: "Fixture"; src: url("./fixture.woff2"); }',
+            cssText: '@font-face { font-family: "Fixture"; src: url("./fixture.woff2"); }',
             style,
           };
         },
@@ -471,10 +431,7 @@ describe("collector source", () => {
   test("reserves the remaining payload before native CSS rule serialization", () => {
     const source = node(9);
     const budget = new RecursiveSnapshotBudget("capture-css-rule", 10, 4, 1, 0);
-    const reservation = budget.reserveDocument(
-      source as unknown as Document,
-      0,
-    );
+    const reservation = budget.reserveDocument(source as unknown as Document, 0);
     let sawReservation = false;
     const sheet = {
       cssRules: {
@@ -523,17 +480,8 @@ describe("collector source", () => {
     const text = node(3);
     text.nodeValue = "base";
     append(source, text);
-    const budget = new RecursiveSnapshotBudget(
-      "capture-style-replacement",
-      10,
-      8,
-      1,
-      0,
-    );
-    const reservation = budget.reserveDocument(
-      source as unknown as Document,
-      0,
-    );
+    const budget = new RecursiveSnapshotBudget("capture-style-replacement", 10, 8, 1, 0);
+    const reservation = budget.reserveDocument(source as unknown as Document, 0);
     let sawCompleteAllowance = false;
     const sheet = {
       cssRules: {
@@ -582,9 +530,7 @@ describe("collector source", () => {
 
   test("bounds canvas encoding before PNG data URL materialization", () => {
     expect(maximumPngDataUrlBytes(1, 1)).toBeGreaterThan(22);
-    expect(maximumPngDataUrlBytes(4096, 4096)).toBeGreaterThan(
-      64 * 1024 * 1024,
-    );
+    expect(maximumPngDataUrlBytes(4096, 4096)).toBeGreaterThan(64 * 1024 * 1024);
     expect(maximumPngDataUrlBytes(Number.MAX_SAFE_INTEGER, 2)).toBeNull();
   });
 
@@ -629,9 +575,7 @@ describe("collector source", () => {
         kind: "ok",
         value: expectedBytes,
       });
-      expect(
-        serializeJsonBytesBounded(value, expectedBytes.byteLength - 1),
-      ).toEqual({
+      expect(serializeJsonBytesBounded(value, expectedBytes.byteLength - 1)).toEqual({
         attempted: expectedBytes.byteLength,
         kind: "limit",
       });
@@ -652,13 +596,8 @@ describe("collector source", () => {
       "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
     );
     for (const length of [1, 55, 56, 63, 64, 65, 1024]) {
-      const bytes = Uint8Array.from(
-        { length },
-        (_, index) => (index * 31 + 17) & 0xff,
-      );
-      const expected = new Bun.CryptoHasher("sha256")
-        .update(bytes)
-        .digest("hex");
+      const bytes = Uint8Array.from({ length }, (_, index) => (index * 31 + 17) & 0xff);
+      const expected = createHash("sha256").update(bytes).digest("hex");
       expect(sha256Fallback(bytes)).toBe(expected);
     }
   });
@@ -718,9 +657,7 @@ describe("collector source", () => {
     const failures: string[] = [];
 
     for (const file of files) {
-      const sourceText = await Bun.file(
-        new URL(`../src/${file}`, import.meta.url),
-      ).text();
+      const sourceText = await readFile(new URL(`../src/${file}`, import.meta.url), "utf8");
       const source = ts.createSourceFile(
         file,
         sourceText,
@@ -740,18 +677,13 @@ describe("collector source", () => {
           mutableMethods.has(node.expression.name.text);
         const mutableGlobal =
           ts.isPropertyAccessExpression(node) &&
-          ((node.expression.getText(source) === "JSON" &&
-            node.name.text === "stringify") ||
-            (node.expression.getText(source) === "Reflect" &&
-              node.name.text === "apply") ||
-            (node.expression.getText(source) === "Array" &&
-              node.name.text === "from"));
+          ((node.expression.getText(source) === "JSON" && node.name.text === "stringify") ||
+            (node.expression.getText(source) === "Reflect" && node.name.text === "apply") ||
+            (node.expression.getText(source) === "Array" && node.name.text === "from"));
         const mutableTimer =
           ts.isCallExpression(node) &&
           ts.isIdentifier(node.expression) &&
-          ["requestAnimationFrame", "setTimeout"].includes(
-            node.expression.text,
-          );
+          ["requestAnimationFrame", "setTimeout"].includes(node.expression.text);
         const mutableSetter =
           ts.isBinaryExpression(node) &&
           node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
@@ -775,13 +707,9 @@ describe("collector source", () => {
           (ts.isBinaryExpression(node) &&
             node.operatorToken.kind === ts.SyntaxKind.InstanceOfKeyword) ||
           (ts.isNewExpression(node) &&
-            ["Promise", "TextEncoder"].includes(
-              node.expression.getText(source),
-            ))
+            ["Promise", "TextEncoder"].includes(node.expression.getText(source)))
         ) {
-          const position = source.getLineAndCharacterOfPosition(
-            node.getStart(),
-          );
+          const position = source.getLineAndCharacterOfPosition(node.getStart());
           failures.push(`${file}:${position.line + 1}`);
         }
         ts.forEachChild(node, visit);

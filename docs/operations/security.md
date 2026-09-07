@@ -25,12 +25,12 @@ Redirects and resolved addresses are revalidated.
 
 ## Network policies
 
-| Policy | Address behavior | Typical use |
-| --- | --- | --- |
-| `standard` | Public addresses, plus same-host loopback from a loopback seed | Interactive capture |
-| `server` | Public addresses | Untrusted server workloads |
-| `unrestricted` | Every address class | Explicit remote or private-network integration |
-| Custom rules | Public plus named hosts, [CIDR](https://www.rfc-editor.org/rfc/rfc4632) address ranges, or enabled classes | Controlled service allowlist |
+| Policy         | Address behavior                                                                                           | Typical use                                    |
+| -------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `standard`     | Public addresses, plus same-host loopback from a loopback seed                                             | Interactive capture                            |
+| `server`       | Public addresses                                                                                           | Untrusted server workloads                     |
+| `unrestricted` | Every address class                                                                                        | Explicit remote or private-network integration |
+| Custom rules   | Public plus named hosts, [CIDR](https://www.rfc-editor.org/rfc/rfc4632) address ranges, or enabled classes | Controlled service allowlist                   |
 
 Complete requests use the same canonical camelCase record in Rust JSON,
 Node.js, and Python:
@@ -81,7 +81,7 @@ Use `allowed_cidrs` to permit specific address ranges. The three switches permit
 every address in their respective loopback, private, or link-local class. All
 answers for a resolved host must pass the resulting policy.
 The compiling source is
-[`custom_network.rs`](../../crates/offprint/examples/custom_network.rs).
+[`custom_network.rs`](https://github.com/peter-gy/offprint/blob/main/offprint-rs/core/examples/custom_network.rs).
 
 Every [Domain Name System (DNS)](https://www.rfc-editor.org/rfc/rfc1034) address
 answer must pass the selected policy. A mixed public and private

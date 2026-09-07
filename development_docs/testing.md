@@ -10,6 +10,11 @@ This checks package formatting, lints every target and feature with warnings
 denied, and runs the default-feature tests. Dependencies compile as needed.
 Ignored browser fixtures run through their dedicated recipes.
 
+JavaScript static checks run through `just js-check`. The collector and Node
+SDK use Vitest on Node. Python static checks run through `just python-qa`,
+which combines Ruff, ty, and Pyrefly. `just python-check` builds the native
+adapter and runs pytest. `just site-check` builds the VitePress site.
+
 ## Focus a failing check
 
 ```console
@@ -57,8 +62,7 @@ and dependency audits. Select browser groups, fuzzing, ownership checks, and
 benchmarks by the change boundary.
 
 `just docs-check` runs repository checks, builds Rust documentation with warnings
-denied, executes documentation tests, compiles Rust examples, and typechecks
-binding examples. Runtime and packaged binding examples run through
+denied, executes documentation tests, compiles Rust examples, and checks the VitePress configuration and production site. Runtime and packaged binding examples run through
 `node-check`, `node-package-check`, `python-check`, and `python-wheel-check`.
 
 ## Browser fixtures
@@ -84,17 +88,17 @@ WebSocket and EventSource behavior, and oversized inputs.
 
 ## Choose the checks for your change
 
-| Change | Required evidence |
-| --- | --- |
-| Public record or schema | Unit tests, codegen freshness, binding contracts |
-| Browser adapter | Focused test plus browser fixture group and process cleanup |
-| Parser, resource graph, serializer, or protocol | Focused tests and `just fuzz-smoke` |
-| Foreign-function-interface-free ownership or state | Focused tests and `just miri` |
-| Node.js or Python | Source tests and extracted package install capture |
-| Export format | Encoder verifier tests, artifact export integration, package mapping |
-| Output transaction | Failure injection, conflict modes, recovery, package path |
-| Measured capture path | Benchmark comparison and repeated-capture evidence |
-| Workflow or release | Workflow lint, repository checks, package dry runs |
+| Change                                             | Required evidence                                                    |
+| -------------------------------------------------- | -------------------------------------------------------------------- |
+| Public record or schema                            | Unit tests, codegen freshness, binding contracts                     |
+| Browser adapter                                    | Focused test plus browser fixture group and process cleanup          |
+| Parser, resource graph, serializer, or protocol    | Focused tests and `just fuzz-smoke`                                  |
+| Foreign-function-interface-free ownership or state | Focused tests and `just miri`                                        |
+| Node.js or Python                                  | Source tests and extracted package install capture                   |
+| Export format                                      | Encoder verifier tests, artifact export integration, package mapping |
+| Output transaction                                 | Failure injection, conflict modes, recovery, package path            |
+| Measured capture path                              | Benchmark comparison and repeated-capture evidence                   |
+| Workflow or release                                | Workflow lint, repository checks, package dry runs                   |
 
 Run `just repo-check` before every handoff. A focused package check compiles its
 dependencies and tests the selected owner. Changes to a shared contract also

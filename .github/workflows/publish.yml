@@ -1,24 +1,18 @@
 name: Publish
-
-on:
+"on":
   push:
     tags:
-      - "v[0-9]*.[0-9]*.[0-9]*"
-  workflow_dispatch:
-
+      - v[0-9]*.[0-9]*.[0-9]*
+  workflow_dispatch: null
 permissions:
   contents: read
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref_name }}
   cancel-in-progress: false
-
 env:
   CARGO_TERM_COLOR: always
   SOURCE_DATE_EPOCH: "0"
-  BUN_VERSION: "1.3.14"
   XDG_CACHE_HOME: ${{ github.workspace }}/.cache
-
 jobs:
   validate:
     name: Validate release candidate
@@ -34,28 +28,25 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
           components: clippy,rustfmt
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
-          node-version: 24
-
+          node-version: 24.14.1
+          package-manager-cache: false
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.3.4 --activate
       - name: Resolve release metadata
         id: release
         shell: bash
         run: |
-          version="$(node -p "require('./bindings/node/package.json').version")"
+          version="$(node -p "require('./sdk/node/package.json').version")"
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
             test "$GITHUB_REF_NAME" = "v$version"
           fi
@@ -71,21 +62,16 @@ jobs:
             echo "npm_tag=$npm_tag"
             echo "prerelease=$prerelease"
           } >> "$GITHUB_OUTPUT"
-
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
-
       - name: Install repository tools
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just,taplo-cli,cargo-deny,cargo-machete,cargo-semver-checks,actionlint
-
       - name: Install dependencies
         run: |
-          bun install --cwd collector --frozen-lockfile
-          bun install --cwd bindings/node --frozen-lockfile
-          uv sync --directory bindings/python --frozen
-
+          pnpm install --frozen-lockfile
+          uv sync --directory sdk/python --frozen
       - name: Verify signed release tag
         if: startsWith(github.ref, 'refs/tags/v')
         env:
@@ -96,14 +82,11 @@ jobs:
             --jq '.verification.verified')" = "true"
           test "$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object" \
             --jq '.object.sha')" = "$GITHUB_SHA"
-
       - name: Verify release version
         if: startsWith(github.ref, 'refs/tags/v')
         run: just repo-check
-
       - name: Run release gate
         run: just release-check
-
   browser-fixtures:
     name: Release fixtures ${{ matrix.group }}
     needs: validate
@@ -124,12 +107,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Install Chromium runtime libraries
         run: |
           sudo apt-get update
@@ -140,13 +121,10 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p offprint-cli -- browser install
-
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
       - name: Run fixture group
-        run: cargo run --locked -p xtask -- e2e "${{ matrix.group }}"
-
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- e2e "${{ matrix.group }}"
       - name: Audit browser process cleanup
         if: always()
         run: |
@@ -154,18 +132,16 @@ jobs:
             echo "Offprint Chromium process survived the fixture group"
             exit 1
           fi
-
       - name: Upload fixture failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: release-fixture-failure-${{ matrix.group }}
           path: |
-            target/benchmark-evidence
-            target/diagnostics
+            offprint-rs/target/benchmark-evidence
+            offprint-rs/target/diagnostics
           if-no-files-found: ignore
           retention-days: 14
-
   browser-integrations:
     name: Release browser integrations
     needs: validate
@@ -176,12 +152,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Install Chromium runtime libraries
         run: |
           sudo apt-get update
@@ -192,19 +166,16 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p offprint-cli -- browser install
-
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
       - name: Run ignored browser integration suites
         run: |
-          cargo test --locked -p offprint \
+          cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint \
             --test artifact_exports \
             --test diagnostics \
             --test capture_regressions \
             --test remote_browser \
             -- --ignored --test-threads=1
-
       - name: Audit browser process cleanup
         if: always()
         run: |
@@ -212,18 +183,16 @@ jobs:
             echo "Offprint Chromium process survived the integration suites"
             exit 1
           fi
-
       - name: Upload integration failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: release-browser-integration-failure
           path: |
-            target/benchmark-evidence
-            target/diagnostics
+            offprint-rs/target/benchmark-evidence
+            offprint-rs/target/diagnostics
           if-no-files-found: ignore
           retention-days: 14
-
   repeated-capture:
     name: Release repeated capture
     needs: validate
@@ -234,12 +203,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Install Chromium runtime libraries
         run: |
           sudo apt-get update
@@ -250,13 +217,10 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
       - name: Install pinned managed Chromium
-        run: cargo run --locked -p offprint-cli -- browser install
-
+        run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
       - name: Run repeated capture suite
-        run: cargo test --release --locked -p offprint repeated_capture -- --ignored --test-threads=1
-
+        run: cargo test --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint repeated_capture -- --ignored --test-threads=1
       - name: Audit browser process cleanup
         if: always()
         run: |
@@ -264,16 +228,14 @@ jobs:
             echo "Offprint Chromium process survived repeated capture"
             exit 1
           fi
-
       - name: Upload repeated-capture report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: repeated-capture
-          path: target/benchmark-evidence/repeated-capture.json
+          path: offprint-rs/target/benchmark-evidence/repeated-capture.json
           if-no-files-found: error
           retention-days: 30
-
   fuzz:
     name: Release fuzz smoke
     needs: validate
@@ -284,31 +246,26 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install nightly Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: nightly
-
       - name: Install fuzz tools
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just,cargo-fuzz
-
       - name: Run fuzz targets
         run: just fuzz-smoke 30
-
       - name: Upload fuzz failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: release-fuzz-failure
           path: |
-            fuzz/artifacts
-            fuzz/corpus
+            offprint-rs/fuzz/artifacts
+            offprint-rs/fuzz/corpus
           if-no-files-found: ignore
           retention-days: 14
-
   miri:
     name: Release Miri
     needs: validate
@@ -319,21 +276,17 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install nightly Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: nightly
           components: miri
-
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
-
       - name: Run Miri
         run: just miri
-
   sanitizer:
     name: Release address sanitizer
     needs: validate
@@ -341,40 +294,35 @@ jobs:
     timeout-minutes: 60
     env:
       ASAN_OPTIONS: detect_leaks=1
-      RUSTDOCFLAGS: -Zsanitizer=address
-      RUSTFLAGS: -Zsanitizer=address
+      RUSTDOCFLAGS: "-Zsanitizer=address"
+      RUSTFLAGS: "-Zsanitizer=address"
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install nightly Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: nightly
           components: rust-src
-
       - name: Install Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.10"
-
       - name: Test process ownership under AddressSanitizer
         run: |
-          cargo test -Zbuild-std --locked \
+          cargo test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
             -p offprint-chromium --lib
-
       - name: Test native bindings under AddressSanitizer
         run: |
-          cargo test -Zbuild-std --locked \
+          cargo test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
             -p offprint-node --lib --features napi-noop-in-unit-test
-          cargo test -Zbuild-std --locked \
+          cargo test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
             -p offprint-python --lib
-
   native:
     name: Native ${{ matrix.target }}
     needs: validate
@@ -401,13 +349,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
           targets: ${{ matrix.target }}
-
       - name: Install Chromium runtime libraries
         if: runner.os == 'Linux'
         run: |
@@ -419,18 +365,15 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
       - name: Build natively
-        run: cargo build --release --locked -p offprint-cli --target ${{ matrix.target }}
-
+        run: cargo build --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint-cli --target ${{ matrix.target }}
       - name: Package archive
         shell: bash
         run: |
-          cargo run --locked -p xtask -- package \
+          cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- package \
             --target "${{ matrix.target }}" \
-            --binary "target/${{ matrix.target }}/release/${{ matrix.executable }}" \
+            --binary "offprint-rs/target/${{ matrix.target }}/release/${{ matrix.executable }}" \
             --output dist
-
       - name: Extract release archive
         shell: bash
         run: |
@@ -439,35 +382,57 @@ jobs:
             *windows*) unzip -q dist/*.zip -d release-smoke ;;
             *) tar -xzf dist/*.tar.gz -C release-smoke ;;
           esac
-
       - name: Verify release metadata
         shell: bash
         run: |
           metadata="$(find release-smoke -type f -name build-metadata.json -print -quit)"
           test -n "$metadata"
-          cargo run --locked -p xtask -- verify-package-metadata \
+          cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- verify-package-metadata \
             --metadata "$metadata" \
             --target "${{ matrix.target }}" \
             --source-revision "$GITHUB_SHA"
-
       - name: Capture through release archive
         shell: bash
         env:
           OFFPRINT_BROWSER_SOURCE: managed
           OFFPRINT_CACHE_DIR: ${{ runner.temp }}/offprint-release-managed-cache
         run: |
-          binary="$(find release-smoke -type f -name '${{ matrix.executable }}' -print -quit)"
+          binary="$(find "$GITHUB_WORKSPACE/release-smoke" -type f -name '${{ matrix.executable }}' -print -quit)"
           OFFPRINT_RELEASE_BINARY="$binary" \
-            cargo test --locked -p offprint-cli --test release_archive_smoke \
+            cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli --test release_archive_smoke \
               -- --ignored --test-threads=1
-
       - name: Upload native archive
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: native-${{ matrix.target }}
           path: dist/*
           if-no-files-found: error
-
+  crates:
+    name: Rust crate archives
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
+        with:
+          toolchain: 1.97.0
+      - name: Install just
+        uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
+        with:
+          tool: just
+      - name: Package and verify Rust crates
+        run: just crate-package dist/crates
+      - name: Upload Rust crate archives
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: rust-crates
+          path: dist/crates/*.crate
+          if-no-files-found: error
   node:
     name: Node addon ${{ matrix.target }}
     needs: validate
@@ -494,23 +459,20 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
           targets: ${{ matrix.target }}
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
-          node-version: 24
-
+          node-version: 24.14.1
+          package-manager-cache: false
+      - name: Install pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@12.3.4 --activate
       - name: Install Chromium runtime libraries
         if: runner.os == 'Linux'
         run: |
@@ -522,24 +484,20 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
-      - name: Install addon dependencies
-        working-directory: bindings/node
-        run: bun install --frozen-lockfile
-
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
       - name: Build native addon
-        working-directory: bindings/node
-        run: bunx napi build --platform --release --target ${{ matrix.target }} --no-js --dts native.d.ts
-
+        working-directory: sdk/node
+        run: pnpm exec napi build --manifest-path ../../offprint-rs/node/Cargo.toml --output-dir . --platform --release --target ${{ matrix.target }} --no-js --dts native.d.ts -- --locked
       - name: Capture through packed npm package
         shell: bash
-        working-directory: bindings/node
+        working-directory: sdk/node
         run: |
           package_dir="$RUNNER_TEMP/offprint-node-package"
           install_dir="$RUNNER_TEMP/offprint-node-install"
           mkdir "$package_dir" "$install_dir"
           node scripts/package-license.mjs sync
-          trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
+          trap 'node "$GITHUB_WORKSPACE/sdk/node/scripts/package-license.mjs" clean' EXIT
           npm pack --ignore-scripts --pack-destination "$package_dir"
           root_package="$(find "$package_dir" -maxdepth 1 -name 'offprint-[0-9]*.tgz' -print -quit)"
           test -n "$root_package"
@@ -549,22 +507,20 @@ jobs:
           cd "$install_dir"
           npm init --yes >/dev/null
           npm install --ignore-scripts --no-audit --no-fund "$root_package"
-          cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/package-smoke.mjs" smoke.mjs
           node smoke.mjs
-          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-child.mjs" lifecycle-child.mjs
-          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-processes.mjs" lifecycle-processes.mjs
-          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-runner.mjs" lifecycle-runner.mjs
-          cp "$GITHUB_WORKSPACE/bindings/node/test/package-lifecycle.mjs" package-lifecycle.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/lifecycle-child.mjs" lifecycle-child.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/lifecycle-processes.mjs" lifecycle-processes.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/lifecycle-runner.mjs" lifecycle-runner.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/package-lifecycle.mjs" package-lifecycle.mjs
           cp "$GITHUB_WORKSPACE/schemas/examples/capture-request.json" capture-request.json
           node package-lifecycle.mjs
-
       - name: Upload addon
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: node-${{ matrix.target }}
-          path: bindings/node/offprint-native.${{ matrix.package }}.node
+          path: sdk/node/offprint-native.${{ matrix.package }}.node
           if-no-files-found: error
-
   node-package:
     name: Assemble npm package
     needs: node
@@ -575,13 +531,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
           package-manager-cache: false
-
       - name: Install Chromium runtime libraries
         run: |
           sudo apt-get update
@@ -592,24 +546,22 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
       - name: Download native addons
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           pattern: node-*
-          path: bindings/node
+          path: sdk/node
           merge-multiple: true
-
       - name: Pack and verify npm package
         shell: bash
-        working-directory: bindings/node
+        working-directory: sdk/node
         run: |
           test "$(find . -maxdepth 1 -name 'offprint-native.*.node' -type f | wc -l | tr -d ' ')" = "4"
           package_dir="$RUNNER_TEMP/offprint-node-package"
           install_dir="$RUNNER_TEMP/offprint-node-install"
           mkdir "$package_dir" "$install_dir"
           node scripts/package-license.mjs sync
-          trap 'node "$GITHUB_WORKSPACE/bindings/node/scripts/package-license.mjs" clean' EXIT
+          trap 'node "$GITHUB_WORKSPACE/sdk/node/scripts/package-license.mjs" clean' EXIT
           npm pack --ignore-scripts --pack-destination "$package_dir"
           package="$(find "$package_dir" -maxdepth 1 -name 'offprint-[0-9]*.tgz' -print -quit)"
           test -n "$package"
@@ -622,15 +574,14 @@ jobs:
           cd "$install_dir"
           npm init --yes >/dev/null
           npm install --ignore-scripts --no-audit --no-fund "$package"
-          cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/package-smoke.mjs" smoke.mjs
           node smoke.mjs
-          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-child.mjs" lifecycle-child.mjs
-          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-processes.mjs" lifecycle-processes.mjs
-          cp "$GITHUB_WORKSPACE/bindings/node/test/lifecycle-runner.mjs" lifecycle-runner.mjs
-          cp "$GITHUB_WORKSPACE/bindings/node/test/package-lifecycle.mjs" package-lifecycle.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/lifecycle-child.mjs" lifecycle-child.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/lifecycle-processes.mjs" lifecycle-processes.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/lifecycle-runner.mjs" lifecycle-runner.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/package-lifecycle.mjs" package-lifecycle.mjs
           cp "$GITHUB_WORKSPACE/schemas/examples/capture-request.json" capture-request.json
           node package-lifecycle.mjs
-
       - name: Upload npm package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -638,7 +589,6 @@ jobs:
           path: ${{ runner.temp }}/offprint-node-package/offprint-*.tgz
           retention-days: 1
           if-no-files-found: error
-
   python:
     name: Python wheels ${{ matrix.target }}
     needs: validate
@@ -673,32 +623,28 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Python 3.10
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.10"
-
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b
         with:
           target: ${{ matrix.target }}
-          args: --release --locked --compatibility pypi -i ${{ matrix.interpreter }} --out dist --manifest-path bindings/python/Cargo.toml ${{ matrix.sdist && '--sdist' || '' }}
+          args: "--release --locked --compatibility pypi -i ${{ matrix.interpreter }} --out ../../dist ${{ matrix.sdist && '--sdist' || '' }}"
           manylinux: ${{ matrix.manylinux }}
-          maturin-version: v1.14.1
+          maturin-version: v1.15.0
           rust-toolchain: 1.97.0
-
+          working-directory: sdk/python
       - name: Verify Python distribution contents
         shell: bash
         run: |
-          python bindings/python/tests/package_contents.py \
+          python sdk/python/tests/package_contents.py \
             "$GITHUB_WORKSPACE/LICENSE" dist/*
-
       - name: Install Python 3.14
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.14"
-
       - name: Install Chromium runtime libraries
         if: runner.os == 'Linux'
         run: |
@@ -710,7 +656,6 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
       - name: Install wheel in a clean environment
         shell: bash
         run: |
@@ -722,16 +667,14 @@ jobs:
           fi
           "$python_bin" -m pip install --disable-pip-version-check dist/*.whl
           "$python_bin" -c "import offprint; assert offprint.Offprint"
-          "$python_bin" bindings/python/tests/wheel_smoke.py
-          "$python_bin" bindings/python/tests/package_lifecycle.py
-
+          "$python_bin" sdk/python/tests/wheel_smoke.py
+          "$python_bin" sdk/python/tests/package_lifecycle.py
       - name: Upload wheels
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: python-${{ matrix.target }}
           path: dist/*.whl
           if-no-files-found: error
-
       - name: Upload source distribution
         if: matrix.sdist
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -739,7 +682,6 @@ jobs:
           name: python-sdist
           path: dist/*.tar.gz
           if-no-files-found: error
-
   supply-chain:
     name: Supply chain artifacts
     needs:
@@ -752,6 +694,7 @@ jobs:
       - python
       - repeated-capture
       - sanitizer
+      - crates
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -766,37 +709,31 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Install license report tool
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: cargo-deny
-
       - name: Download release artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           path: release
           merge-multiple: true
-
       - name: Generate dependency license report
         run: |
           license_report="$(mktemp)"
-          cargo deny list --format json --layout crate > "$license_report"
+          cargo deny --manifest-path offprint-rs/Cargo.toml list --format json --layout crate > "$license_report"
           test -s "$license_report"
           mv "$license_report" release/dependency-licenses.json
-
       - name: Generate SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
         with:
           path: release
           format: spdx-json
           output-file: release/offprint.spdx.json
-
       - name: Generate release checksums
         working-directory: release
         run: |
@@ -805,12 +742,10 @@ jobs:
             | sort -z \
             | xargs -0 sha256sum > "$checksum_tmp"
           mv "$checksum_tmp" SHA256SUMS
-
       - name: Attest release artifacts
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
           subject-path: release/*
-
       - name: Upload release artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -818,81 +753,11 @@ jobs:
           path: release/*
           retention-days: 1
           if-no-files-found: error
-
-  publish-crates:
-    name: Publish Rust crates
-    needs: [supply-chain, validate]
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    environment: release
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
-        with:
-          toolchain: 1.97.0
-
-      - name: Publish workspace crates
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-          VERSION: ${{ needs.validate.outputs.version }}
-        run: |
-          registry_token="$CARGO_REGISTRY_TOKEN"
-          unset CARGO_REGISTRY_TOKEN
-          crates=(
-            offprint-model
-            offprint-artifact
-            offprint-browser
-            offprint-capture
-            offprint-document
-            offprint-protocol
-            offprint-chromium
-            offprint-html
-            offprint-export
-            offprint-transform
-            offprint
-            offprint-cli
-          )
-          for crate in "${crates[@]}"; do
-            cargo package --locked -p "$crate" --no-verify
-            archive="target/package/$crate-$VERSION.crate"
-            test -f "$archive"
-            local_checksum="$(sha256sum "$archive" | cut -d ' ' -f 1)"
-            registry_record="$(mktemp)"
-            if curl --fail --silent \
-              --header "User-Agent: offprint-release/$VERSION" \
-              "https://crates.io/api/v1/crates/$crate/$VERSION" \
-              --output "$registry_record"
-            then
-              published_checksum="$(jq -er '.version.checksum' "$registry_record")"
-              if [[ "$published_checksum" != "$local_checksum" ]]; then
-                echo "$crate@$VERSION exists with a different checksum" >&2
-                exit 1
-              fi
-              echo "$crate@$VERSION is already published with matching bytes"
-              continue
-            fi
-            for attempt in {1..6}; do
-              if CARGO_REGISTRY_TOKEN="$registry_token" \
-                cargo publish --locked --no-verify -p "$crate"
-              then
-                break
-              fi
-              if [[ "$attempt" == 6 ]]; then
-                exit 1
-              fi
-              sleep 10
-            done
-          done
-
   publish-node:
     name: Publish npm package
-    needs: [supply-chain, validate]
+    needs:
+      - supply-chain
+      - validate
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -909,14 +774,12 @@ jobs:
         with:
           name: node-package
           path: dist/npm
-
       - name: Configure npm
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
-
       - name: Publish with npm trusted publishing
         env:
           NPM_TAG: ${{ needs.validate.outputs.npm_tag }}
@@ -945,46 +808,11 @@ jobs:
             --access public \
             --tag "$NPM_TAG" \
             "${packages[0]}"
-
-  verify-crates:
-    name: Verify crates.io release
-    needs: [publish-crates, validate]
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    permissions:
-      contents: read
-    steps:
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
-        with:
-          toolchain: 1.97.0
-
-      - name: Build a public-registry consumer
-        env:
-          VERSION: ${{ needs.validate.outputs.version }}
-        run: |
-          consumer="$RUNNER_TEMP/offprint-crates-consumer"
-          cargo init --name offprint-public-smoke --bin "$consumer"
-          for attempt in {1..12}; do
-            if cargo add "offprint@=$VERSION" \
-              --manifest-path "$consumer/Cargo.toml" \
-              && cargo check --manifest-path "$consumer/Cargo.toml"
-            then
-              break
-            fi
-            if [[ "$attempt" == 12 ]]; then
-              exit 1
-            fi
-            sleep 10
-          done
-          cargo tree \
-            --manifest-path "$consumer/Cargo.toml" \
-            --package "offprint@$VERSION" \
-            --depth 0
-
   publish-python:
     name: Publish Python distributions
-    needs: [supply-chain, validate]
+    needs:
+      - supply-chain
+      - validate
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -1002,29 +830,22 @@ jobs:
           pattern: python-*
           path: dist
           merge-multiple: true
-
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
         with:
           enable-cache: false
-          version: "0.12.9"
-
+          version: 0.12.9
       - name: Check distribution set
         run: |
           test "$(find dist -name '*.whl' -type f | wc -l | tr -d ' ')" = "4"
           test "$(find dist -name '*.tar.gz' -type f | wc -l | tr -d ' ')" = "1"
-
       - name: Publish with PyPI trusted publishing
-        run: >-
-          uv publish
-          --check-url https://pypi.org/simple
-          --trusted-publishing always
-          dist/offprint-*.whl
-          dist/offprint-*.tar.gz
-
+        run: uv publish --check-url https://pypi.org/simple --trusted-publishing always dist/offprint-*.whl dist/offprint-*.tar.gz
   verify-node:
     name: Verify npm release
-    needs: [publish-node, validate]
+    needs:
+      - publish-node
+      - validate
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -1034,13 +855,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: 24
           package-manager-cache: false
-
       - name: Install Chromium runtime libraries
         run: |
           sudo apt-get update
@@ -1051,7 +870,6 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
       - name: Install and capture through npm release
         env:
           VERSION: ${{ needs.validate.outputs.version }}
@@ -1078,12 +896,13 @@ jobs:
             --no-audit \
             --no-fund \
             "offprint@$VERSION"
-          cp "$GITHUB_WORKSPACE/bindings/node/test/package-smoke.mjs" smoke.mjs
+          cp "$GITHUB_WORKSPACE/sdk/node/test/package-smoke.mjs" smoke.mjs
           node smoke.mjs
-
   verify-python:
     name: Verify PyPI release
-    needs: [publish-python, validate]
+    needs:
+      - publish-python
+      - validate
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -1093,14 +912,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d
         with:
           enable-cache: false
           python-version: "3.14"
-          version: "0.12.9"
-
+          version: 0.12.9
       - name: Install Chromium runtime libraries
         run: |
           sudo apt-get update
@@ -1111,7 +928,6 @@ jobs:
             libgtk-3-0 \
             libnss3 \
             libxkbcommon0
-
       - name: Install and capture through PyPI release
         env:
           VERSION: ${{ needs.validate.outputs.version }}
@@ -1139,15 +955,13 @@ jobs:
 
           assert version("offprint") == os.environ["EXPECTED_VERSION"]
           PY
-          release-venv/bin/python bindings/python/tests/wheel_smoke.py
-          release-venv/bin/python bindings/python/tests/package_lifecycle.py
-
+          release-venv/bin/python sdk/python/tests/wheel_smoke.py
+          release-venv/bin/python sdk/python/tests/package_lifecycle.py
   release-notes:
     name: Publish GitHub release
     needs:
       - supply-chain
       - validate
-      - verify-crates
       - verify-node
       - verify-python
     if: startsWith(github.ref, 'refs/tags/v')
@@ -1162,7 +976,6 @@ jobs:
         with:
           name: release-artifacts
           path: release
-
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

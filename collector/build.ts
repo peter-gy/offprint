@@ -1,5 +1,8 @@
-import { mkdir } from "node:fs/promises";
-import { availableCapabilities, protocol } from "./src/identity";
+import { createHash } from "node:crypto";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { rolldown } from "rolldown";
+import { availableCapabilities, protocol } from "./src/identity.ts";
 
 interface SchemaIndex {
   collectorProtocol?: {
@@ -17,24 +20,20 @@ interface CollectorMessageSchema {
 }
 
 async function validateGeneratedIdentity(): Promise<void> {
-  const schemaIndex = (await Bun.file(
-    new URL("../schemas/index.json", import.meta.url),
-  ).json()) as SchemaIndex;
+  const schemaIndex = JSON.parse(
+    await readFile(new URL("../schemas/index.json", import.meta.url), "utf8"),
+  ) as SchemaIndex;
   const generatedProtocol = schemaIndex.collectorProtocol;
-  if (
-    generatedProtocol?.major !== protocol.major ||
-    generatedProtocol.minor !== protocol.minor
-  ) {
+  if (generatedProtocol?.major !== protocol.major || generatedProtocol.minor !== protocol.minor) {
     throw new Error(
       `collector protocol ${protocol.major}.${protocol.minor} does not match generated schemas`,
     );
   }
 
-  const collectorSchema = (await Bun.file(
-    new URL("../schemas/collector-message.schema.json", import.meta.url),
-  ).json()) as CollectorMessageSchema;
-  const generatedCapabilities =
-    collectorSchema.$defs?.CollectorCapability?.enum;
+  const collectorSchema = JSON.parse(
+    await readFile(new URL("../schemas/collector-message.schema.json", import.meta.url), "utf8"),
+  ) as CollectorMessageSchema;
+  const generatedCapabilities = collectorSchema.$defs?.CollectorCapability?.enum;
   if (
     !Array.isArray(generatedCapabilities) ||
     !generatedCapabilities.every(
@@ -50,60 +49,44 @@ async function validateGeneratedIdentity(): Promise<void> {
     expected.length !== generated.length ||
     expected.some((capability, index) => capability !== generated[index])
   ) {
-    throw new Error(
-      "collector capabilities do not match generated collector schema",
-    );
+    throw new Error("collector capabilities do not match generated collector schema");
   }
 }
 
 const check = process.argv.includes("--check");
 await validateGeneratedIdentity();
-const result = await Bun.build({
-  entrypoints: [new URL("./src/index.ts", import.meta.url).pathname],
-  target: "browser",
-  format: "iife",
-  minify: false,
-  sourcemap: "none",
+const bundle = await rolldown({
+  input: fileURLToPath(new URL("./src/index.ts", import.meta.url)),
+  platform: "browser",
 });
-
-if (!result.success || result.outputs.length !== 1) {
-  for (const log of result.logs) {
-    console.error(log);
+let bundledSource: string;
+try {
+  const result = await bundle.generate({ format: "iife", sourcemap: false });
+  if (result.output.length !== 1 || result.output[0].type !== "chunk") {
+    throw new Error("collector build must produce one JavaScript bundle");
   }
-  process.exit(1);
+  bundledSource = result.output[0].code;
+} finally {
+  await bundle.close();
 }
 
-const bundledSource = await result.outputs[0].text();
-const sourceDigest = new Bun.CryptoHasher("sha256")
-  .update(bundledSource)
-  .digest("hex");
-const output = bundledSource.replaceAll(
-  "__OFFPRINT_COLLECTOR_BUILD_SHA256__",
-  sourceDigest,
-);
-const outputDigest = new Bun.CryptoHasher("sha256")
-  .update(output)
-  .digest("hex");
+const sourceDigest = createHash("sha256").update(bundledSource).digest("hex");
+const output = bundledSource.replaceAll("__OFFPRINT_COLLECTOR_BUILD_SHA256__", sourceDigest);
+const outputDigest = createHash("sha256").update(output).digest("hex");
 const targets = [
   {
     bundle: new URL("./dist/collector.js", import.meta.url),
     digest: new URL("./dist/collector.sha256", import.meta.url),
   },
   {
-    bundle: new URL(
-      "../crates/offprint-chromium/generated/collector.js",
-      import.meta.url,
-    ),
-    digest: new URL(
-      "../crates/offprint-chromium/generated/collector.sha256",
-      import.meta.url,
-    ),
+    bundle: new URL("../offprint-rs/chromium/generated/collector.js", import.meta.url),
+    digest: new URL("../offprint-rs/chromium/generated/collector.sha256", import.meta.url),
   },
 ];
 if (check) {
   for (const target of targets) {
-    const generated = await Bun.file(target.bundle).text();
-    const digest = await Bun.file(target.digest).text();
+    const generated = await readFile(target.bundle, "utf8");
+    const digest = await readFile(target.digest, "utf8");
     if (generated !== output || digest !== `${outputDigest}\n`) {
       console.error(`generated collector bundle is stale: ${target.bundle}`);
       process.exit(1);
@@ -114,6 +97,6 @@ if (check) {
 
 for (const target of targets) {
   await mkdir(new URL(".", target.bundle), { recursive: true });
-  await Bun.write(target.bundle, output);
-  await Bun.write(target.digest, `${outputDigest}\n`);
+  await writeFile(target.bundle, output);
+  await writeFile(target.digest, `${outputDigest}\n`);
 }

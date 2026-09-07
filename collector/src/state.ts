@@ -108,10 +108,7 @@ export function copyState(
   if (isHtmlElement(live, "input") && isHtmlElement(clone, "input")) {
     const liveInput = live as HTMLInputElement;
     const cloneInput = clone as HTMLInputElement;
-    if (
-      inputType(liveInput) === "password" &&
-      !context.options.preservePasswordValues
-    ) {
+    if (inputType(liveInput) === "password" && !context.options.preservePasswordValues) {
       removeAttribute(cloneInput, "value");
       arrayPush(context.warnings, {
         code: "offprint.form.password_redacted",
@@ -121,21 +118,11 @@ export function copyState(
       setAttribute(cloneInput, "value", inputValue(liveInput));
     }
     toggleAttribute(cloneInput, "checked", inputChecked(liveInput));
-  } else if (
-    isHtmlElement(live, "textarea") &&
-    isHtmlElement(clone, "textarea")
-  ) {
+  } else if (isHtmlElement(live, "textarea") && isHtmlElement(clone, "textarea")) {
     setNodeTextContent(clone, textAreaValue(live as HTMLTextAreaElement));
   } else if (isHtmlElement(live, "option") && isHtmlElement(clone, "option")) {
-    toggleAttribute(
-      clone,
-      "selected",
-      optionSelected(live as HTMLOptionElement),
-    );
-  } else if (
-    isHtmlElement(live, "details") &&
-    isHtmlElement(clone, "details")
-  ) {
+    toggleAttribute(clone, "selected", optionSelected(live as HTMLOptionElement));
+  } else if (isHtmlElement(live, "details") && isHtmlElement(clone, "details")) {
     toggleAttribute(clone, "open", detailsOpen(live as HTMLDetailsElement));
   } else if (isHtmlElement(live, "img") && isHtmlElement(clone, "img")) {
     const liveImage = live as HTMLImageElement;
@@ -161,28 +148,17 @@ export function copyState(
       replaceNode(cloneCanvas, image);
     } catch (error) {
       if (allocatedPayloadBytes > 0) {
-        context.budget.settlePayloadAllocation(
-          context.reservation,
-          allocatedPayloadBytes,
-          0,
-        );
+        context.budget.settlePayloadAllocation(context.reservation, allocatedPayloadBytes, 0);
       }
       if (context.budget.limitResponse(error)) {
         throw error;
       }
       materializeVisualFallback(liveCanvas, cloneCanvas, "canvas", context);
     }
-  } else if (
-    isHtmlElement(live, "video", "audio") &&
-    isHtmlElement(clone, "video", "audio")
-  ) {
+  } else if (isHtmlElement(live, "video", "audio") && isHtmlElement(clone, "video", "audio")) {
     const liveMedia = live as HTMLMediaElement;
     const cloneMedia = clone as HTMLMediaElement;
-    setAttribute(
-      cloneMedia,
-      "data-offprint-current-time",
-      SafeString(mediaCurrentTime(liveMedia)),
-    );
+    setAttribute(cloneMedia, "data-offprint-current-time", SafeString(mediaCurrentTime(liveMedia)));
     toggleAttribute(cloneMedia, "controls", mediaControls(liveMedia));
     toggleAttribute(cloneMedia, "muted", mediaMuted(liveMedia));
     const currentSource = mediaCurrentSource(liveMedia);
@@ -190,11 +166,7 @@ export function copyState(
       setAttribute(cloneMedia, "src", currentSource);
     }
     if (isHtmlElement(live, "video") && isHtmlElement(clone, "video")) {
-      materializeVideo(
-        live as HTMLVideoElement,
-        clone as HTMLVideoElement,
-        context,
-      );
+      materializeVideo(live as HTMLVideoElement, clone as HTMLVideoElement, context);
     }
   } else if (isHtmlElement(live, "iframe") && isHtmlElement(clone, "iframe")) {
     copyInlineFrame(live as HTMLIFrameElement, clone, context, snapshotInline);
@@ -239,10 +211,7 @@ function copyInlineFrame(
     }
     const childWindow = frameContentWindow(liveFrame) as unknown as {
       __offprintCollector?: {
-        call(
-          method: "snapshotInline",
-          arguments_: [InlineSnapshotRequest],
-        ): InlineSnapshot;
+        call(method: "snapshotInline", arguments_: [InlineSnapshotRequest]): InlineSnapshot;
       };
     } | null;
     const childCollector = childWindow?.__offprintCollector;
@@ -265,16 +234,8 @@ function copyInlineFrame(
       child.frames,
     );
     mapSet(context.inlineFrameOwners, clone, child.frameOwners);
-    setAttribute(
-      clone,
-      "srcdoc",
-      mergeInlineVisualFallbacks(liveFrame, child, context),
-    );
-    setAttribute(
-      clone,
-      "data-offprint-frame-base",
-      documentBaseUri(childDocument),
-    );
+    setAttribute(clone, "srcdoc", mergeInlineVisualFallbacks(liveFrame, child, context));
+    setAttribute(clone, "data-offprint-frame-base", documentBaseUri(childDocument));
     removeAttribute(clone, "src");
     for (let index = 0; index < child.warnings.length; index += 1) {
       arrayPush(context.warnings, child.warnings[index]);
@@ -319,15 +280,11 @@ function mergeInlineVisualFallbacks(
       ...fallback,
       x: SafeString(
         contentX +
-          (SafeNumber(fallback.x) -
-            (childWindow ? windowScrollX(childWindow) : 0)) *
-            scaleX,
+          (SafeNumber(fallback.x) - (childWindow ? windowScrollX(childWindow) : 0)) * scaleX,
       ),
       y: SafeString(
         contentY +
-          (SafeNumber(fallback.y) -
-            (childWindow ? windowScrollY(childWindow) : 0)) *
-            scaleY,
+          (SafeNumber(fallback.y) - (childWindow ? windowScrollY(childWindow) : 0)) * scaleY,
       ),
       width: SafeString(SafeNumber(fallback.width) * scaleX),
       height: SafeString(SafeNumber(fallback.height) * scaleY),
@@ -348,10 +305,7 @@ function isHtmlElement(node: Node, ...localNames: string[]): node is Element {
   );
 }
 
-function canvasImage(
-  live: HTMLCanvasElement,
-  clone: HTMLCanvasElement,
-): HTMLImageElement {
+function canvasImage(live: HTMLCanvasElement, clone: HTMLCanvasElement): HTMLImageElement {
   const document = ownerDocument(live);
   if (!document) {
     throw new SafeTypeError("a canvas has no owner document");
@@ -364,10 +318,7 @@ function canvasImage(
   return image;
 }
 
-function videoImage(
-  live: HTMLVideoElement,
-  clone: HTMLVideoElement,
-): HTMLImageElement {
+function videoImage(live: HTMLVideoElement, clone: HTMLVideoElement): HTMLImageElement {
   const document = ownerDocument(live);
   if (!document) {
     throw new SafeTypeError("a video has no owner document");
@@ -389,11 +340,7 @@ function copyAttributes(source: Element, destination: Element): void {
   for (let index = 0; index < count; index += 1) {
     const attribute = attributeAt(source, index);
     if (attribute) {
-      setAttribute(
-        destination,
-        attributeName(attribute),
-        attributeValue(attribute),
-      );
+      setAttribute(destination, attributeName(attribute), attributeValue(attribute));
     }
   }
 }
@@ -423,11 +370,7 @@ function materializeVideo(
         throw new SafeError("2D canvas context is unavailable");
       }
       drawCanvasImage(drawing, live, 0, 0);
-      const encoded = encodeReservedCanvasDataUrl(
-        canvas,
-        reservedPayloadBytes,
-        context,
-      );
+      const encoded = encodeReservedCanvasDataUrl(canvas, reservedPayloadBytes, context);
       reservedPayloadBytes = 0;
       allocatedPayloadBytes = encoded.bytes;
       const image = videoImage(live, clone);
@@ -437,18 +380,10 @@ function materializeVideo(
       return;
     } catch (error) {
       if (reservedPayloadBytes > 0) {
-        context.budget.settlePayloadAllocation(
-          context.reservation,
-          reservedPayloadBytes,
-          0,
-        );
+        context.budget.settlePayloadAllocation(context.reservation, reservedPayloadBytes, 0);
       }
       if (allocatedPayloadBytes > 0) {
-        context.budget.settlePayloadAllocation(
-          context.reservation,
-          allocatedPayloadBytes,
-          0,
-        );
+        context.budget.settlePayloadAllocation(context.reservation, allocatedPayloadBytes, 0);
       }
       if (context.budget.limitResponse(error)) {
         throw error;
@@ -473,41 +408,21 @@ interface EncodedCanvas {
   value: string;
 }
 
-function captureCanvasDataUrl(
-  canvas: HTMLCanvasElement,
-  context: SnapshotContext,
-): EncodedCanvas {
-  const reservedBytes = reserveCanvasDataUrl(
-    canvasWidth(canvas),
-    canvasHeight(canvas),
-    context,
-  );
+function captureCanvasDataUrl(canvas: HTMLCanvasElement, context: SnapshotContext): EncodedCanvas {
+  const reservedBytes = reserveCanvasDataUrl(canvasWidth(canvas), canvasHeight(canvas), context);
   try {
     return encodeReservedCanvasDataUrl(canvas, reservedBytes, context);
   } catch (error) {
-    context.budget.settlePayloadAllocation(
-      context.reservation,
-      reservedBytes,
-      0,
-    );
+    context.budget.settlePayloadAllocation(context.reservation, reservedBytes, 0);
     throw error;
   }
 }
 
-function reserveCanvasDataUrl(
-  width: number,
-  height: number,
-  context: SnapshotContext,
-): number {
+function reserveCanvasDataUrl(width: number, height: number, context: SnapshotContext): number {
   const maximumBytes = maximumPngDataUrlBytes(width, height);
-  const availableBytes = context.budget.maximumPayloadAllocation(
-    context.reservation,
-  );
+  const availableBytes = context.budget.maximumPayloadAllocation(context.reservation);
   if (maximumBytes === null || maximumBytes > availableBytes) {
-    context.budget.rejectPayloadAllocation(
-      context.reservation,
-      maximumBytes ?? availableBytes + 1,
-    );
+    context.budget.rejectPayloadAllocation(context.reservation, maximumBytes ?? availableBytes + 1);
   }
   context.budget.reservePayloadAllocation(context.reservation, maximumBytes);
   return maximumBytes;
@@ -521,29 +436,14 @@ function encodeReservedCanvasDataUrl(
   const value = canvasDataUrl(canvas, "image/png");
   const actualBytes = utf8LengthWithinLimit(value, reservedBytes);
   if (actualBytes === null) {
-    context.budget.rejectPayloadAllocation(
-      context.reservation,
-      reservedBytes + 1,
-    );
+    context.budget.rejectPayloadAllocation(context.reservation, reservedBytes + 1);
   }
-  context.budget.settlePayloadAllocation(
-    context.reservation,
-    reservedBytes,
-    actualBytes,
-  );
+  context.budget.settlePayloadAllocation(context.reservation, reservedBytes, actualBytes);
   return { bytes: actualBytes, value };
 }
 
-export function maximumPngDataUrlBytes(
-  width: number,
-  height: number,
-): number | null {
-  if (
-    !numberIsSafeInteger(width) ||
-    width < 0 ||
-    !numberIsSafeInteger(height) ||
-    height < 0
-  ) {
+export function maximumPngDataUrlBytes(width: number, height: number): number | null {
+  if (!numberIsSafeInteger(width) || width < 0 || !numberIsSafeInteger(height) || height < 0) {
     return null;
   }
   const rowBytes = width * 4 + 1;
@@ -591,8 +491,7 @@ function materializeVisualFallback(
     });
     return;
   }
-  const id =
-    context.visualFallbackIdPrefix + SafeString(context.visualFallbacks.length);
+  const id = context.visualFallbackIdPrefix + SafeString(context.visualFallbacks.length);
   const image =
     isHtmlElement(live, "canvas") && isHtmlElement(clone, "canvas")
       ? canvasImage(live as HTMLCanvasElement, clone as HTMLCanvasElement)
