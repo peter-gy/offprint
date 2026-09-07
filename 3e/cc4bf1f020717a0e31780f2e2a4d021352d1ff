@@ -1,0 +1,231 @@
+docs/examples/index.md
+  s_c15eeb5af092d4::t_facb7716b7389e 18-22,26-35
+offprint-rs/xtask/src/cdp/selection.rs
+  s_c15eeb5af092d4::t_da8a79e10801f4 1-36,38,41-48,50-51,53-78,80-97,100,103-128,132-139,141,143-148,151,154-174,177-202,204,206-212,214-219,221-222,224,226-241,243-248,250-253,256-262,264-269,275-284,289-298,302-355
+sdk/python/uv.lock
+  ai_agent 5-16,59,64,66-78,83,89,92-93,100-105,135-153,186-210,265-289
+docs/start/why-offprint.md
+  s_c15eeb5af092d4::t_facb7716b7389e 27-31
+offprint-rs/xtask/src/repository/structure.rs
+  s_c15eeb5af092d4::t_da8a79e10801f4 133,236-238,313,316,319,321-323,325
+docs/guides/control-capture.md
+  s_c15eeb5af092d4::t_facb7716b7389e 15-20,87-91
+.github/workflows/ci.yml
+  s_c15eeb5af092d4::t_3c9c5dbae3d247 221-223
+  s_c15eeb5af092d4::t_bcead94bf092d5 41-42,49-50,52-53,55-57,59-61,88,97-98,100-105,108-109,119-121,155-156,159,162,186,191-196,198-200,224-229,231,237,241,265-266,283,288
+docs/start/what-is-offprint.md
+  s_c15eeb5af092d4::t_facb7716b7389e 20-27
+docs/.vitepress/theme/style.css
+  s_c15eeb5af092d4::t_cc85dbbe30c282 1,6-8,13
+  s_c15eeb5af092d4::t_8fd26c7866d06a 3-4,11
+  s_c15eeb5af092d4::t_2f85ad13d4340b 5,12
+  s_c15eeb5af092d4::t_dc027937924aa9 2,9-10
+offprint-rs/xtask/src/package.rs
+  s_c15eeb5af092d4::t_f527cac0eafe6f 40-47
+  s_c15eeb5af092d4::t_da8a79e10801f4 477
+offprint-rs/chromium/generated/collector.sha256
+  s_c15eeb5af092d4::t_9a07bc91f6e74d 1
+development_docs/schemas-and-versioning.md
+  s_c15eeb5af092d4::t_c28a84d5837929 8
+docs/guides/automation.md
+  s_c15eeb5af092d4::t_bed1b4b4b48242 63
+  s_c15eeb5af092d4::t_facb7716b7389e 44-50
+docs/start/install.md
+  s_c15eeb5af092d4::t_bcead94bf092d5 15,87
+  s_c15eeb5af092d4::t_facb7716b7389e 11,13-14,16
+development_docs/README.md
+  s_c15eeb5af092d4::t_da8a79e10801f4 5
+docs/public/brand/offprint-lockup-vertical-light.svg
+  s_c15eeb5af092d4::t_0c6b18bd4be853 29,31-35,37
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-5,7,10,13,16,19,22,25-27,39,41-42,44-45,47-48,50-51,53-54,56-57,59-60
+  s_c15eeb5af092d4::t_6cb9af44e9ef91 6,8-9,11-12,14-15,17-18,20-21,23-24,38,40,43,46,49,52,55,58
+schemas/examples/artifact-manifest.json
+  s_c15eeb5af092d4::t_7b0eb19ecaae8e 30
+docs/public/brand/offprint-mark-light.svg
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-2,13
+  s_c15eeb5af092d4::t_0c6b18bd4be853 4,6-10,12
+pnpm-workspace.yaml
+  s_c15eeb5af092d4::t_3302ad05864051 9
+collector/dist/collector.js
+  s_c15eeb5af092d4::t_46f0d9f706e4fe 2-35,37-2582
+  s_c15eeb5af092d4::t_9a07bc91f6e74d 1,36
+docs/index.md
+  s_c15eeb5af092d4::t_2f85ad13d4340b 7
+  s_c15eeb5af092d4::t_e94b8d5b1bc874 8
+  s_c15eeb5af092d4::t_63fed9efba042d 14-42,44-56
+  s_c15eeb5af092d4::t_4493f0ed3bb264 1-6,9-13,57
+docs/operations/limits-and-performance.md
+  s_c15eeb5af092d4::t_facb7716b7389e 9-22
+docs/public/brand/offprint-mark-dark.svg
+  s_c15eeb5af092d4::t_0c6b18bd4be853 4,6-10,12
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-2,13
+docs/integrations/rust.md
+  s_c15eeb5af092d4::t_facb7716b7389e 78-90
+collector/dist/collector.sha256
+  s_c15eeb5af092d4::t_9a07bc91f6e74d 1
+docs/public/brand/offprint-wordmark-dark.svg
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-5,7,10,13,16,19,22,25-27,29,31-32,34-35,37-38,40-41,43-44,46-47,49-50
+  s_c15eeb5af092d4::t_6cb9af44e9ef91 6,8-9,11-12,14-15,17-18,20-21,23-24,28,30,33,36,39,42,45,48
+docs/public/icons/LUCIDE-LICENSE.txt
+  s_c15eeb5af092d4::t_63fed9efba042d 1,3,5-7,9-15,17,19,21,23,25,27-43
+offprint-rs/core/README.md
+  s_c15eeb5af092d4::t_c28a84d5837929 9,13
+.github/workflows/pages.yml
+  s_c15eeb5af092d4::t_2623f92d926b26 1,3-5,7-21,53-65
+  s_c15eeb5af092d4::t_5d985b8f4ab639 2,6,22-52,66-68
+sdk/python/pyproject.toml
+  s_c15eeb5af092d4::t_3d18d4e0ce5413 2,7,31-36,40,46,53-72
+.github/workflows/browser.yml
+  s_c15eeb5af092d4::t_bc3b39341ee53d 12
+  s_c15eeb5af092d4::t_bcead94bf092d5 8-11,13-14,56-57,73-75,78,87,104-105,126-127,143-145,148,158,179-180,213-214,219-221,224,233,236
+docs/reference/configuration.md
+  s_c15eeb5af092d4::t_facb7716b7389e 68-72,88-92,102-110,117-125,140-146,155-161,170-183,192-199
+docs/package.json
+  s_c15eeb5af092d4::t_3ee0b62ad0391e 6
+  s_c15eeb5af092d4::t_ca6ff48d24c6dd 16-18
+docs/public/brand/offprint-wordmark-light.svg
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-5,7,10,13,16,19,22,25-27,29,31-32,34-35,37-38,40-41,43-44,46-47,49-50
+  s_c15eeb5af092d4::t_6cb9af44e9ef91 6,8-9,11-12,14-15,17-18,20-21,23-24,28,30,33,36,39,42,45,48
+docs/.vitepress/config.ts
+  s_c15eeb5af092d4::t_50fc389ec876dc 179-181
+  s_c15eeb5af092d4::t_cc85dbbe30c282 3-6,96-101,103-104,106-164,166-170,172,175,178,182
+  s_c15eeb5af092d4::t_b093570627be07 87-95,176
+  s_c15eeb5af092d4::t_2f85ad13d4340b 165,171
+offprint-rs/Cargo.toml
+  s_c15eeb5af092d4::t_3d18d4e0ce5413 5-19,25,115-127
+.github/workflows/publish.yml
+  s_c15eeb5af092d4::t_bfa2aa236147d1 491
+  s_c15eeb5af092d4::t_16e07d1abfa6d3 49,73-74,141-142,173,192-193,265-266,315,320,323,373,375,390,402,500,510,512-515,564,577,579-582,642,670-671,728,899,958-959
+  s_c15eeb5af092d4::t_28f13f0a0e712e 2,5-6,297-298,410-435,634,697,758-760,813-815,837,843,846-848,903-905,920
+  s_c15eeb5af092d4::t_3c9c5dbae3d247 400
+  s_c15eeb5af092d4::t_64eae594ae07c9 39-43,125,127,170,221,223,236,369,470-474,487-488,490,494,522,636,638
+docs/guides/inspect-verify-export.md
+  s_c15eeb5af092d4::t_facb7716b7389e 63-69
+offprint-rs/xtask/src/corpus.rs
+  s_c15eeb5af092d4::t_da8a79e10801f4 1-9,11,13-14,16,18-23,26,28-30,33,35-46,49-56,59-76,79-92,94-112,114-146,148-181,183-203,205-210,212-215,217-229
+pnpm-lock.yaml
+  ai_agent 1-3308
+docs/reference/records.md
+  s_c15eeb5af092d4::t_facb7716b7389e 13-20,58-64,83-86,94-100
+offprint-rs/model/src/error/tests.rs
+  s_c15eeb5af092d4::t_da8a79e10801f4 128,130
+docs/reference/compatibility.md
+  s_c15eeb5af092d4::t_facb7716b7389e 8-14,21-29
+docs/reference/formats.md
+  s_c15eeb5af092d4::t_facb7716b7389e 9-16
+offprint-rs/cli/src/runner/tests.rs
+  s_c15eeb5af092d4::t_c28a84d5837929 238
+sdk/node/package.json
+  s_c15eeb5af092d4::t_3d18d4e0ce5413 3
+docs/public/og.svg
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-5,7-8,10,13,16,19,22,25-26,28-29,31-32,34-35,37-38,40-41,43-44,46,49,70,73,76-77,79-80,82-83,85-86,88-89,91-92,94-95,97,100,139,201,203-204,206-207,209-210,212-213,215-216,218-219,264-265,267-268,270-271,273-274,276-277,279-280,282-283,285-286,288-289,291-292,294-296,298-299,301-302,304-305,307-308,310-311,313-314,316-317,319-320,322-323,325-326,328-329,331-332,334-335,337-338,340-341,343-344,346-347,349-350,352-353,355-356,358-359,361-362,364-365,367-368,370-371,373-374,376-377,379-380,382-383,385-386,388-389,391-392,394-395,397-398,400-401,403-404,406-407,409-410,412-413,415-416,418,420,422-423,425-426,428-429,431-432,434-435,437-438,440-441,443-444,446-447,449-450,452-453,455-456,458-459,461-462,464-465,467-468,470,481
+  s_c15eeb5af092d4::t_6cb9af44e9ef91 6,9,11-12,14-15,17-18,20-21,23-24,98,101,103-104,106-107,109-110,112-113,115-116,118-122,124-125,127-128,130-131,146,148-149,151-175,177-178,180-181,183-184,186-187,189-190,192-193,195-200,202,205,208,211,214,217,220,419
+  s_c15eeb5af092d4::t_0c6b18bd4be853 472,474-478,480
+versions.toml
+  s_c15eeb5af092d4::t_3d18d4e0ce5413 1
+offprint-rs/xtask/src/main.rs
+  s_c15eeb5af092d4::t_c28a84d5837929 409
+  s_c15eeb5af092d4::t_da8a79e10801f4 90,103,108,113,115,193,233,252,644,647
+AGENTS.md
+  s_c15eeb5af092d4::t_da8a79e10801f4 28-29,95-101,106-108,129,134,136-137,139-140,142-143,145
+sdk/python/tests/package_contents.py
+  s_c15eeb5af092d4::t_b18d11ff95ebce 9,23,47
+  s_c15eeb5af092d4::t_e27887a247d82a 11-18
+.github/workflows/scheduled.yml
+  s_c15eeb5af092d4::t_bcead94bf092d5 138,180-181,195,198,213,257,267,287-288,302,312,332-333,373,393-394,408,422
+  s_c15eeb5af092d4::t_16e07d1abfa6d3 46-47,93-94,364,366,413-414
+docs/integrations/python.md
+  s_c15eeb5af092d4::t_facb7716b7389e 108-112
+docs/public/brand/offprint-lockup-vertical-dark.svg
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-5,7,10,13,16,19,22,25-27,39,41-42,44-45,47-48,50-51,53-54,56-57,59-60
+  s_c15eeb5af092d4::t_6cb9af44e9ef91 6,8-9,11-12,14-15,17-18,20-21,23-24,38,40,43,46,49,52,55,58
+  s_c15eeb5af092d4::t_0c6b18bd4be853 29,31-35,37
+offprint-rs/xtask/src/repository.rs
+  s_c15eeb5af092d4::t_12737b247bd0ae 281-282
+  s_c15eeb5af092d4::t_da8a79e10801f4 7,113,137,165,195-198,222-225,245,267,270,279,344,348,560,576,601,758-759,761,763,769,776-779,789,802,811,833,873,879
+  s_c15eeb5af092d4::t_2a0df29a01e928 39,71,76-106
+  s_c15eeb5af092d4::t_9774c4087d4cd2 271
+docs/.vitepress/theme/index.ts
+  s_c15eeb5af092d4::t_cc85dbbe30c282 1-4
+docs/concepts/browsers.md
+  s_c15eeb5af092d4::t_facb7716b7389e 13-17
+development_docs/setup.md
+  s_c15eeb5af092d4::t_d16628ccba7651 93-102
+  s_c15eeb5af092d4::t_3ee0b62ad0391e 71-74,76-78
+  s_c15eeb5af092d4::t_74541b9daf733a 103-106,108-109
+  s_c15eeb5af092d4::t_7f8efe51717244 88-91
+docs/integrations/node.md
+  s_c15eeb5af092d4::t_facb7716b7389e 76-80
+offprint-rs/chromium/generated/collector.js
+  s_c15eeb5af092d4::t_46f0d9f706e4fe 2-35,37-2582
+  s_c15eeb5af092d4::t_9a07bc91f6e74d 1,36,2583
+docs/operations/troubleshooting.md
+  s_c15eeb5af092d4::t_facb7716b7389e 60
+sdk/python/README.md
+  s_c15eeb5af092d4::t_c28a84d5837929 14,17
+  s_c15eeb5af092d4::t_46f0d9f706e4fe 32-34,71-72
+package.json
+  s_c15eeb5af092d4::t_f0c0f82301f6f6 20
+  s_c15eeb5af092d4::t_204d8a26e03bd2 6-11
+sdk/node/README.md
+  s_c15eeb5af092d4::t_c28a84d5837929 14,17
+docs/reference/cli.md
+  s_c15eeb5af092d4::t_facb7716b7389e 9-22,32-41,107-112,119-125
+docs/guides/export-pdf.md
+  s_c15eeb5af092d4::t_facb7716b7389e 40-44
+collector/package.json
+  s_c15eeb5af092d4::t_3d18d4e0ce5413 3
+docs/public/brand/offprint-lockup-horizontal-light.svg
+  s_c15eeb5af092d4::t_6cb9af44e9ef91 6,8-9,11-12,14-15,17-18,20-21,23-24,38,40,43,46,49,52,55,58
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-5,7,10,13,16,19,22,25-27,39,41-42,44-45,47-48,50-51,53-54,56-57,59-60
+  s_c15eeb5af092d4::t_0c6b18bd4be853 29,31-35,37
+offprint-rs/benches/src/main.rs
+  s_c15eeb5af092d4::t_da8a79e10801f4 51-54
+README.md
+  s_c15eeb5af092d4::t_df7e414a82bc77 17
+  s_c15eeb5af092d4::t_da8a79e10801f4 57
+  s_c15eeb5af092d4::t_4493f0ed3bb264 1-8
+offprint-rs/core/tests/repeated_capture.rs
+  s_c15eeb5af092d4::t_204d8a26e03bd2 337
+offprint-rs/benches/build.rs
+  s_c15eeb5af092d4::t_da8a79e10801f4 1-2,4-28
+offprint-rs/xtask/src/cdp.rs
+  s_c15eeb5af092d4::t_da8a79e10801f4 20-21,126
+docs/concepts/artifacts-and-verification.md
+  s_c15eeb5af092d4::t_facb7716b7389e 64-69,84-89
+docs/operations/security.md
+  s_c15eeb5af092d4::t_facb7716b7389e 28-33
+docs/reference/errors.md
+  s_c15eeb5af092d4::t_facb7716b7389e 6-14,36-53
+offprint-rs/xtask/src/contracts/inventory.rs
+  s_c15eeb5af092d4::t_da8a79e10801f4 1,3-5,7,9-13,16-24,26-35,37-42,44-68,71-120,123-130,132-186,189-198,200-205,208-209,212-215
+development_docs/release.md
+  s_c15eeb5af092d4::t_df7e414a82bc77 12-13,18-20,23-26,79-92
+docs/reference/service-api.md
+  s_c15eeb5af092d4::t_facb7716b7389e 14-23,39-44,121-124,126-127,140-145,154-156,158-159,171-178
+justfile
+  s_c15eeb5af092d4::t_a8b99f73714a96 154-155,176
+  s_c15eeb5af092d4::t_851a1eb9a17557 362,376,382,384-392
+offprint-rs/core/tests/differential.rs
+  s_c15eeb5af092d4::t_204d8a26e03bd2 373
+docs/public/brand/offprint-lockup-horizontal-dark.svg
+  s_c15eeb5af092d4::t_0c6b18bd4be853 29,31-35,37
+  s_c15eeb5af092d4::t_e9e76ffb912b8b 1-5,7,10,13,16,19,22,25-27,39,41-42,44-45,47-48,50-51,53-54,56-57,59-60
+  s_c15eeb5af092d4::t_6cb9af44e9ef91 6,8-9,11-12,14-15,17-18,20-21,23-24,38,40,43,46,49,52,55,58
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "3ecc4bf1f020717a0e31780f2e2a4d021352d1ff",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
