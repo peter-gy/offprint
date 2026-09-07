@@ -25,8 +25,9 @@ Dependencies stay behind the crate that owns their behavior.
   them.
 - Browser, parser, foreign-function interface, archive, and protocol changes
   run focused security and boundary checks.
-- `cargo deny` checks advisories, licenses, registries, and Git sources.
+- `cargo deny` checks advisories, registries, and Git sources.
 - `cargo machete` checks unused Rust dependencies.
+- Package checks compile extracted source in a fresh Cargo target directory.
 - The pnpm workspace and Python lockfiles remain committed and install with frozen resolution.
 - Review package lifecycle scripts before enabling them in a development or
   release environment.

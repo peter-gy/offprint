@@ -5,7 +5,7 @@ browser, and protocol axes. `versions.toml` records the release-aligned values.
 
 | Axis               | Owner                                     | Current value   |
 | ------------------ | ----------------------------------------- | --------------- |
-| Product            | Workspace and package manifests           | `0.0.1`         |
+| Product            | Workspace and package manifests           | `0.0.2`         |
 | Public schema      | `offprint_model::PUBLIC_SCHEMA_VERSION`   | `2`             |
 | Artifact format    | `offprint_model::ARTIFACT_FORMAT_VERSION` | `2`             |
 | Collector protocol | `offprint-protocol`                       | `1.5`           |

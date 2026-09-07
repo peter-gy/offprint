@@ -14,8 +14,8 @@ and Pages must each pass for the tagged commit.
    stable-ABI wheels, and one Python source distribution.
 4. Capture through native archives, the assembled npm package, and installed
    Python wheels.
-5. Build the dependency license report, software bill of materials, checksums,
-   and request hosted GitHub build provenance attestations.
+5. Build the software bill of materials and checksums, then request hosted
+   GitHub build provenance attestations.
 6. Publish the `offprint` npm package and `offprint` Python distributions.
 7. Install exact public npm and PyPI versions and run capture lifecycle smoke
    tests.
@@ -72,7 +72,7 @@ Targets:
 - `aarch64-apple-darwin`
 - `x86_64-pc-windows-msvc`
 
-Each archive contains the executable, README, license, generated completions,
+Each archive contains the executable, README, generated completions,
 checksums, and build metadata. Build metadata records the source revision,
 target, compiler, public schema, artifact format, collector protocol, CDP
 revision, and managed browser identity.
@@ -87,7 +87,7 @@ same archive set locally with:
 just crate-package dist/crates
 ```
 
-The recipe checks package metadata and licenses, extracts the complete crate
+The recipe checks package metadata, extracts the complete crate
 graph, and builds it with local dependency paths before copying the verified
 archives to the destination. Use the [Rust integration guide](../docs/integrations/rust.md)
 to build applications from a checkout.

@@ -103,7 +103,7 @@ The theme selects light and dark artwork from `docs/public/brand/`.
 Edit the landing page through VitePress's `hero` and `features` frontmatter in
 `docs/index.md`. Card icons are static SVGs from [Lucide](https://lucide.dev/),
 distributed through [Iconify](https://iconify.design/), in each card's `icon`
-field. Their license is in `docs/public/icons/LUCIDE-LICENSE.txt`.
+field.
 
 The site build checks that every documentation page appears in the sidebar
 defined in `docs/.vitepress/config.ts`.
@@ -113,8 +113,8 @@ defined in `docs/.vitepress/config.ts`.
 Run `just codegen` after changing canonical records, fixture metadata, CDP
 selection, or collector source, then run `just codegen-check`.
 
-[Testing](./testing.md) maps changes to required evidence. The complete release
-gate also needs `actionlint`, Taplo, cargo-deny, cargo-machete, and
-cargo-semver-checks. [CI](../.github/workflows/ci.yml) records their installation.
+[Testing](./testing.md) maps changes to required evidence.
+[CI](../.github/workflows/ci.yml) records the repository tools and installation
+steps required by the complete release gate.
 
 `just clean` clears build outputs, package installations, and generated caches.

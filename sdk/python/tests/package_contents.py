@@ -4,10 +4,11 @@ import configparser
 import sys
 import tarfile
 import zipfile
+from email.parser import BytesParser
 from pathlib import Path
 
 
-def check_wheel(path: Path, license_text: bytes) -> None:
+def check_wheel(path: Path, notices: dict[str, bytes]) -> None:
     with zipfile.ZipFile(path) as archive:
         required = {
             "offprint/__init__.py",
@@ -25,36 +26,59 @@ def check_wheel(path: Path, license_text: bytes) -> None:
         parser = configparser.ConfigParser()
         parser.read_string(archive.read(entrypoint).decode("utf-8"))
         assert parser.has_option("console_scripts", "offprint")
-        candidates = [
-            name for name in archive.namelist() if name.endswith("/LICENSE") or name == "LICENSE"
-        ]
-        assert len(candidates) == 1, candidates
-        assert archive.read(candidates[0]) == license_text
+        metadata_path = next(
+            name for name in archive.namelist() if name.endswith(".dist-info/METADATA")
+        )
+        metadata = BytesParser().parsebytes(archive.read(metadata_path))
+        assert metadata["License-Expression"] == "MIT"
+        assert set(metadata.get_all("License-File", [])) == set(notices)
+        for name, content in notices.items():
+            candidates = [
+                entry
+                for entry in archive.namelist()
+                if entry.endswith(f".dist-info/licenses/{name}")
+            ]
+            assert len(candidates) == 1, candidates
+            assert archive.read(candidates[0]) == content
 
 
-def sdist_licenses(path: Path) -> list[bytes]:
+def check_sdist(path: Path, notices: dict[str, bytes]) -> None:
     with tarfile.open(path, "r:gz") as archive:
-        candidates = [
+        metadata_files = [
             member
             for member in archive.getmembers()
-            if member.isfile() and Path(member.name).name == "LICENSE"
+            if member.isfile()
+            and len(Path(member.name).parts) == 2
+            and Path(member.name).name == "PKG-INFO"
         ]
-        assert candidates
-        contents = []
-        for candidate in candidates:
-            extracted = archive.extractfile(candidate)
-            assert extracted is not None
-            contents.append(extracted.read())
-        return contents
+        assert len(metadata_files) == 1
+        metadata_file = archive.extractfile(metadata_files[0])
+        assert metadata_file is not None
+        metadata = BytesParser().parsebytes(metadata_file.read())
+        assert metadata["License-Expression"] == "MIT"
+        for name, content in notices.items():
+            candidates = [
+                member
+                for member in archive.getmembers()
+                if member.isfile() and Path(member.name).name == name
+            ]
+            assert candidates, name
+            for candidate in candidates:
+                extracted = archive.extractfile(candidate)
+                assert extracted is not None
+                assert extracted.read() == content
 
 
-license_text = Path(sys.argv[1]).read_bytes()
+license_directory = Path(sys.argv[1]).parent
+notices = {
+    name: (license_directory / name).read_bytes() for name in ("LICENSE", "THIRD_PARTY_NOTICES.txt")
+}
 archives = [Path(argument) for argument in sys.argv[2:]]
 assert archives
 for archive in archives:
     if archive.suffix == ".whl":
-        check_wheel(archive, license_text)
+        check_wheel(archive, notices)
     elif archive.name.endswith(".tar.gz"):
-        assert all(content == license_text for content in sdist_licenses(archive))
+        check_sdist(archive, notices)
     else:
         raise AssertionError(f"unexpected distribution: {archive}")

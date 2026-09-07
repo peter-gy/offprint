@@ -66,7 +66,7 @@ jobs:
       - name: Install repository tools
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
-          tool: just,taplo-cli,cargo-deny,cargo-machete,cargo-semver-checks
+          tool: just,taplo-cli,cargo-deny,cargo-machete,cargo-semver-checks,cargo-about@0.9.2
       - name: Install actionlint
         run: |
           curl --fail --silent --show-error --location \
@@ -372,6 +372,7 @@ jobs:
             *windows*) unzip -q dist/*.zip -d release-smoke ;;
             *) tar -xzf dist/*.tar.gz -C release-smoke ;;
           esac
+          cmp THIRD_PARTY_NOTICES.txt release-smoke/offprint-*/THIRD_PARTY_NOTICES.txt
       - name: Verify release metadata
         shell: bash
         run: |
@@ -709,6 +710,7 @@ jobs:
           merge-multiple: true
       - name: Generate dependency license report
         run: |
+          cp LICENSE THIRD_PARTY_NOTICES.txt release/
           license_report="$(mktemp)"
           cargo deny --manifest-path offprint-rs/Cargo.toml list --format json --layout crate > "$license_report"
           test -s "$license_report"
@@ -867,6 +869,7 @@ jobs:
             sleep 5
           done
           test "$(npx --yes npm@11.12.1 view "offprint@$NPM_TAG" version)" = "$VERSION"
+          test "$(npx --yes npm@11.12.1 view "offprint@$VERSION" license)" = MIT
           install_dir="$RUNNER_TEMP/offprint-npm-install"
           mkdir "$install_dir"
           cd "$install_dir"
@@ -925,10 +928,11 @@ jobs:
             sleep 5
           done
           EXPECTED_VERSION="$VERSION" release-venv/bin/python - <<'PY'
-          from importlib.metadata import version
+          from importlib.metadata import metadata, version
           import os
 
           assert version("offprint") == os.environ["EXPECTED_VERSION"]
+          assert metadata("offprint")["License-Expression"] == "MIT"
           PY
           release-venv/bin/python sdk/python/tests/wheel_smoke.py
           release-venv/bin/python sdk/python/tests/package_lifecycle.py

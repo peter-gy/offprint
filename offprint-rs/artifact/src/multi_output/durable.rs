@@ -212,7 +212,9 @@ fn directory_sync_is_unavailable(_error: &std::io::Error) -> bool {
 }
 
 fn parent(path: &Path) -> &Path {
-    path.parent().unwrap_or_else(|| Path::new("."))
+    path.parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."))
 }
 
 fn io_error(stage: ErrorStage, message: &'static str, error: std::io::Error) -> OffprintError {
