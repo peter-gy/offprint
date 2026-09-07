@@ -9,9 +9,7 @@ async function windowsProcesses() {
   const script = [
     "$ErrorActionPreference = 'Stop'",
     "[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)",
-    "Get-CimInstance Win32_Process",
-    "Select-Object ProcessId,ParentProcessId,Name,CommandLine",
-    "ConvertTo-Json -Compress",
+    "Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,Name,CommandLine | ConvertTo-Json -Compress",
   ].join("; ");
   const { stdout } = await execFileAsync(
     "powershell.exe",
