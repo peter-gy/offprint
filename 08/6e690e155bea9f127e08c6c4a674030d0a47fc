@@ -1,0 +1,29 @@
+development_docs/release.md
+  s_c15eeb5af092d4::t_9d941da7ba10f6 17-18,75,90
+development_docs/setup.md
+  s_c15eeb5af092d4::t_9d941da7ba10f6 106,116-118
+development_docs/provenance.md
+  s_c15eeb5af092d4::t_9d941da7ba10f6 1,3-6,30-32
+README.md
+  s_c15eeb5af092d4::t_9d941da7ba10f6 79-85
+development_docs/dependencies.md
+  s_c15eeb5af092d4::t_9d941da7ba10f6 28,30
+development_docs/README.md
+  s_c15eeb5af092d4::t_9d941da7ba10f6 48
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "086e690e155bea9f127e08c6c4a674030d0a47fc",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
