@@ -1,0 +1,172 @@
+crates/offprint-export/src/markdown/output.rs
+  s_c15eeb5af092d4::t_ad402139092202 1-108
+crates/offprint-capture/src/content_store.rs
+  s_c15eeb5af092d4::t_7174def44f12d5 321-325,332-336
+  s_c15eeb5af092d4::t_f502db1f4dc5df 9,43,49-60,313-320,326-331,337-339
+collector/dist/collector.sha256
+  s_c15eeb5af092d4::t_b00936e8af3639 1
+docs/reference/formats.md
+  s_c15eeb5af092d4::t_7e18aff5a6624c 40-42
+  s_c15eeb5af092d4::t_2e0aaf818ccfe6 32-34
+  s_c15eeb5af092d4::t_a8e5e381e7a9a2 36-39
+  s_c15eeb5af092d4::t_00b80da28580b3 47-50
+  s_c15eeb5af092d4::t_8e907d11571b56 68-69,111-116
+  s_c15eeb5af092d4::t_29bedf6a7639d8 31,35
+crates/offprint-chromium/src/page/offline.rs
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 3,15,33-34
+  s_c15eeb5af092d4::t_64dd4ae93ca8b2 38-45
+crates/offprint-chromium/generated/collector.sha256
+  s_c15eeb5af092d4::t_b00936e8af3639 1
+crates/offprint/src/artifact_service/export.rs
+  s_c15eeb5af092d4::t_b346b05536f24c 96,142,147,153,158-159
+  s_ba1a8ee0fd334c::t_500e01fd81f57d 535
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 254
+  s_c15eeb5af092d4::t_0e24f9e4b959a8 134-136,215,263
+  s_c15eeb5af092d4::t_a8e5e381e7a9a2 17,28-30,39-41,43,49-50,66,216,266
+  s_c15eeb5af092d4::t_28010bfa697f6c 78,81,95,120,130-131,277-284,309-310
+  s_c15eeb5af092d4::t_ab7d50e7752787 79-80,83-91,94,123-129,148-152,285-308,480-534
+crates/offprint/tests/fixture_matrix.rs
+  s_c15eeb5af092d4::t_aef8e87bbf4125 162-178,197-199,215-218,223-224,226-232,234-237,241-247
+  s_c15eeb5af092d4::t_cedd2e7c918358 147-148,182-190,200-213,219-222,225,233,238-240,248-250
+  s_1d9f072e8140a0::t_db3c89b66acf98 145-146
+docs/guides/inspect-verify-export.md
+  s_c15eeb5af092d4::t_7e18aff5a6624c 47-49
+crates/offprint-test-support/src/manifest.rs
+  s_c15eeb5af092d4::t_1e4c667b136fa7 1,3-6,394-402,699-702
+  s_c15eeb5af092d4::t_cedd2e7c918358 191-196,573-576
+  s_ba1a8ee0fd334c::t_7f1df6dd49d4b2 190,403-404,577-578,703-704
+collector/src/styles.ts
+  s_c15eeb5af092d4::t_e7a4169f9446ad 338
+  s_c15eeb5af092d4::t_5571ff15d054e2 15,49-50,310,348,355-361
+crates/offprint-export/src/pdf/metadata/tests.rs
+  s_c15eeb5af092d4::t_416c952ccd1347 290-339
+crates/offprint-export/src/pdf/metadata/model.rs
+  s_c15eeb5af092d4::t_416c952ccd1347 12-14,58,91,252-267,269-271
+  s_c15eeb5af092d4::t_00b80da28580b3 268
+  s_ba1a8ee0fd334c::t_82dc9afb1f3a0a 272-273
+crates/offprint/src/artifact_service.rs
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 221
+crates/offprint-test-support/src/manifest/model.rs
+  s_c15eeb5af092d4::t_1e4c667b136fa7 1-137
+development_docs/artifacts-and-formats.md
+  s_c15eeb5af092d4::t_5145e1cfff4ff6 28-31
+  s_c15eeb5af092d4::t_01220f6e952635 92-93,96
+  s_c15eeb5af092d4::t_f836096560a467 95
+  s_c15eeb5af092d4::t_7cd4ae0a266e0f 94
+  s_c15eeb5af092d4::t_a8e5e381e7a9a2 22-26
+  s_c15eeb5af092d4::t_86416330d3ad7d 89-91,97,117-121
+crates/offprint-export/src/pdf/metadata/xmp.rs
+  s_c15eeb5af092d4::t_416c952ccd1347 13-14,26-28
+crates/offprint/tests/custom_backend.rs
+  s_c15eeb5af092d4::t_a8e5e381e7a9a2 39,538,540-544,1094-1137
+crates/offprint-browser/src/backend.rs
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 172-180,319
+crates/offprint-export/src/markdown.rs
+  s_c15eeb5af092d4::t_6f3fb567896067 728
+  s_c15eeb5af092d4::t_77189158bef3ff 19-21,698-704,708-716,721-727,737-738,752-753
+  s_ba1a8ee0fd334c::t_500e01fd81f57d 14,754-755
+  s_c15eeb5af092d4::t_4fa4af2c8c7950 2,13,15-16,26-27,33-35,37,56,110-112,126,143,206,208,211,214,227,230,249-251,268,271,282,302-308,324,358,384,386-387,397-398,400,402-404,458,527,541,566,578,763,786,811,832-833
+  s_c15eeb5af092d4::t_ab7d50e7752787 7-9,283-298,705-707,717-720,729-736,739-751
+crates/offprint-model/src/error/tests.rs
+  s_c15eeb5af092d4::t_186ef2dc243c69 16
+collector/src/web.ts
+  s_c15eeb5af092d4::t_27df65e1282253 149-151,154-156,159-161
+  s_c15eeb5af092d4::t_5571ff15d054e2 20-21,148,152-153,157-158,162-165
+crates/offprint-chromium/generated/collector.js
+  s_1d9f072e8140a0::t_7b5ba6bcaa0589 2284,2312,2318
+  s_c15eeb5af092d4::t_b00936e8af3639 83,2302
+docs/guides/export-pdf.md
+  s_c15eeb5af092d4::t_7e18aff5a6624c 1-14,17-22,26-69
+  s_c15eeb5af092d4::t_9a80683b852593 23-25
+  s_c15eeb5af092d4::t_a8e5e381e7a9a2 15-16
+crates/offprint/tests/artifact_exports.rs
+  s_c15eeb5af092d4::t_0e24f9e4b959a8 372-375
+  s_c15eeb5af092d4::t_0d7e8af3d886e8 193-194,358-370,378-385
+  s_c15eeb5af092d4::t_224325b51f6e98 184,197
+  s_c15eeb5af092d4::t_b4f83df538bab5 426-430,452-456
+  s_c15eeb5af092d4::t_2d8c376b07896e 195-196,371,376-377
+  s_c15eeb5af092d4::t_9a80683b852593 276-291,293-331
+  s_c15eeb5af092d4::t_ad22c4ddf3d013 292
+crates/offprint-chromium/src/page/lifecycle.rs
+  s_c15eeb5af092d4::t_468bbc3b621524 6,290-293
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 194
+crates/offprint-chromium/src/page.rs
+  s_c15eeb5af092d4::t_87533ec751e994 20-21
+  s_c15eeb5af092d4::t_9a80683b852593 639
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 52,758,760
+  s_ba1a8ee0fd334c::t_6fdfc0f9077ec9 22
+crates/offprint/src/lib.rs
+  s_c15eeb5af092d4::t_aef8e87bbf4125 83
+fixtures/manifest/fixtures.json
+  s_c15eeb5af092d4::t_4022a043285cc2 449-468
+crates/offprint-chromium/tests/browser_smoke.rs
+  s_c15eeb5af092d4::t_cedd2e7c918358 2039-2043,2081-2082,2086-2090
+  s_c15eeb5af092d4::t_aef8e87bbf4125 2073-2079,2083-2085,2091-2100
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 2053-2057,2132-2136,2173-2177,2207-2211,2308-2312
+collector/dist/collector.js
+  s_c15eeb5af092d4::t_b00936e8af3639 83,505,543-548,2284,2302
+crates/offprint-chromium/src/pdf.rs
+  s_c15eeb5af092d4::t_0d7e8af3d886e8 13-14,32-34,37,39
+  s_c15eeb5af092d4::t_9a80683b852593 9,20-24,62,64
+  s_c15eeb5af092d4::t_2d8c376b07896e 35-36,38
+crates/offprint-chromium/src/offline.rs
+  s_c15eeb5af092d4::t_dc931abf41fac3 5-8,27-29,31-38,43-46,48-49,53-62,68-70,73-74,78-87,89-91,100,102,104-121,186-188,260-261,269-271,384-389,395
+crates/offprint-artifact/src/multi_output/payload.rs
+  s_c15eeb5af092d4::t_40ad09eb7d02b2 159-161,168-171
+  s_ba1a8ee0fd334c::t_500e01fd81f57d 172-173
+crates/offprint-export/src/lib.rs
+  s_c15eeb5af092d4::t_4fa4af2c8c7950 148-149,151
+  s_c15eeb5af092d4::t_0ce3bb4ed379e6 141-143
+crates/offprint/src/artifact_service/markdown_bundle.rs
+  s_c15eeb5af092d4::t_42f7c94fe4206f 69-70,98,112-116,132-134
+  s_c15eeb5af092d4::t_b0969433424ec4 33-38,63-68
+crates/offprint/src/pipeline/offline.rs
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 54-58
+crates/offprint-browser/src/lib.rs
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 18
+docs/README.md
+  s_c15eeb5af092d4::t_7e18aff5a6624c 22
+  s_d5de3e966809b7::t_e70b628ef081c8 3-4,6-7,9-11,13,15,17-21,23-47,51-54,57,63-64
+crates/offprint/tests/differential.rs
+  s_c15eeb5af092d4::t_ba2bb21ec4f33b 210-214
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "452bce3c237134432d57091b47fb4c61cc571a6a",
+  "prompts": {},
+  "sessions": {
+    "s_1d9f072e8140a0": {
+      "agent_id": {
+        "tool": "opencode",
+        "id": "ses_f89640832ffeph0nYtdM2jou1U",
+        "model": "muse-spark-1.3-contributor-free"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    },
+    "s_ba1a8ee0fd334c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a076aa-aee9-7b63-a20e-eceb53cc9f2c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    },
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    },
+    "s_d5de3e966809b7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb4-51ad-77c0-9633-ea58558cdf86",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
