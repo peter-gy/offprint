@@ -1,0 +1,88 @@
+offprint-rs/Cargo.toml
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 25,28,115-127
+offprint-rs/model/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+schemas/examples/artifact-manifest.json
+  s_c15eeb5af092d4::t_1997f878e5f738 30
+sdk/node/README.md
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 22,25
+development_docs/schemas-and-versioning.md
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 8
+offprint-rs/xtask/src/package.rs
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 39
+offprint-rs/chromium/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+offprint-rs/about.hbs
+  s_c15eeb5af092d4::t_5292deef024474 4-5
+offprint-rs/html/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+offprint-rs/xtask/src/repository.rs
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 756,766
+sdk/python/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+offprint-rs/browser/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+sdk/python/tests/package_contents.py
+  s_c15eeb5af092d4::t_accd4e02f19a37 33
+  s_c15eeb5af092d4::t_86801375d005fd 47-49,52-58
+  s_c15eeb5af092d4::t_abdf05a7e9ec93 50-51
+.github/workflows/publish.yml
+  s_c15eeb5af092d4::t_86801375d005fd 871
+  s_c15eeb5af092d4::t_cba6b5adcfbd6b 930,934
+development_docs/provenance.md
+  s_c15eeb5af092d4::t_accd4e02f19a37 16-20
+sdk/python/README.md
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 22,25
+sdk/node/package.json
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 3,9
+offprint-rs/cli/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+offprint-rs/transform/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+offprint-rs/capture/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+offprint-rs/xtask/src/package/tests.rs
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 14,41,45
+offprint-rs/document/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+collector/package.json
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 3
+README.md
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 79
+offprint-rs/protocol/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+versions.toml
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1
+sdk/node/test/package-contents.mjs
+  s_c15eeb5af092d4::t_accd4e02f19a37 37
+development_docs/decisions.md
+  s_c15eeb5af092d4::t_accd4e02f19a37 82-83
+offprint-rs/artifact/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+offprint-rs/core/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+sdk/python/pyproject.toml
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 7,11
+offprint-rs/export/LICENSE
+  s_c15eeb5af092d4::t_39b3d58bab7f6c 1-21
+offprint-rs/about.toml
+  s_c15eeb5af092d4::t_5292deef024474 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "35054dc210194e9cf5904b9913ef8e43fb3de335",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
