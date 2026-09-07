@@ -1,0 +1,19 @@
+sdk/node/test/lifecycle-processes.mjs
+  s_c15eeb5af092d4::t_f0c0faa5e23847 12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "cac54fa2425ff8a38354eb46863c6b3aa6c2db5d",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
