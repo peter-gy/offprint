@@ -10,9 +10,7 @@ from lifecycle_support import run_lifecycle_child
 tests_directory = Path(__file__).resolve().parent
 fixture = tests_directory.parents[2] / "schemas" / "examples" / "capture-request.json"
 
-with tempfile.TemporaryDirectory(
-    prefix="offprint-python-package-host-exit-"
-) as temporary_directory:
+with tempfile.TemporaryDirectory(prefix="offprint-py-") as temporary_directory:
     directory = Path(temporary_directory)
     inherited_environment = dict(os.environ)
     inherited_environment.pop("PYTHONPATH", None)

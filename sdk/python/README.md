@@ -7,7 +7,7 @@ It supports Python 3.10 through 3.14 on Linux x86-64 with glibc, macOS arm64
 and x86-64, and Windows x86-64.
 
 Linux hosts also need Chromium's
-[shared runtime libraries](https://github.com/peter-gy/offprint/blob/main/docs/start/install.md#linux-runtime-libraries).
+[shared runtime libraries](https://peter-gy.github.io/offprint/start/install.html#linux-runtime-libraries).
 
 ## Install and capture
 
@@ -64,9 +64,9 @@ Methods and keyword arguments use snake_case. Request and result dictionaries
 use camelCase. Failures raise `OffprintError` subclasses with a stable `code`,
 `stage`, and `retryable` flag.
 
-Read the complete [Python integration guide](https://github.com/peter-gy/offprint/blob/main/docs/integrations/python.md),
-[record reference](https://github.com/peter-gy/offprint/blob/main/docs/reference/records.md),
-and [troubleshooting guide](https://github.com/peter-gy/offprint/blob/main/docs/operations/troubleshooting.md).
+Read the complete [Python integration guide](https://peter-gy.github.io/offprint/integrations/python.html),
+[record reference](https://peter-gy.github.io/offprint/reference/records.html),
+and [troubleshooting guide](https://peter-gy.github.io/offprint/operations/troubleshooting.html).
 
 [`src/offprint/__init__.pyi`](./src/offprint/__init__.pyi) owns exact host
 signatures. [`src/offprint/contracts.py`](./src/offprint/contracts.py)

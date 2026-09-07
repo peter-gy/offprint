@@ -140,7 +140,7 @@ fn selected_platform() -> Result<&'static str> {
     })
 }
 
-fn validate_revision(revision: &str) -> Result<()> {
+pub(super) fn validate_revision(revision: &str) -> Result<()> {
     if revision.is_empty()
         || revision.len() > 32
         || !revision.bytes().all(|byte| byte.is_ascii_digit())

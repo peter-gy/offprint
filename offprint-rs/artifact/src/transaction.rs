@@ -282,7 +282,7 @@ fn validate_staging_path_identity(staging: &NamedTempFile) -> Result<()> {
             error,
         )
     })?;
-    let file_metadata = staging.as_file().metadata().map_err(|error| {
+    let matches_path = staging_matches_path(staging, &path_metadata).map_err(|error| {
         output_io_error(
             "offprint.output.staging",
             ErrorStage::Commit,
@@ -290,10 +290,7 @@ fn validate_staging_path_identity(staging: &NamedTempFile) -> Result<()> {
             error,
         )
     })?;
-    if path_metadata.file_type().is_symlink()
-        || !path_metadata.is_file()
-        || !same_file(&path_metadata, &file_metadata)
-    {
+    if path_metadata.file_type().is_symlink() || !path_metadata.is_file() || !matches_path {
         return Err(output_error(
             "offprint.output.staging",
             ErrorStage::Commit,
@@ -304,25 +301,38 @@ fn validate_staging_path_identity(staging: &NamedTempFile) -> Result<()> {
 }
 
 #[cfg(unix)]
-fn same_file(left: &std::fs::Metadata, right: &std::fs::Metadata) -> bool {
+fn staging_matches_path(staging: &NamedTempFile, path: &std::fs::Metadata) -> io::Result<bool> {
     use std::os::unix::fs::MetadataExt as _;
 
-    left.dev() == right.dev() && left.ino() == right.ino()
+    let file = staging.as_file().metadata()?;
+    Ok(path.dev() == file.dev() && path.ino() == file.ino())
 }
 
 #[cfg(windows)]
-fn same_file(left: &std::fs::Metadata, right: &std::fs::Metadata) -> bool {
-    use std::os::windows::fs::MetadataExt as _;
+fn staging_matches_path(staging: &NamedTempFile, _path: &std::fs::Metadata) -> io::Result<bool> {
+    use std::os::windows::fs::OpenOptionsExt as _;
+    use windows_sys::Win32::Storage::FileSystem::{
+        FILE_ATTRIBUTE_REPARSE_POINT, FILE_FLAG_OPEN_REPARSE_POINT,
+    };
 
-    left.volume_serial_number()
-        .zip(left.file_index())
-        .zip(right.volume_serial_number().zip(right.file_index()))
-        .is_some_and(|(left, right)| left == right)
+    // Keep both handles open while comparing identity and inspect the path's
+    // reparse point itself so a replacement cannot redirect the comparison.
+    let path_file = File::options()
+        .read(true)
+        .custom_flags(FILE_FLAG_OPEN_REPARSE_POINT)
+        .open(staging.path())?;
+    let path = winapi_util::file::information(&path_file)?;
+    let file = winapi_util::file::information(staging.as_file())?;
+    Ok(
+        path.file_attributes() & u64::from(FILE_ATTRIBUTE_REPARSE_POINT) == 0
+            && path.volume_serial_number() == file.volume_serial_number()
+            && path.file_index() == file.file_index(),
+    )
 }
 
 #[cfg(not(any(unix, windows)))]
-fn same_file(_left: &std::fs::Metadata, _right: &std::fs::Metadata) -> bool {
-    true
+fn staging_matches_path(_staging: &NamedTempFile, _path: &std::fs::Metadata) -> io::Result<bool> {
+    Ok(true)
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -374,7 +384,7 @@ fn directory_sync_is_unavailable(error: &std::io::Error) -> bool {
     error.raw_os_error() == Some(1)
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn directory_sync_is_unavailable(_error: &std::io::Error) -> bool {
     false
 }
@@ -705,7 +715,7 @@ mod tests {
             .map_err(|error| std::io::Error::other(error.to_string()))?;
         let displaced = directory.path().join("displaced.html");
         fs::rename(staged.path(), displaced)?;
-        fs::write(staged.path(), b"modified")?;
+        fs::write(staged.path(), b"verified")?;
 
         let error = staged
             .commit()

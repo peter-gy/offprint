@@ -1,4 +1,6 @@
-use std::fs::{self, File, OpenOptions};
+#[cfg(unix)]
+use std::fs::File;
+use std::fs::{self, OpenOptions};
 use std::io::Write as _;
 use std::path::Path;
 
@@ -204,7 +206,7 @@ fn directory_sync_is_unavailable(error: &std::io::Error) -> bool {
     error.raw_os_error() == Some(1)
 }
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(all(unix, not(target_os = "macos")))]
 fn directory_sync_is_unavailable(_error: &std::io::Error) -> bool {
     false
 }

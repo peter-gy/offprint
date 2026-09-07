@@ -49,6 +49,9 @@ async def run(scenario: str) -> Offprint | None:
         async for event in events:
             if event["type"] == "navigation.started":
                 break
+        else:
+            await job.result()
+            raise AssertionError("capture completed before browser readiness")
 
         ready_path = os.environ.get("OFFPRINT_LIFECYCLE_READY")
         continue_path = os.environ.get("OFFPRINT_LIFECYCLE_CONTINUE")

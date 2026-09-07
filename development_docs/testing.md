@@ -67,6 +67,12 @@ denied, executes documentation tests, compiles Rust examples, and checks the Vit
 
 ## Browser fixtures
 
+Linux CI uses the [Chromium runtime action](../.github/actions/setup-chromium/action.yml)
+to install browser libraries and an AppArmor profile for the managed Chromium
+cache path. The profile permits the user namespaces Chromium needs for its
+sandbox. See [Linux sandbox setup](../docs/operations/troubleshooting.md#chromium-reports-no-usable-sandbox-on-linux)
+when reproducing startup failures on Ubuntu.
+
 Use one owned fixture during development:
 
 ```console

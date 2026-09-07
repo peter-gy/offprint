@@ -7,7 +7,7 @@ It requires Node.js 22 or newer and supports Linux x86-64 with glibc, macOS
 arm64 and x86-64, and Windows x86-64.
 
 Linux hosts also need Chromium's
-[shared runtime libraries](https://github.com/peter-gy/offprint/blob/main/docs/start/install.md#linux-runtime-libraries).
+[shared runtime libraries](https://peter-gy.github.io/offprint/start/install.html#linux-runtime-libraries).
 
 ## Install and capture
 
@@ -57,9 +57,9 @@ Always await `offprint.close()` or use `Symbol.asyncDispose` during shutdown.
 Native failures reject with `OffprintError`, including a stable `code`,
 `stage`, and `retryable` flag.
 
-Read the complete [Node.js integration guide](https://github.com/peter-gy/offprint/blob/main/docs/integrations/node.md),
-[record reference](https://github.com/peter-gy/offprint/blob/main/docs/reference/records.md),
-and [troubleshooting guide](https://github.com/peter-gy/offprint/blob/main/docs/operations/troubleshooting.md).
+Read the complete [Node.js integration guide](https://peter-gy.github.io/offprint/integrations/node.html),
+[record reference](https://peter-gy.github.io/offprint/reference/records.html),
+and [troubleshooting guide](https://peter-gy.github.io/offprint/operations/troubleshooting.html).
 
 [`index.d.ts`](./index.d.ts) owns exact TypeScript signatures and exported
 record aliases.

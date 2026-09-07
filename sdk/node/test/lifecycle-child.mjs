@@ -39,10 +39,16 @@ const browserPath = process.env.OFFPRINT_PACKAGE_BROWSER_PATH;
 let offprint = new Offprint(browserPath ? { browserPath } : undefined);
 const job = await offprint.captures.start(request);
 const events = job.events();
+let navigationStarted = false;
 for await (const event of events) {
   if (event.type === "navigation.started") {
+    navigationStarted = true;
     break;
   }
+}
+if (!navigationStarted) {
+  await job.result();
+  throw new Error("capture completed before browser readiness");
 }
 
 const readyPath = process.env.OFFPRINT_LIFECYCLE_READY;

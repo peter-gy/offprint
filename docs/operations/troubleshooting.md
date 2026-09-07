@@ -30,6 +30,17 @@ offprint doctor --browser-path /path/to/chrome
 System discovery accepts Chrome, Chromium, and Microsoft Edge based on
 Chromium 120 or newer.
 
+## Chromium reports no usable sandbox on Linux
+
+Ubuntu 23.10 and newer restrict unprivileged user namespaces, which Chromium
+uses for sandboxing. A managed browser outside the system browser's installed
+path may need its own [AppArmor profile](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md).
+AppArmor is Linux's application access-control system.
+
+If `offprint.browser.launch` includes `No usable sandbox` in `browserStderr`,
+use a system-installed browser with an appropriate profile, or configure a
+profile for the managed Chromium executable using Chromium's instructions.
+
 ## Capture reaches its deadline
 
 `offprint.readiness.timeout` means the page did not satisfy readiness.

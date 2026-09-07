@@ -46,9 +46,28 @@ test("tracks the Chromium process tree from its owned profile", () => {
   );
 });
 
+test("reports a browser startup failure before lifecycle readiness", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "offprint-node-"));
+  try {
+    await assert.rejects(
+      runLifecycleScenario({
+        childScript,
+        scenario: "explicit-close",
+        directory,
+        environment: { OFFPRINT_PACKAGE_BROWSER_PATH: join(directory, "missing-browser") },
+        timeout: 10_000,
+      }),
+      /browser executable .*missing-browser.*unavailable/u,
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}, 15_000);
+
 for (const scenario of ["retained-job", "explicit-close", "abandoned-close", "host-exit"]) {
   test(`releases a live browser after ${scenario}`, async () => {
-    const directory = await mkdtemp(join(tmpdir(), `offprint-node-${scenario}-`));
+    // Chromium's Linux singleton socket must fit in sockaddr_un.sun_path.
+    const directory = await mkdtemp(join(tmpdir(), "offprint-node-"));
     try {
       await runLifecycleScenario({
         childScript,

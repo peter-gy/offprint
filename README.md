@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="./docs/index.md">
+  <a href="https://peter-gy.github.io/offprint/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="docs/public/brand/offprint-lockup-horizontal-dark.svg">
       <img alt="Offprint" src="docs/public/brand/offprint-lockup-horizontal-light.svg" width="360">
@@ -38,7 +38,7 @@ output files are preserved unless you select `--on-exists replace`.
 
 Capturing executes the source page and can save private content. Captured page
 scripts are stripped from the artifact. Read the
-[security guide](./docs/operations/security.md) before capturing untrusted or
+[security guide](https://peter-gy.github.io/offprint/operations/security.html) before capturing untrusted or
 authenticated pages.
 
 - **Keep the rendered state.** Capture dynamic content, forms, frames, shadow
@@ -52,24 +52,24 @@ authenticated pages.
 
 ## Documentation
 
-[Install](./docs/start/install.md) ·
-[Quickstart](./docs/start/quickstart.md) ·
-[Documentation](./docs/index.md)
+[Install](https://peter-gy.github.io/offprint/start/install.html) ·
+[Quickstart](https://peter-gy.github.io/offprint/start/quickstart.html) ·
+[Documentation](https://peter-gy.github.io/offprint/)
 
-- [Control readiness and page selection](./docs/guides/control-capture.md)
-- [Capture authenticated pages](./docs/guides/authenticated-pages.md)
-- [Run batches and crawls](./docs/guides/batch-and-crawl.md)
-- [Save documentation as PDF](./docs/guides/export-pdf.md)
-- [Inspect, verify, and export](./docs/guides/inspect-verify-export.md)
-- [Use Rust](./docs/integrations/rust.md),
-  [Node.js](./docs/integrations/node.md), or
-  [Python](./docs/integrations/python.md)
+- [Control readiness and page selection](https://peter-gy.github.io/offprint/guides/control-capture.html)
+- [Capture authenticated pages](https://peter-gy.github.io/offprint/guides/authenticated-pages.html)
+- [Run batches and crawls](https://peter-gy.github.io/offprint/guides/batch-and-crawl.html)
+- [Save documentation as PDF](https://peter-gy.github.io/offprint/guides/export-pdf.html)
+- [Inspect, verify, and export](https://peter-gy.github.io/offprint/guides/inspect-verify-export.html)
+- [Use Rust](https://peter-gy.github.io/offprint/integrations/rust.html),
+  [Node.js](https://peter-gy.github.io/offprint/integrations/node.html), or
+  [Python](https://peter-gy.github.io/offprint/integrations/python.html)
 
 ## Development
 
-Read [contributor setup](./development_docs/setup.md) for the local check loop
-and [architecture](./development_docs/architecture.md) for ownership and
-extension boundaries. [Development docs](./development_docs/README.md) route
+Read [contributor setup](https://github.com/peter-gy/offprint/blob/main/development_docs/setup.md) for the local check loop
+and [architecture](https://github.com/peter-gy/offprint/blob/main/development_docs/architecture.md) for ownership and
+extension boundaries. [Development docs](https://github.com/peter-gy/offprint/blob/main/development_docs/README.md) route
 changes to their source, tests, and generation commands.
 
 Licensed under [AGPL-3.0-or-later](./LICENSE).

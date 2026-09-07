@@ -1,18 +1,14 @@
 name: Scheduled assurance
-
-on:
+"on":
   schedule:
-    - cron: "17 3 * * 1"
-  workflow_dispatch:
-
+    - cron: 17 3 * * 1
+  workflow_dispatch: null
 permissions:
   contents: read
-
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: "1"
   XDG_CACHE_HOME: ${{ github.workspace }}/.cache
-
 jobs:
   fuzz:
     name: Fuzz smoke
@@ -23,20 +19,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install nightly Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: nightly
-
       - name: Install cargo-fuzz
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just,cargo-fuzz
-
       - name: Run fuzz targets
         run: just fuzz-smoke 30
-
       - name: Upload fuzz failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -47,7 +39,6 @@ jobs:
             offprint-rs/fuzz/corpus
           if-no-files-found: ignore
           retention-days: 14
-
   long-fuzz:
     name: Long fuzz ${{ matrix.target }}
     runs-on: ubuntu-24.04
@@ -70,20 +61,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install nightly Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: nightly
-
       - name: Install tools
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just,cargo-fuzz
-
       - name: Run sustained fuzz target
         run: just fuzz-target "${{ matrix.target }}" 300
-
       - name: Upload fuzz failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -94,7 +81,6 @@ jobs:
             offprint-rs/fuzz/corpus/${{ matrix.target }}
           if-no-files-found: ignore
           retention-days: 14
-
   miri:
     name: Miri
     runs-on: ubuntu-24.04
@@ -104,21 +90,17 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install nightly Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: nightly
           components: miri
-
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
-
       - name: Run Miri
         run: just miri
-
   minimum-rust:
     name: Minimum Rust
     runs-on: ubuntu-24.04
@@ -128,15 +110,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install minimum Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Check workspace
         run: cargo check --manifest-path offprint-rs/Cargo.toml --workspace --all-targets --all-features --locked
-
   dependency-audit:
     name: Dependency audit
     runs-on: ubuntu-24.04
@@ -146,20 +125,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Install dependency tools
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just,cargo-deny,cargo-machete
-
       - name: Audit dependencies
         run: just dependency-check
-
   repeated-capture:
     name: Repeated capture and lifecycle
     runs-on: ubuntu-24.04
@@ -169,34 +144,27 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
-
       - name: Cache managed browser
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           key: offprint-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
-
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
-
       - name: Install pinned managed Chromium
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
-
       - name: Run repeated capture suite
         run: cargo test --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint repeated_capture -- --ignored --test-threads=1
-
       - name: Audit browser process cleanup
         if: always()
         run: |
@@ -204,7 +172,6 @@ jobs:
             echo "Offprint Chromium process survived repeated capture"
             exit 1
           fi
-
       - name: Upload repeated-capture report
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -213,7 +180,6 @@ jobs:
           path: offprint-rs/target/benchmark-evidence/repeated-capture.json
           if-no-files-found: error
           retention-days: 30
-
   differential:
     name: SingleFile differential
     runs-on: ubuntu-24.04
@@ -223,7 +189,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Checkout pinned SingleFile CLI
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -231,34 +196,27 @@ jobs:
           ref: d1cdaa7b2006782415637ac79aeae136812826aa
           path: .differential/single-file-cli
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Install Deno
         uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed
         with:
           deno-version: v2.9.5
-
       - name: Cache managed browser
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           key: offprint-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
-
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
-
       - name: Install pinned managed Chromium
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
-
       - name: Run differential fixture
         run: just differential "$GITHUB_WORKSPACE/.differential/single-file-cli/single-file"
-
       - name: Upload differential evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -266,7 +224,6 @@ jobs:
           name: singlefile-differential
           path: offprint-rs/target/benchmark-evidence/singlefile-differential.json
           if-no-files-found: error
-
   datawrapper:
     name: Datawrapper exploratory corpus
     runs-on: ubuntu-24.04
@@ -276,34 +233,27 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
-
       - name: Cache managed browser
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           key: offprint-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
-
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
-
       - name: Install pinned managed Chromium
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
-
       - name: Capture exploratory corpus
         run: just exploratory-corpus
-
       - name: Upload corpus evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -311,7 +261,6 @@ jobs:
           name: datawrapper-corpus
           path: offprint-rs/target/benchmark-evidence/datawrapper-corpus.json
           if-no-files-found: error
-
   chromium-canary:
     name: Latest Chromium canary
     runs-on: ubuntu-24.04
@@ -321,22 +270,18 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
-
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
-
       - name: Download latest Chrome for Testing canary
         shell: bash
         run: |
@@ -357,14 +302,12 @@ jobs:
           test -x "$browser"
           echo "OFFPRINT_CANARY_PATH=$browser" >> "$GITHUB_ENV"
           echo "OFFPRINT_CANARY_VERSION=$version" >> "$GITHUB_ENV"
-
       - name: Run browser benchmark corpus on canary
         run: |
           just benchmark-browser \
             offprint-rs/target/benchmark-evidence/chromium-canary.json \
             "$OFFPRINT_CANARY_PATH"
           test "$(jq -r '.environment.browserVersion' offprint-rs/target/benchmark-evidence/chromium-canary.json)" = "$OFFPRINT_CANARY_VERSION"
-
       - name: Upload canary evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -372,7 +315,6 @@ jobs:
           name: chromium-canary
           path: offprint-rs/target/benchmark-evidence/chromium-canary.json
           if-no-files-found: error
-
   performance:
     name: Performance baseline comparison
     runs-on: ubuntu-24.04
@@ -382,38 +324,31 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
-
       - name: Cache managed browser
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ${{ env.XDG_CACHE_HOME }}
           key: offprint-browser-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('versions.toml') }}
-
       - name: Install just
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
-
       - name: Install pinned managed Chromium
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
-
       - name: Compare benchmark corpus
         run: |
           just benchmark-compare \
             offprint-rs/benches/baseline.json \
             offprint-rs/target/benchmark-evidence/performance.json \
             true
-
       - name: Upload performance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

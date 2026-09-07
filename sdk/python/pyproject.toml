@@ -25,6 +25,7 @@ classifiers = [
 [project.urls]
 Source = "https://github.com/peter-gy/offprint"
 Issues = "https://github.com/peter-gy/offprint/issues"
+Documentation = "https://peter-gy.github.io/offprint/"
 
 [dependency-groups]
 dev = [

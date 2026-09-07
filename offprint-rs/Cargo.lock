@@ -1658,6 +1658,8 @@ dependencies = [
  "serde_json",
  "sha2",
  "tempfile",
+ "winapi-util",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

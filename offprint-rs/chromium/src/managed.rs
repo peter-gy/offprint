@@ -151,7 +151,7 @@ impl ManagedBrowserManager {
     }
 
     pub async fn remove(&self, revision: &str) -> Result<()> {
-        let entry = entry_for_revision(revision)?;
+        catalog::validate_revision(revision)?;
         cache::prepare(&self.cache_dir)?;
         let _lock = cache::acquire_lock(&self.cache_dir).await?;
         let active_leases = leases::count_active(&self.cache_dir, revision)?;
@@ -165,6 +165,7 @@ impl ManagedBrowserManager {
             .with_detail("revision", revision)
             .with_detail("activeLeases", active_leases));
         }
+        let entry = entry_for_revision(revision)?;
         let final_dir = entry_directory(&self.cache_dir, entry);
         let Some(_browser) = installed::probe_entry(&self.cache_dir, entry).await? else {
             return Err(managed_error(
@@ -238,10 +239,11 @@ mod tests {
         let cache_path = camino::Utf8Path::from_path(cache_dir.path())
             .ok_or("temporary cache path is not UTF-8")?;
         cache::prepare(cache_path)?;
-        let lease = leases::create(cache_path, "1654411")?;
+        // Active owners keep their lease even when a revision leaves the catalog.
+        let lease = leases::create(cache_path, "1")?;
         let manager = ManagedBrowserManager::new(cache_path.to_owned());
 
-        let error = manager.remove("1654411").await.err();
+        let error = manager.remove("1").await.err();
 
         assert_eq!(
             error.as_ref().map(|error| error.code.as_str()),

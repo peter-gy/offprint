@@ -1,8 +1,8 @@
 name: Browser contracts
-
-on:
+"on":
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
     paths:
       - offprint-rs/**
@@ -12,19 +12,15 @@ on:
       - rust-toolchain.toml
       - versions.toml
       - .github/workflows/browser.yml
-  workflow_dispatch:
-
+  workflow_dispatch: null
 permissions:
   contents: read
-
 concurrency:
   group: browser-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
-
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: "1"
-
 jobs:
   fixtures:
     name: Fixtures ${{ matrix.group }}
@@ -45,28 +41,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
-
-      - name: Install Chromium runtime libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libasound2t64 \
-            libatk-bridge2.0-0 \
-            libgbm1 \
-            libgtk-3-0 \
-            libnss3 \
-            libxkbcommon0
-
+      - name: Set up Chromium runtime
+        uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
         shell: bash
         run: |
@@ -82,10 +66,8 @@ jobs:
               "OFFPRINT_BROWSER_PATH=" + result.browser.executablePath + "\n",
             );
           '
-
       - name: Run fixture group
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- e2e "${{ matrix.group }}"
-
       - name: Audit browser process cleanup
         if: always()
         shell: bash
@@ -94,7 +76,6 @@ jobs:
             echo "Offprint Chromium process survived the fixture group"
             exit 1
           fi
-
       - name: Upload fixture failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -105,7 +86,6 @@ jobs:
             offprint-rs/target/diagnostics
           if-no-files-found: ignore
           retention-days: 14
-
   integrations:
     name: Browser integration suites
     runs-on: ubuntu-24.04
@@ -115,28 +95,16 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
-
-      - name: Install Chromium runtime libraries
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libasound2t64 \
-            libatk-bridge2.0-0 \
-            libgbm1 \
-            libgtk-3-0 \
-            libnss3 \
-            libxkbcommon0
-
+      - name: Set up Chromium runtime
+        uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
         shell: bash
         run: |
@@ -152,7 +120,6 @@ jobs:
               "OFFPRINT_BROWSER_PATH=" + result.browser.executablePath + "\n",
             );
           '
-
       - name: Run ignored browser integration suites
         run: |
           cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint \
@@ -161,7 +128,6 @@ jobs:
             --test capture_regressions \
             --test remote_browser \
             -- --ignored --test-threads=1
-
       - name: Audit browser process cleanup
         if: always()
         run: |
@@ -169,7 +135,6 @@ jobs:
             echo "Offprint Chromium process survived the integration suites"
             exit 1
           fi
-
       - name: Upload failure evidence
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -180,7 +145,6 @@ jobs:
             offprint-rs/target/diagnostics
           if-no-files-found: ignore
           retention-days: 14
-
   platform-smoke:
     name: Browser smoke ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
@@ -202,17 +166,14 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-
       - name: Install Rust
         uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772
         with:
           toolchain: 1.97.0
-
       - name: Cache Rust
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
-
       - name: Install pinned managed Chromium
         shell: bash
         run: |
@@ -228,9 +189,7 @@ jobs:
               "OFFPRINT_BROWSER_PATH=" + result.browser.executablePath + "\n",
             );
           '
-
       - name: Run managed browser smoke
         run: cargo test --manifest-path offprint-rs/Cargo.toml --locked -p offprint-chromium --test browser_smoke -- --ignored --test-threads=1
-
       - name: Run static capture fixture
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p xtask -- test-fixture static-article

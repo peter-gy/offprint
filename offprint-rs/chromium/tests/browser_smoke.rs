@@ -2169,10 +2169,11 @@ async fn offline_verification_keeps_up_with_large_event_stream() -> TestResult {
         ChromiumProcess::launch(ChromiumLaunchOptions::new(local_executable().await?)).await?;
     let page = process.new_page(&BrowserEnvironment::default()).await?;
 
+    // Each image decodes a separate SVG document within the capture budget.
     let observation = page
         .verify_offline_url(
             &artifact_url,
-            Duration::from_secs(10),
+            Duration::from(offprint_model::CaptureLimits::default().duration),
             offprint_browser::RenderingMedia::Screen,
         )
         .await?;

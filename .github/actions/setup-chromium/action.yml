@@ -1,0 +1,32 @@
+name: Set up Chromium runtime
+description: Install Linux browser libraries and enable sandbox user namespaces for managed Chromium.
+runs:
+  using: composite
+  steps:
+    - name: Install Linux libraries
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          apparmor \
+          libasound2t64 \
+          libatk-bridge2.0-0 \
+          libgbm1 \
+          libgtk-3-0 \
+          libnss3 \
+          libxkbcommon0
+    - name: Allow managed Chromium sandbox namespaces
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        if [[ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]]; then
+          sudo tee /etc/apparmor.d/offprint-chromium >/dev/null <<PROFILE
+        abi <abi/4.0>,
+        include <tunables/global>
+        profile offprint-chromium "${HOME}/**/chromium-*/chrome-linux64/chrome" flags=(unconfined) {
+          userns,
+        }
+        PROFILE
+          sudo apparmor_parser --replace /etc/apparmor.d/offprint-chromium
+        fi
