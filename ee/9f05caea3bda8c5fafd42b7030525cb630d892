@@ -1,0 +1,21 @@
+offprint-rs/model/src/error/catalog/definitions.rs
+  s_c15eeb5af092d4::t_791d56a29f0a49 200
+schemas/error-codes.json
+  s_c15eeb5af092d4::t_7896226311dc6a 1089-1093
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "ee9f05caea3bda8c5fafd42b7030525cb630d892",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
