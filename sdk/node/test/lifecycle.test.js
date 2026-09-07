@@ -1,12 +1,14 @@
 import { strict as assert } from "node:assert";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { test } from "vitest";
+import { test, vi } from "vitest";
 
-import { findOwnedProcesses } from "./lifecycle-processes.mjs";
+import { findOwnedProcesses, ownedProcesses } from "./lifecycle-processes.mjs";
 import { runLifecycleScenario } from "./lifecycle-runner.mjs";
 
 const childScript = fileURLToPath(new URL("./lifecycle-child.mjs", import.meta.url));
@@ -44,6 +46,29 @@ test("tracks the Chromium process tree from its owned profile", () => {
     findOwnedProcesses(directory, processes).map((candidate) => candidate.pid),
     [10, 11, 12],
   );
+});
+
+test("tracks a browser profile after a long command line", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "offprint-node-"));
+  vi.stubEnv("COLUMNS", "40");
+  const child = spawn(process.execPath, [
+    "-e",
+    "setInterval(() => {}, 1000)",
+    "--",
+    "--chrome-fixture",
+    "x".repeat(512),
+    `--user-data-dir=${directory}/offprint-browser-fixture`,
+  ]);
+  try {
+    await once(child, "spawn", { signal: AbortSignal.timeout(5_000) });
+    assert((await ownedProcesses(directory)).some((record) => record.pid === child.pid));
+  } finally {
+    const exited = once(child, "exit", { signal: AbortSignal.timeout(5_000) });
+    child.kill();
+    await exited;
+    vi.unstubAllEnvs();
+    await rm(directory, { recursive: true, force: true });
+  }
 });
 
 test("reports a browser startup failure before lifecycle readiness", async () => {

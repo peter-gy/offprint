@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -9,6 +10,7 @@ import pytest
 from lifecycle_support import (
     ProcessRecord,
     _owned_processes,
+    owned_processes,
     run_lifecycle_child,
 )
 
@@ -46,6 +48,27 @@ def test_owned_browser_processes_include_the_profile_tree(
     owned = _owned_processes(tmp_path, processes)
 
     assert [process.pid for process in owned] == [10, 11, 12]
+
+
+def test_owned_browser_processes_read_long_command_lines(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("COLUMNS", "40")
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "import time; time.sleep(30)",
+            "--chrome-fixture",
+            "x" * 512,
+            f"--user-data-dir={tmp_path}/offprint-browser-fixture",
+        ]
+    )
+    try:
+        assert process.pid in {record.pid for record in owned_processes(tmp_path)}
+    finally:
+        process.kill()
+        process.wait(timeout=5)
 
 
 def test_lifecycle_child_reports_browser_startup_failure(tmp_path: Path) -> None:

@@ -40,7 +40,7 @@ async function windowsProcesses() {
 }
 
 async function unixProcesses() {
-  const { stdout } = await execFileAsync("ps", ["-axo", "pid=,ppid=,command="]);
+  const { stdout } = await execFileAsync("ps", ["-axww", "-o", "pid=,ppid=,command="]);
   return stdout
     .split("\n")
     .map((line) => line.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/))

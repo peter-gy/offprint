@@ -249,6 +249,12 @@ mod tests {
             error.as_ref().map(|error| error.code.as_str()),
             Some("offprint.browser.active")
         );
+        assert_eq!(
+            error
+                .as_ref()
+                .and_then(|error| error.details.get("activeLeases")),
+            Some(&serde_json::json!(1))
+        );
         drop(lease);
         Ok(())
     }

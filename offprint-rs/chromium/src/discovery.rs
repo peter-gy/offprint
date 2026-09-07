@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::io;
 use std::process::Stdio;
 use std::time::Duration;
 
@@ -10,11 +11,13 @@ use offprint_model::{
 };
 #[cfg(target_os = "windows")]
 use std::path::PathBuf;
+use tokio::io::AsyncReadExt as _;
 use tokio::process::Command;
 use tokio::time::timeout;
 
 const MINIMUM_CHROMIUM_MAJOR: u32 = 120;
 const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
+const MAX_PROBE_BYTES: u64 = 4096;
 
 #[derive(Clone, Debug)]
 pub struct ChromiumDiscovery {
@@ -179,34 +182,7 @@ pub(crate) async fn probe(path: &Utf8PathBuf, source: BrowserSource) -> Result<B
             format!("browser executable `{path}` is unavailable"),
         ));
     }
-    let mut command = Command::new(path);
-    command
-        .arg("--version")
-        .stdin(Stdio::null())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true);
-    let output = timeout(PROBE_TIMEOUT, command.output())
-        .await
-        .map_err(|_| {
-            browser_error(
-                "offprint.browser.probe_timeout",
-                format!("browser version probe timed out for `{path}`"),
-            )
-        })?
-        .map_err(|error| {
-            browser_error(
-                "offprint.browser.probe",
-                format!("failed to execute browser `{path}`: {error}"),
-            )
-        })?;
-    if !output.status.success() {
-        return Err(browser_error(
-            "offprint.browser.probe",
-            format!("browser version probe failed for `{path}`"),
-        ));
-    }
-    let text = String::from_utf8(output.stdout).map_err(|error| {
+    let text = String::from_utf8(probe_output(path).await?).map_err(|error| {
         browser_error(
             "offprint.browser.version",
             format!("browser version output is not UTF-8: {error}"),
@@ -245,6 +221,99 @@ pub(crate) async fn probe(path: &Utf8PathBuf, source: BrowserSource) -> Result<B
         revision: None,
         protocol_version: "1.3".to_owned(),
     })
+}
+
+async fn probe_output(path: &Utf8PathBuf) -> Result<Vec<u8>> {
+    let probe_error = |error| {
+        browser_error(
+            "offprint.browser.probe",
+            format!("browser version probe failed for `{path}`: {error}"),
+        )
+    };
+    let mut child = probe_command(path)
+        .map_err(probe_error)?
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .kill_on_drop(true)
+        .spawn()
+        .map_err(probe_error)?;
+    let result = timeout(PROBE_TIMEOUT, async {
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| io::Error::other("version probe output is unavailable"))?;
+        let mut bytes = Vec::new();
+        stdout
+            .take(MAX_PROBE_BYTES + 1)
+            .read_to_end(&mut bytes)
+            .await?;
+        if bytes.len() as u64 > MAX_PROBE_BYTES {
+            return Err(io::Error::other(
+                "version probe output exceeds its byte limit",
+            ));
+        }
+        if !child.wait().await?.success() {
+            return Err(io::Error::other("version probe exited unsuccessfully"));
+        }
+        Ok(bytes)
+    })
+    .await
+    .map_err(|_| {
+        browser_error(
+            "offprint.browser.probe_timeout",
+            format!("browser version probe timed out for `{path}`"),
+        )
+    })
+    .and_then(|result| result.map_err(probe_error));
+    if result.is_err() {
+        let _terminated = child.kill().await;
+    }
+    result
+}
+
+#[cfg(not(windows))]
+fn probe_command(path: &Utf8PathBuf) -> io::Result<Command> {
+    let mut command = Command::new(path);
+    command.arg("--version");
+    Ok(command)
+}
+
+#[cfg(windows)]
+fn probe_command(path: &Utf8PathBuf) -> io::Result<Command> {
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    // Windows Chrome is a GUI executable. Read its version resource with a
+    // fixed script and pass the untrusted path as data, not PowerShell source.
+    const VERSION_PROBE: &str = r#"
+$ErrorActionPreference = 'Stop'
+try {
+    [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
+    $path = [IO.Path]::GetFullPath($env:OFFPRINT_BROWSER_PROBE_PATH)
+    $info = [Diagnostics.FileVersionInfo]::GetVersionInfo($path)
+    [Console]::WriteLine($info.ProductName + ' ' + $info.ProductVersion)
+} catch {
+    exit 1
+}
+"#;
+    let system_root = std::env::var_os("SystemRoot")
+        .ok_or_else(|| io::Error::other("SystemRoot is unavailable"))?;
+    let powershell = PathBuf::from(system_root)
+        .join("System32")
+        .join("WindowsPowerShell")
+        .join("v1.0")
+        .join("powershell.exe");
+    let mut command = Command::new(powershell);
+    command
+        .args([
+            "-NoLogo",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            VERSION_PROBE,
+        ])
+        .env("OFFPRINT_BROWSER_PROBE_PATH", path)
+        .creation_flags(CREATE_NO_WINDOW);
+    Ok(command)
 }
 
 fn parse_version_output(output: &str) -> Option<(BrowserProduct, String)> {
@@ -378,15 +447,70 @@ mod tests {
     use super::parse_version_output;
 
     #[test]
-    fn chrome_version_output_maps_to_a_typed_product() {
-        assert_eq!(
-            parse_version_output("Google Chrome 150.0.7871.187"),
-            Some((BrowserProduct::Chrome, "150.0.7871.187".to_owned()))
-        );
+    fn browser_version_output_maps_to_a_typed_product() {
+        for (output, product) in [
+            ("Google Chrome 150.0.7871.187", BrowserProduct::Chrome),
+            (
+                "Google Chrome for Testing 150.0.7871.187",
+                BrowserProduct::Chrome,
+            ),
+            ("Chromium 150.0.7871.187", BrowserProduct::Chromium),
+            ("Microsoft Edge 150.0.7871.187", BrowserProduct::Edge),
+        ] {
+            assert_eq!(
+                parse_version_output(output),
+                Some((product, "150.0.7871.187".to_owned()))
+            );
+        }
     }
 
     #[test]
     fn unrelated_executable_output_is_rejected() {
         assert_eq!(parse_version_output("Offprint 1.0.0"), None);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn discovery_rejects_excessive_version_output() -> Result<(), Box<dyn std::error::Error>>
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("chromium");
+        std::fs::write(&path, "#!/bin/sh\nprintf '%5000s' x\n")?;
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o700))?;
+        let path = camino::Utf8PathBuf::from_path_buf(path)
+            .map_err(|_| std::io::Error::other("fixture path is not UTF-8"))?;
+        let result = super::ChromiumDiscovery::new()
+            .with_explicit_path(path)
+            .with_source_policy(offprint_model::BrowserSourcePolicy::Managed)
+            .discover()
+            .await;
+
+        assert!(result.selected.is_none());
+        assert_eq!(result.failures.len(), 1);
+        assert_eq!(result.failures[0].code.as_str(), "offprint.browser.probe");
+        Ok(())
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    async fn discovery_rejects_missing_version_metadata_at_a_literal_path()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let directory = tempfile::tempdir()?;
+        let path = directory.path().join("Chrome's [test] $browser.exe");
+        std::fs::write(&path, b"not an executable")?;
+        let path = camino::Utf8PathBuf::from_path_buf(path)
+            .map_err(|_| std::io::Error::other("fixture path is not UTF-8"))?;
+        let result = super::ChromiumDiscovery::new()
+            .with_explicit_path(path)
+            .with_source_policy(offprint_model::BrowserSourcePolicy::Managed)
+            .discover()
+            .await;
+
+        assert!(result.selected.is_none());
+        assert_eq!(result.failures.len(), 1);
+        assert_eq!(result.failures[0].code.as_str(), "offprint.browser.version");
+        Ok(())
     }
 }

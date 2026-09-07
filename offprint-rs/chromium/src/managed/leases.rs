@@ -1,5 +1,4 @@
 use std::fs::{self, File, OpenOptions};
-use std::io;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -113,7 +112,7 @@ pub(super) fn count_active(cache_dir: &Utf8Path, revision: &str) -> Result<u32> 
                     )
                 })?;
             }
-            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+            Err(error) if error.raw_os_error() == fs2::lock_contended_error().raw_os_error() => {
                 active = active.saturating_add(1);
             }
             Err(error) => {

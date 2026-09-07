@@ -161,6 +161,8 @@ jobs:
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
+      - name: Set up Chromium runtime
+        uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
       - name: Run repeated capture suite
@@ -213,6 +215,8 @@ jobs:
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
+      - name: Set up Chromium runtime
+        uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
       - name: Run differential fixture
@@ -250,6 +254,8 @@ jobs:
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
+      - name: Set up Chromium runtime
+        uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
       - name: Capture exploratory corpus
@@ -341,6 +347,8 @@ jobs:
         uses: taiki-e/install-action@5b4d68e2e660441203ab128a23676f1e4faf1532
         with:
           tool: just
+      - name: Set up Chromium runtime
+        uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
         run: cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install
       - name: Compare benchmark corpus

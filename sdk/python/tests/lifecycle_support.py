@@ -67,7 +67,7 @@ def _windows_processes() -> list[ProcessRecord]:
 
 def _unix_processes() -> list[ProcessRecord]:
     result = subprocess.run(
-        ["ps", "-axo", "pid=,ppid=,command="],
+        ["ps", "-axww", "-o", "pid=,ppid=,command="],
         check=True,
         capture_output=True,
         text=True,
@@ -146,6 +146,32 @@ def owned_profiles(directory: Path) -> list[Path]:
     return sorted(directory.glob("offprint-browser-*"))
 
 
+def _lifecycle_process_snapshot(parent_pid: int, directory: Path) -> str:
+    processes = _windows_processes() if sys.platform == "win32" else _unix_processes()
+    descendants = {parent_pid}
+    while True:
+        expanded = descendants | {
+            process.pid for process in processes if process.parent_pid in descendants
+        }
+        if expanded == descendants:
+            break
+        descendants = expanded
+    records = [
+        {
+            "pid": process.pid,
+            "parent_pid": process.parent_pid,
+            "browser": _is_browser(process),
+            "command_length": len(process.command_line),
+            "profile_match": str(directory) in process.command_line,
+        }
+        for process in processes
+        if process.pid in descendants
+    ]
+    return json.dumps(
+        {"processes": records, "profiles": [str(p) for p in owned_profiles(directory)]}
+    )
+
+
 def wait_for_lifecycle_cleanup(
     directory: Path,
     tracked_pids: Iterable[int] = (),
@@ -216,7 +242,10 @@ def run_lifecycle_child(
             tracked = owned_processes(directory)
             profiles = owned_profiles(directory)
             if not tracked:
-                errors.append(f"{scenario} did not expose its owned browser process tree")
+                errors.append(
+                    f"{scenario} did not expose its owned browser process tree: "
+                    f"{_lifecycle_process_snapshot(process.pid, directory)}"
+                )
             if not profiles:
                 errors.append(f"{scenario} did not expose its owned browser profile")
 

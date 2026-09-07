@@ -174,6 +174,8 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6
         with:
           workspaces: offprint-rs -> target
+      - name: Set up Chromium runtime
+        uses: ./.github/actions/setup-chromium
       - name: Install pinned managed Chromium
         shell: bash
         run: |

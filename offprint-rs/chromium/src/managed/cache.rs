@@ -87,7 +87,7 @@ pub(super) async fn acquire_lock(cache_dir: &Utf8Path) -> Result<CacheLock> {
     loop {
         match file.try_lock_exclusive() {
             Ok(()) => return Ok(CacheLock { file }),
-            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+            Err(error) if error.raw_os_error() == fs2::lock_contended_error().raw_os_error() => {
                 if started.elapsed() >= CACHE_LOCK_TIMEOUT {
                     return Err(managed_error(
                         "offprint.browser.install",
@@ -206,4 +206,28 @@ pub(super) fn set_owner_file_permissions(path: &Path) -> Result<()> {
 #[cfg(not(unix))]
 pub(super) fn set_owner_file_permissions(_path: &Path) -> Result<()> {
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use futures_util::FutureExt as _;
+
+    use super::{Duration, TempDir, Utf8Path, acquire_lock, prepare};
+
+    #[tokio::test]
+    async fn cache_lock_waits_for_the_current_owner_to_release()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let directory = TempDir::new()?;
+        let path = Utf8Path::from_path(directory.path()).ok_or("cache path is not UTF-8")?;
+        prepare(path)?;
+        let owner = acquire_lock(path).await?;
+        let waiting = acquire_lock(path);
+        tokio::pin!(waiting);
+
+        assert!(waiting.as_mut().now_or_never().is_none());
+        drop(owner);
+        let acquired = tokio::time::timeout(Duration::from_secs(2), waiting).await??;
+        drop(acquired);
+        Ok(())
+    }
 }
