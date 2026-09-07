@@ -1,0 +1,63 @@
+offprint-rs/about.hbs
+  s_c15eeb5af092d4::t_8cdab878c22eb2 1-27
+fixtures/corpora/datawrapper.json
+  s_c15eeb5af092d4::t_30b69d0fe3ac90 4
+sdk/node/test/package-contents.mjs
+  s_c15eeb5af092d4::t_21db27a9183d44 3,30-33
+development_docs/provenance.md
+  s_c15eeb5af092d4::t_3e34bbad2d4866 6-9,11-14
+  s_c15eeb5af092d4::t_1a75deea3ba1ab 10,16-29,51-55,62-66
+sdk/python/pyproject.toml
+  s_c15eeb5af092d4::t_21db27a9183d44 12,49
+offprint-rs/chromium/NOTICE
+  s_c15eeb5af092d4::t_30b69d0fe3ac90 1-32
+offprint-rs/xtask/src/package.rs
+  s_c15eeb5af092d4::t_21db27a9183d44 526-529
+  s_c15eeb5af092d4::t_8fc914def1fe87 342-344
+  s_c15eeb5af092d4::t_07576887a8b70e 341
+offprint-rs/xtask/NOTICE
+  s_c15eeb5af092d4::t_30b69d0fe3ac90 1-208
+THIRD_PARTY_NOTICES.txt
+  s_c15eeb5af092d4::t_59f0addeb1c23a 1-13825
+.github/workflows/ci.yml
+  s_c15eeb5af092d4::t_1a75deea3ba1ab 41
+sdk/node/package.json
+  s_c15eeb5af092d4::t_a78462ecca4ad0 26
+.github/workflows/publish.yml
+  s_c15eeb5af092d4::t_1a75deea3ba1ab 69,375
+sdk/python/tests/package_contents.py
+  s_c15eeb5af092d4::t_f3e912451a0a6c 7,11,29-41,44,46-56,59-60,62,67,69
+  s_c15eeb5af092d4::t_b196faeea4f996 61
+sdk/node/scripts/package-license.mjs
+  s_c15eeb5af092d4::t_21db27a9183d44 5,8-11,15-26
+development_docs/dependencies.md
+  s_c15eeb5af092d4::t_3409fc1e3fe4ca 54-55
+  s_c15eeb5af092d4::t_1a75deea3ba1ab 36-53,56,59-64
+  s_c15eeb5af092d4::t_07576887a8b70e 57-58
+justfile
+  s_c15eeb5af092d4::t_380878284cfdb2 41,46,398
+  s_c15eeb5af092d4::t_07576887a8b70e 302
+  s_c15eeb5af092d4::t_8cdab878c22eb2 156-157,164-177,179,181-182
+  s_c15eeb5af092d4::t_3409fc1e3fe4ca 158-163,178,180,183-184
+offprint-rs/about.toml
+  s_c15eeb5af092d4::t_c45c8d65a31445 23
+  s_c15eeb5af092d4::t_3e34bbad2d4866 1-13
+development_docs/setup.md
+  s_c15eeb5af092d4::t_1a75deea3ba1ab 117-119
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "f4c14164eb31eda01e1d0167d239df938d5014e1",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
