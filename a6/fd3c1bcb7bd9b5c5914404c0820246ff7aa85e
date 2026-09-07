@@ -1,0 +1,115 @@
+crates/offprint/Cargo.toml
+  s_c15eeb5af092d4::t_2c99e39c26f204 45
+crates/offprint/tests/custom_backend.rs
+  s_c15eeb5af092d4::t_15cfbd62642a6d 10-13
+  s_c15eeb5af092d4::t_6f1b8679fd55c7 744-756,758-759
+  s_c15eeb5af092d4::t_8d245ece25b9ab 106
+  s_c15eeb5af092d4::t_20e3fb606c575c 765-791,793
+bindings/python/python/offprint/__init__.pyi
+  s_c15eeb5af092d4::t_a5f30865c1c04c 108-128
+crates/offprint/src/capture_builder.rs
+  s_c15eeb5af092d4::t_e34d74b52de546 144,148-165,170,185,200-205
+  s_c15eeb5af092d4::t_1c35f20415f2c8 176-177,190-191
+xtask/src/main.rs
+  s_c15eeb5af092d4::t_c7a8e98889296e 291
+bindings/python/src/lib.rs
+  s_c15eeb5af092d4::t_a5f30865c1c04c 96-103,477-479,486-494,522-524,543
+bindings/python/python/offprint/_api.py
+  s_c15eeb5af092d4::t_a5f30865c1c04c 238-251
+development_docs/capture-pipeline.md
+  s_c15eeb5af092d4::t_993112c14178ea 107-118
+crates/offprint/src/runtime/browser.rs
+  s_c15eeb5af092d4::t_965b7196fef4e1 10,61-63
+bindings/python/examples/capture_memory.py
+  s_c15eeb5af092d4::t_8d72542935db59 3,8-9
+crates/offprint-model/src/request.rs
+  s_c15eeb5af092d4::t_c697a7b1ab858f 6-8,476-478,481-487
+  s_c15eeb5af092d4::t_c7a8e98889296e 112-113,463,474-475,479-480,488-489,491-498
+bindings/node/examples/capture-memory.ts
+  s_c15eeb5af092d4::t_8d72542935db59 1,5-6
+bindings/node/test/api.test.js
+  s_c15eeb5af092d4::t_c7a8e98889296e 39-81
+docs/concepts/capture-model.md
+  s_c15eeb5af092d4::t_c8ca8e3de64516 35-44,49-50,63-64
+  s_c15eeb5af092d4::t_5e9d7e5f480beb 3-6,9,12-13
+crates/offprint/src/pipeline/artifact.rs
+  s_c15eeb5af092d4::t_b0969433424ec4 312-315
+  s_c15eeb5af092d4::t_c7a8e98889296e 309
+development_docs/bindings.md
+  s_c15eeb5af092d4::t_993112c14178ea 21,27-35
+crates/offprint/tests/request_api.rs
+  s_c15eeb5af092d4::t_c697a7b1ab858f 1-65
+bindings/python/python/offprint/_native.pyi
+  s_c15eeb5af092d4::t_a5f30865c1c04c 22-26
+bindings/python/README.md
+  s_c15eeb5af092d4::t_993112c14178ea 47,49-50,52-57,59-62,64-66
+development_docs/architecture.md
+  s_c15eeb5af092d4::t_993112c14178ea 73-76
+crates/offprint/src/scheduler/resume.rs
+  s_c15eeb5af092d4::t_c7a8e98889296e 600
+docs/integrations/python.md
+  s_c15eeb5af092d4::t_8d72542935db59 67-68,73,78-79,96-101,110
+docs/reference/service-api.md
+  s_c15eeb5af092d4::t_8d72542935db59 57-62,66-73,78-80,220-221
+  s_c15eeb5af092d4::t_c697a7b1ab858f 74
+  s_c15eeb5af092d4::t_79c03a716db2b6 75-77
+bindings/node/api.cjs
+  s_c15eeb5af092d4::t_a5f30865c1c04c 139-146
+crates/offprint/src/dependencies.rs
+  s_c15eeb5af092d4::t_a7dba8f33e22f0 32
+  s_c15eeb5af092d4::t_139e8898bcbb45 30-31
+crates/offprint-cli/src/runner/tests.rs
+  s_c15eeb5af092d4::t_c7a8e98889296e 1070
+crates/offprint/src/scheduler.rs
+  s_c15eeb5af092d4::t_c7a8e98889296e 731
+crates/offprint/src/lib.rs
+  s_c15eeb5af092d4::t_aef8e87bbf4125 83-84
+  s_c15eeb5af092d4::t_a5f30865c1c04c 79-82
+crates/offprint/src/runtime.rs
+  s_c15eeb5af092d4::t_3058cbf0043722 164
+  s_c15eeb5af092d4::t_e31f5b5dca7e3f 275,398-400,402-404,417-420,429-431
+  s_c15eeb5af092d4::t_0967f80ed0391f 271,273-274,277,280-281,306-307,309-318,320,323-341,343-350,395-397,401,405-416,421-428,432-443
+  s_c15eeb5af092d4::t_aaf21347f95881 165-169
+  s_c15eeb5af092d4::t_883b80dcc26dab 473-478,480-487
+  s_c15eeb5af092d4::t_2c99e39c26f204 211,226
+  s_c15eeb5af092d4::t_c55b3e27faed44 87-97,276,308,319,321-322,342,462-470,472,479,488-495
+  s_c15eeb5af092d4::t_71b5598994e035 471
+bindings/node/src/lib.rs
+  s_c15eeb5af092d4::t_a5f30865c1c04c 97-105,425-427,434-442,470-472,491,534-535
+bindings/python/tests/test_api.py
+  s_c15eeb5af092d4::t_c7a8e98889296e 275-326
+docs/integrations/rust.md
+  s_c15eeb5af092d4::t_15906ad8683705 49-69,104-112,114-118,120-124,133-139
+  s_c15eeb5af092d4::t_8d72542935db59 99,102,126-130,132,142-144
+bindings/node/test/e2e.test.js
+  s_c15eeb5af092d4::t_c697a7b1ab858f 120,178-197
+bindings/node/README.md
+  s_c15eeb5af092d4::t_993112c14178ea 43,48-53,55-58,60-61
+  s_c15eeb5af092d4::t_f405878fee240f 45-46
+bindings/node/native.d.ts
+  s_c15eeb5af092d4::t_918ca9fee6b219 19
+docs/integrations/node.md
+  s_c15eeb5af092d4::t_8d72542935db59 31-32,39-40,59-64,78
+bindings/node/index.d.ts
+  s_c15eeb5af092d4::t_a5f30865c1c04c 142
+bindings/python/tests/test_e2e.py
+  s_c15eeb5af092d4::t_c697a7b1ab858f 127,166-183
+crates/offprint/examples/capture_memory.rs
+  s_c15eeb5af092d4::t_8d72542935db59 2,7-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "a6fd3c1bcb7bd9b5c5914404c0820246ff7aa85e",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
