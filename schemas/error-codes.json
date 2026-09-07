@@ -1086,6 +1086,12 @@
     "description": "The command could not subscribe to interruption signals."
   },
   {
+    "code": "offprint.runtime.start",
+    "stage": "internal",
+    "retryable": false,
+    "description": "The command runtime could not be started."
+  },
+  {
     "code": "offprint.runtime.state_transition",
     "stage": "internal",
     "retryable": false,
