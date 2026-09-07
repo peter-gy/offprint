@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import configparser
 import sys
 import tarfile
 import zipfile
@@ -10,12 +11,20 @@ def check_wheel(path: Path, license_text: bytes) -> None:
     with zipfile.ZipFile(path) as archive:
         required = {
             "offprint/__init__.py",
+            "offprint/_cli.py",
+            "offprint/__main__.py",
             "offprint/__init__.pyi",
             "offprint/_native.pyi",
             "offprint/contracts.py",
             "offprint/py.typed",
         }
         assert required <= set(archive.namelist())
+        entrypoint = next(
+            name for name in archive.namelist() if name.endswith(".dist-info/entry_points.txt")
+        )
+        parser = configparser.ConfigParser()
+        parser.read_string(archive.read(entrypoint).decode("utf-8"))
+        assert parser.has_option("console_scripts", "offprint")
         candidates = [
             name for name in archive.namelist() if name.endswith("/LICENSE") or name == "LICENSE"
         ]

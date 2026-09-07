@@ -20,6 +20,15 @@ use serde::Serialize;
 use serde_json::Value;
 use tokio::sync::Mutex;
 
+#[napi(js_name = "runCli")]
+pub fn run_cli(arguments: Vec<String>) -> napi::Result<u8> {
+    contained_sync(|| {
+        Ok(offprint_cli::run_process(
+            arguments.into_iter().map(Into::into).collect(),
+        ))
+    })
+}
+
 const ERROR_MARKER: &str = "__OFFPRINT_ERROR__";
 
 #[derive(Debug, Default, Deserialize)]

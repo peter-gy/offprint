@@ -9,7 +9,15 @@ arm64 and x86-64, and Windows x86-64.
 Linux hosts also need Chromium's
 [shared runtime libraries](https://peter-gy.github.io/offprint/start/install.html#linux-runtime-libraries).
 
-## Install and capture
+## Capture from the command line
+
+Run with [`npx`](https://docs.npmjs.com/cli/commands/npx), npm's command runner:
+
+```console
+npx offprint capture https://example.com --output example.html --quiet
+```
+
+## Use in an application
 
 Install version 0.0.1:
 

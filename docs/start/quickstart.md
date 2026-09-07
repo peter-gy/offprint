@@ -1,7 +1,8 @@
 # Capture and verify one page
 
 Save a page, open the HTML file, and inspect the evidence that travels with it.
-[Install the CLI](./install.md#build-the-cli-from-source) before starting.
+[Install the CLI](./install.md#install-the-cli) before starting, or run the
+commands with `uvx offprint` or `npx offprint`.
 
 Offprint needs network access to the page. It uses a compatible local browser
 or downloads and verifies the pinned

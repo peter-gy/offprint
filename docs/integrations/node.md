@@ -3,8 +3,13 @@
 The `offprint` npm package exposes Promise-based services and the canonical
 camelCase record types. It requires Node.js 22 or newer.
 
-Build the current checkout with the steps in [Install Offprint](../start/install.md).
-Tagged releases install from npm as `offprint@VERSION`.
+Install the package from [npm](https://www.npmjs.com/package/offprint):
+
+```console
+npm install offprint
+```
+
+For shell commands, use [the packaged CLI](../start/install.md#run-the-cli).
 
 ## Capture one file
 

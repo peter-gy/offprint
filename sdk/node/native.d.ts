@@ -33,3 +33,5 @@ export declare class NativeOffprint {
   close(): Promise<void>
   closeBlocking(): void
 }
+
+export declare function runCli(arguments: Array<string>): number

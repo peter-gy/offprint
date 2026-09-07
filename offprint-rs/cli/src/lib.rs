@@ -11,6 +11,7 @@ mod command;
 mod config;
 mod credentials;
 mod output;
+mod process;
 mod runner;
 
 pub use command::{
@@ -18,4 +19,5 @@ pub use command::{
     CompletionShell, ExportArguments, FormatSpec, InspectArguments, VerificationModeArg,
     VerifyArguments,
 };
+pub use process::run_process;
 pub use runner::{CommandExit, run, run_with_terminal_diagnostics};

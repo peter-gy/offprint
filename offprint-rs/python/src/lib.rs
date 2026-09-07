@@ -19,6 +19,11 @@ use serde::Deserialize;
 use serde::Serialize;
 use tokio::sync::Mutex;
 
+#[pyfunction]
+fn run_cli(py: Python<'_>, arguments: Vec<std::ffi::OsString>) -> PyResult<u8> {
+    py.detach(move || contained_sync(|| Ok(offprint_cli::run_process(arguments))))
+}
+
 const ERROR_MARKER: &str = "__OFFPRINT_ERROR__";
 
 #[derive(Debug, Default, Deserialize)]
@@ -628,6 +633,7 @@ const fn capture_status_name(status: CaptureStatus) -> &'static str {
 
 #[pymodule]
 fn _native(module: &Bound<'_, PyModule>) -> PyResult<()> {
+    module.add_function(wrap_pyfunction!(run_cli, module)?)?;
     module.add_class::<NativeOffprint>()?;
     module.add_class::<NativeCaptureJob>()?;
     module.add_class::<NativeCaptureEvents>()?;

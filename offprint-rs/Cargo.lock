@@ -1837,6 +1837,7 @@ dependencies = [
  "napi-build",
  "napi-derive",
  "offprint",
+ "offprint-cli",
  "serde",
  "serde_json",
  "tokio",
@@ -1861,6 +1862,7 @@ version = "0.0.1"
 dependencies = [
  "futures-util",
  "offprint",
+ "offprint-cli",
  "pyo3",
  "pyo3-async-runtimes",
  "serde",

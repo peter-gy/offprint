@@ -18,19 +18,23 @@ Offprint is alpha. APIs and artifact formats can change.
 
 ## Capture a page
 
-Build from this checkout with [Rust](https://www.rust-lang.org/tools/install):
+Use [`uvx`](https://docs.astral.sh/uv/guides/tools/), uv's Python command runner:
 
 ```console
-cargo build --manifest-path offprint-rs/Cargo.toml --release --locked -p offprint-cli
-./offprint-rs/target/release/offprint capture https://example.com --output example.html --quiet
+uvx offprint capture https://example.com --output example.html --quiet
+uvx offprint artifact inspect example.html
 ```
 
-The command prints `example.html`. Open that file in a browser, or inspect its
-manifest:
+Or use [`npx`](https://docs.npmjs.com/cli/commands/npx), npm's command runner,
+with Node.js 22 or newer:
 
 ```console
-./offprint-rs/target/release/offprint artifact inspect example.html
+npx offprint capture https://example.com --output example.html --quiet
+npx offprint artifact inspect example.html
 ```
+
+The capture command prints `example.html`. Open the file in a browser.
+`artifact inspect` reads its embedded manifest.
 
 Offprint uses an installed Chrome, Chromium, or Microsoft Edge. If none is
 available, it downloads and verifies a pinned browser on first use. Existing
