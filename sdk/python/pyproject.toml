@@ -60,7 +60,7 @@ extend-exclude = ["src/offprint/contracts.py"]
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.ty.src]
-include = ["src", "tests", "examples"]
+include = ["src", "tests", "examples", "scripts"]
 
 [tool.ty.environment]
 python-version = "3.10"
@@ -68,6 +68,6 @@ python-platform = "all"
 extra-paths = ["src", "tests"]
 
 [tool.pyrefly]
-project-includes = ["src/**/*.py", "src/**/*.pyi", "tests/**/*.py", "examples/**/*.py"]
+project-includes = ["src/**/*.py", "src/**/*.pyi", "tests/**/*.py", "examples/**/*.py", "scripts/**/*.py"]
 search-path = ["src", "tests"]
 python-version = "3.10"

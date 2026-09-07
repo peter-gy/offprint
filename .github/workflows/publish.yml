@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 env:
   CARGO_TERM_COLOR: always
-  SOURCE_DATE_EPOCH: "0"
+  SOURCE_DATE_EPOCH: "315532800"
 jobs:
   validate:
     name: Validate release candidate
@@ -299,15 +299,15 @@ jobs:
           python-version: "3.10"
       - name: Test process ownership under AddressSanitizer
         run: |
-          cargo test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
+          cargo +nightly test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
             -p offprint-chromium --lib
       - name: Test native bindings under AddressSanitizer
         run: |
-          cargo test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
+          cargo +nightly test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
             -p offprint-node --lib --features napi-noop-in-unit-test
-          cargo test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
+          cargo +nightly test --manifest-path offprint-rs/Cargo.toml -Zbuild-std --locked \
             --target x86_64-unknown-linux-gnu \
             -p offprint-python --lib
   native:
@@ -460,6 +460,7 @@ jobs:
       - name: Build native addon
         working-directory: sdk/node
         run: pnpm exec napi build --manifest-path ../../offprint-rs/node/Cargo.toml --output-dir . --platform --release --target ${{ matrix.target }} --no-js --dts native.d.ts -- --locked
+        shell: bash
       - name: Capture through packed npm package
         shell: bash
         working-directory: sdk/node
@@ -590,20 +591,39 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:
           python-version: "3.10"
+      - name: Build source distribution
+        if: matrix.sdist
+        uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b
+        with:
+          command: sdist
+          args: "--out ../../dist"
+          manylinux: "off"
+          maturin-version: v1.15.0
+          rust-toolchain: 1.97.0
+          working-directory: sdk/python
+      - name: Prepare locked source distribution
+        if: matrix.sdist
+        shell: bash
+        run: |
+          cargo fetch --manifest-path offprint-rs/Cargo.toml --locked
+          python sdk/python/scripts/prepare_sdist.py dist/offprint-*.tar.gz
+          mkdir dist/python-source
+          tar -xzf dist/offprint-*.tar.gz -C dist/python-source --strip-components=1
       - name: Build wheels
         uses: PyO3/maturin-action@e83996d129638aa358a18fbd1dfb82f0b0fb5d3b
         with:
           target: ${{ matrix.target }}
-          args: "--release --locked --compatibility pypi -i ${{ matrix.interpreter }} --out ../../dist ${{ matrix.sdist && '--sdist' || '' }}"
+          args: "--release --locked --compatibility pypi -i ${{ matrix.interpreter }} --out ../../dist"
           manylinux: ${{ matrix.manylinux }}
           maturin-version: v1.15.0
           rust-toolchain: 1.97.0
-          working-directory: sdk/python
+          working-directory: ${{ matrix.sdist && 'dist/python-source' || 'sdk/python' }}
       - name: Verify Python distribution contents
         shell: bash
         run: |
+          shopt -s nullglob
           python sdk/python/tests/package_contents.py \
-            "$GITHUB_WORKSPACE/LICENSE" dist/*
+            "$GITHUB_WORKSPACE/LICENSE" dist/*.whl dist/*.tar.gz
       - name: Install Python 3.14
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
         with:

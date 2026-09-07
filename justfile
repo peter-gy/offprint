@@ -266,11 +266,12 @@ python-wheel-check:
     trap 'rm -rf "$wheel_tmp"' EXIT
     cd sdk/python
     uv run --frozen --no-sync maturin sdist --out "$wheel_tmp/dist"
+    uv run --frozen --no-sync python scripts/prepare_sdist.py "$wheel_tmp"/dist/*.tar.gz
     mkdir "$wheel_tmp/source"
     tar -xzf "$wheel_tmp"/dist/*.tar.gz -C "$wheel_tmp/source" --strip-components=1
     cd "$wheel_tmp/source"
     CARGO_TARGET_DIR="$workspace/offprint-rs/target" \
-      "$workspace/sdk/python/.venv/bin/maturin" build --release --offline \
+      "$workspace/sdk/python/.venv/bin/maturin" build --release --locked --offline \
         --out "$wheel_tmp/dist"
     cd "$workspace/sdk/python"
     uv run --frozen --no-sync python tests/package_contents.py \
@@ -280,13 +281,19 @@ python-wheel-check:
     "$wheel_tmp/venv/bin/python" tests/wheel_smoke.py
 
 fuzz-check:
-    cd offprint-rs/fuzz && nightly_cargo="$(rustup which cargo --toolchain nightly)" && PATH="$(dirname "$nightly_cargo"):$PATH" rustup run nightly "$nightly_cargo" fuzz build
+    #!/usr/bin/env bash
+    set -euo pipefail
+    nightly_cargo="$(rustup which cargo --toolchain nightly)"
+    export PATH="$(dirname "$nightly_cargo"):$PATH"
+    fuzz_host="$(rustup run nightly rustc -vV | sed -n 's/^host: //p')"
+    rustup run nightly "$nightly_cargo" fuzz build --fuzz-dir offprint-rs/fuzz --target "$fuzz_host"
 
 fuzz-smoke seconds="3":
     #!/usr/bin/env bash
     set -euo pipefail
     nightly_cargo="$(rustup which cargo --toolchain nightly)"
     export PATH="$(dirname "$nightly_cargo"):$PATH"
+    fuzz_host="$(rustup run nightly rustc -vV | sed -n 's/^host: //p')"
     targets=(
       collector_protocol
       css_url_rewriting
@@ -299,12 +306,17 @@ fuzz-smoke seconds="3":
       srcset
     )
     for target in "${targets[@]}"; do
-      rustup run nightly "$nightly_cargo" fuzz run --fuzz-dir offprint-rs/fuzz "$target" -- \
+      rustup run nightly "$nightly_cargo" fuzz run --fuzz-dir offprint-rs/fuzz --target "$fuzz_host" "$target" -- \
         -max_total_time="{{seconds}}" -timeout=10 -rss_limit_mb=2048
     done
 
 fuzz-target target seconds="300":
-    nightly_cargo="$(rustup which cargo --toolchain nightly)" && PATH="$(dirname "$nightly_cargo"):$PATH" rustup run nightly "$nightly_cargo" fuzz run --fuzz-dir offprint-rs/fuzz "{{target}}" -- \
+    #!/usr/bin/env bash
+    set -euo pipefail
+    nightly_cargo="$(rustup which cargo --toolchain nightly)"
+    export PATH="$(dirname "$nightly_cargo"):$PATH"
+    fuzz_host="$(rustup run nightly rustc -vV | sed -n 's/^host: //p')"
+    rustup run nightly "$nightly_cargo" fuzz run --fuzz-dir offprint-rs/fuzz --target "$fuzz_host" "{{target}}" -- \
       -max_total_time="{{seconds}}" -timeout=10 -rss_limit_mb=2048
 
 miri:
