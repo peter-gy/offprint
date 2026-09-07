@@ -1,8 +1,9 @@
 # Release process
 
-Push a signed `v<version>` tag to run
+Push an annotated `v<version>` tag from `main` to run
 [`publish.yml`](../.github/workflows/publish.yml). The tag must match
-`versions.toml`, Cargo, npm, and Python package metadata.
+`versions.toml`, Cargo, npm, and Python package metadata. CI, browser contracts,
+and Pages must each pass for the tagged commit.
 
 ## Release order
 
@@ -23,8 +24,8 @@ Push a signed `v<version>` tag to run
 Registry publication is not atomic across npm and PyPI. A retry checks the npm
 version and skips it when the published bytes match. `uv publish --check-url`
 skips matching files already present on PyPI and uploads the remaining
-distribution set. The workflow then verifies npm and PyPI installations. It
-builds but does not install the source distribution separately from wheels.
+distribution set. The workflow then verifies npm and PyPI installations. The
+Linux wheel is built from the source distribution with locked dependencies.
 
 Before retrying a partial publication, inspect registry state:
 
@@ -34,7 +35,7 @@ curl --fail --silent --show-error \
   https://pypi.org/pypi/offprint/VERSION/json > /dev/null
 ```
 
-Rerun the workflow for the same signed tag when every published file belongs to
+Rerun the workflow for the same tag when every published file belongs to
 that source revision and the remaining registries are empty or incomplete. The
 publish jobs roll forward missing immutable versions and distributions. Create
 a corrected source commit and new version when published bytes, metadata,
