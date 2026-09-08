@@ -1,0 +1,49 @@
+justfile
+  s_c15eeb5af092d4::t_e3ef6bfb142cb3 358-360
+offprint-rs/fuzz/Cargo.lock
+  ai_agent 683,698,726,740,756
+sdk/python/uv.lock
+  ai_agent 83
+sdk/node/README.md
+  s_c15eeb5af092d4::t_4a129504a780e2 22,25
+collector/package.json
+  s_c15eeb5af092d4::t_4a129504a780e2 3
+sdk/node/package.json
+  s_c15eeb5af092d4::t_4a129504a780e2 3
+sdk/python/pyproject.toml
+  s_c15eeb5af092d4::t_4a129504a780e2 7
+THIRD_PARTY_NOTICES.txt
+  s_c15eeb5af092d4::t_4a129504a780e2 10275,10278,10281,10284,10287,10290,10293,10296,10299,10302,10305,10308
+versions.toml
+  s_c15eeb5af092d4::t_4a129504a780e2 1
+schemas/examples/artifact-manifest.json
+  s_c15eeb5af092d4::t_4a129504a780e2 30
+sdk/python/THIRD_PARTY_NOTICES.txt
+  s_c15eeb5af092d4::t_4a129504a780e2 10275,10278,10281,10284,10287,10290,10293,10296,10299,10302,10305,10308
+offprint-rs/Cargo.toml
+  s_c15eeb5af092d4::t_4a129504a780e2 25,115-127
+offprint-rs/Cargo.lock
+  ai_agent 1614,1651,1667,1688,1703,1717,1746,1768,1782,1801,1816,1833,1849,1861,1876,1895,3938
+development_docs/schemas-and-versioning.md
+  s_c15eeb5af092d4::t_4a129504a780e2 8
+sdk/python/README.md
+  s_c15eeb5af092d4::t_4a129504a780e2 22,25
+development_docs/testing.md
+  s_c15eeb5af092d4::t_dcef79ccfb6465 111-115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "081ad6c7c0e985f21fd966ed28c33ac703dcd087",
+  "prompts": {},
+  "sessions": {
+    "s_c15eeb5af092d4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a07bb1-9116-7d23-9233-da9b7708c8fb",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
