@@ -10272,40 +10272,40 @@ SOFTWARE.
 ===========================================================================
 MIT License (MIT)
 
-offprint-artifact 0.0.2
+offprint-artifact 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-browser 0.0.2
+offprint-browser 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-capture 0.0.2
+offprint-capture 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-chromium 0.0.2
+offprint-chromium 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-cli 0.0.2
+offprint-cli 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint 0.0.2
+offprint 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-document 0.0.2
+offprint-document 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-export 0.0.2
+offprint-export 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-html 0.0.2
+offprint-html 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-model 0.0.2
+offprint-model 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-protocol 0.0.2
+offprint-protocol 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
-offprint-transform 0.0.2
+offprint-transform 0.0.3
 Source: https://github.com/peter-gy/offprint
 Repository: https://github.com/peter-gy/offprint
 

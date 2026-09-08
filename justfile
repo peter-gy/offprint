@@ -355,8 +355,9 @@ miri:
     export PATH="$(dirname "$nightly_cargo"):$PATH"
     export MIRIFLAGS="${MIRIFLAGS:+$MIRIFLAGS }-Zmiri-disable-isolation"
     export PROPTEST_CASES="${PROPTEST_CASES:-16}"
-    rustup run nightly "$nightly_cargo" miri setup
-    rustup run nightly "$nightly_cargo" miri test --manifest-path offprint-rs/Cargo.toml --locked \
+    rustup run nightly "$nightly_cargo" miri setup --target x86_64-unknown-linux-gnu
+    rustup run nightly "$nightly_cargo" miri test --manifest-path offprint-rs/Cargo.toml --locked --lib \
+      --target x86_64-unknown-linux-gnu \
       -p offprint-artifact \
       -p offprint-browser \
       -p offprint-capture \

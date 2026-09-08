@@ -1611,7 +1611,7 @@ dependencies = [
 
 [[package]]
 name = "offprint"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "async-trait",
  "base64",
@@ -1648,7 +1648,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-artifact"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "camino",
  "fs2",
@@ -1664,7 +1664,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-bench"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "base64",
  "camino",
@@ -1685,7 +1685,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-browser"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "async-trait",
  "bytes",
@@ -1700,7 +1700,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-capture"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "bytes",
  "futures-util",
@@ -1714,7 +1714,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-chromium"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "async-trait",
  "base64",
@@ -1743,7 +1743,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-cli"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "camino",
  "clap",
@@ -1765,7 +1765,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-document"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "cssparser",
  "html5ever",
@@ -1779,7 +1779,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-export"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "base64",
  "data-url",
@@ -1798,7 +1798,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-html"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "base64",
  "chrono",
@@ -1813,7 +1813,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-model"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "camino",
  "chrono",
@@ -1830,7 +1830,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-node"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "futures-util",
  "napi",
@@ -1846,7 +1846,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-protocol"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "crc32fast",
  "offprint-model",
@@ -1858,7 +1858,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-python"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "futures-util",
  "offprint",
@@ -1873,7 +1873,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-test-support"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "base64",
  "flate2",
@@ -1892,7 +1892,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-transform"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "offprint-document",
  "offprint-html",
@@ -3935,7 +3935,7 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "chrono",
  "clap",

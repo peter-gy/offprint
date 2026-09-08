@@ -680,7 +680,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-artifact"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "camino",
  "fs2",
@@ -695,7 +695,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-document"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "cssparser",
  "html5ever",
@@ -723,7 +723,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-html"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "base64",
  "data-url",
@@ -737,7 +737,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-model"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "camino",
  "chrono",
@@ -753,7 +753,7 @@ dependencies = [
 
 [[package]]
 name = "offprint-protocol"
-version = "0.0.2"
+version = "0.0.3"
 dependencies = [
  "crc32fast",
  "offprint-model",

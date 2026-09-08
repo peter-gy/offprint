@@ -108,6 +108,11 @@ WebSocket and EventSource behavior, and oversized inputs.
 | Measured capture path                              | Benchmark comparison and repeated-capture evidence                   |
 | Workflow or release                                | Workflow lint, repository checks, package dry runs                   |
 
+`just miri` uses [Miri](https://github.com/rust-lang/miri), a Rust interpreter
+that checks memory behavior, to run library tests for x86-64 Linux. This target
+matches CI across development hosts. Process-level contracts run as native
+integration tests in the platform lanes.
+
 Run `just repo-check` before every handoff. A focused package check compiles its
 dependencies and tests the selected owner. Changes to a shared contract also
 require the consumer suites listed in the table.
