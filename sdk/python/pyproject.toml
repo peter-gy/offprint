@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "offprint"
-version = "0.0.2"
+version = "0.0.3"
 description = "Capture rendered web pages as verified self-contained artifacts"
 readme = "README.md"
 requires-python = ">=3.10,<3.15"
