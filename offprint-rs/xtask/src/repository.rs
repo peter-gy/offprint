@@ -46,10 +46,6 @@ pub fn check(root: &Path) -> Result<(), String> {
             check_workflow_action_pins(path, &mut violations)?;
         }
     }
-    check_scheduled_evidence_uploads(
-        &root.join(".github/workflows/scheduled.yml"),
-        &mut violations,
-    )?;
     check_crate_package_metadata(root, &mut violations)?;
     check_version_alignment(root, &mut violations)?;
     check_binding_contract_wiring(root, &mut violations)?;
@@ -330,81 +326,6 @@ fn check_workflow_action_pins(path: &Path, violations: &mut Vec<String>) -> Resu
         }
     }
     Ok(())
-}
-
-fn check_scheduled_evidence_uploads(
-    path: &Path,
-    violations: &mut Vec<String>,
-) -> Result<(), String> {
-    let text = fs::read_to_string(path)
-        .map_err(|error| format!("failed to read {}: {error}", path.display()))?;
-    for (name, report_path) in [
-        (
-            "Upload differential evidence",
-            "offprint-rs/target/benchmark-evidence/singlefile-differential.json",
-        ),
-        (
-            "Upload performance evidence",
-            "offprint-rs/target/benchmark-evidence/performance.json",
-        ),
-    ] {
-        let Some(step) = workflow_named_step(&text, name) else {
-            violations.push(format!("{} has no `{name}` step", path.display()));
-            continue;
-        };
-        if !step.iter().any(|line| line.trim() == "if: always()") {
-            violations.push(format!(
-                "{} step `{name}` must run with `if: always()`",
-                path.display()
-            ));
-        }
-        if !step
-            .iter()
-            .any(|line| line.trim().starts_with("uses: actions/upload-artifact@"))
-        {
-            violations.push(format!(
-                "{} step `{name}` must use `actions/upload-artifact`",
-                path.display()
-            ));
-        }
-        if !step
-            .iter()
-            .any(|line| line.trim() == format!("path: {report_path}"))
-        {
-            violations.push(format!(
-                "{} step `{name}` must upload `{report_path}`",
-                path.display()
-            ));
-        }
-        if !step
-            .iter()
-            .any(|line| line.trim() == "if-no-files-found: error")
-        {
-            violations.push(format!(
-                "{} step `{name}` must fail when its report is missing",
-                path.display()
-            ));
-        }
-    }
-    Ok(())
-}
-
-fn workflow_named_step<'a>(text: &'a str, name: &str) -> Option<Vec<&'a str>> {
-    let marker = format!("- name: {name}");
-    let mut lines = text.lines();
-    let first_line = lines.find(|line| line.trim() == marker)?;
-    let indentation = first_line
-        .len()
-        .saturating_sub(first_line.trim_start().len());
-    let mut step = vec![first_line];
-    for line in lines {
-        let next_indentation = line.len().saturating_sub(line.trim_start().len());
-        if !line.trim().is_empty() && next_indentation <= indentation {
-            break;
-        }
-        step.push(line);
-    }
-    Some(step)
 }
 
 fn check_text_file(path: &Path, violations: &mut Vec<String>) -> Result<(), String> {
@@ -746,10 +667,7 @@ mod tests {
 
     use tempfile::TempDir;
 
-    use super::{
-        check_crate_package_metadata, check_scheduled_evidence_uploads, check_workflow_action_pins,
-        release_tag_version,
-    };
+    use super::{check_crate_package_metadata, check_workflow_action_pins, release_tag_version};
     use crate::package::{PUBLISHABLE_CRATES, crate_directory};
 
     #[test]
@@ -858,42 +776,6 @@ offprint-test-support = { path = "test-support" }
                 violations.len()
             ));
         }
-        Ok(())
-    }
-
-    #[test]
-    fn scheduled_evidence_uploads_survive_producer_failures() -> Result<(), String> {
-        let temporary = TempDir::new().map_err(|error| error.to_string())?;
-        let workflow = temporary.path().join("scheduled.yml");
-        let valid = r#"steps:
-  - name: Upload differential evidence
-    if: always()
-    uses: actions/upload-artifact@revision
-    with:
-      path: offprint-rs/target/benchmark-evidence/singlefile-differential.json
-      if-no-files-found: error
-  - name: Upload performance evidence
-    if: always()
-    uses: actions/upload-artifact@revision
-    with:
-      path: offprint-rs/target/benchmark-evidence/performance.json
-      if-no-files-found: error
-"#;
-        fs::write(&workflow, valid).map_err(|error| error.to_string())?;
-        let mut violations = Vec::new();
-        check_scheduled_evidence_uploads(&workflow, &mut violations)?;
-        assert!(violations.is_empty(), "{violations:?}");
-
-        let invalid = valid.replacen("    if: always()\n", "", 1).replacen(
-            "      if-no-files-found: error\n",
-            "",
-            1,
-        );
-        fs::write(&workflow, invalid).map_err(|error| error.to_string())?;
-        check_scheduled_evidence_uploads(&workflow, &mut violations)?;
-        assert_eq!(violations.len(), 2);
-        assert!(violations[0].contains("if: always()"));
-        assert!(violations[1].contains("report is missing"));
         Ok(())
     }
 

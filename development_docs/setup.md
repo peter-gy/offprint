@@ -114,7 +114,7 @@ Run `just codegen` after changing canonical records, fixture metadata, CDP
 selection, or collector source, then run `just codegen-check`.
 
 [Testing](./testing.md) maps changes to required evidence.
-[CI](../.github/workflows/ci.yml) records the repository tools and installation
+[Publish](../.github/workflows/publish.yml) records the repository tools and installation
 steps required by the complete release gate.
 
 `just clean` clears build outputs, package installations, and generated caches.
