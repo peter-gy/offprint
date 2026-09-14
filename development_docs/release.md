@@ -2,8 +2,8 @@
 
 Push an annotated `v<version>` tag from `main` to run
 [`publish.yml`](../.github/workflows/publish.yml). The tag must match
-`versions.toml`, Cargo, npm, and Python package metadata. CI, browser contracts,
-and Pages must each pass for the tagged commit.
+`versions.toml`, Cargo, npm, and Python package metadata. The publish workflow
+runs the release gate and browser contracts for the tagged commit.
 
 ## Release order
 
@@ -98,5 +98,5 @@ to build applications from a checkout.
 just release-check
 ```
 
-The CI validation job installs every required repository tool before running
+The release validation job installs every required repository tool before running
 the gate. Run the corresponding package check after changing a release shape.

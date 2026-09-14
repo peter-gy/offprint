@@ -15,6 +15,12 @@ SDK use Vitest on Node. Python static checks run through `just python-qa`,
 which combines Ruff, ty, and Pyrefly. `just python-check` builds the native
 adapter and runs pytest. `just site-check` builds the VitePress site.
 
+[CI](../.github/workflows/ci.yml) runs one Linux job for Rust formatting, linting,
+tests, repository contracts, JavaScript checks, collector tests, and generated
+file freshness. Run browser, binding, platform, and performance checks locally
+for the affected behavior. The publish workflow runs the complete release gate
+and browser contracts. Pages deploys documentation on pushes to `main`.
+
 ## Focus a failing check
 
 ```console
@@ -67,7 +73,7 @@ denied, executes documentation tests, compiles Rust examples, and checks the Vit
 
 ## Browser fixtures
 
-Linux CI uses the [Chromium runtime action](../.github/actions/setup-chromium/action.yml)
+Linux release jobs use the [Chromium runtime action](../.github/actions/setup-chromium/action.yml)
 to install browser libraries and an AppArmor profile for the managed Chromium
 cache path. The profile permits the user namespaces Chromium needs for its
 sandbox. See [Linux sandbox setup](../docs/operations/troubleshooting.md#chromium-reports-no-usable-sandbox-on-linux)
@@ -109,9 +115,9 @@ WebSocket and EventSource behavior, and oversized inputs.
 | Workflow or release                                | Workflow lint, repository checks, package dry runs                   |
 
 `just miri` uses [Miri](https://github.com/rust-lang/miri), a Rust interpreter
-that checks memory behavior, to run library tests for x86-64 Linux. This target
-matches CI across development hosts. Process-level contracts run as native
-integration tests in the platform lanes.
+that checks memory behavior, to run library tests for x86-64 Linux across
+development hosts. Run process-level contracts as native integration tests
+on the target platform.
 
 Run `just repo-check` before every handoff. A focused package check compiles its
 dependencies and tests the selected owner. Changes to a shared contract also
