@@ -36,4 +36,4 @@ pub use offprint_browser::{
 };
 pub use page::ChromiumPage;
 pub use remote::{probe_remote_browser, resolve_remote_endpoint};
-pub use transport::{CdpClient, CdpEvent};
+pub use transport::{CdpClient, CdpEvent, CdpEventReceiver};

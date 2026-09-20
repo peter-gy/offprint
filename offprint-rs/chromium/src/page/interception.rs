@@ -10,7 +10,7 @@ use url::Url;
 use super::activity::is_long_lived_response;
 use crate::CdpClient;
 use crate::resources::ObservedResourceRecorder;
-use crate::targets::SessionRegistry;
+use crate::transport::PageEvents;
 
 use self::paused::{InterceptionContext, InterceptionFailure, PausedRequest};
 
@@ -33,7 +33,7 @@ pub(super) struct NetworkInterception {
 impl NetworkInterception {
     pub(super) fn start(
         client: CdpClient,
-        sessions: SessionRegistry,
+        events: &PageEvents,
         observed_resources: ObservedResourceRecorder,
         guard: NetworkGuard,
         headers: Vec<RequestHeader>,
@@ -43,8 +43,8 @@ impl NetworkInterception {
         let cancellation = CancellationToken::new();
         let task_state = Arc::clone(&state);
         let task_cancellation = cancellation.clone();
+        let mut events = events.interception();
         let task = tokio::spawn(async move {
-            let mut events = client.subscribe();
             let mut continuations = tokio::task::JoinSet::new();
             let context = InterceptionContext::new(
                 client.clone(),
@@ -88,11 +88,6 @@ impl NetworkInterception {
                 let Some(session_id) = event.session_id.as_deref() else {
                     continue;
                 };
-                if !sessions.read().await.contains(session_id)
-                    || event.method.as_ref() != "Fetch.requestPaused"
-                {
-                    continue;
-                }
                 let request = match PausedRequest::from_event(session_id, event.params.clone()) {
                     Ok(request) => request,
                     Err(error) => {
@@ -312,15 +307,12 @@ pub(super) async fn validate_guard_destination(guard: &NetworkGuard, url: &Url) 
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
     use std::error::Error;
-    use std::sync::Arc;
     use std::time::Duration;
 
     use offprint_browser::{NetworkGuard, ResourceObservationLimits};
     use offprint_model::NetworkPolicy;
     use serde_json::json;
-    use tokio::sync::RwLock;
     use tokio::time::timeout;
 
     use super::*;
@@ -333,16 +325,16 @@ mod tests {
     async fn cancellation_resolves_each_paused_response_once() -> TestResult {
         let server = TestCdpServer::start("Fetch.takeResponseBodyAsStream").await?;
         let client = CdpClient::connect(server.endpoint().clone()).await?;
-        let sessions = Arc::new(RwLock::new(HashSet::from(["session".to_owned()])));
+        let events = client.page_events("session");
         let observed = ObservedResources::start(
             client.clone(),
-            Arc::clone(&sessions),
+            &events,
             ResourceObservationLimits::default(),
         );
         let origin = Url::parse("https://example.test/")?;
         let interception = NetworkInterception::start(
             client.clone(),
-            sessions,
+            &events,
             observed.recorder(),
             NetworkGuard::new(NetworkPolicy::Unrestricted, &origin)?,
             Vec::new(),

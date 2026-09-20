@@ -8,7 +8,7 @@ use futures_util::{Sink, SinkExt, Stream, StreamExt};
 use offprint_model::{ErrorStage, OffprintError, Result};
 use serde::Deserialize;
 use serde_json::{Value, json};
-use tokio::sync::{Semaphore, broadcast, mpsc, oneshot};
+use tokio::sync::{Semaphore, mpsc, oneshot};
 use tokio::task::JoinHandle;
 use tokio::time::timeout;
 use tokio_tungstenite::tungstenite::Message;
@@ -23,7 +23,7 @@ const MAX_MESSAGE_BYTES: usize = 96 * 1024 * 1024;
 const MAX_EVENT_BYTES: usize = 1024 * 1024;
 const MAX_EVENT_QUEUE_BYTES: usize = 128 * 1024 * 1024;
 const COMMAND_CAPACITY: usize = 256;
-const EVENT_CAPACITY: usize = MAX_EVENT_QUEUE_BYTES / MAX_EVENT_BYTES;
+const EVENT_CAPACITY: usize = 16_384;
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const COMMAND_TIMEOUT: Duration = Duration::from_secs(30);
 const CLOSE_TIMEOUT: Duration = Duration::from_secs(5);
@@ -57,7 +57,7 @@ impl CdpEvent {
         if self.method.as_ref() != E::METHOD {
             return Ok(None);
         }
-        serde_json::from_value((*self.params).clone())
+        E::deserialize(self.params.as_ref())
             .map(Some)
             .map_err(|error| {
                 cdp_error(
@@ -85,41 +85,10 @@ struct ClientInner {
     task: Mutex<Option<JoinHandle<Result<()>>>>,
 }
 
-#[derive(Clone, Debug)]
-struct EventBus {
-    all: broadcast::Sender<CdpEvent>,
-    navigation: broadcast::Sender<CdpEvent>,
-    offline: broadcast::Sender<CdpEvent>,
-    targets: broadcast::Sender<CdpEvent>,
-}
-
-impl EventBus {
-    fn new(capacity: usize) -> Self {
-        let (all, _) = broadcast::channel(capacity);
-        let (navigation, _) = broadcast::channel(capacity);
-        let (offline, _) = broadcast::channel(capacity);
-        let (targets, _) = broadcast::channel(capacity);
-        Self {
-            all,
-            navigation,
-            offline,
-            targets,
-        }
-    }
-
-    fn publish(&self, event: CdpEvent) {
-        if navigation_event(&event) {
-            let _ignored = self.navigation.send(event.clone());
-        }
-        if offline_event(&event) {
-            let _ignored = self.offline.send(event.clone());
-        }
-        if target_event(&event) {
-            let _ignored = self.targets.send(event.clone());
-        }
-        let _ignored = self.all.send(event);
-    }
-}
+mod events;
+pub use events::CdpEventReceiver;
+pub(crate) use events::PageEvents;
+use events::{EventBus, EventPublisher};
 
 impl Drop for ClientInner {
     fn drop(&mut self) {
@@ -226,7 +195,7 @@ impl CdpClient {
         let (outbound_tx, outbound_rx) = mpsc::channel(COMMAND_CAPACITY);
         let (cancellation_tx, cancellation_rx) = mpsc::unbounded_channel();
         let events = EventBus::new(EVENT_CAPACITY);
-        let actor_events = events.clone();
+        let actor_events = events.publisher();
         let task = tokio::spawn(run_transport(
             socket,
             outbound_rx,
@@ -248,28 +217,17 @@ impl CdpClient {
         })
     }
 
-    pub fn subscribe(&self) -> broadcast::Receiver<CdpEvent> {
+    pub fn subscribe(&self) -> crate::CdpEventReceiver {
         self.inner.events.all.subscribe()
     }
 
-    pub(crate) fn subscribe_navigation(&self) -> broadcast::Receiver<CdpEvent> {
-        self.inner.events.navigation.subscribe()
-    }
-
-    pub(crate) fn subscribe_offline(&self) -> broadcast::Receiver<CdpEvent> {
-        self.inner.events.offline.subscribe()
-    }
-
-    pub(crate) fn subscribe_targets(&self) -> broadcast::Receiver<CdpEvent> {
-        self.inner.events.targets.subscribe()
+    pub(crate) fn page_events(&self, session_id: &str) -> Arc<PageEvents> {
+        self.inner.events.scope(session_id)
     }
 
     #[cfg(test)]
     pub(crate) fn event_receiver_count(&self) -> usize {
-        self.inner.events.all.receiver_count()
-            + self.inner.events.navigation.receiver_count()
-            + self.inner.events.offline.receiver_count()
-            + self.inner.events.targets.receiver_count()
+        self.inner.events.receiver_count()
     }
 
     pub(crate) fn mark_owned_browser(&self) {
@@ -482,7 +440,7 @@ async fn run_transport<W>(
     socket: W,
     mut outbound: mpsc::Receiver<Outbound>,
     mut cancellations: mpsc::UnboundedReceiver<u64>,
-    events: EventBus,
+    events: EventPublisher,
     deadlines: WireDeadlines,
 ) -> Result<()>
 where
@@ -564,7 +522,7 @@ where
             inbound = reader.next() => {
                 match inbound {
                     Some(Ok(message)) => {
-                        if let Some(error) = route_message(message, &mut pending, &events) {
+                        if let Some(error) = route_message(message, &mut pending, &events.bus) {
                             break Err(error);
                         }
                     }
@@ -672,7 +630,7 @@ fn route_materialized_message(
     pending: &mut BTreeMap<u64, PendingCommand>,
     events: &EventBus,
 ) -> Option<OffprintError> {
-    let message: Value = match serde_json::from_str(text) {
+    let mut message: Value = match serde_json::from_str(text) {
         Ok(message) => message,
         Err(error) => return Some(cdp_decode_error(error)),
     };
@@ -681,7 +639,10 @@ fn route_materialized_message(
             let result = if let Some(error) = message.get("error") {
                 Err(remote_error(error, id, &command.method))
             } else {
-                Ok(message.get("result").cloned().unwrap_or(Value::Null))
+                Ok(message
+                    .get_mut("result")
+                    .map(Value::take)
+                    .unwrap_or(Value::Null))
             };
             let _ignored = command.response.send(result);
         }
@@ -690,13 +651,18 @@ fn route_materialized_message(
     if let Some(method) = message.get("method").and_then(Value::as_str) {
         let event = CdpEvent {
             method: Arc::from(method),
-            params: Arc::new(message.get("params").cloned().unwrap_or(Value::Null)),
+            params: Arc::new(
+                message
+                    .get_mut("params")
+                    .map(Value::take)
+                    .unwrap_or(Value::Null),
+            ),
             session_id: message
                 .get("sessionId")
                 .and_then(Value::as_str)
                 .map(Arc::from),
         };
-        events.publish(event);
+        events.publish(event, text.len());
     }
     None
 }

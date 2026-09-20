@@ -934,6 +934,28 @@
       }
     },
     {
+      "id": "parallel-capture-isolation",
+      "group": "lifecycle",
+      "summary": "Preserves complete resources, ordered outcomes, and cancellation isolation across concurrent captures.",
+      "required": true,
+      "capabilities": [
+        "stage-cancellation",
+        "offline-reopen"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "every-resource-has-outcome",
+        "zero-external-requests"
+      ],
+      "runner": {
+        "package": "offprint",
+        "testTarget": "parallel_capture",
+        "filter": "parallel_capture_isolates_resources_failures_and_cancellation",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
       "id": "pdf-figure-pagination",
       "group": "artifact",
       "summary": "Keeps a visual figure on one PDF page when it fits.",

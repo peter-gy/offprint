@@ -24,7 +24,7 @@ impl ChromiumPage {
         if let Some(proxy) = self.validating_proxy.lock().await.as_ref() {
             proxy.ensure_standard_guard(url).await?;
         }
-        let mut events = self.client.subscribe_navigation();
+        let mut events = self.events.navigation();
         let response = self
             .client
             .command_with_timeout(
@@ -73,7 +73,7 @@ impl ChromiumPage {
                 redirects,
             });
         }
-        let readiness_probe = self.wait_for_document_readiness(readiness);
+        let readiness_probe = self.wait_for_document_readiness(readiness, frame_id.clone());
         tokio::pin!(readiness_probe);
         timeout(deadline, async {
             loop {
@@ -227,7 +227,11 @@ impl ChromiumPage {
         })
     }
 
-    async fn wait_for_document_readiness(&self, readiness: ReadinessMode) -> Result<()> {
+    async fn wait_for_document_readiness(
+        &self,
+        readiness: ReadinessMode,
+        frame_id: String,
+    ) -> Result<()> {
         let expression = match readiness {
             ReadinessMode::NetworkIdle | ReadinessMode::DomContentLoaded => {
                 "location.href !== 'about:blank' && document.readyState !== 'loading'"
@@ -238,6 +242,9 @@ impl ChromiumPage {
         };
         loop {
             sleep(READINESS_PROBE_INTERVAL).await;
+            if let Some(error) = self.interception_error(&frame_id, false).await {
+                return Err(error);
+            }
             let reached = match self
                 .client
                 .command_with_timeout(

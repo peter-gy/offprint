@@ -28,7 +28,7 @@ use self::stream::{
 };
 use self::tasks::OrderedBodyTasks;
 use crate::CdpClient;
-use crate::targets::SessionRegistry;
+use crate::transport::PageEvents;
 
 mod identity;
 mod normalization;
@@ -75,7 +75,7 @@ pub(crate) struct CapturedInterceptedResponse {
 impl ObservedResources {
     pub(crate) fn start(
         client: CdpClient,
-        sessions: SessionRegistry,
+        events: &PageEvents,
         limits: ResourceObservationLimits,
     ) -> Self {
         let state = Arc::new(Mutex::new(ObservedResourceState::new(limits)));
@@ -84,8 +84,8 @@ impl ObservedResources {
         let task_state = Arc::clone(&state);
         let task_changed = Arc::clone(&changed);
         let task_cancellation = cancellation.clone();
+        let mut events = events.resources();
         let task = tokio::spawn(async move {
-            let mut events = client.subscribe();
             let mut body_tasks = OrderedBodyTasks::new(MAXIMUM_RESOURCE_BODY_TASKS);
             loop {
                 let event = tokio::select! {
@@ -127,9 +127,6 @@ impl ObservedResources {
                 let Some(session_id) = event.session_id.as_deref() else {
                     continue;
                 };
-                if !sessions.read().await.contains(session_id) {
-                    continue;
-                }
                 match event.method.as_ref() {
                     "Network.requestWillBeSent" => {
                         observe_request(&task_state, session_id, &event.params).await;
@@ -603,12 +600,9 @@ impl Drop for ObservedResources {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-    use std::sync::Arc;
 
     use offprint_browser::ResourceObservationLimits;
     use serde_json::json;
-    use tokio::sync::RwLock;
 
     use super::*;
     use crate::resources::test_support::TestCdpServer;
@@ -630,10 +624,10 @@ mod tests {
     -> std::result::Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let server = TestCdpServer::start("Network.streamResourceContent").await?;
         let client = CdpClient::connect(server.endpoint().clone()).await?;
-        let sessions = Arc::new(RwLock::new(HashSet::from(["session".to_owned()])));
+        let events = client.page_events("session");
         let observed = ObservedResources::start(
             client.clone(),
-            sessions,
+            &events,
             ResourceObservationLimits::default(),
         );
         wait_for_receivers(&client, 1).await?;

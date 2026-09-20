@@ -310,6 +310,11 @@ pub(super) async fn observe_request_id(
         .map(str::to_owned);
     let key = request_key(session_id, request_id);
     let mut state = state.lock().await;
+    // Network observation may commit the response while interception waits for
+    // this lock. A late Fetch observation must not recreate a pending request.
+    if !network_observed && state.records.contains_key(&key) {
+        return;
+    }
     let existed = state.requests.contains_key(&key);
     if !existed {
         state.sequence = state.sequence.saturating_add(1);
@@ -625,6 +630,33 @@ mod tests {
             ..ObservedResourceState::default()
         };
 
+        assert!(matches!(
+            select_reusable_response(&state, "session", "frame", &url),
+            ResponseSelection::Ready(_)
+        ));
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn late_interception_does_not_reopen_a_completed_response() -> TestResult {
+        let url = Url::parse("https://example.test/image.svg")?;
+        let state = Mutex::new(ObservedResourceState {
+            records: BTreeMap::from([(
+                request_key("session", "request"),
+                completed_response(1, "request", &url, [1; 32], b"<svg/>"),
+            )]),
+            ..ObservedResourceState::default()
+        });
+        observe_request_id(
+            &state,
+            "session",
+            "request",
+            &json!({"request":{"url":url.as_str(),"method":"GET"},"frameId":"frame"}),
+            false,
+        )
+        .await;
+        let state = state.lock().await;
+        assert!(state.requests.is_empty());
         assert!(matches!(
             select_reusable_response(&state, "session", "frame", &url),
             ResponseSelection::Ready(_)

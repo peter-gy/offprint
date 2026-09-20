@@ -156,7 +156,8 @@ fn events_keep_the_flat_session_identifier() {
 fn navigation_stream_ignores_subresource_event_bursts() -> TestResult {
     let mut pending = BTreeMap::new();
     let events = EventBus::new(1);
-    let mut navigation = events.navigation.subscribe();
+    let page = events.scope("s1");
+    let mut navigation = page.navigation();
     for index in 0..512 {
         let message = serde_json::to_string(&json!({
             "method": "Network.requestWillBeSent",
@@ -187,7 +188,8 @@ fn navigation_stream_ignores_subresource_event_bursts() -> TestResult {
 fn offline_stream_ignores_inline_resource_event_bursts() -> TestResult {
     let mut pending = BTreeMap::new();
     let events = EventBus::new(1);
-    let mut offline = events.offline.subscribe();
+    let page = events.scope("s1");
+    let mut offline = page.offline();
     for index in 0..512 {
         let message = serde_json::to_string(&json!({
             "method": "Network.requestWillBeSent",
@@ -314,6 +316,71 @@ fn oversized_responses_still_route_to_pending_commands() -> TestResult {
 }
 
 #[tokio::test]
+async fn retained_clients_observe_clean_transport_shutdown()
+-> std::result::Result<(), Box<dyn Error + Send + Sync>> {
+    let server = crate::resources::test_support::TestCdpServer::start("").await?;
+    let client = CdpClient::connect(server.endpoint().clone()).await?;
+    let page = client.page_events("main");
+    let mut browser = client.subscribe();
+    let mut scoped = page.navigation();
+    client.close().await?;
+    for receiver in [&mut browser, &mut scoped] {
+        assert!(matches!(
+            tokio::time::timeout(Duration::from_secs(1), receiver.recv()).await?,
+            Err(tokio::sync::broadcast::error::RecvError::Closed)
+        ));
+    }
+    assert!(matches!(
+        client.subscribe().try_recv(),
+        Err(tokio::sync::broadcast::error::TryRecvError::Closed)
+    ));
+    server.close().await;
+    Ok(())
+}
+
+#[tokio::test]
+async fn retained_clients_observe_failed_transport_shutdown()
+-> std::result::Result<(), Box<dyn Error + Send + Sync>> {
+    let server = crate::resources::test_support::TestCdpServer::start("").await?;
+    let client = CdpClient::connect(server.endpoint().clone()).await?;
+    let page = client.page_events("main");
+    let mut browser = client.subscribe();
+    let mut scoped = page.resources();
+    server.close().await;
+    for receiver in [&mut browser, &mut scoped] {
+        assert!(matches!(
+            tokio::time::timeout(Duration::from_secs(1), receiver.recv()).await?,
+            Err(tokio::sync::broadcast::error::RecvError::Closed)
+        ));
+    }
+    Ok(())
+}
+
+#[tokio::test]
+async fn abort_before_first_poll_closes_retained_page_subscriptions() -> TestResult {
+    let (_outbound, outbound_receiver) = mpsc::channel(1);
+    let (_cancellations, cancellation_receiver) = mpsc::unbounded_channel();
+    let events = EventBus::new(1);
+    let page = events.scope("main");
+    let mut receiver = page.navigation();
+    let task = tokio::spawn(run_transport(
+        PendingWire,
+        outbound_receiver,
+        cancellation_receiver,
+        events.publisher(),
+        test_wire_deadlines(),
+    ));
+    // This single-threaded test has not yielded since spawning the wire task.
+    task.abort();
+    assert!(task.await.is_err());
+    assert!(matches!(
+        tokio::time::timeout(Duration::from_secs(1), receiver.recv()).await?,
+        Err(tokio::sync::broadcast::error::RecvError::Closed)
+    ));
+    Ok(())
+}
+
+#[tokio::test]
 async fn actor_send_timeout_fails_the_pending_command() -> TestResult {
     let (outbound, outbound_receiver) = mpsc::channel(1);
     let (_cancellations, cancellation_receiver) = mpsc::unbounded_channel();
@@ -322,7 +389,7 @@ async fn actor_send_timeout_fails_the_pending_command() -> TestResult {
         PendingWire,
         outbound_receiver,
         cancellation_receiver,
-        events,
+        events.publisher(),
         test_wire_deadlines(),
     ));
     let (response, response_receiver) = oneshot::channel();
@@ -362,7 +429,7 @@ async fn actor_close_timeout_terminates_the_transport() -> TestResult {
         PendingWire,
         outbound_receiver,
         cancellation_receiver,
-        events,
+        events.publisher(),
         test_wire_deadlines(),
     ));
     assert!(outbound.send(Outbound::Close).await.is_ok());

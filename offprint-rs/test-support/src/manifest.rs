@@ -403,6 +403,20 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
             ],
         ),
         fixture(
+            "parallel-capture-isolation",
+            FixtureGroup::Lifecycle,
+            "Preserves complete resources, ordered outcomes, and cancellation isolation across concurrent captures.",
+            &[
+                FixtureCapability::StageCancellation,
+                FixtureCapability::OfflineReopen,
+            ],
+            &[
+                FixtureExpectation::CaptureSucceeds,
+                FixtureExpectation::EveryResourceHasOutcome,
+                FixtureExpectation::ZeroExternalRequests,
+            ],
+        ),
+        fixture(
             "pdf-figure-pagination",
             FixtureGroup::Artifact,
             "Keeps a visual figure on one PDF page when it fits.",
@@ -736,6 +750,12 @@ fn runner(id: &str) -> FixtureRunner {
             "offprint",
             Some("artifact_exports"),
             "pdf_keeps_heading_with_following_content",
+            true,
+        ),
+        "parallel-capture-isolation" => (
+            "offprint",
+            Some("parallel_capture"),
+            "parallel_capture_isolates_resources_failures_and_cancellation",
             true,
         ),
         "pdf-figure-pagination" => (
