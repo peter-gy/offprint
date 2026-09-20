@@ -1,0 +1,32 @@
+offprint-rs/document/src/discover/rewrite.rs
+  s_e649d6ee88111e::t_04b527690fead1 1-14,16-24,29-33,38-53,56-59,64-78
+  s_e649d6ee88111e::t_02e2b4cb27bc05 15,25-28,34-37,54-55,60-63
+development_docs/performance.md
+  s_e649d6ee88111e::t_d336a2aec1568f 25-35
+offprint-rs/document/src/discover.rs
+  s_e649d6ee88111e::t_04b527690fead1 13,21,85-86
+offprint-rs/document/src/serialize.rs
+  s_e649d6ee88111e::t_c63288f598dbe1 45-48
+offprint-rs/document/src/discover/css.rs
+  s_e649d6ee88111e::t_4b454cb3c2fb2a 2,300-308,310,312-315
+  s_e649d6ee88111e::t_04b527690fead1 11,60
+offprint-rs/benches/examples/css_expansion.rs
+  s_e649d6ee88111e::t_d336a2aec1568f 1-3,5-40,43-52,54-55
+  s_e649d6ee88111e::t_f385083ed0d465 4,41-42,53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "15635f7c14212cf3fd4455a1892c0f7601d90aac",
+  "prompts": {},
+  "sessions": {
+    "s_e649d6ee88111e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0bb1c-90fc-74a2-bb7f-a4f16bea57b3",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
