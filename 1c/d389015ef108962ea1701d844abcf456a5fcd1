@@ -1,0 +1,69 @@
+offprint-rs/core/src/runtime.rs
+  s_e649d6ee88111e::t_3d8d148dae9ac2 21,27,37,167,194-196,234,240
+offprint-rs/core/src/artifact_service/markdown_bundle.rs
+  s_e649d6ee88111e::t_3ed7d1e92e7660 8,170,189
+offprint-rs/core/src/artifact_service/export.rs
+  s_e649d6ee88111e::t_c58e6e9d0dee10 16
+  s_e649d6ee88111e::t_3ed7d1e92e7660 17,381
+offprint-rs/core/src/scheduler.rs
+  s_e649d6ee88111e::t_0398ff8e4e72ef 472-484,497-499,743,746,751-752
+  s_e649d6ee88111e::t_d22b3474488210 744-745,747-750
+  s_e649d6ee88111e::t_f9d4842f4fb294 65-70,147-155,210-215,314
+  s_e649d6ee88111e::t_36eaa97d9c6181 2,15,469-471,485-496
+  s_e649d6ee88111e::t_fc7e38a9aa3e63 63-64,71-72,74,122,208-209,216-217,219,229
+  s_e649d6ee88111e::t_6c9628ebd385a5 140-143,145-146
+docs/guides/batch-and-crawl.md
+  s_e649d6ee88111e::t_0398ff8e4e72ef 43,45-47
+  s_e649d6ee88111e::t_0c4d1363af3077 66-67
+  s_e649d6ee88111e::t_b032ec3dbff7ea 44
+  s_e649d6ee88111e::t_5a758504dd6449 68-70
+development_docs/schedulers.md
+  s_e649d6ee88111e::t_0398ff8e4e72ef 24-25,55
+  s_e649d6ee88111e::t_0c4d1363af3077 70-72
+  s_e649d6ee88111e::t_1ad1d982870451 67-69,73-83
+offprint-rs/core/src/runtime/checkpoints.rs
+  s_e649d6ee88111e::t_a6e1fbe4407089 168-169,192-193,198,205-213,217-222
+  s_e649d6ee88111e::t_9b5753d523c36a 184,244-246
+  s_e649d6ee88111e::t_280f9661106eae 247-248
+  s_e649d6ee88111e::t_f9d4842f4fb294 44-46,66-69,73-79,82-84,96-101,112-115,127-133,138-140,151-155,178-179,199-204,214-216,236-238
+  s_e649d6ee88111e::t_88627c84138951 8-9
+  s_e649d6ee88111e::t_3d8d148dae9ac2 1-7,10-35,48-56,65,70-72,80-81,85-95,102-111,116-126,134-137,141-150,156-167,170-174,185-186,188,190-191,194-197,223-232,239,241,243,249-257
+  s_e649d6ee88111e::t_3ed7d1e92e7660 36-43,47,57-64,175-177,180-183,187,189,233-235,240,242
+offprint-rs/core/src/runtime/configuration.rs
+  s_e649d6ee88111e::t_3d8d148dae9ac2 116
+offprint-rs/core/src/scheduler/resume.rs
+  s_e649d6ee88111e::t_a6e1fbe4407089 560-564,571-590,594-596,605-607,619-622
+  s_e649d6ee88111e::t_fc7e38a9aa3e63 2-3,9,15-16,22,28,45,100,103,119,131-132,136
+  s_e649d6ee88111e::t_3ed7d1e92e7660 14
+  s_e649d6ee88111e::t_f9d4842f4fb294 31-44,52-62,106-111,114-115,117,139-158,565-570,591-593,597-604,608-617
+  s_e649d6ee88111e::t_dee4963b7f9ab3 101-102,104,112-113,120
+  s_e649d6ee88111e::t_af1cc500de5697 618
+offprint-rs/core/src/bounded_io.rs
+  s_e649d6ee88111e::t_f9d4842f4fb294 66-71,78-81,97-100,111-113,137-142,144-151,163-166
+  s_e649d6ee88111e::t_3ed7d1e92e7660 15-20,24,26,39
+  s_e649d6ee88111e::t_9b5753d523c36a 36-38
+  s_e649d6ee88111e::t_0911dddb64ac68 1-14,21-23,25,27-35,40-65,72-77,82-96,101-110,114-136,143,152-162,167-169
+offprint-rs/core/src/artifact_service.rs
+  s_e649d6ee88111e::t_c58e6e9d0dee10 12
+  s_e649d6ee88111e::t_3ed7d1e92e7660 15,391
+  s_e649d6ee88111e::t_f9d4842f4fb294 429
+  s_e649d6ee88111e::t_ff3e7de076d53f 422
+offprint-rs/core/src/lib.rs
+  s_e649d6ee88111e::t_0911dddb64ac68 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "1cd389015ef108962ea1701d844abcf456a5fcd1",
+  "prompts": {},
+  "sessions": {
+    "s_e649d6ee88111e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0bb1c-90fc-74a2-bb7f-a4f16bea57b3",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
