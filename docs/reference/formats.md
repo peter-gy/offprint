@@ -26,7 +26,11 @@ through `FormatSpec` or `verify_format`.
 
 PDF export prints the offline-verified page through Chromium. It preserves
 selectable text, printable HTTP, HTTPS, mail, and telephone links, tagged
-structure, document outline, and selected source metadata.
+structure, document outline, and source provenance. The PDF Info dictionary
+records the requested URL, final URL, and exact RFC 3339 capture timestamp.
+The Extensible Metadata Platform packet also records both URLs and their
+digests, the source-artifact digest, capture policy digest, browser identity,
+capture environment, verification mode, resource summary, and warning codes.
 
 Offprint activates print styles before offline verification and loads and
 decodes HTML image elements, including lazy images in shadow trees and inline

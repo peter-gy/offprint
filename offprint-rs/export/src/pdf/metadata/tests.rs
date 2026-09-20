@@ -202,6 +202,14 @@ fn enriched_pdf_has_cross_checked_offprint_metadata() -> TestResult {
     assert!(metadata.contains("Grace Hopper"));
     assert!(metadata.contains("<offprint:SourceArtifactSHA256>"));
     assert!(metadata.contains("urn:offprint:source-artifact:sha256:"));
+    let provenance = super::verify::verify_metadata(&document)?;
+    let manifest = manifest()?;
+    assert_eq!(
+        provenance.requested_url,
+        manifest.source.requested_url.as_str()
+    );
+    assert_eq!(provenance.final_url, manifest.source.final_url.as_str());
+    assert_eq!(provenance.captured_at, manifest.captured_at.to_rfc3339());
     Ok(())
 }
 
@@ -212,6 +220,22 @@ fn verifier_rejects_independent_duplicate_field_mutations() -> TestResult {
         (
             "Info source",
             mutate_info(&enriched, "Source", "https://other.example/")?,
+        ),
+        (
+            "Info requested source URL",
+            mutate_info(
+                &enriched,
+                "OffprintSourceRequestedURL",
+                "https://other.example/requested",
+            )?,
+        ),
+        (
+            "Info capture timestamp",
+            mutate_info(
+                &enriched,
+                "OffprintCaptureTimestamp",
+                "2026-01-01T00:00:00Z",
+            )?,
         ),
         (
             "Info title",

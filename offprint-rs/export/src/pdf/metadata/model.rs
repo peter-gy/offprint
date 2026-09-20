@@ -194,6 +194,18 @@ impl PdfMetadata {
                 value: Some(self.final_url.clone()),
             },
             InfoField {
+                key: "OffprintSourceRequestedURL",
+                value: Some(self.requested_url.clone()),
+            },
+            InfoField {
+                key: "OffprintSourceFinalURL",
+                value: Some(self.final_url.clone()),
+            },
+            InfoField {
+                key: "OffprintCaptureTimestamp",
+                value: Some(self.captured_at.clone()),
+            },
+            InfoField {
                 key: "OffprintSourceArtifactSHA256",
                 value: Some(self.source_artifact_sha256.to_hex()),
             },
