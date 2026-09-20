@@ -40,6 +40,11 @@ If some captures fail, Offprint writes `BatchResult` before returning exit
 status `1`. Read each `outcomes` entry instead of treating process failure as a
 missing result.
 
+Results retain the input job order. Batch `concurrency` bounds running capture
+jobs, while the service's [context limit](../reference/service-api.md) bounds browser contexts
+shared by captures, offline verification, and exports. Configure both limits
+when increasing parallelism. A failed job leaves the other captures running.
+
 ## Resume a batch
 
 Add this `resume` field to the batch request:
@@ -57,6 +62,11 @@ Resume requires file outputs and rejects requests containing credentials. A
 successful prior outcome is reused only while its request digest and artifact
 digest still match. Failed outcomes remain recorded unless `retryFailed` is
 true.
+
+Use a separate resume file for each service or CLI process, with one consistent
+file-name spelling on case-insensitive filesystems. Checkpoints are
+limited to 16 MiB. If an updated checkpoint exceeds that limit, the previous
+file remains intact and the schedule reports an error.
 
 ## Crawl a site
 

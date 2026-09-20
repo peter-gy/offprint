@@ -10,6 +10,7 @@ use crate::{Document, NodeData, RenderingRole};
 
 mod css;
 mod html;
+mod rewrite;
 mod svg;
 
 pub use css::{
@@ -17,6 +18,7 @@ pub use css::{
     discover_css_resources_bounded,
 };
 use css::{css_references_bounded, escape_css_string};
+use rewrite::rewrite_ranges;
 
 const CSS_BASE_ATTRIBUTE: &str = "data-offprint-css-base";
 
@@ -80,23 +82,8 @@ impl DocumentResources {
                 }
             }
         }
-        for (container, mut changes) in ranged {
-            changes.sort_by_key(|change| std::cmp::Reverse(change.0.start));
-            let source = container_text(document, container)?.to_owned();
-            let mut rewritten = source;
-            for (range, replacement) in changes {
-                if range.start > range.end
-                    || range.end > rewritten.len()
-                    || !rewritten.is_char_boundary(range.start)
-                    || !rewritten.is_char_boundary(range.end)
-                {
-                    return Err(resource_error(
-                        "offprint.resource.rewrite",
-                        "resource rewrite range is outside its source text",
-                    ));
-                }
-                rewritten.replace_range(range, &replacement);
-            }
+        for (container, changes) in ranged {
+            let rewritten = rewrite_ranges(container_text(document, container)?, changes)?;
             set_container_text(document, container, rewritten)?;
         }
         remove_css_base_attributes(document);

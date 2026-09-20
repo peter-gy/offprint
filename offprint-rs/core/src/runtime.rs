@@ -18,11 +18,13 @@ use crate::capture_service::JobControl;
 use crate::{CaptureIdGenerator, Clock};
 
 mod browser;
+mod checkpoints;
 mod configuration;
 mod context;
 mod lifecycle;
 
 pub(crate) use browser::{RuntimePagePurpose, RuntimePageRequest, probe_remote_browser};
+pub(crate) use checkpoints::{CheckpointLease, CheckpointRegistry};
 pub(crate) use configuration::RuntimeOptions;
 use context::{ContextPermit, PendingRuntimePage, RuntimePage};
 use lifecycle::{RuntimeLifecycle, closed_error};
@@ -32,6 +34,7 @@ const RUNTIME_SHUTDOWN_TIMEOUT: std::time::Duration = std::time::Duration::from_
 
 #[derive(Debug)]
 pub(crate) struct RuntimeState {
+    pub(crate) checkpoints: CheckpointRegistry,
     lifecycle: RuntimeLifecycle,
     pub(crate) discovery: ChromiumDiscovery,
     pub(crate) cache_dir: Utf8PathBuf,
@@ -161,6 +164,7 @@ impl RuntimeState {
     pub(crate) async fn close(self: &Arc<Self>) -> Result<()> {
         let (result, leader) = self.lifecycle.begin_close();
         if leader {
+            self.checkpoints.close_admission();
             // Claim capture cancellation before waking operation observers.
             if let Ok(jobs) = self.jobs.lock() {
                 for job in jobs.values() {
@@ -187,6 +191,9 @@ impl RuntimeState {
     }
 
     async fn finish_close(&self) -> Result<()> {
+        let checkpoints = tokio::time::timeout(RUNTIME_SHUTDOWN_TIMEOUT, self.checkpoints.wait())
+            .await
+            .map_err(|_| shutdown_deadline_error("resume checkpoints"));
         let jobs = tokio::time::timeout(RUNTIME_SHUTDOWN_TIMEOUT, async {
             loop {
                 let notified = self.jobs_changed.notified();
@@ -224,12 +231,13 @@ impl RuntimeState {
         let backend = tokio::time::timeout(RUNTIME_SHUTDOWN_TIMEOUT, self.browser_backend.close())
             .await
             .unwrap_or_else(|_| Err(shutdown_deadline_error("browser backend")));
-        jobs.and(contexts).and(backend)
+        checkpoints.and(jobs).and(contexts).and(backend)
     }
 }
 
 impl Drop for RuntimeState {
     fn drop(&mut self) {
+        self.checkpoints.close_admission();
         self.lifecycle.mark_dropped();
         self.shutdown.cancel();
         if let Ok(jobs) = self.jobs.lock() {

@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "format": "oxfmt collector sdk/node docs package.json pnpm-workspace.yaml .oxfmtrc.json .oxlintrc.json README.md development_docs .github",
-    "format:check": "oxfmt --check collector sdk/node docs package.json pnpm-workspace.yaml .oxfmtrc.json .oxlintrc.json README.md development_docs .github",
-    "lint": "oxlint --deny-warnings --report-unused-disable-directives collector sdk/node docs",
+    "format": "oxfmt collector sdk/node docs offprint-rs/chromium/src/pdf package.json pnpm-workspace.yaml .oxfmtrc.json .oxlintrc.json README.md development_docs .github",
+    "format:check": "oxfmt --check collector sdk/node docs offprint-rs/chromium/src/pdf package.json pnpm-workspace.yaml .oxfmtrc.json .oxlintrc.json README.md development_docs .github",
+    "lint": "oxlint --deny-warnings --report-unused-disable-directives collector sdk/node docs offprint-rs/chromium/src/pdf",
     "typecheck": "pnpm --recursive --if-present run typecheck",
     "check": "pnpm run format:check && pnpm run lint && pnpm run typecheck",
     "test": "pnpm --filter @offprint/collector test && pnpm --filter offprint run build:test && pnpm --filter offprint test"

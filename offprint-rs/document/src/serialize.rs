@@ -42,12 +42,10 @@ fn serialize_children(
     parent_name: Option<&QualName>,
     output: &mut (impl Write + ?Sized),
 ) -> io::Result<()> {
-    let children = document
-        .node(parent)
-        .map(|node| node.children.clone())
-        .unwrap_or_default();
-    for child in children {
-        serialize_node(document, child, parent_name, output)?;
+    if let Some(node) = document.node(parent) {
+        for &child in &node.children {
+            serialize_node(document, child, parent_name, output)?;
+        }
     }
     Ok(())
 }

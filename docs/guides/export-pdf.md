@@ -20,8 +20,19 @@ links. Links to captured element IDs navigate within the PDF. Links to other
 pages resolve against the source URL. The page's HTML structure determines the
 quality of its reading order and headings.
 
-Offprint keeps headings with following content when the page leaves their
-print-break behavior at its default. Explicit page-break rules remain in effect.
+Offprint keeps headings with following content and keeps figures on one page
+when they fit. Figure protection covers `<figure>`, `[role="figure"]`, and
+text-free wrappers around `<img>`, `<picture>`, `<svg>`, `<canvas>`, and
+`<video>`. Media without authored size limits is bounded by Chromium's printable
+page area, including CSS page size and margins. Authored maximum sizes retain
+their print-time meaning. Single-media figures with a block media path reserve space for their
+captions and padding when shrinking the image. Authored inline, grid, and
+multi-media arrangements retain their layout. Explicit page-break rules remain
+in effect.
+
+The media height limit follows the first page's content area. Documents that
+switch to smaller named page sizes need matching media limits in their print
+styles.
 
 ## Choose the content and layout
 

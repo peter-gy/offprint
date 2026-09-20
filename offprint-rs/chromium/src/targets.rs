@@ -1,17 +1,17 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use offprint_browser::AttachedFrame;
 use offprint_model::{ErrorStage, OffprintError, Result};
 use serde_json::{Value, json};
-use tokio::sync::{Mutex, RwLock, broadcast, mpsc};
+use tokio::sync::{Mutex, RwLock};
 use tokio_util::sync::CancellationToken;
 
 use crate::cdp::generated::cdp_target::{AttachedToTargetEvent, DetachedFromTargetEvent};
 use crate::resources::RENDERED_RESPONSE_RESOURCE_TYPES;
 use crate::{COLLECTOR_BUNDLE, CdpClient};
 
-pub(crate) type SessionRegistry = Arc<RwLock<HashSet<String>>>;
+use crate::transport::PageEvents;
 
 const NETWORK_BUFFER_BYTES: u64 = 16 * 1024 * 1024;
 const NETWORK_RESOURCE_BUFFER_BYTES: u64 = 512 * 1024;
@@ -193,7 +193,7 @@ pub(crate) struct FrameTargetManager {
 #[derive(Debug)]
 struct TargetManagerRuntime {
     client: CdpClient,
-    sessions: SessionRegistry,
+    events: Arc<PageEvents>,
     state: Arc<Mutex<TargetState>>,
     policy: Arc<RwLock<TargetPolicy>>,
     block_direct_sockets: bool,
@@ -204,8 +204,7 @@ struct TargetManagerRuntime {
 impl FrameTargetManager {
     pub(crate) fn start_with_limits(
         client: CdpClient,
-        main_session_id: String,
-        sessions: SessionRegistry,
+        events: Arc<PageEvents>,
         block_direct_sockets: bool,
         limits: TargetLimits,
         install_collector: bool,
@@ -215,7 +214,7 @@ impl FrameTargetManager {
         let cancellation = CancellationToken::new();
         let runtime = TargetManagerRuntime {
             client: client.clone(),
-            sessions,
+            events: Arc::clone(&events),
             state: Arc::clone(&state),
             policy: Arc::clone(&policy),
             block_direct_sockets,
@@ -223,8 +222,9 @@ impl FrameTargetManager {
             install_collector,
         };
         let task_cancellation = cancellation.clone();
+        let events = events.targets();
         let task = tokio::spawn(async move {
-            run_target_manager(runtime, main_session_id, task_cancellation).await;
+            run_target_manager(runtime, task_cancellation, events).await;
         });
         Self {
             client,
@@ -336,38 +336,37 @@ pub(crate) const fn containment_script(block_direct_sockets: bool) -> &'static s
 
 async fn run_target_manager(
     runtime: TargetManagerRuntime,
-    main_session_id: String,
     cancellation: CancellationToken,
+    mut events: crate::CdpEventReceiver,
 ) {
     let TargetManagerRuntime {
         client,
-        sessions,
+        events: page_events,
         state,
         policy,
         block_direct_sockets,
         limits,
         install_collector,
     } = runtime;
-    sessions.write().await.insert(main_session_id);
-    let (target_event_tx, mut target_events) = mpsc::channel(limits.maximum_targets.max(1));
-    let forward_task = tokio::spawn(forward_target_events(
-        client.subscribe_targets(),
-        target_event_tx,
-        Arc::clone(&sessions),
-        Arc::clone(&state),
-        cancellation.clone(),
-    ));
     loop {
         let event = tokio::select! {
-            () = cancellation.cancelled() => {
-                let _ignored = forward_task.await;
-                return;
-            },
-            event = target_events.recv() => event,
+            () = cancellation.cancelled() => return,
+            event = events.recv() => event,
         };
-        let Some(event) = event else {
-            let _ignored = forward_task.await;
-            return;
+        let event = match event {
+            Ok(event) => event,
+            Err(error) => {
+                set_target_error(
+                    &state,
+                    OffprintError::new(
+                        "offprint.browser.cdp_event_lag",
+                        ErrorStage::Collection,
+                        format!("target event stream failed: {error}"),
+                    ),
+                )
+                .await;
+                return;
+            }
         };
         let parent_session_id = event
             .session_id
@@ -427,7 +426,7 @@ async fn run_target_manager(
                     set_target_error(&state, error).await;
                     continue;
                 }
-                sessions.write().await.insert(session_id.clone());
+                page_events.register(&session_id);
                 let target_policy = tokio::select! {
                     () = cancellation.cancelled() => return,
                     target_policy = policy.read() => target_policy,
@@ -457,7 +456,7 @@ async fn run_target_manager(
                 match (configured, resumed) {
                     (Ok(()), Ok(())) => {}
                     (Err(error), _) | (Ok(()), Err(error)) => {
-                        sessions.write().await.remove(&session_id);
+                        page_events.unregister(&session_id);
                         let _ignored = close_target(&client, &target_id).await;
                         remove_target(&state, &session_id).await;
                         set_target_error(&state, error).await;
@@ -467,7 +466,7 @@ async fn run_target_manager(
             }
             "Target.detachedFromTarget" => match event.decode::<DetachedFromTargetEvent>() {
                 Ok(Some(detached)) => {
-                    sessions.write().await.remove(&detached.session_id);
+                    page_events.unregister(&detached.session_id);
                     record_detached_target(&state, &detached.session_id).await;
                 }
                 Ok(None) => {}
@@ -476,55 +475,6 @@ async fn run_target_manager(
                 }
             },
             _ => {}
-        }
-    }
-}
-
-async fn forward_target_events(
-    mut events: broadcast::Receiver<crate::CdpEvent>,
-    target_events: mpsc::Sender<crate::CdpEvent>,
-    sessions: SessionRegistry,
-    state: Arc<Mutex<TargetState>>,
-    cancellation: CancellationToken,
-) {
-    loop {
-        let event = tokio::select! {
-            () = cancellation.cancelled() => return,
-            event = events.recv() => event,
-        };
-        let event = match event {
-            Ok(event) => event,
-            Err(error) => {
-                set_target_error(
-                    &state,
-                    OffprintError::new(
-                        "offprint.browser.cdp_event_lag",
-                        ErrorStage::Collection,
-                        format!("target event stream failed: {error}"),
-                    ),
-                )
-                .await;
-                return;
-            }
-        };
-        if !matches!(
-            event.method.as_ref(),
-            "Target.attachedToTarget" | "Target.detachedFromTarget"
-        ) {
-            continue;
-        }
-        let Some(parent) = event.session_id.as_deref() else {
-            continue;
-        };
-        if !sessions.read().await.contains(parent) {
-            continue;
-        }
-        let sent = tokio::select! {
-            () = cancellation.cancelled() => return,
-            sent = target_events.send(event) => sent,
-        };
-        if sent.is_err() {
-            return;
         }
     }
 }

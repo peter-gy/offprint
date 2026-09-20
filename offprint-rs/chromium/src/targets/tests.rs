@@ -1,14 +1,12 @@
+use std::collections::HashSet;
 use std::error::Error;
 use std::sync::Arc;
 
 use futures_util::{SinkExt as _, StreamExt as _};
 use serde_json::json;
 use tokio::net::TcpListener;
-use tokio::time::{Duration, timeout};
 use tokio_tungstenite::tungstenite::Message;
 use url::Url;
-
-use crate::CdpEvent;
 
 use super::*;
 
@@ -172,14 +170,8 @@ async fn partial_policy_application_closes_manager_with_recorded_error() -> Asyn
 }
 
 fn test_target_manager(client: CdpClient) -> FrameTargetManager {
-    FrameTargetManager::start_with_limits(
-        client,
-        "main".to_owned(),
-        Arc::new(RwLock::new(HashSet::new())),
-        false,
-        TargetLimits::default(),
-        true,
-    )
+    let events = client.page_events("main");
+    FrameTargetManager::start_with_limits(client, events, false, TargetLimits::default(), true)
 }
 
 async fn add_policy_targets(manager: &FrameTargetManager) {
@@ -249,70 +241,6 @@ async fn worker_detachment_does_not_poison_frame_collection() {
     record_detached_target(&state, "worker-session").await;
 
     assert!(state.lock().await.error.is_none());
-}
-
-#[tokio::test]
-async fn target_ingress_drains_unrelated_event_bursts_while_configuration_waits() -> AsyncTestResult
-{
-    let (event_tx, event_rx) = broadcast::channel(4);
-    let (target_tx, mut target_rx) = mpsc::channel(1);
-    let sessions = Arc::new(RwLock::new(HashSet::from(["main".to_owned()])));
-    let state = Arc::new(Mutex::new(TargetState::default()));
-    let cancellation = CancellationToken::new();
-    let task = tokio::spawn(forward_target_events(
-        event_rx,
-        target_tx,
-        sessions,
-        Arc::clone(&state),
-        cancellation.clone(),
-    ));
-    tokio::task::yield_now().await;
-
-    assert!(
-        event_tx
-            .send(test_event("Target.attachedToTarget", "main"))
-            .is_ok()
-    );
-    assert_eq!(
-        target_rx.recv().await.map(|event| event.method),
-        Some(Arc::from("Target.attachedToTarget"))
-    );
-
-    for index in 0..128 {
-        assert!(
-            event_tx
-                .send(CdpEvent {
-                    method: Arc::from("Network.dataReceived"),
-                    params: Arc::new(json!({"requestId": index.to_string()})),
-                    session_id: Some(Arc::from("main")),
-                })
-                .is_ok()
-        );
-        tokio::task::yield_now().await;
-    }
-    assert!(
-        event_tx
-            .send(test_event("Target.detachedFromTarget", "main"))
-            .is_ok()
-    );
-
-    let event = timeout(Duration::from_secs(1), target_rx.recv())
-        .await?
-        .ok_or_else(|| std::io::Error::other("target event channel closed"))?;
-    assert_eq!(event.method.as_ref(), "Target.detachedFromTarget");
-    assert!(state.lock().await.error.is_none());
-
-    cancellation.cancel();
-    task.await?;
-    Ok(())
-}
-
-fn test_event(method: &'static str, session_id: &'static str) -> CdpEvent {
-    CdpEvent {
-        method: Arc::from(method),
-        params: Arc::new(json!({})),
-        session_id: Some(Arc::from(session_id)),
-    }
 }
 
 #[tokio::test]

@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, BTreeSet, HashSet};
-use std::sync::Arc;
 use std::time::Duration;
 
 use offprint_browser::{OfflineBrowserObservation, RenderingMedia};
@@ -14,7 +13,8 @@ use tokio::time::Instant;
 use tokio_util::sync::CancellationToken;
 use url::Url;
 
-use crate::targets::{FrameTargetManager, SessionRegistry, block_network};
+use crate::targets::{FrameTargetManager, block_network};
+use crate::transport::PageEvents;
 use crate::{CdpClient, CdpEvent};
 
 const STABILITY_QUIET: Duration = Duration::from_millis(300);
@@ -180,9 +180,8 @@ impl StabilityProbe {
 pub(crate) struct OfflineVerifier<'a> {
     client: &'a CdpClient,
     main_session_id: &'a str,
-    sessions: &'a SessionRegistry,
+    events: &'a PageEvents,
     targets: &'a FrameTargetManager,
-    seen_sessions: Arc<Mutex<HashSet<String>>>,
     media_sessions: Mutex<HashSet<String>>,
     environment: &'a BrowserEnvironment,
     media: RenderingMedia,
@@ -190,8 +189,8 @@ pub(crate) struct OfflineVerifier<'a> {
 
 #[derive(Debug, Default)]
 struct OfflineEventState {
-    attempted_urls: BTreeMap<String, AttemptedUrlEvidence>,
-    page_errors: BTreeMap<String, Vec<String>>,
+    attempted_urls: AttemptedUrlEvidence,
+    page_errors: Vec<String>,
 }
 
 #[derive(Debug, Default)]
@@ -255,7 +254,7 @@ impl<'a> OfflineVerifier<'a> {
     pub(crate) fn new(
         client: &'a CdpClient,
         main_session_id: &'a str,
-        sessions: &'a SessionRegistry,
+        events: &'a PageEvents,
         targets: &'a FrameTargetManager,
         environment: &'a BrowserEnvironment,
         media: RenderingMedia,
@@ -263,9 +262,8 @@ impl<'a> OfflineVerifier<'a> {
         Self {
             client,
             main_session_id,
-            sessions,
+            events,
             targets,
-            seen_sessions: Arc::new(Mutex::new(HashSet::from([main_session_id.to_owned()]))),
             media_sessions: Mutex::new(HashSet::from([main_session_id.to_owned()])),
             environment,
             media,
@@ -275,7 +273,7 @@ impl<'a> OfflineVerifier<'a> {
     pub(crate) fn subscribe(&self) -> OfflineEventStream {
         let cancellation = CancellationToken::new();
         let task_cancellation = cancellation.clone();
-        let events = self.client.subscribe_offline();
+        let events = self.events.offline();
         let task =
             tokio::spawn(async move { collect_offline_events(events, task_cancellation).await });
         OfflineEventStream {
@@ -367,11 +365,6 @@ impl<'a> OfflineVerifier<'a> {
                 .into_iter()
                 .map(|frame| (format!("frame:{}", frame.target_id), frame.session_id)),
         );
-        {
-            let mut seen = self.seen_sessions.lock().await;
-            seen.extend(targets.iter().map(|(_, session)| session.clone()));
-            seen.extend(self.sessions.read().await.iter().cloned());
-        }
         let futures = targets.into_iter().map(|(label, session_id)| async move {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
@@ -445,41 +438,16 @@ impl<'a> OfflineVerifier<'a> {
         mut page_errors: Vec<String>,
     ) -> Result<OfflineBrowserObservation> {
         let events = events.stop().await?;
-        let seen_sessions = self.seen_sessions.lock().await.clone();
-        let mut attempted_urls = BTreeSet::new();
-        let mut attempted_url_bytes = 0_usize;
-        for (session, evidence) in events.attempted_urls {
-            if seen_sessions.contains(&session) {
-                if evidence.overflow {
-                    return Err(attempted_url_limit_error());
-                }
-                for url in evidence.urls {
-                    if attempted_urls.contains(&url) {
-                        continue;
-                    }
-                    attempted_url_bytes = attempted_url_bytes
-                        .checked_add(url.len())
-                        .ok_or_else(attempted_url_limit_error)?;
-                    if attempted_urls.len() >= MAXIMUM_ATTEMPTED_URLS
-                        || attempted_url_bytes > MAXIMUM_ATTEMPTED_URL_BYTES
-                    {
-                        return Err(attempted_url_limit_error());
-                    }
-                    attempted_urls.insert(url);
-                }
-            }
+        if events.attempted_urls.overflow {
+            return Err(attempted_url_limit_error());
         }
-        for (session, errors) in events.page_errors {
-            if seen_sessions.contains(&session) {
-                for error in errors {
-                    push_page_error(&mut page_errors, &error);
-                }
-            }
+        for error in events.page_errors {
+            push_page_error(&mut page_errors, &error);
         }
         page_errors.sort();
         page_errors.dedup();
         Ok(OfflineBrowserObservation {
-            attempted_urls: attempted_urls.into_iter().collect(),
+            attempted_urls: events.attempted_urls.urls.into_iter().collect(),
             page_errors,
             stable,
         })
@@ -487,14 +455,14 @@ impl<'a> OfflineVerifier<'a> {
 }
 
 async fn collect_offline_events(
-    mut events: broadcast::Receiver<CdpEvent>,
+    mut events: crate::CdpEventReceiver,
     cancellation: CancellationToken,
 ) -> Result<OfflineEventState> {
     let mut state = OfflineEventState::default();
     loop {
         tokio::select! {
             () = cancellation.cancelled() => {
-                let pending = events.len();
+                let pending = events.pending_len();
                 for _ in 0..pending {
                     match events.try_recv() {
                         Ok(event) => record_offline_event(&mut state, &event),
@@ -521,9 +489,6 @@ async fn collect_offline_events(
 }
 
 fn record_offline_event(state: &mut OfflineEventState, event: &CdpEvent) {
-    let Some(session) = event.session_id.as_deref() else {
-        return;
-    };
     match event.method.as_ref() {
         "Network.requestWillBeSent" => {
             if let Some(url) = event.params.pointer("/request/url").and_then(Value::as_str)
@@ -532,11 +497,7 @@ fn record_offline_event(state: &mut OfflineEventState, event: &CdpEvent) {
                     Some("http" | "https" | "ws" | "wss")
                 )
             {
-                state
-                    .attempted_urls
-                    .entry(session.to_string())
-                    .or_default()
-                    .record(url);
+                state.attempted_urls.record(url);
             }
         }
         "Runtime.exceptionThrown" => {
@@ -545,18 +506,12 @@ fn record_offline_event(state: &mut OfflineEventState, event: &CdpEvent) {
                 .pointer("/exceptionDetails/text")
                 .and_then(Value::as_str)
             {
-                push_page_error(
-                    state.page_errors.entry(session.to_string()).or_default(),
-                    text,
-                );
+                push_page_error(&mut state.page_errors, text);
             }
         }
         "Log.entryAdded" => {
             if let Some(text) = log_entry_page_error(&event.params) {
-                push_page_error(
-                    state.page_errors.entry(session.to_string()).or_default(),
-                    text,
-                );
+                push_page_error(&mut state.page_errors, text);
             }
         }
         _ => {}
@@ -691,8 +646,50 @@ mod tests {
             record_offline_event(&mut state, &event);
         }
 
-        let evidence = &state.attempted_urls["main"];
+        let evidence = &state.attempted_urls;
         assert_eq!(evidence.urls.len(), MAXIMUM_ATTEMPTED_URLS);
         assert!(evidence.overflow);
+    }
+
+    #[tokio::test]
+    async fn detached_worker_evidence_is_not_lost_before_stability_sampling()
+    -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let server = crate::resources::test_support::TestCdpServer::start("").await?;
+        let client = crate::CdpClient::connect(server.endpoint().clone()).await?;
+        let page = client.page_events("main");
+        page.register("worker");
+        let events = page.offline();
+        let mut published = client.subscribe();
+        server.send_event(
+            "Network.requestWillBeSent",
+            json!({
+                "request":{"url":"https://example.test/worker-request"}
+            }),
+            "worker",
+        )?;
+        server.send_event(
+            "Runtime.exceptionThrown",
+            json!({
+                "exceptionDetails":{"text":"worker failure"}
+            }),
+            "worker",
+        )?;
+        for _ in 0..2 {
+            tokio::time::timeout(std::time::Duration::from_secs(1), published.recv()).await??;
+        }
+        page.unregister("worker");
+        let cancellation = tokio_util::sync::CancellationToken::new();
+        cancellation.cancel();
+        let evidence = super::collect_offline_events(events, cancellation).await?;
+        assert!(
+            evidence
+                .attempted_urls
+                .urls
+                .contains("https://example.test/worker-request")
+        );
+        assert_eq!(evidence.page_errors, ["worker failure"]);
+        client.close().await?;
+        server.close().await;
+        Ok(())
     }
 }

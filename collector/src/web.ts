@@ -1,4 +1,4 @@
-import { localName, namespaceUri, styleSheets } from "./dom";
+import { localName, namespaceUri, nodeType, styleSheets } from "./dom";
 import {
   arrayPush,
   captureGetter,
@@ -30,6 +30,8 @@ const animationPrototype = typeof Animation === "undefined" ? undefined : Animat
 const keyframeEffectPrototype =
   typeof KeyframeEffect === "undefined" ? undefined : KeyframeEffect.prototype;
 const elementPrototype = typeof Element === "undefined" ? undefined : Element.prototype;
+const documentPrototype = typeof Document === "undefined" ? undefined : Document.prototype;
+const shadowRootPrototype = typeof ShadowRoot === "undefined" ? undefined : ShadowRoot.prototype;
 const htmlElementPrototype = typeof HTMLElement === "undefined" ? undefined : HTMLElement.prototype;
 const styleElementPrototype =
   typeof HTMLStyleElement === "undefined" ? undefined : HTMLStyleElement.prototype;
@@ -283,11 +285,23 @@ export const computedStyle = captureMethod<Window, [Element, string | null], CSS
   (view, element, pseudo) => view.getComputedStyle(element, pseudo),
 );
 
-export const elementAnimations = captureMethod<Element, [], Animation[]>(
-  elementPrototype,
+const documentAnimations = captureMethod<Document, [], Animation[]>(
+  documentPrototype,
   "getAnimations",
-  (element) => element.getAnimations(),
+  (document) => document.getAnimations(),
 );
+const shadowAnimations = captureMethod<ShadowRoot, [], Animation[]>(
+  shadowRootPrototype,
+  "getAnimations",
+  (root) => root.getAnimations(),
+);
+
+export function rootAnimations(root: Document | ShadowRoot): Animation[] {
+  return nodeType(root) === 9
+    ? documentAnimations(root as Document)
+    : shadowAnimations(root as ShadowRoot);
+}
+
 export const elementScrollIntoView = captureMethod<Element, [ScrollIntoViewOptions], void>(
   elementPrototype,
   "scrollIntoView",

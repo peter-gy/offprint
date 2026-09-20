@@ -13,9 +13,8 @@ use offprint_model::{
 use url::Url;
 
 use super::markdown_bundle::read_markdown_bundle;
-use super::{
-    ArtifactService, BoundedFileReadError, read_bounded_file, read_input, stage_temporary_artifact,
-};
+use super::{ArtifactService, read_input, stage_temporary_artifact};
+use crate::bounded_io::{BoundedFileReadError, FileAddressing, read_bounded_file};
 use crate::runtime::{RuntimePagePurpose, RuntimePageRequest, operation_cancelled_error};
 use crate::verified_html::OfflineHtmlArtifact;
 
@@ -379,7 +378,7 @@ async fn read_export_file(path: &PortablePath) -> Result<Vec<u8>> {
     match read_bounded_file(
         path.as_utf8_path().as_std_path(),
         MAXIMUM_EXPORT_BYTES,
-        true,
+        FileAddressing::Direct,
     )
     .await
     {

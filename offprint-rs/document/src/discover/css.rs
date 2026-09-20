@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fmt::Write as _;
 use std::ops::Range;
 
 use cssparser::{Parser, ParserInput, Token};
@@ -7,6 +8,7 @@ use lightningcss::stylesheet::{ParserOptions, PrinterOptions, StyleSheet};
 use offprint_model::{ResourceId, Result};
 use url::Url;
 
+use super::rewrite::rewrite_ranges;
 use super::{Reference, resource_error};
 
 #[derive(Clone, Debug)]
@@ -55,22 +57,7 @@ impl CssResources {
                 format!("url(\"{}\")", escape_css_string(replacement)),
             ));
         }
-        changes.sort_by_key(|change| std::cmp::Reverse(change.0.start));
-        let mut rewritten = self.source.clone();
-        for (range, replacement) in changes {
-            if range.start > range.end
-                || range.end > rewritten.len()
-                || !rewritten.is_char_boundary(range.start)
-                || !rewritten.is_char_boundary(range.end)
-            {
-                return Err(resource_error(
-                    "offprint.resource.rewrite",
-                    "CSS resource rewrite range is outside its source text",
-                ));
-            }
-            rewritten.replace_range(range, &replacement);
-        }
-        Ok(rewritten)
+        rewrite_ranges(&self.source, changes)
     }
 }
 
@@ -310,21 +297,22 @@ fn add_css_reference(
 }
 
 pub(super) fn escape_css_string(value: &str) -> String {
-    value
-        .chars()
-        .flat_map(|character| match character {
-            '\0' => "\u{fffd}".chars().collect::<Vec<_>>(),
-            '"' => "\\\"".chars().collect::<Vec<_>>(),
-            '\\' => "\\\\".chars().collect(),
-            '\n' => "\\a ".chars().collect(),
-            '\r' => "\\d ".chars().collect(),
-            '\u{000c}' => "\\c ".chars().collect(),
+    let mut escaped = String::with_capacity(value.len());
+    for character in value.chars() {
+        match character {
+            '\0' => escaped.push('\u{fffd}'),
+            '"' => escaped.push_str("\\\""),
+            '\\' => escaped.push_str("\\\\"),
+            '\n' => escaped.push_str("\\a "),
+            '\r' => escaped.push_str("\\d "),
+            '\u{000c}' => escaped.push_str("\\c "),
             character if character.is_control() => {
-                format!("\\{:x} ", u32::from(character)).chars().collect()
+                let _ = write!(escaped, "\\{:x} ", u32::from(character));
             }
-            character => vec![character],
-        })
-        .collect()
+            character => escaped.push(character),
+        }
+    }
+    escaped
 }
 
 #[cfg(test)]

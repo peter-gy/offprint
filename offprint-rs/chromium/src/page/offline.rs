@@ -28,7 +28,7 @@ impl ChromiumPage {
         let verifier = OfflineVerifier::new(
             &self.client,
             &self.session_id,
-            &self.sessions,
+            &self.events,
             &self.targets,
             &self.environment,
             media,

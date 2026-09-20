@@ -33,7 +33,7 @@
 	const cssBaseAttribute = "data-offprint-css-base";
 	const freezeAttribute = "data-offprint-freeze";
 	const freezeCss = "*,*::before,*::after{animation-play-state:paused!important;transition:none!important;caret-color:transparent!important}";
-	const buildSha256 = "0bbfa36ba10d493a3b8f28a1c5c793f2b97c59975430c5500a5c5986092f419d";
+	const buildSha256 = "e94dfbafd8f65fd48799bd6b6cf3d0be64ee7a4756a433f61f464ebd3412173d";
 	//#endregion
 	//#region src/primordials.ts
 	const reflectApply = Reflect.apply;
@@ -151,7 +151,7 @@
 	//#region src/dom.ts
 	const nodePrototype = typeof Node === "undefined" ? void 0 : Node.prototype;
 	const elementPrototype$1 = typeof Element === "undefined" ? void 0 : Element.prototype;
-	const documentPrototype = typeof Document === "undefined" ? void 0 : Document.prototype;
+	const documentPrototype$1 = typeof Document === "undefined" ? void 0 : Document.prototype;
 	const fragmentPrototype = typeof DocumentFragment === "undefined" ? void 0 : DocumentFragment.prototype;
 	const templatePrototype = typeof HTMLTemplateElement === "undefined" ? void 0 : HTMLTemplateElement.prototype;
 	const framePrototype = typeof HTMLIFrameElement === "undefined" ? void 0 : HTMLIFrameElement.prototype;
@@ -160,7 +160,7 @@
 	const htmlCollectionPrototype = typeof HTMLCollection === "undefined" ? void 0 : HTMLCollection.prototype;
 	const namedNodeMapPrototype = typeof NamedNodeMap === "undefined" ? void 0 : NamedNodeMap.prototype;
 	const attrPrototype = typeof Attr === "undefined" ? void 0 : Attr.prototype;
-	const shadowRootPrototype = typeof ShadowRoot === "undefined" ? void 0 : ShadowRoot.prototype;
+	const shadowRootPrototype$1 = typeof ShadowRoot === "undefined" ? void 0 : ShadowRoot.prototype;
 	const parserPrototype = typeof DOMParser === "undefined" ? void 0 : DOMParser.prototype;
 	const SafeDOMParser = typeof DOMParser === "undefined" ? void 0 : DOMParser;
 	const nodeType = captureGetter(nodePrototype, "nodeType", (node) => node.nodeType);
@@ -184,10 +184,10 @@
 	const removeChild = captureMethod(nodePrototype, "removeChild", (node, child) => node.removeChild(child));
 	const replaceChild = captureMethod(nodePrototype, "replaceChild", (node, child, replaced) => node.replaceChild(child, replaced));
 	const elementQuerySelector = captureMethod(elementPrototype$1, "querySelector", (element, selector) => element.querySelector(selector));
-	const documentQuerySelector = captureMethod(documentPrototype, "querySelector", (document, selector) => document.querySelector(selector));
+	const documentQuerySelector = captureMethod(documentPrototype$1, "querySelector", (document, selector) => document.querySelector(selector));
 	const fragmentQuerySelector = captureMethod(fragmentPrototype, "querySelector", (fragment, selector) => fragment.querySelector(selector));
 	const elementQuerySelectorAll = captureMethod(elementPrototype$1, "querySelectorAll", (element, selector) => element.querySelectorAll(selector));
-	const documentQuerySelectorAll = captureMethod(documentPrototype, "querySelectorAll", (document, selector) => document.querySelectorAll(selector));
+	const documentQuerySelectorAll = captureMethod(documentPrototype$1, "querySelectorAll", (document, selector) => document.querySelectorAll(selector));
 	const fragmentQuerySelectorAll = captureMethod(fragmentPrototype, "querySelectorAll", (fragment, selector) => fragment.querySelectorAll(selector));
 	function querySelector(root, selector) {
 		const type = nodeType(root);
@@ -261,20 +261,20 @@
 	function shadowRoot(element) {
 		return getElementShadowRoot(element);
 	}
-	const getDocumentElement = captureGetter(documentPrototype, "documentElement", (document) => document.documentElement);
-	const getDocumentDoctype = captureGetter(documentPrototype, "doctype", (document) => document.doctype);
-	const getDocumentTitle = captureGetter(documentPrototype, "title", (document) => document.title);
-	const getDocumentCharacterSet = captureGetter(documentPrototype, "characterSet", (document) => document.characterSet);
-	const getDocumentDefaultView = captureGetter(documentPrototype, "defaultView", (document) => document.defaultView);
-	const getDocumentBody = captureGetter(documentPrototype, "body", (document) => document.body);
-	const getDocumentScrollingElement = captureGetter(documentPrototype, "scrollingElement", (document) => document.scrollingElement);
-	const getDocumentStyleSheets = captureGetter(documentPrototype, "styleSheets", (document) => document.styleSheets);
-	const getDocumentAdoptedStyleSheets = captureGetter(documentPrototype, "adoptedStyleSheets", (document) => document.adoptedStyleSheets);
-	const getFragmentAdoptedStyleSheets = captureGetter(shadowRootPrototype, "adoptedStyleSheets", (fragment) => fragment.adoptedStyleSheets);
-	const createElement = captureMethod(documentPrototype, "createElement", (document, name) => document.createElement(name));
-	const createDocumentFragment = captureMethod(documentPrototype, "createDocumentFragment", (document) => document.createDocumentFragment());
-	const getSelection = captureMethod(documentPrototype, "getSelection", (document) => document.getSelection());
-	const createTreeWalker = captureMethod(documentPrototype, "createTreeWalker", (document, root, show) => document.createTreeWalker(root, show));
+	const getDocumentElement = captureGetter(documentPrototype$1, "documentElement", (document) => document.documentElement);
+	const getDocumentDoctype = captureGetter(documentPrototype$1, "doctype", (document) => document.doctype);
+	const getDocumentTitle = captureGetter(documentPrototype$1, "title", (document) => document.title);
+	const getDocumentCharacterSet = captureGetter(documentPrototype$1, "characterSet", (document) => document.characterSet);
+	const getDocumentDefaultView = captureGetter(documentPrototype$1, "defaultView", (document) => document.defaultView);
+	const getDocumentBody = captureGetter(documentPrototype$1, "body", (document) => document.body);
+	const getDocumentScrollingElement = captureGetter(documentPrototype$1, "scrollingElement", (document) => document.scrollingElement);
+	const getDocumentStyleSheets = captureGetter(documentPrototype$1, "styleSheets", (document) => document.styleSheets);
+	const getDocumentAdoptedStyleSheets = captureGetter(documentPrototype$1, "adoptedStyleSheets", (document) => document.adoptedStyleSheets);
+	const getFragmentAdoptedStyleSheets = captureGetter(shadowRootPrototype$1, "adoptedStyleSheets", (fragment) => fragment.adoptedStyleSheets);
+	const createElement = captureMethod(documentPrototype$1, "createElement", (document, name) => document.createElement(name));
+	const createDocumentFragment = captureMethod(documentPrototype$1, "createDocumentFragment", (document) => document.createDocumentFragment());
+	const getSelection = captureMethod(documentPrototype$1, "getSelection", (document) => document.getSelection());
+	const createTreeWalker = captureMethod(documentPrototype$1, "createTreeWalker", (document, root, show) => document.createTreeWalker(root, show));
 	function documentElement(document) {
 		return getDocumentElement(document);
 	}
@@ -308,7 +308,7 @@
 	const getTemplateContent = captureGetter(templatePrototype, "content", (template) => template.content);
 	const getFrameContentDocument = captureGetter(framePrototype, "contentDocument", (frame) => frame.contentDocument);
 	const getFrameContentWindow = captureGetter(framePrototype, "contentWindow", (frame) => frame.contentWindow);
-	const getShadowMode = captureGetter(shadowRootPrototype, "mode", (root) => root.mode);
+	const getShadowMode = captureGetter(shadowRootPrototype$1, "mode", (root) => root.mode);
 	function templateContent(template) {
 		return getTemplateContent(template);
 	}
@@ -418,6 +418,8 @@
 	const animationPrototype = typeof Animation === "undefined" ? void 0 : Animation.prototype;
 	const keyframeEffectPrototype = typeof KeyframeEffect === "undefined" ? void 0 : KeyframeEffect.prototype;
 	const elementPrototype = typeof Element === "undefined" ? void 0 : Element.prototype;
+	const documentPrototype = typeof Document === "undefined" ? void 0 : Document.prototype;
+	const shadowRootPrototype = typeof ShadowRoot === "undefined" ? void 0 : ShadowRoot.prototype;
 	const htmlElementPrototype = typeof HTMLElement === "undefined" ? void 0 : HTMLElement.prototype;
 	const styleElementPrototype = typeof HTMLStyleElement === "undefined" ? void 0 : HTMLStyleElement.prototype;
 	const svgStyleElementPrototype = typeof SVGStyleElement === "undefined" ? void 0 : SVGStyleElement.prototype;
@@ -532,7 +534,11 @@
 		return namespaceUri(element) === "http://www.w3.org/2000/svg" ? getSvgElementStyle(element) : getElementStyle(element);
 	}
 	const computedStyle = captureMethod(windowPropertySource, "getComputedStyle", (view, element, pseudo) => view.getComputedStyle(element, pseudo));
-	const elementAnimations = captureMethod(elementPrototype, "getAnimations", (element) => element.getAnimations());
+	const documentAnimations = captureMethod(documentPrototype, "getAnimations", (document) => document.getAnimations());
+	const shadowAnimations = captureMethod(shadowRootPrototype, "getAnimations", (root) => root.getAnimations());
+	function rootAnimations(root) {
+		return nodeType(root) === 9 ? documentAnimations(root) : shadowAnimations(root);
+	}
 	const elementScrollIntoView = captureMethod(elementPrototype, "scrollIntoView", (element, options) => {
 		element.scrollIntoView(options);
 	});
@@ -637,6 +643,10 @@
 			mapForEach(properties, (byPseudo, target) => {
 				const captured = captureComputedProperties(target, byPseudo);
 				weakMapSet(frozenMotion, target, captured);
+			});
+			mapForEach(properties, (_byPseudo, target) => {
+				const captured = weakMapGet(frozenMotion, target);
+				if (!captured) return;
 				const elementProperties = mapGet(captured, "");
 				if (elementProperties && supportsInlineStyle(target)) {
 					const style = elementStyle(target);
@@ -670,8 +680,26 @@
 			message: "Animated state could not be frozen at its current phase."
 		});
 	}
+	function snapshotMotion(source) {
+		freezeMotion(source);
+		const captured = new SafeMap();
+		try {
+			const properties = motionProperties(animationsWithin(source));
+			mapForEach(properties, (byPseudo, target) => {
+				if (weakMapGet(frozenMotion, target)) return;
+				try {
+					mapSet(captured, target, captureComputedProperties(target, byPseudo));
+				} catch {
+					return;
+				}
+			});
+		} catch {
+			return captured;
+		}
+		return captured;
+	}
 	function materializeMotionState(live, clone, context, rules) {
-		const captured = weakMapGet(frozenMotion, live) ?? captureCurrentMotion(live);
+		const captured = weakMapGet(frozenMotion, live) ?? mapGet(context.motion, live);
 		if (!captured) return;
 		let pseudoMarker;
 		mapForEach(captured, (properties, pseudo) => {
@@ -718,11 +746,8 @@
 		const animations = new SafeSet();
 		const roots = composedRoots(source);
 		for (let rootIndex = 0; rootIndex < roots.length; rootIndex += 1) {
-			const elements = querySelectorAll(roots[rootIndex], "*");
-			for (let elementIndex = 0; elementIndex < elements.length; elementIndex += 1) {
-				const observed = elementAnimations(elements[elementIndex]);
-				for (let animationIndex = 0; animationIndex < observed.length; animationIndex += 1) setAdd(animations, observed[animationIndex]);
-			}
+			const observed = rootAnimations(roots[rootIndex]);
+			for (let animationIndex = 0; animationIndex < observed.length; animationIndex += 1) setAdd(animations, observed[animationIndex]);
 		}
 		const result = [];
 		setForEach(animations, (animation) => {
@@ -771,15 +796,6 @@
 			mapSet(captured, pseudo, values);
 		});
 		return captured;
-	}
-	function captureCurrentMotion(live) {
-		try {
-			const properties = motionProperties(elementAnimations(live));
-			const byPseudo = mapGet(properties, live);
-			return byPseudo ? captureComputedProperties(live, byPseudo) : void 0;
-		} catch {
-			return;
-		}
 	}
 	function matchesKeyframeMetadata(name) {
 		return arrayIncludes([
@@ -1095,6 +1111,9 @@
 			arrayPush(this.chunks, value);
 			return true;
 		}
+		writeJsonString(value, mode = "json") {
+			return this.write("\"") && writeEscaped(this, value, mode) && this.write("\"");
+		}
 		resultString() {
 			if (this.overflow) return {
 				attempted: this.maximumBytes + 1,
@@ -1208,24 +1227,6 @@
 		writeJson(writer, value);
 		return writer.resultBytes();
 	}
-	function serializeJsonStringBounded(value, maximumBytes) {
-		const writer = new BoundedWriter(maximumBytes);
-		writeJson(writer, value);
-		return writer.resultString();
-	}
-	function escapeScriptDataBounded(value, maximumBytes) {
-		const writer = new BoundedWriter(maximumBytes);
-		let start = 0;
-		for (let index = 0; index < value.length; index += 1) {
-			const code = stringCharCodeAt(value, index);
-			const replacement = code === 38 ? "\\u0026" : code === 60 ? "\\u003c" : code === 62 ? "\\u003e" : code === 8232 ? "\\u2028" : code === 8233 ? "\\u2029" : void 0;
-			if (replacement === void 0) continue;
-			if (!writer.write(stringSlice(value, start, index)) || !writer.write(replacement)) return writer.resultString();
-			start = index + 1;
-		}
-		writer.write(stringSlice(value, start));
-		return writer.resultString();
-	}
 	function writeJson(writer, value) {
 		const pending = [{
 			kind: "value",
@@ -1239,7 +1240,7 @@
 				continue;
 			}
 			if (task.kind === "string") {
-				if (!writer.write("\"") || !writeEscaped(writer, task.value, "json") || !writer.write("\"")) return;
+				if (!writer.writeJsonString(task.value)) return;
 				continue;
 			}
 			const current = task.value;
@@ -1308,7 +1309,7 @@
 		let start = 0;
 		for (let index = 0; index < value.length; index += 1) {
 			const code = stringCharCodeAt(value, index);
-			const replacement = mode === "json" ? jsonEscape(code) : mode === "raw" ? void 0 : htmlEscape(code, mode === "attribute");
+			const replacement = mode === "json" || mode === "script-json" ? jsonEscape(code) ?? (mode === "script-json" ? scriptDataEscape(code) : void 0) : mode === "raw" ? void 0 : htmlEscape(code, mode === "attribute");
 			if (replacement === void 0) continue;
 			if (!writer.write(stringSlice(value, start, index)) || !writer.write(replacement)) return false;
 			start = index + 1;
@@ -1332,6 +1333,86 @@
 			default: return code < 32 ? `\\u00${"0123456789abcdef"[code >>> 4 & 15]}${"0123456789abcdef"[code & 15]}` : void 0;
 		}
 	}
+	function scriptDataEscape(code) {
+		switch (code) {
+			case 38: return "\\u0026";
+			case 60: return "\\u003c";
+			case 62: return "\\u003e";
+			case 8232: return "\\u2028";
+			case 8233: return "\\u2029";
+			default: return;
+		}
+	}
+	//#endregion
+	//#region src/repair-serialization.ts
+	const htmlNamespace$2 = "http://www.w3.org/1999/xhtml";
+	function serializeRepairDataBounded(root, maximumBytes) {
+		const writer = new BoundedWriter(maximumBytes);
+		const pending = [{
+			kind: "node",
+			node: root
+		}];
+		if (!writer.write("{\"documentElement\":")) return writer.resultString();
+		while (pending.length > 0) {
+			const task = arrayPop(pending);
+			if (!task) continue;
+			if (task.kind === "children") {
+				if (!task.node) {
+					if (!writer.write("]")) break;
+				} else {
+					if (!task.first && !writer.write(",")) break;
+					arrayPush(pending, {
+						kind: "children",
+						node: nextSibling(task.node),
+						first: false
+					});
+					arrayPush(pending, {
+						kind: "node",
+						node: task.node
+					});
+				}
+				continue;
+			}
+			if (task.kind === "template") {
+				if (!writer.write(",\"templateContent\":[")) break;
+				const template = namespaceUri(task.element) === htmlNamespace$2 && localName(task.element) === "template";
+				arrayPush(pending, {
+					kind: "close",
+					shadowMode: template ? getAttribute(task.element, "shadowrootmode") : null
+				});
+				arrayPush(pending, {
+					kind: "children",
+					node: template ? firstChild(templateContent(task.element)) : null,
+					first: true
+				});
+				continue;
+			}
+			if (task.kind === "close") {
+				if (task.shadowMode && (!writer.write(",\"shadowMode\":") || !writer.writeJsonString(task.shadowMode, "script-json"))) break;
+				if (!writer.write("}")) break;
+				continue;
+			}
+			const node = task.node;
+			const type = nodeType(node);
+			if (type === 3 || type === 8) {
+				if (!writer.write(type === 3 ? "{\"kind\":\"text\",\"value\":" : "{\"kind\":\"comment\",\"value\":") || !writer.writeJsonString(nodeValue(node) ?? "", "script-json") || !writer.write("}")) break;
+				continue;
+			}
+			if (!isElement(node)) throw new SafeTypeError("structural repair supports element, text, and comment nodes");
+			if (!writer.write("{\"kind\":\"element\",\"marker\":") || !writer.writeJsonString(getAttribute(node, "data-offprint-node") ?? "", "script-json") || !writer.write(",\"namespace\":") || !writer.writeJsonString(namespaceUri(node) ?? htmlNamespace$2, "script-json") || !writer.write(",\"name\":") || !writer.writeJsonString(localName(node) ?? "", "script-json") || !writer.write(",\"children\":[")) break;
+			arrayPush(pending, {
+				kind: "template",
+				element: node
+			});
+			arrayPush(pending, {
+				kind: "children",
+				node: firstChild(node),
+				first: true
+			});
+		}
+		writer.write("}");
+		return writer.resultString();
+	}
 	//#endregion
 	//#region src/repair.ts
 	const htmlNamespace$1 = "http://www.w3.org/1999/xhtml";
@@ -1351,19 +1432,21 @@
 		assignRepairMarkers(root);
 		const initial = serializeHtmlBounded(root, maximumBytes);
 		if (initial.kind === "limit") return initial;
-		const structuralRepair = structuralRepairFor(root, initial.value);
-		if (structuralRepair) {
-			const repairJson = serializeJsonStringBounded(structuralRepair, maximumBytes);
-			if (repairJson.kind === "limit") return repairJson;
-			const repairData = escapeScriptDataBounded(repairJson.value, maximumBytes);
+		if (requiresStructuralRepair(root, initial.value)) {
+			const repairData = serializeRepairDataBounded(root, maximumBytes);
 			if (repairData.kind === "limit") return repairData;
 			appendRepairData(source, root, repairData.value);
 		} else removeRepairMarkers(root);
 		return serializeHtmlBounded(root, maximumBytes);
 	}
-	function structuralRepairFor(root, serialized) {
-		if (repairNodesEqual(root, documentElement(parseHtml(serialized)))) return;
-		return { documentElement: repairNode(root) };
+	function requiresStructuralRepair(root, serialized) {
+		let reparsed;
+		try {
+			reparsed = parseHtml(serialized);
+		} catch {
+			return true;
+		}
+		return !repairNodesEqual(root, documentElement(reparsed));
 	}
 	function repairNodesEqual(left, right) {
 		const pending = [[left, right]];
@@ -1390,37 +1473,6 @@
 			for (let index = 0; index < leftTemplate.length; index += 1) arrayPush(pending, [leftTemplate[index], rightTemplate[index]]);
 		}
 		return true;
-	}
-	function repairNode(node) {
-		if (nodeType(node) === 3) return {
-			kind: "text",
-			value: nodeValue(node) ?? ""
-		};
-		if (nodeType(node) === 8) return {
-			kind: "comment",
-			value: nodeValue(node) ?? ""
-		};
-		if (!isElement(node)) throw new SafeTypeError("structural repair supports element, text, and comment nodes");
-		const marker = getAttribute(node, "data-offprint-node") ?? "";
-		const children = repairChildren(node);
-		const shadowMode = shadowModeFor(node);
-		return {
-			kind: "element",
-			marker,
-			namespace: namespaceUri(node) ?? htmlNamespace$1,
-			name: localName(node) ?? "",
-			children,
-			templateContent: repairNodes(templateChildren(node)),
-			...shadowMode ? { shadowMode } : {}
-		};
-	}
-	function repairChildren(parent) {
-		return repairNodes(childNodes(parent));
-	}
-	function repairNodes(nodes) {
-		const repaired = [];
-		for (let index = 0; index < nodes.length; index += 1) arrayPush(repaired, repairNode(nodes[index]));
-		return repaired;
 	}
 	function templateChildren(node) {
 		return isHtmlTemplate(node) ? childNodes(templateContent(node)) : [];
@@ -2136,9 +2188,9 @@
 			documentFontFaces: documentFontFaces(source),
 			inlineFrameOwners: new SafeMap(),
 			reservation,
+			motion: snapshotMotion(source),
 			usedFontsByRoot: new SafeMap()
 		};
-		freezeMotion(source);
 		reportMotionCaptureFailure(source, context);
 		const liveDocumentElement = documentElement(source);
 		const clone = cloneNode(liveDocumentElement, true);

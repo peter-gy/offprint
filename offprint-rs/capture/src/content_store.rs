@@ -196,20 +196,17 @@ impl ContentStore {
                 format!("failed to flush temporary resource content: {error}"),
             )
         })?;
-        file.sync_all().await.map_err(|error| {
-            content_error(
-                "offprint.resource.store",
-                format!("failed to sync temporary resource content: {error}"),
-            )
-        })?;
-        drop(file);
         let digest = ContentDigest::from_bytes(digest.finalize().into());
         if let Some(content) = self.entries.get(&digest) {
+            drop(file);
             return Ok(ContentInsertion {
                 content: content.clone(),
                 new_content: false,
             });
         }
+        // Flush completes Tokio's pending writes before the capture reads this
+        // temporary entry. Artifact delivery owns durable file synchronization.
+        drop(file);
         let destination = self.directory.path().join(digest.to_hex());
         path.persist(&destination).map_err(|error| {
             content_error(
@@ -311,6 +308,34 @@ mod tests {
     }
 
     #[test]
+    fn duplicate_streams_keep_receive_limits_and_release_temporary_entries()
+    -> Result<(), Box<dyn std::error::Error>> {
+        runtime()?.block_on(async {
+            let mut store = ContentStore::new()?;
+            let first = store.insert_bytes(b"same".to_vec(), 4, 8).await?;
+            let stream = futures_util::stream::iter([
+                Ok(Bytes::from_static(b"sa")),
+                Ok(Bytes::from_static(b"me")),
+            ]);
+            let duplicate = store.insert_stream(stream, 4, 8).await?;
+            assert!(!duplicate.new_content);
+            assert_eq!(duplicate.content, first.content);
+            assert_eq!(duplicate.content.read(4).await?, b"same");
+            assert_eq!(store.received_bytes(), 8);
+            assert_eq!(std::fs::read_dir(store.directory.path())?.count(), 1);
+
+            let error = store.insert_bytes(b"same".to_vec(), 4, 8).await;
+            assert_eq!(
+                error.err().map(|error| error.code.to_string()),
+                Some("offprint.resource.limit".into())
+            );
+            assert_eq!(std::fs::read_dir(store.directory.path())?.count(), 1);
+            assert_eq!(first.content.read(4).await?, b"same");
+            Ok(())
+        })
+    }
+
+    #[test]
     fn stored_content_read_enforces_limits_and_detects_changed_length()
     -> Result<(), Box<dyn std::error::Error>> {
         runtime()?.block_on(async {
@@ -373,6 +398,25 @@ mod tests {
 
         assert!(!directory.exists());
         Ok(())
+    }
+
+    #[test]
+    fn completed_stream_is_readable_until_store_drop() -> Result<(), Box<dyn std::error::Error>> {
+        runtime()?.block_on(async {
+            let mut store = ContentStore::new()?;
+            let chunks = futures_util::stream::iter([
+                Ok(Bytes::from_static(b"first")),
+                Ok(Bytes::from_static(b"second")),
+            ]);
+            let inserted = store.insert_stream(chunks, 11, 11).await?;
+            assert_eq!(inserted.content.read(11).await?, b"firstsecond");
+            assert_eq!(store.received_bytes(), 11);
+            assert_eq!(store.unique_bytes(), 11);
+            let path = inserted.content.path().to_owned();
+            drop(store);
+            assert!(!path.exists());
+            Ok(())
+        })
     }
 
     proptest! {

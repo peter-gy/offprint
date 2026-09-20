@@ -6,7 +6,7 @@ use offprint_browser::NetworkGuard;
 use offprint_model::{ErrorStage, NetworkPolicy, OffprintError, Result};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
-use tokio::sync::{RwLock, Semaphore};
+use tokio::sync::{OwnedSemaphorePermit, RwLock, Semaphore};
 use tokio::task::JoinSet;
 use tokio::time::{Instant, timeout};
 use tokio_util::sync::CancellationToken;
@@ -15,6 +15,13 @@ use url::{Host, Url};
 const MAXIMUM_REQUEST_HEAD_BYTES: usize = 64 * 1024;
 const REQUEST_HEAD_TIMEOUT: Duration = Duration::from_secs(10);
 const UPSTREAM_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+// Denial responses need no upstream permit, but still own bounded local sockets.
+const MAXIMUM_CONNECTION_TASKS: usize = 32;
+
+enum ConnectionAdmission {
+    Guarded(OwnedSemaphorePermit),
+    Denied,
+}
 
 #[derive(Debug)]
 pub(crate) struct ValidatingProxy {
@@ -121,20 +128,30 @@ async fn run_proxy(
     loop {
         tokio::select! {
             () = cancellation.cancelled() => break,
-            accepted = listener.accept() => {
+            accepted = listener.accept(), if connections.len() < MAXIMUM_CONNECTION_TASKS => {
                 let Ok((stream, _peer)) = accepted else {
                     break;
                 };
-                let Ok(permit) = Arc::clone(&connection_budget).try_acquire_owned() else {
-                    drop(stream);
-                    continue;
+                let admission = tokio::select! {
+                    biased;
+                    () = cancellation.cancelled() => break,
+                    () = traffic_cancellation.cancelled() => ConnectionAdmission::Denied,
+                    permit = timeout(UPSTREAM_CONNECT_TIMEOUT, Arc::clone(&connection_budget).acquire_owned()) => {
+                        match permit {
+                            Ok(Ok(permit)) => ConnectionAdmission::Guarded(permit),
+                            _ => continue,
+                        }
+                    },
                 };
                 let connection_policy = Arc::clone(&policy);
                 let connection_cancellation = traffic_cancellation.child_token();
                 connections.spawn(async move {
-                    let _permit = permit;
-                    let _ignored =
-                        serve_connection(stream, connection_policy, connection_cancellation).await;
+                    match admission {
+                        ConnectionAdmission::Guarded(_permit) => {
+                            let _ignored = serve_connection(stream, connection_policy, connection_cancellation).await;
+                        }
+                        ConnectionAdmission::Denied => reject_connection(stream).await,
+                    }
                 });
             }
             Some(_finished) = connections.join_next(), if !connections.is_empty() => {}
@@ -142,6 +159,14 @@ async fn run_proxy(
     }
     connections.abort_all();
     while connections.join_next().await.is_some() {}
+}
+
+async fn reject_connection(mut browser: TcpStream) {
+    // Consume the bounded request head before closing: unread bytes can turn a
+    // valid HTTP rejection into a TCP reset on Linux. Each denial has its own
+    // bounded task, so an idle socket cannot block other rejection responses.
+    let _ignored = read_request_head(&mut browser).await;
+    write_proxy_failure(&mut browser, 403, "Forbidden").await;
 }
 
 async fn serve_connection(
@@ -414,6 +439,7 @@ mod tests {
     use std::net::{IpAddr, Ipv4Addr, SocketAddr};
     use std::sync::Arc;
     use std::time::Duration;
+    use tokio::time::timeout;
 
     use offprint_browser::NetworkGuard;
     use offprint_model::NetworkPolicy;
@@ -460,21 +486,44 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn proxies_share_the_browser_connection_budget() -> TestResult {
+    async fn proxies_backpressure_the_shared_browser_connection_budget() -> TestResult {
         let connection_budget = Arc::new(Semaphore::new(1));
         let first = ValidatingProxy::start(Arc::clone(&connection_budget)).await?;
         let second = ValidatingProxy::start(Arc::clone(&connection_budget)).await?;
         let permit = Arc::clone(&connection_budget).try_acquire_owned()?;
         let mut client = TcpStream::connect(second.address).await?;
-        let mut response = [0_u8; 1];
-
-        let read =
-            tokio::time::timeout(Duration::from_secs(1), client.read(&mut response)).await??;
-
-        assert_eq!(read, 0);
+        client
+            .write_all(b"GET http://example.test/ HTTP/1.1\r\nHost: example.test\r\n\r\n")
+            .await?;
+        let mut response = Vec::new();
+        assert!(
+            timeout(Duration::from_millis(20), client.read_to_end(&mut response))
+                .await
+                .is_err()
+        );
         drop(permit);
+        timeout(Duration::from_secs(1), client.read_to_end(&mut response)).await??;
+        assert!(response.starts_with(b"HTTP/1.1 403"));
         first.close().await;
         second.close().await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn saturated_proxy_shutdown_cancels_the_connection_wait() -> TestResult {
+        let budget = Arc::new(Semaphore::new(1));
+        let permit = Arc::clone(&budget).acquire_owned().await?;
+        let proxy = ValidatingProxy::start(Arc::clone(&budget)).await?;
+        let mut client = TcpStream::connect(proxy.address).await?;
+        timeout(Duration::from_secs(1), proxy.close()).await?;
+        let mut bytes = [0; 1];
+        let closed = timeout(Duration::from_secs(1), client.read(&mut bytes)).await?;
+        assert!(match closed {
+            Ok(bytes) => bytes == 0,
+            Err(error) => error.kind() == std::io::ErrorKind::ConnectionReset,
+        });
+        drop(permit);
+        assert_eq!(budget.available_permits(), 1);
         Ok(())
     }
 
@@ -524,7 +573,9 @@ mod tests {
     async fn deny_all_rejects_new_requests_before_upstream_connection() -> TestResult {
         let upstream = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await?;
         let upstream_address = upstream.local_addr()?;
-        let proxy = start_test_proxy().await?;
+        let budget = Arc::new(Semaphore::new(1));
+        let _permit = Arc::clone(&budget).acquire_owned().await?;
+        let proxy = ValidatingProxy::start(budget).await?;
         let initial = Url::parse(&format!("http://127.0.0.1:{}/", upstream_address.port()))?;
         proxy
             .set_guard(NetworkGuard::new(NetworkPolicy::Standard, &initial)?)
@@ -546,7 +597,7 @@ mod tests {
             )
             .await?;
         let mut response = Vec::new();
-        client.read_to_end(&mut response).await?;
+        timeout(Duration::from_secs(1), client.read_to_end(&mut response)).await??;
 
         assert!(response.starts_with(b"HTTP/1.1 403 Forbidden\r\n"));
         assert!(
@@ -555,6 +606,46 @@ mod tests {
                 .is_err()
         );
         proxy.close().await;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn denied_idle_socket_does_not_block_other_http_rejections() -> TestResult {
+        let upstream = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await?;
+        let upstream_address = upstream.local_addr()?;
+        let budget = Arc::new(Semaphore::new(1));
+        let permit = Arc::clone(&budget).acquire_owned().await?;
+        let proxy = ValidatingProxy::start(Arc::clone(&budget)).await?;
+        proxy.deny_all().await;
+        let mut idle = TcpStream::connect(proxy.address).await?;
+        let mut request = TcpStream::connect(proxy.address).await?;
+        request
+            .write_all(
+                format!(
+                    "GET http://{upstream_address}/ HTTP/1.1\r\nHost: {upstream_address}\r\n\r\n"
+                )
+                .as_bytes(),
+            )
+            .await?;
+        let mut response = Vec::new();
+        timeout(Duration::from_secs(1), request.read_to_end(&mut response)).await??;
+        assert_eq!(
+            response,
+            b"HTTP/1.1 403 Forbidden\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        );
+        assert!(
+            timeout(Duration::from_millis(20), upstream.accept())
+                .await
+                .is_err()
+        );
+        timeout(Duration::from_secs(1), proxy.close()).await?;
+        let mut byte = [0];
+        assert_eq!(
+            timeout(Duration::from_secs(1), idle.read(&mut byte)).await??,
+            0
+        );
+        drop(permit);
+        assert_eq!(budget.available_permits(), 1);
         Ok(())
     }
 

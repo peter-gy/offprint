@@ -28,6 +28,7 @@
 #![warn(missing_docs)]
 
 mod artifact_service;
+mod bounded_io;
 mod browser_service;
 mod capture_builder;
 mod capture_service;

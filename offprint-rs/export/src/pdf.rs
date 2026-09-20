@@ -1,8 +1,8 @@
 use std::collections::BTreeSet;
 
 use lopdf::content::{Content, Operation};
-use lopdf::{Dictionary, Document as PdfDocument, LoadOptions as PdfLoadOptions, Object, ObjectId};
-use offprint_model::{ArtifactFormat, Result};
+use lopdf::{Dictionary, Document as PdfDocument, Object, ObjectId};
+use offprint_model::{ArtifactFormat, ErrorStage, Result};
 
 use crate::FormatEvidence;
 use crate::support::{
@@ -65,21 +65,19 @@ const FORBIDDEN_ACTIONS: &[&[u8]] = &[
 
 /// Verifies a Chromium PDF at the independent file-format boundary.
 pub fn verify_pdf(bytes: &[u8]) -> Result<FormatEvidence> {
+    let document = parse_pdf(bytes);
+    verify_parsed_pdf(bytes, document.as_ref())
+}
+
+fn parse_pdf(bytes: &[u8]) -> Option<PdfDocument> {
+    pdf_envelope_valid(bytes)
+        .then(|| semantics::load_pdf(bytes, ErrorStage::Verification).ok())
+        .flatten()
+}
+
+fn verify_parsed_pdf(bytes: &[u8], document: Option<&PdfDocument>) -> Result<FormatEvidence> {
     let structure_valid = pdf_envelope_valid(bytes);
-    let document = structure_valid
-        .then(|| {
-            PdfDocument::load_mem_with_options(
-                bytes,
-                PdfLoadOptions {
-                    strict: true,
-                    max_decompressed_size: Some(maximum_decoded_bytes()),
-                    ..PdfLoadOptions::default()
-                },
-            )
-            .ok()
-        })
-        .flatten();
-    let content_valid = document.as_ref().is_some_and(|document| {
+    let content_valid = document.is_some_and(|document| {
         validated_page_ids(document).is_some_and(|pages| {
             pdf_objects_are_passive(document)
                 && pages

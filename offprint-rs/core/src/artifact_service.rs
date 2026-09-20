@@ -1,6 +1,5 @@
 use std::io;
 use std::io::Write as _;
-use std::path::Path;
 use std::sync::Arc;
 
 use offprint_artifact::FileArtifactWriter;
@@ -10,9 +9,10 @@ use offprint_model::{
     CaptureReceipt, ConflictPolicy, ERROR_CODE_REGISTRY, ErrorStage, OffprintError, PortablePath,
     RedactedUrl, RedactionPolicy, Result, VerificationMode, VerificationReport,
 };
-use tokio::io::{AsyncReadExt as _, AsyncWriteExt as _};
+use tokio::io::AsyncWriteExt as _;
 use url::Url;
 
+use crate::bounded_io::{BoundedFileReadError, FileAddressing, read_bounded_file};
 use crate::runtime::{
     RuntimePagePurpose, RuntimePageRequest, RuntimeState, operation_cancelled_error,
 };
@@ -21,7 +21,6 @@ mod export;
 mod markdown_bundle;
 
 const MAXIMUM_INSPECTION_BYTES: u64 = 64 * 1024 * 1024;
-const FILE_READ_BUFFER_BYTES: usize = 64 * 1024;
 
 #[derive(Clone, Debug)]
 /// Inspects and verifies Offprint HTML artifacts.
@@ -389,7 +388,7 @@ async fn read_input(input: ArtifactSource) -> Result<Vec<u8>> {
         ArtifactSource::File(path) => match read_bounded_file(
             path.as_utf8_path().as_std_path(),
             MAXIMUM_INSPECTION_BYTES,
-            false,
+            FileAddressing::FollowLinks,
         )
         .await
         {
@@ -417,96 +416,17 @@ fn input_too_large() -> OffprintError {
     )
 }
 
-#[derive(Debug)]
-enum BoundedFileReadError {
-    Io(io::Error),
-    NotDirectFile,
-    TooLarge,
-}
-
-async fn read_bounded_file(
-    path: &Path,
-    maximum_bytes: u64,
-    directly_addressed: bool,
-) -> std::result::Result<Vec<u8>, BoundedFileReadError> {
-    if directly_addressed {
-        validate_direct_file_path(path).await?;
-    }
-    let file = tokio::fs::File::open(path)
-        .await
-        .map_err(BoundedFileReadError::Io)?;
-    let metadata = file.metadata().await.map_err(BoundedFileReadError::Io)?;
-    if !metadata.is_file() {
-        return Err(BoundedFileReadError::NotDirectFile);
-    }
-    if directly_addressed {
-        validate_direct_file_path(path).await?;
-    }
-    read_bounded_open_file(file, maximum_bytes).await
-}
-
-async fn validate_direct_file_path(path: &Path) -> std::result::Result<(), BoundedFileReadError> {
-    let metadata = tokio::fs::symlink_metadata(path)
-        .await
-        .map_err(BoundedFileReadError::Io)?;
-    if metadata.file_type().is_symlink() || !metadata.is_file() {
-        return Err(BoundedFileReadError::NotDirectFile);
-    }
-    Ok(())
-}
-
-async fn read_bounded_open_file(
-    mut file: tokio::fs::File,
-    maximum_bytes: u64,
-) -> std::result::Result<Vec<u8>, BoundedFileReadError> {
-    let mut bytes = Vec::new();
-    let mut total = 0_u64;
-    // Binding runtimes poll this nested future on worker stacks smaller than
-    // the native CLI stack, so keep the read chunk on the heap.
-    let mut buffer = vec![0_u8; FILE_READ_BUFFER_BYTES];
-    loop {
-        if total == maximum_bytes {
-            let mut trailing = [0_u8; 1];
-            if file
-                .read(&mut trailing)
-                .await
-                .map_err(BoundedFileReadError::Io)?
-                != 0
-            {
-                return Err(BoundedFileReadError::TooLarge);
-            }
-            return Ok(bytes);
-        }
-        let remaining = maximum_bytes.saturating_sub(total);
-        let maximum =
-            usize::try_from(remaining.min(u64::try_from(buffer.len()).unwrap_or(u64::MAX)))
-                .unwrap_or(buffer.len());
-        let read = file
-            .read(&mut buffer[..maximum])
-            .await
-            .map_err(BoundedFileReadError::Io)?;
-        if read == 0 {
-            return Ok(bytes);
-        }
-        bytes.extend_from_slice(&buffer[..read]);
-        total = total.saturating_add(u64::try_from(read).unwrap_or(u64::MAX));
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use std::error::Error;
-    use std::io::{self, Write as _};
+    use std::io;
 
     use offprint_model::{
         CaptureArtifact, CaptureReceipt, ConflictPolicy, ContentDigest, ERROR_CODE_REGISTRY,
         ErrorStage,
     };
 
-    use super::{
-        BoundedFileReadError, StagingOperation, map_staging_io, read_bounded_file,
-        read_bounded_open_file, stage_temporary_artifact,
-    };
+    use super::{StagingOperation, map_staging_io, stage_temporary_artifact};
     use crate::Offprint;
 
     type TestResult = std::result::Result<(), Box<dyn Error + Send + Sync>>;
@@ -598,38 +518,6 @@ mod tests {
             stage_temporary_artifact("offprint-test-", ".html", b"complete", "test").await?;
 
         assert_eq!(std::fs::read(staged.path())?, b"complete");
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn bounded_open_file_detects_growth_after_open() -> TestResult {
-        let directory = tempfile::tempdir()?;
-        let path = directory.path().join("artifact.html");
-        std::fs::write(&path, b"safe")?;
-        let file = tokio::fs::File::open(&path).await?;
-        let mut writer = std::fs::OpenOptions::new().append(true).open(path)?;
-        writer.write_all(b"-oversized")?;
-
-        let result = read_bounded_open_file(file, 4).await;
-
-        assert!(matches!(result, Err(BoundedFileReadError::TooLarge)));
-        Ok(())
-    }
-
-    #[cfg(unix)]
-    #[tokio::test]
-    async fn directly_addressed_reader_rejects_a_symlink() -> TestResult {
-        use std::os::unix::fs::symlink;
-
-        let directory = tempfile::tempdir()?;
-        let target = directory.path().join("target.bin");
-        let link = directory.path().join("link.bin");
-        std::fs::write(&target, b"content")?;
-        symlink(target, &link)?;
-
-        let result = read_bounded_file(&link, 64, true).await;
-
-        assert!(matches!(result, Err(BoundedFileReadError::NotDirectFile)));
         Ok(())
     }
 }

@@ -31,7 +31,7 @@ export type BoundedResult<T> =
   | { attempted: number; kind: "limit" }
   | { bytes: number; kind: "ok"; value: T };
 
-class BoundedWriter {
+export class BoundedWriter {
   readonly maximumBytes: number;
   private bytes = 0;
   private readonly chunks: string[] = [];
@@ -53,6 +53,10 @@ class BoundedWriter {
     this.bytes += width;
     arrayPush(this.chunks, value);
     return true;
+  }
+
+  writeJsonString(value: string, mode: "json" | "script-json" = "json"): boolean {
+    return this.write('"') && writeEscaped(this, value, mode) && this.write('"');
   }
 
   resultString(): BoundedResult<string> {
@@ -193,47 +197,6 @@ export function serializeJsonBytesBounded(
   return writer.resultBytes();
 }
 
-export function serializeJsonStringBounded(
-  value: unknown,
-  maximumBytes: number,
-): BoundedResult<string> {
-  const writer = new BoundedWriter(maximumBytes);
-  writeJson(writer, value);
-  return writer.resultString();
-}
-
-export function escapeScriptDataBounded(
-  value: string,
-  maximumBytes: number,
-): BoundedResult<string> {
-  const writer = new BoundedWriter(maximumBytes);
-  let start = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    const code = stringCharCodeAt(value, index);
-    const replacement =
-      code === 38
-        ? "\\u0026"
-        : code === 60
-          ? "\\u003c"
-          : code === 62
-            ? "\\u003e"
-            : code === 0x2028
-              ? "\\u2028"
-              : code === 0x2029
-                ? "\\u2029"
-                : undefined;
-    if (replacement === undefined) {
-      continue;
-    }
-    if (!writer.write(stringSlice(value, start, index)) || !writer.write(replacement)) {
-      return writer.resultString();
-    }
-    start = index + 1;
-  }
-  writer.write(stringSlice(value, start));
-  return writer.resultString();
-}
-
 function writeJson(writer: BoundedWriter, value: unknown): void {
   const pending: JsonTask[] = [{ kind: "value", value }];
   while (pending.length > 0) {
@@ -248,7 +211,7 @@ function writeJson(writer: BoundedWriter, value: unknown): void {
       continue;
     }
     if (task.kind === "string") {
-      if (!writer.write('"') || !writeEscaped(writer, task.value, "json") || !writer.write('"')) {
+      if (!writer.writeJsonString(task.value)) {
         return;
       }
       continue;
@@ -300,15 +263,15 @@ function writeJson(writer: BoundedWriter, value: unknown): void {
   }
 }
 
-type EscapeMode = "attribute" | "json" | "raw" | "text";
+type EscapeMode = "attribute" | "json" | "script-json" | "raw" | "text";
 
 function writeEscaped(writer: BoundedWriter, value: string, mode: EscapeMode): boolean {
   let start = 0;
   for (let index = 0; index < value.length; index += 1) {
     const code = stringCharCodeAt(value, index);
     const replacement =
-      mode === "json"
-        ? jsonEscape(code)
+      mode === "json" || mode === "script-json"
+        ? (jsonEscape(code) ?? (mode === "script-json" ? scriptDataEscape(code) : undefined))
         : mode === "raw"
           ? undefined
           : htmlEscape(code, mode === "attribute");
@@ -356,5 +319,22 @@ function jsonEscape(code: number): string | undefined {
       return code < 32
         ? `\\u00${"0123456789abcdef"[(code >>> 4) & 0xf]}${"0123456789abcdef"[code & 0xf]}`
         : undefined;
+  }
+}
+
+function scriptDataEscape(code: number): string | undefined {
+  switch (code) {
+    case 38:
+      return "\\u0026";
+    case 60:
+      return "\\u003c";
+    case 62:
+      return "\\u003e";
+    case 0x2028:
+      return "\\u2028";
+    case 0x2029:
+      return "\\u2029";
+    default:
+      return undefined;
   }
 }

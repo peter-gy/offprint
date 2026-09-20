@@ -329,6 +329,320 @@ async fn pdf_keeps_heading_with_following_content() -> TestResult {
     Ok(())
 }
 
+#[tokio::test]
+#[ignore = "requires a locally installed compatible Chromium browser"]
+async fn pdf_keeps_visual_figure_on_one_page() -> TestResult {
+    let server = FixtureServer::start().await?;
+    server
+        .register(
+            "/",
+            FixtureResponse::html(
+                r#"<!doctype html><html><head><title>Figure pagination</title>
+                <style>
+                @page { size: A4; margin: 40px; }
+                html, body { margin: 0; font: 16px/20px sans-serif; }
+                .opening { height: 1000px; }
+                .figure-row { height: 160px; }
+                .figure-row::before { content: "Figure top"; display: block; height: 20px; }
+                .figure-row::after { content: "Figure bottom"; display: block; height: 20px; }
+                .figure-row p, .figure-row picture, .figure-row img {
+                    display: block;
+                    height: 120px;
+                    margin: 0;
+                    width: 120px;
+                }
+                </style></head><body>
+                <div class="opening">Opening page</div>
+                <div class="figure-row"><p><picture><img alt="Blue square"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cpath fill='%230078d4' d='M0 0h120v120H0z'/%3E%3C/svg%3E">
+                </picture></p></div>
+                <p>Following explanation</p>
+                </body></html>"#,
+            ),
+        )
+        .await?;
+    let directory = tempfile::tempdir()?;
+    let offprint = Offprint::new()?;
+    let captured = offprint
+        .capture(server.url("/")?.as_str())?
+        .bytes(1024 * 1024)
+        .await?;
+    let exported = offprint
+        .artifacts()
+        .export_capture(
+            &captured,
+            ExportRequest {
+                schema_version: offprint::PUBLIC_SCHEMA_VERSION,
+                output_directory: PortablePath::from_path_buf(directory.path().join("pdf"))?,
+                base_name: "figure-pagination".to_owned(),
+                formats: vec![FormatSpec::Pdf(PdfOptions {
+                    landscape: false,
+                    prefer_css_page_size: true,
+                })],
+                conflict: ConflictPolicy::Fail,
+            },
+        )
+        .await?;
+    let document = lopdf::Document::load(exported.artifacts[0].path.as_std_path())?;
+    assert_eq!(document.get_pages().len(), 2);
+    let first = document.extract_text(&[1])?;
+    let second = document.extract_text(&[2])?;
+    assert!(first.contains("Opening page"));
+    assert!(!first.contains("Figure top"));
+    assert!(second.contains("Figure top"));
+    assert!(second.contains("Figure bottom"));
+    assert!(second.contains("Following explanation"));
+    offprint.close().await?;
+    server.close().await;
+    Ok(())
+}
+
+#[tokio::test]
+#[ignore = "requires a locally installed compatible Chromium browser"]
+async fn pdf_scales_oversized_figure_to_one_page() -> TestResult {
+    let server = FixtureServer::start().await?;
+    server
+        .register(
+            "/",
+            FixtureResponse::html(
+                r#"<!doctype html><html><head><title>Oversized figure</title>
+                <style>
+                @page { size: A4; margin: 40px; }
+                html, body, h1, p, figure { margin: 0; font: 16px/20px sans-serif; }
+                img { display: block; width: 400px; height: 1600px; }
+                </style></head><body>
+                <h1>Oversized figure</h1>
+                <figure><img alt="Tall chart"
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='1600'%3E%3Cpath fill='%230078d4' d='M0 0h400v1600H0z'/%3E%3C/svg%3E">
+                </figure>
+                <p>Following explanation</p>
+                </body></html>"#,
+            ),
+        )
+        .await?;
+    let directory = tempfile::tempdir()?;
+    let offprint = Offprint::new()?;
+    let captured = offprint
+        .capture(server.url("/")?.as_str())?
+        .bytes(1024 * 1024)
+        .await?;
+    let exported = offprint
+        .artifacts()
+        .export_capture(
+            &captured,
+            ExportRequest {
+                schema_version: offprint::PUBLIC_SCHEMA_VERSION,
+                output_directory: PortablePath::from_path_buf(directory.path().join("pdf"))?,
+                base_name: "oversized-figure".to_owned(),
+                formats: vec![FormatSpec::Pdf(PdfOptions {
+                    landscape: false,
+                    prefer_css_page_size: true,
+                })],
+                conflict: ConflictPolicy::Fail,
+            },
+        )
+        .await?;
+    let document = lopdf::Document::load(exported.artifacts[0].path.as_std_path())?;
+    let pages = document.get_pages().keys().copied().collect::<Vec<_>>();
+    let text = document.extract_text(&pages)?;
+    assert!(text.contains("Following explanation"));
+    for (name, page_style, expected_width, expected_height, page_margin) in [
+        (
+            "large-margins",
+            "size: A4; margin: 120px",
+            595.0,
+            842.0,
+            90.0,
+        ),
+        (
+            "landscape",
+            "size: A4 landscape; margin: 80px",
+            842.0,
+            595.0,
+            60.0,
+        ),
+        (
+            "small-page",
+            "size: 300px 400px; margin: 40px",
+            225.0,
+            300.0,
+            30.0,
+        ),
+    ] {
+        let html = format!(
+            r#"<!doctype html><style>
+            @page {{ {page_style}; }}
+            html, body {{ margin: 0; font: 16px/20px sans-serif; }}
+            figure {{ margin: 0; padding: 12px; border: 2px solid; }}
+            svg {{ display: block; width: 400px; height: 1600px; max-width: 100%; }}
+            p {{ margin: 0; }}
+            </style><figure><svg xmlns="http://www.w3.org/2000/svg" width="400" height="1600" viewBox="0 0 400 1600">
+            <rect width="400" height="1600" fill="lightblue"/>
+            <a href="https://example.com/media-start"><text x="10" y="30" font-size="24">Media start</text></a>
+            <a href="https://example.com/media-end"><text x="10" y="1580" font-size="24">Media end</text></a>
+            </svg><figcaption><a href="https://example.com/caption-start">Caption first line</a><br>
+            <a href="https://example.com/caption-end">Caption last line</a></figcaption></figure>
+            <p>Following paragraph</p>"#
+        );
+        server
+            .register(&format!("/{name}"), FixtureResponse::html(html))
+            .await?;
+        let captured = offprint
+            .capture(server.url(&format!("/{name}"))?.as_str())?
+            .bytes(1024 * 1024)
+            .await?;
+        let exported = offprint
+            .artifacts()
+            .export_capture(
+                &captured,
+                ExportRequest {
+                    schema_version: offprint::PUBLIC_SCHEMA_VERSION,
+                    output_directory: PortablePath::from_path_buf(directory.path().join(name))?,
+                    base_name: name.to_owned(),
+                    formats: vec![FormatSpec::Pdf(PdfOptions {
+                        landscape: false,
+                        prefer_css_page_size: true,
+                    })],
+                    conflict: ConflictPolicy::Fail,
+                },
+            )
+            .await?;
+        let document = lopdf::Document::load(exported.artifacts[0].path.as_std_path())?;
+        let first_page = document.get_pages()[&1];
+        let bounds = document
+            .get_object(first_page)?
+            .as_dict()?
+            .get(b"MediaBox")?
+            .as_array()?;
+        assert!(
+            (f64::from(bounds[2].as_float()?) - expected_width).abs() < 1.0,
+            "{name}"
+        );
+        assert!(
+            (f64::from(bounds[3].as_float()?) - expected_height).abs() < 1.0,
+            "{name}"
+        );
+        let first = document.extract_text(&[1])?;
+        for marker in [
+            "Media start",
+            "Media end",
+            "Caption first line",
+            "Caption last line",
+        ] {
+            assert!(
+                first.contains(marker),
+                "{name}: {marker} missing from figure page: {first}"
+            );
+        }
+        let annotations = document
+            .get_object(first_page)?
+            .as_dict()?
+            .get(b"Annots")?
+            .as_array()?;
+        assert_eq!(annotations.len(), 4, "{name}");
+        for annotation in annotations {
+            let (_, annotation) = document.dereference(annotation)?;
+            let rect = annotation.as_dict()?.get(b"Rect")?.as_array()?;
+            let coordinates = rect
+                .iter()
+                .map(lopdf::Object::as_float)
+                .collect::<std::result::Result<Vec<_>, _>>()?;
+            assert!(
+                f64::from(coordinates[0]) >= page_margin - 1.0,
+                "{name}: {coordinates:?}"
+            );
+            assert!(
+                f64::from(coordinates[1]) >= page_margin - 1.0,
+                "{name}: {coordinates:?}"
+            );
+            assert!(
+                f64::from(coordinates[2]) <= expected_width - page_margin + 1.0,
+                "{name}: {coordinates:?}"
+            );
+            assert!(
+                f64::from(coordinates[3]) <= expected_height - page_margin + 1.0,
+                "{name}: {coordinates:?}"
+            );
+        }
+        assert_eq!(document.get_pages().len(), 2, "{name}");
+        assert!(
+            document.extract_text(&[2])?.contains("Following paragraph"),
+            "{name}"
+        );
+    }
+    offprint.close().await?;
+    verify_pdf_layout_invariance(&server).await?;
+    server.close().await;
+    Ok(())
+}
+
+async fn verify_pdf_layout_invariance(server: &FixtureServer) -> TestResult {
+    let executable = ChromiumDiscovery::new()
+        .discover()
+        .await
+        .selected
+        .and_then(|browser| browser.executable_path)
+        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "no browser"))?;
+    let process = ChromiumProcess::launch(ChromiumLaunchOptions::new(executable)).await?;
+    let image = r#"<img id="image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='48'%3E%3Crect width='24' height='48' fill='blue'/%3E%3C/svg%3E">"#;
+    let metrics = r#"Array.from(document.querySelectorAll('[id]'), element => {
+        const box = element.getBoundingClientRect();
+        return { id: element.id, x: box.x, y: box.y, width: box.width, height: box.height,
+            boxSizing: getComputedStyle(element).boxSizing };
+    })"#;
+    let result = async {
+        for (name, css, body) in [
+            ("content-box-caption-minimum", "figure{width:300px;padding:12px;border:2px solid}img{display:block}figcaption{min-height:80px}", image.to_owned()),
+            ("intrinsic-inline", "figure{width:300px}", image.to_owned()),
+            ("authored-stretch", "figure{width:300px}img{display:block;width:48px;height:48px}", image.to_owned()),
+            ("grid-picture", "figure{width:300px}picture{display:grid;grid-template-columns:100px 100px}img{display:block}", format!("<picture id=picture>{image}</picture>")),
+            ("relative-cap", "figure{width:300px}img{display:block;max-height:50vh;height:1600px;width:24px}", image.to_owned()),
+        ] {
+            let route = format!("/invariance-{name}");
+            server.register(&route, FixtureResponse::html(format!(
+                "<!doctype html><style>body{{margin:0;font:16px/20px sans-serif}}figure{{margin:0}}{css}</style><figure id=figure>{body}<figcaption id=caption>Caption</figcaption></figure>"
+            ))).await?;
+            let page = process.new_page(&offprint::BrowserEnvironment::default()).await?;
+            let viewport = serde_json::json!({
+                "width": 800, "height": 900, "deviceScaleFactor": 1, "mobile": false,
+            });
+            process.client().command("Emulation.setDeviceMetricsOverride", viewport.clone(), Some(page.session_id())).await?;
+            let url = server.url(&route)?;
+            page.navigate(&url, offprint::ReadinessMode::Load, 20, Duration::from_secs(10)).await?;
+            page.evaluate("Promise.all(Array.from(document.images, image => image.decode()))").await?;
+            let before = page.evaluate(metrics).await?;
+            let printed = page.print_to_pdf(&url, false, true, 1024 * 1024).await?;
+            assert!(!printed.is_empty(), "{name}");
+            // Printing resolves viewport lengths against the page area. Re-enter
+            // the same screen viewport before comparing source-layout geometry.
+            process.client().command("Emulation.clearDeviceMetricsOverride", serde_json::json!({}), Some(page.session_id())).await?;
+            process.client().command("Emulation.setDeviceMetricsOverride", viewport, Some(page.session_id())).await?;
+            assert_eq!(page.evaluate(metrics).await?, before, "{name}");
+            if name == "content-box-caption-minimum" {
+                assert_eq!(page.evaluate("getComputedStyle(document.querySelector('figcaption')).minHeight").await?.as_str(), Some("80px"));
+            }
+            if name == "grid-picture" {
+                assert_eq!(page.evaluate("getComputedStyle(document.querySelector('picture')).display").await?.as_str(), Some("grid"));
+            }
+            if name == "authored-stretch" {
+                assert_eq!(page.evaluate("getComputedStyle(document.querySelector('img')).objectFit").await?.as_str(), Some("fill"));
+            }
+            if name == "relative-cap" {
+                process.client().command("Emulation.setDeviceMetricsOverride", serde_json::json!({
+                    "width": 800, "height": 400, "deviceScaleFactor": 1, "mobile": false,
+                }), Some(page.session_id())).await?;
+                assert_eq!(page.evaluate("getComputedStyle(document.querySelector('img')).maxHeight").await?.as_str(), Some("200px"));
+            }
+            page.close().await?;
+        }
+        TestResult::Ok(())
+    }.await;
+    let close = process.close().await;
+    result?;
+    close?;
+    Ok(())
+}
+
 fn verify_pdf_semantics(path: &std::path::Path, source_digest: ContentDigest) -> TestResult {
     let bytes = std::fs::read(path)?;
     let metadata = lopdf::Document::load_metadata_mem(&bytes)?;

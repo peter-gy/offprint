@@ -29,7 +29,8 @@ use url::Url;
 use crate::CdpClient;
 use crate::proxy::ValidatingProxy;
 use crate::resources::ObservedResources;
-use crate::targets::{FrameTargetManager, SessionRegistry};
+use crate::targets::FrameTargetManager;
+use crate::transport::PageEvents;
 use activity::NetworkActivity;
 #[cfg(test)]
 use activity::{is_long_lived_resource_type, is_long_lived_response};
@@ -52,7 +53,7 @@ pub struct ChromiumPage {
     environment: BrowserEnvironment,
     browser_context_id: String,
     session_id: String,
-    sessions: SessionRegistry,
+    events: Arc<PageEvents>,
     targets: FrameTargetManager,
     activity: NetworkActivity,
     observed_resources: ObservedResources,
@@ -175,7 +176,7 @@ impl ChromiumPage {
         let intercept_subresource_requests = !headers.is_empty();
         let controller = NetworkInterception::start(
             self.client.clone(),
-            Arc::clone(&self.sessions),
+            &self.events,
             self.observed_resources.recorder(),
             guard,
             headers,

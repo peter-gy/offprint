@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -175,26 +174,23 @@ impl ChromiumPage {
             }
         };
 
-        let sessions = Arc::new(tokio::sync::RwLock::new(HashSet::from(
-            [session_id.clone()],
-        )));
+        let events = client.page_events(&session_id);
         let targets = FrameTargetManager::start_with_limits(
             client.clone(),
-            session_id.clone(),
-            Arc::clone(&sessions),
+            Arc::clone(&events),
             !client.is_owned_browser(),
             target_limits,
             install_collector,
         );
-        let activity = NetworkActivity::start(client.clone(), Arc::clone(&sessions));
+        let activity = NetworkActivity::start(&events);
         let observed_resources =
-            ObservedResources::start(client.clone(), Arc::clone(&sessions), resource_observation);
+            ObservedResources::start(client.clone(), &events, resource_observation);
         let page = Self {
             client,
             environment: environment.clone(),
             browser_context_id,
             session_id,
-            sessions,
+            events,
             targets,
             activity,
             observed_resources,

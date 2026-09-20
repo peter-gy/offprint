@@ -35,6 +35,21 @@ runtime bounds contexts, restarts after crash, recycles after the configured job
 threshold, and keeps an idle process pooled until `close_idle`, recycle, or
 service shutdown.
 
+Each page owns bounded CDP event queues for its main session and admitted child
+sessions. `PageEvents` admits each event once at publication. Child routes are
+registered before target configuration and released when the target detaches.
+Already admitted events remain available after detach. Dropping the page's final owner releases
+its remaining routes. Event consumers subscribe before their tasks start.
+Interception, network activity, and resource observation each receive the event
+methods they consume. Navigation reports a failed interception stream while
+waiting for the document milestone.
+Each subscription buffers at most 16,384 events and 128 MiB of encoded event
+bytes. Storage grows with queued events. Overflow evicts the oldest records
+and reports lag before delivering another record. Dropping a subscription
+releases its buffered payloads. The transport task closes existing and future
+subscriptions on shutdown, failure, or abort, even when callers retain client
+handles. Subscribers drain buffered events before observing closure.
+
 Local launch uses an ephemeral user-data directory, CDP loopback binding,
 disabled downloads, browser sandboxing, process-tree containment, and blocked
 direct WebRTC UDP.
@@ -80,6 +95,15 @@ Cookie scope and local-file-root containment are validated by request and
 pipeline code around the guard. Direct transport containment belongs to browser
 launch and target configuration.
 
+The shared proxy budget bounds active upstream connections. At saturation,
+each proxy holds at most one accepted connection while waiting for a permit,
+with a ten-second deadline. Network denial or shutdown cancels that wait.
+Additional connections remain in the listener backlog.
+Denied requests use a separate pool of at most 32 local response tasks per proxy.
+Each task consumes a bounded request head before returning HTTP 403, with a
+ten-second deadline. An idle denied connection can occupy one response task
+while other denials proceed independently of upstream permits.
+
 `NetworkPolicy::Unrestricted` disables address-class restrictions. It does not
 disable WebSocket, EventSource, WebRTC, malformed URL, byte, count, or deadline
 containment.
@@ -92,6 +116,12 @@ and rendering freeze. Font or mutation probes can report false in readiness
 evidence after their internal deadline. `network-idle` requires zero finite
 requests for the quiet window. Load modes stop at their browser lifecycle
 milestones.
+
+Animation capture enumerates each composed document or shadow root once per
+observation pass through document-start native methods. It reads animated
+property values before applying overrides, then reuses those samples while
+materializing elements. A collection-time snapshot also captures animations
+introduced after the freeze step.
 
 All readiness work shares the capture deadline. Navigation has no automatic
 retry.

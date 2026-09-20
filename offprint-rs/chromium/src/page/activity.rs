@@ -7,8 +7,7 @@ use serde_json::Value;
 use tokio::sync::{Mutex, Notify};
 use tokio_util::sync::CancellationToken;
 
-use crate::CdpClient;
-use crate::targets::SessionRegistry;
+use crate::transport::PageEvents;
 
 #[derive(Debug)]
 struct ActivityState {
@@ -28,7 +27,7 @@ pub(super) struct NetworkActivity {
 }
 
 impl NetworkActivity {
-    pub(super) fn start(client: CdpClient, sessions: SessionRegistry) -> Self {
+    pub(super) fn start(events: &PageEvents) -> Self {
         let state = Arc::new(Mutex::new(ActivityState {
             active: HashSet::new(),
             last_change: tokio::time::Instant::now(),
@@ -39,8 +38,8 @@ impl NetworkActivity {
         let task_state = Arc::clone(&state);
         let task_changed = Arc::clone(&changed);
         let task_cancellation = cancellation.clone();
+        let mut events = events.activity();
         let task = tokio::spawn(async move {
-            let mut events = client.subscribe();
             loop {
                 let event = tokio::select! {
                     () = task_cancellation.cancelled() => return,
@@ -59,12 +58,6 @@ impl NetworkActivity {
                         return;
                     }
                 };
-                let Some(session_id) = event.session_id.as_deref() else {
-                    continue;
-                };
-                if !sessions.read().await.contains(session_id) {
-                    continue;
-                }
                 let mut changed_state = false;
                 let mut state = task_state.lock().await;
                 match event.method.as_ref() {

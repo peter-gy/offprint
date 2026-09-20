@@ -27,7 +27,7 @@ import {
 } from "./dom";
 import {
   appendMotionStyles,
-  freezeMotion,
+  snapshotMotion,
   materializeMotionState,
   reportMotionCaptureFailure,
 } from "./motion";
@@ -235,9 +235,9 @@ export function snapshotDocument(
     documentFontFaces: documentFontFaces(source),
     inlineFrameOwners: new SafeMap<Element, FrameOwnerSnapshot[]>(),
     reservation,
+    motion: snapshotMotion(source),
     usedFontsByRoot: new SafeMap<Document | ShadowRoot, Set<string>>(),
   };
-  freezeMotion(source);
   reportMotionCaptureFailure(source, context);
   const liveDocumentElement = documentElement(source);
   const clone = cloneNode(liveDocumentElement, true) as Element;
