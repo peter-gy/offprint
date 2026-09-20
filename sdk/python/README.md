@@ -19,10 +19,10 @@ uvx offprint capture https://example.com --output example.html --quiet
 
 ## Use in an application
 
-Install version 0.0.5:
+Install version 0.0.6:
 
 ```console
-python -m pip install offprint==0.0.5
+python -m pip install offprint==0.0.6
 ```
 
 ```python

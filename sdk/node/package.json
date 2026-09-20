@@ -1,6 +1,6 @@
 {
   "name": "offprint",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "Capture rendered web pages as verified self-contained artifacts",
   "homepage": "https://peter-gy.github.io/offprint/",
   "bugs": {

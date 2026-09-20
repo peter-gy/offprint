@@ -1,4 +1,4 @@
-product = "0.0.5"
+product = "0.0.6"
 artifact_format = 2
 public_schema = 2
 collector_protocol = "1.5"
