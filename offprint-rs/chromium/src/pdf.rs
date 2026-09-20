@@ -6,58 +6,7 @@ use url::Url;
 use crate::CdpClient;
 
 const PDF_READ_BYTES: u64 = 64 * 1024;
-const PREPARE_PDF_DOCUMENT: &str = r#"(sourceUrl) => {
-    let rewritten = 0;
-    let removed = 0;
-    const schemes = new Set(["http:", "https:", "mailto:", "tel:"]);
-    const source = new URL(sourceUrl);
-    source.hash = "";
-    const visited = new Set();
-    const visit = (root) => {
-        if (!root || visited.has(root)) return;
-        visited.add(root);
-        for (const element of root.querySelectorAll("*")) {
-            if (element.namespaceURI === "http://www.w3.org/1999/xhtml" &&
-                /^h[1-6]$/.test(element.localName) &&
-                element.ownerDocument.defaultView.getComputedStyle(element).breakAfter === "auto") {
-                element.style.breakAfter = "avoid-page";
-            }
-            if (
-                (element.localName === "a" || element.localName === "area") &&
-                element.hasAttribute("href")
-            ) {
-                try {
-                    const target = new URL(element.getAttribute("href"), sourceUrl);
-                    if (schemes.has(target.protocol)) {
-                        const fragment = target.hash;
-                        const destination = new URL(target);
-                        destination.hash = "";
-                        let identifier = fragment.slice(1);
-                        try { identifier = decodeURIComponent(identifier); } catch {}
-                        const local = fragment && destination.href === source.href &&
-                            root.getElementById?.(identifier);
-                        element.setAttribute("href", local ? fragment : target.href);
-                        rewritten += 1;
-                    } else {
-                        element.removeAttribute("href");
-                        removed += 1;
-                    }
-                } catch {
-                    element.removeAttribute("href");
-                    removed += 1;
-                }
-            }
-            visit(element.shadowRoot);
-            if (element.localName === "iframe" || element.localName === "frame") {
-                try {
-                    visit(element.contentDocument);
-                } catch {}
-            }
-        }
-    };
-    visit(document);
-    return { rewritten, removed };
-}"#;
+const PREPARE_PDF_DOCUMENT: &str = include_str!("pdf/prepare.js");
 
 pub(crate) fn prepare_pdf_document_expression(source_url: &Url) -> String {
     let source_url = serde_json::Value::String(source_url.as_str().to_owned());

@@ -143,6 +143,8 @@
         "committed-path-reported",
         "destination-unchanged",
         "every-resource-has-outcome",
+        "figure-scaled",
+        "figure-whole",
         "heading-with-content",
         "process-recovers",
         "process-recycles",

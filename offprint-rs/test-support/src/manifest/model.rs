@@ -126,6 +126,8 @@ pub enum FixtureExpectation {
     CommittedPathReported,
     DestinationUnchanged,
     EveryResourceHasOutcome,
+    FigureScaled,
+    FigureWhole,
     HeadingWithContent,
     ProcessRecovers,
     ProcessRecycles,

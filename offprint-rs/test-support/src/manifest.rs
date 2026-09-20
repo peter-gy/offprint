@@ -403,6 +403,29 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
             ],
         ),
         fixture(
+            "pdf-figure-pagination",
+            FixtureGroup::Artifact,
+            "Keeps a visual figure on one PDF page when it fits.",
+            &[FixtureCapability::PdfPagination],
+            &[
+                FixtureExpectation::CaptureSucceeds,
+                FixtureExpectation::RepresentationVerified,
+                FixtureExpectation::FigureWhole,
+            ],
+        ),
+        fixture(
+            "pdf-oversized-figure",
+            FixtureGroup::Artifact,
+            "Scales a visual figure that is taller than one PDF page.",
+            &[FixtureCapability::PdfPagination],
+            &[
+                FixtureExpectation::CaptureSucceeds,
+                FixtureExpectation::RepresentationVerified,
+                FixtureExpectation::FigureScaled,
+                FixtureExpectation::FigureWhole,
+            ],
+        ),
+        fixture(
             "trusted-types-structural-repair",
             FixtureGroup::BrowserState,
             "Preserves browser-owned nesting when Trusted Types blocks detached parsing.",
@@ -713,6 +736,18 @@ fn runner(id: &str) -> FixtureRunner {
             "offprint",
             Some("artifact_exports"),
             "pdf_keeps_heading_with_following_content",
+            true,
+        ),
+        "pdf-figure-pagination" => (
+            "offprint",
+            Some("artifact_exports"),
+            "pdf_keeps_visual_figure_on_one_page",
+            true,
+        ),
+        "pdf-oversized-figure" => (
+            "offprint",
+            Some("artifact_exports"),
+            "pdf_scales_oversized_figure_to_one_page",
             true,
         ),
         "trusted-types-structural-repair" => (

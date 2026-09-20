@@ -934,6 +934,49 @@
       }
     },
     {
+      "id": "pdf-figure-pagination",
+      "group": "artifact",
+      "summary": "Keeps a visual figure on one PDF page when it fits.",
+      "required": true,
+      "capabilities": [
+        "pdf-pagination"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "representation-verified",
+        "figure-whole"
+      ],
+      "runner": {
+        "package": "offprint",
+        "testTarget": "artifact_exports",
+        "filter": "pdf_keeps_visual_figure_on_one_page",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
+      "id": "pdf-oversized-figure",
+      "group": "artifact",
+      "summary": "Scales a visual figure that is taller than one PDF page.",
+      "required": true,
+      "capabilities": [
+        "pdf-pagination"
+      ],
+      "expectations": [
+        "capture-succeeds",
+        "representation-verified",
+        "figure-scaled",
+        "figure-whole"
+      ],
+      "runner": {
+        "package": "offprint",
+        "testTarget": "artifact_exports",
+        "filter": "pdf_scales_oversized_figure_to_one_page",
+        "ignored": true,
+        "serial": true
+      }
+    },
+    {
       "id": "trusted-types-structural-repair",
       "group": "browser-state",
       "summary": "Preserves browser-owned nesting when Trusted Types blocks detached parsing.",
