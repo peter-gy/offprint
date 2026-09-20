@@ -1,0 +1,61 @@
+fixtures/manifest/fixtures.schema.json
+  s_e649d6ee88111e::t_c8a963ccd6a5ff 146
+  s_e649d6ee88111e::t_45a3059812aff0 147
+offprint-rs/chromium/src/pdf.rs
+  s_e649d6ee88111e::t_e90ada5956fa68 9
+offprint-rs/test-support/src/manifest.rs
+  s_e649d6ee88111e::t_b57e552e959413 417-427,745-750
+  s_e649d6ee88111e::t_f3c0141aa3eacf 751-752
+  s_e649d6ee88111e::t_99f0e4ecf44794 406-416,741-744
+offprint-rs/chromium/src/pdf/prepare.js
+  s_e649d6ee88111e::t_f16a18506cb537 100
+  s_e649d6ee88111e::t_29579dbc0f4106 19-21,24,30-32,69-71,92-95,103-104
+  s_e649d6ee88111e::t_79790d358f0e6d 29
+  s_e649d6ee88111e::t_81be0e39a82feb 3-18,33-49,51-68,72-91,96-98,101-102,105-106,108-113,115-119,121-123,125,127-155,157-165
+  s_e649d6ee88111e::t_b27a790ca9d7bd 2
+  s_e649d6ee88111e::t_5b102e658d0e04 50,99,107,114,120,124,126,156,166
+  s_e649d6ee88111e::t_b2116e3349e401 1,22-23,25-28
+offprint-rs/core/tests/artifact_exports.rs
+  s_e649d6ee88111e::t_586aef36e25b38 342,344
+  s_e649d6ee88111e::t_60049b8d829834 449,462,469,481-484,536-545,549
+  s_e649d6ee88111e::t_b57e552e959413 400-445,448,573,575,643-645
+  s_e649d6ee88111e::t_ccae153c4f6e0e 450,458-461,463-468,470,487-509,512-524,526-535,568-571
+  s_e649d6ee88111e::t_54d54ca9d47b80 581-584
+  s_e649d6ee88111e::t_844fe4d5b2871d 446-447,471-480,485-486,510-511,525,566-567,572
+  s_e649d6ee88111e::t_513900375f0aba 606-609,616-619
+  s_e649d6ee88111e::t_69c783deed2a08 451-457,546-548,550-565
+  s_e649d6ee88111e::t_5d3ede520b1334 574,576-580,585-596,598-605,610-615,620-625,629-642
+  s_e649d6ee88111e::t_36f0c79dcdbab7 597,626-628
+  s_e649d6ee88111e::t_99f0e4ecf44794 332-341,343,345-399
+docs/guides/export-pdf.md
+  s_e649d6ee88111e::t_b27a790ca9d7bd 30-31
+  s_e649d6ee88111e::t_435e0e80dab877 33-35
+  s_e649d6ee88111e::t_f16a18506cb537 29
+  s_e649d6ee88111e::t_99f0e4ecf44794 23
+  s_e649d6ee88111e::t_080451926a12e9 24-25
+  s_e649d6ee88111e::t_6e4c603735056d 26-28
+package.json
+  s_e649d6ee88111e::t_791855df7b8740 6-8
+offprint-rs/test-support/src/manifest/model.rs
+  s_e649d6ee88111e::t_99f0e4ecf44794 130
+  s_e649d6ee88111e::t_b57e552e959413 129
+fixtures/manifest/fixtures.json
+  s_e649d6ee88111e::t_45a3059812aff0 937-957
+  s_e649d6ee88111e::t_c8a963ccd6a5ff 958-978
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "3ed38771917a5458880c65619479292760133b08",
+  "prompts": {},
+  "sessions": {
+    "s_e649d6ee88111e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0bb1c-90fc-74a2-bb7f-a4f16bea57b3",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
