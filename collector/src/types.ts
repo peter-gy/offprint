@@ -56,7 +56,10 @@ export interface VisualFallback {
   height: string;
 }
 
+export type CapturedMotion = Map<string, Map<string, string>>;
+
 export interface SnapshotContext {
+  motion: Map<Element, CapturedMotion>;
   warnings: SnapshotWarning[];
   visualFallbacks: VisualFallback[];
   visualFallbackTargets: Map<string, Element>;
@@ -154,21 +157,4 @@ export interface InlineSnapshot {
   warnings: SnapshotWarning[];
   visualFallbacks: VisualFallback[];
   visualFallbackTargets: Map<string, Element>;
-}
-
-export type RepairNode =
-  | {
-      kind: "element";
-      marker: string;
-      namespace: string;
-      name: string;
-      children: RepairNode[];
-      templateContent: RepairNode[];
-      shadowMode?: string;
-    }
-  | { kind: "text"; value: string }
-  | { kind: "comment"; value: string };
-
-export interface StructuralRepairTree {
-  documentElement: RepairNode;
 }

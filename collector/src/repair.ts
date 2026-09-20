@@ -30,13 +30,8 @@ import {
 } from "./dom";
 import { isGeneratedMotionStyle } from "./motion";
 import { arrayIncludes, arrayPop, arrayPush, SafeString, SafeTypeError } from "./primordials";
-import {
-  type BoundedResult,
-  escapeScriptDataBounded,
-  serializeHtmlBounded,
-  serializeJsonStringBounded,
-} from "./serialize";
-import type { RepairNode, StructuralRepairTree } from "./types";
+import { type BoundedResult, serializeHtmlBounded } from "./serialize";
+import { serializeRepairDataBounded } from "./repair-serialization";
 
 const htmlNamespace = "http://www.w3.org/1999/xhtml";
 
@@ -68,13 +63,8 @@ export function serializeDocumentWithRepair(
   if (initial.kind === "limit") {
     return initial;
   }
-  const structuralRepair = structuralRepairFor(root, initial.value);
-  if (structuralRepair) {
-    const repairJson = serializeJsonStringBounded(structuralRepair, maximumBytes);
-    if (repairJson.kind === "limit") {
-      return repairJson;
-    }
-    const repairData = escapeScriptDataBounded(repairJson.value, maximumBytes);
+  if (requiresStructuralRepair(root, initial.value)) {
+    const repairData = serializeRepairDataBounded(root, maximumBytes);
     if (repairData.kind === "limit") {
       return repairData;
     }
@@ -85,12 +75,16 @@ export function serializeDocumentWithRepair(
   return serializeHtmlBounded(root, maximumBytes);
 }
 
-function structuralRepairFor(root: Element, serialized: string): StructuralRepairTree | undefined {
-  const reparsed = parseHtml(serialized);
-  if (repairNodesEqual(root, documentElement(reparsed))) {
-    return undefined;
+function requiresStructuralRepair(root: Element, serialized: string): boolean {
+  let reparsed: Document;
+  try {
+    reparsed = parseHtml(serialized);
+  } catch {
+    // Trusted Types can reject detached parsing inside the captured document's realm.
+    // The full repair tree is the conservative result when equivalence cannot be proved.
+    return true;
   }
-  return { documentElement: repairNode(root) };
+  return !repairNodesEqual(root, documentElement(reparsed));
 }
 
 function repairNodesEqual(left: Node, right: Node): boolean {
@@ -142,42 +136,6 @@ function repairNodesEqual(left: Node, right: Node): boolean {
     }
   }
   return true;
-}
-
-function repairNode(node: Node): RepairNode {
-  if (nodeType(node) === 3) {
-    return { kind: "text", value: nodeValue(node) ?? "" };
-  }
-  if (nodeType(node) === 8) {
-    return { kind: "comment", value: nodeValue(node) ?? "" };
-  }
-  if (!isElement(node)) {
-    throw new SafeTypeError("structural repair supports element, text, and comment nodes");
-  }
-  const marker = getAttribute(node, repairMarkerAttribute) ?? "";
-  const children = repairChildren(node);
-  const shadowMode = shadowModeFor(node);
-  return {
-    kind: "element",
-    marker,
-    namespace: namespaceUri(node) ?? htmlNamespace,
-    name: localName(node) ?? "",
-    children,
-    templateContent: repairNodes(templateChildren(node)),
-    ...(shadowMode ? { shadowMode } : {}),
-  };
-}
-
-function repairChildren(parent: Node): RepairNode[] {
-  return repairNodes(childNodes(parent));
-}
-
-function repairNodes(nodes: Node[]): RepairNode[] {
-  const repaired: RepairNode[] = [];
-  for (let index = 0; index < nodes.length; index += 1) {
-    arrayPush(repaired, repairNode(nodes[index]));
-  }
-  return repaired;
 }
 
 function templateChildren(node: Element): ChildNode[] {

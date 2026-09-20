@@ -403,6 +403,19 @@ fn fixture_definitions() -> Vec<FixtureDefinition> {
             ],
         ),
         fixture(
+            "trusted-types-structural-repair",
+            FixtureGroup::BrowserState,
+            "Preserves browser-owned nesting when Trusted Types blocks detached parsing.",
+            &[
+                FixtureCapability::ContentSecurityPolicy,
+                FixtureCapability::MalformedDomNesting,
+            ],
+            &[
+                FixtureExpectation::CaptureSucceeds,
+                FixtureExpectation::VisibleOutputPreserved,
+            ],
+        ),
+        fixture(
             "cli-pdf-output",
             FixtureGroup::Artifact,
             "Commits and verifies a PDF representation through the capture command.",
@@ -700,6 +713,12 @@ fn runner(id: &str) -> FixtureRunner {
             "offprint",
             Some("artifact_exports"),
             "pdf_keeps_heading_with_following_content",
+            true,
+        ),
+        "trusted-types-structural-repair" => (
+            "offprint-chromium",
+            Some("browser_smoke"),
+            "structural_repair_uses_captured_attribute_writes",
             true,
         ),
         "cli-pdf-output" => (

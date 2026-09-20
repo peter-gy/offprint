@@ -19,6 +19,10 @@ if (typeof Element === "undefined") {
         return Object.getOwnPropertyDescriptor(this, "namespaceURI")?.value;
       }
 
+      getAttribute(name: string) {
+        return Object.getOwnPropertyDescriptor(this, "attributeValues")?.value?.[name] ?? null;
+      }
+
       attachShadow(init: unknown) {
         return { init };
       }
@@ -32,6 +36,7 @@ const { countCloneableNodesWithinLimit, RecursiveSnapshotBudget } = await import
 const { frameOwnerMappings } = await import("../src/collection");
 const { copyCssRules, materializeCssRules } = await import("../src/styles");
 const { serializeJsonBytesBounded } = await import("../src/serialize");
+const { serializeRepairDataBounded } = await import("../src/repair-serialization");
 const { maximumPngDataUrlBytes } = await import("../src/state");
 
 interface TestNode {
@@ -65,7 +70,108 @@ function append(parent: TestNode, ...children: TestNode[]): void {
   }
 }
 
+function repairElement(name: string, marker: string, shadowMode?: string): TestNode {
+  return Object.assign(node(1, name), {
+    attributeValues: { "data-offprint-node": marker, shadowrootmode: shadowMode },
+  });
+}
+
 describe("collector source", () => {
+  test("encodes repair text, namespaces, template content, and shadow modes at the byte boundary", () => {
+    const root = repairElement("html", "0");
+    const template = repairElement("template", "1", "closed");
+    template.content = node(11);
+    const svg = repairElement("svg", "2");
+    svg.namespaceURI = "http://www.w3.org/2000/svg";
+    const text = node(3);
+    text.nodeValue = '</script>&💾\n\u2028"';
+    const comment = node(8);
+    comment.nodeValue = "annotation";
+    append(svg, text, comment);
+    append(template.content, svg);
+    append(root, template);
+    const expected = {
+      documentElement: {
+        kind: "element",
+        marker: "0",
+        namespace: "http://www.w3.org/1999/xhtml",
+        name: "html",
+        children: [
+          {
+            kind: "element",
+            marker: "1",
+            namespace: "http://www.w3.org/1999/xhtml",
+            name: "template",
+            children: [],
+            templateContent: [
+              {
+                kind: "element",
+                marker: "2",
+                namespace: "http://www.w3.org/2000/svg",
+                name: "svg",
+                children: [
+                  { kind: "text", value: text.nodeValue },
+                  { kind: "comment", value: "annotation" },
+                ],
+                templateContent: [],
+              },
+            ],
+            shadowMode: "closed",
+          },
+        ],
+        templateContent: [],
+      },
+    };
+    const expectedJson = JSON.stringify(expected).replace(
+      /[<>&\u2028\u2029]/g,
+      (value) => `\\u${value.charCodeAt(0).toString(16).padStart(4, "0")}`,
+    );
+    const bytes = new TextEncoder().encode(expectedJson).byteLength;
+    expect(serializeRepairDataBounded(root as unknown as Element, bytes)).toEqual({
+      kind: "ok",
+      bytes,
+      value: expectedJson,
+    });
+    expect(serializeRepairDataBounded(root as unknown as Element, bytes - 1)).toEqual({
+      kind: "limit",
+      attempted: bytes,
+    });
+  });
+
+  test("serializes deeply nested repair documents with bounded traversal state", () => {
+    const root = repairElement("html", "0");
+    let current = root;
+    for (let index = 1; index <= 10_000; index += 1) {
+      const child = repairElement("div", String(index));
+      append(current, child);
+      current = child;
+    }
+    const result = serializeRepairDataBounded(root as unknown as Element, 2 * 1024 * 1024);
+    expect(result.kind).toBe("ok");
+    if (result.kind === "ok") {
+      let parsed = JSON.parse(result.value).documentElement;
+      for (let index = 0; index < 10_000; index += 1) {
+        expect(parsed.marker).toBe(String(index));
+        parsed = parsed.children[0];
+      }
+      expect(parsed.marker).toBe("10000");
+      expect(parsed.children).toEqual([]);
+    }
+  });
+
+  test("stops repair expansion before traversing children after the output budget is exhausted", () => {
+    const root = repairElement("html", "0");
+    Object.defineProperty(root, "firstChild", {
+      get() {
+        throw new Error("repair traversal exceeded its output budget");
+      },
+    });
+    expect(serializeRepairDataBounded(root as unknown as Element, 32)).toEqual({
+      kind: "limit",
+      attempted: 33,
+    });
+  });
+
   test("dispatches the shared versioned wire contract", async () => {
     const fixture = JSON.parse(
       await readFile(
@@ -611,6 +717,7 @@ describe("collector source", () => {
       "motion.ts",
       "protocol.ts",
       "repair.ts",
+      "repair-serialization.ts",
       "serialize.ts",
       "shadow.ts",
       "state.ts",

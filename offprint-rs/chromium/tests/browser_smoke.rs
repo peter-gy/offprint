@@ -692,6 +692,10 @@ async fn structural_repair_uses_captured_attribute_writes() -> TestResult {
                   document.getElementById("mount")
                     .setAttribute("data-type-setter", "poisoned");
                 </script>"#,
+            )
+            .with_header(
+                "Content-Security-Policy",
+                "require-trusted-types-for 'script'",
             ),
         )
         .await?;
@@ -1722,6 +1726,9 @@ async fn collector_materializes_motion_and_shadow_state_at_the_freeze_boundary()
                   };
                   attachStatefulShadow(document.getElementById("open-host"), "open");
                   attachStatefulShadow(document.getElementById("closed-host"), "closed");
+                  for (const prototype of [Document.prototype, ShadowRoot.prototype, Element.prototype]) {
+                    prototype.getAnimations = () => { throw new Error("page poisoned getAnimations"); };
+                  }
                 </script></body></html>"#,
             ),
         )
@@ -1738,6 +1745,25 @@ async fn collector_materializes_motion_and_shadow_state_at_the_freeze_boundary()
     .await?;
     page.freeze_attached_frames().await?;
 
+    page.settle(&ReadinessPolicy {
+        mode: ReadinessMode::Load,
+        ..ReadinessPolicy::default()
+    })
+    .await?;
+
+    page.evaluate(
+        r#"(() => {
+      const late = document.createElement("div");
+      late.id = "late-animated";
+      document.body.append(late);
+      const animation = late.animate([{opacity: 0}, {opacity: 1}], {duration: 1000, fill: "both"});
+      animation.pause();
+      animation.currentTime = 500;
+      return true;
+    })()"#,
+    )
+    .await?;
+
     let observation = collect_page_observation(
         &page,
         &CaptureId::new(),
@@ -1748,6 +1774,11 @@ async fn collector_materializes_motion_and_shadow_state_at_the_freeze_boundary()
 
     assert_eq!(observation.viewport.scroll_x, "0");
     assert_eq!(observation.viewport.scroll_y, "240");
+    assert!(
+        observation.html.contains("opacity: 0.5"),
+        "{}",
+        observation.html
+    );
     assert!(
         observation.html.contains(r#"data-offprint-scroll-y="240""#),
         "{}",

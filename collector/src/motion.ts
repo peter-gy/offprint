@@ -12,7 +12,6 @@ import {
   namespaceUri,
   ownerDocument,
   querySelector,
-  querySelectorAll,
   setAttribute,
   setNodeTextContent,
 } from "./dom";
@@ -43,24 +42,23 @@ import {
   weakSetHas,
 } from "./primordials";
 import { composedRoots } from "./shadow";
-import type { SnapshotContext } from "./types";
+import type { CapturedMotion, SnapshotContext } from "./types";
 import {
   animationEffect,
   computedStyle,
-  elementAnimations,
   elementStyle,
   isKeyframeEffect,
   keyframePseudo,
   keyframes,
   keyframeTarget,
   pauseAnimation,
+  rootAnimations,
   setStyleProperty,
   stylePropertyValue,
   styleText,
 } from "./web";
 
 type CapturedProperties = Map<string, string>;
-type CapturedMotion = Map<string, CapturedProperties>;
 
 const frozenDocuments = new SafeWeakSet<Document>();
 const failedDocuments = new SafeWeakSet<Document>();
@@ -87,6 +85,12 @@ export function freezeMotion(source: Document): void {
     mapForEach(properties, (byPseudo, target) => {
       const captured = captureComputedProperties(target, byPseudo);
       weakMapSet(frozenMotion, target, captured);
+    });
+    mapForEach(properties, (_byPseudo, target) => {
+      const captured = weakMapGet(frozenMotion, target);
+      if (!captured) {
+        return;
+      }
       const elementProperties = mapGet(captured, "");
       if (elementProperties && supportsInlineStyle(target)) {
         const style = elementStyle(target as HTMLElement | SVGElement);
@@ -127,13 +131,34 @@ export function reportMotionCaptureFailure(source: Document, context: SnapshotCo
   }
 }
 
+export function snapshotMotion(source: Document): Map<Element, CapturedMotion> {
+  freezeMotion(source);
+  const captured = new SafeMap<Element, CapturedMotion>();
+  try {
+    const properties = motionProperties(animationsWithin(source));
+    mapForEach(properties, (byPseudo, target) => {
+      if (weakMapGet(frozenMotion, target)) {
+        return;
+      }
+      try {
+        mapSet(captured, target, captureComputedProperties(target, byPseudo));
+      } catch {
+        return;
+      }
+    });
+  } catch {
+    return captured;
+  }
+  return captured;
+}
+
 export function materializeMotionState(
   live: Element,
   clone: Element,
   context: SnapshotContext,
   rules: string[],
 ): void {
-  const captured = weakMapGet(frozenMotion, live) ?? captureCurrentMotion(live);
+  const captured = weakMapGet(frozenMotion, live) ?? mapGet(context.motion, live);
   if (!captured) {
     return;
   }
@@ -198,12 +223,9 @@ function animationsWithin(source: Document): Animation[] {
   const animations = new SafeSet<Animation>();
   const roots = composedRoots(source);
   for (let rootIndex = 0; rootIndex < roots.length; rootIndex += 1) {
-    const elements = querySelectorAll(roots[rootIndex], "*");
-    for (let elementIndex = 0; elementIndex < elements.length; elementIndex += 1) {
-      const observed = elementAnimations(elements[elementIndex]);
-      for (let animationIndex = 0; animationIndex < observed.length; animationIndex += 1) {
-        setAdd(animations, observed[animationIndex]);
-      }
+    const observed = rootAnimations(roots[rootIndex]);
+    for (let animationIndex = 0; animationIndex < observed.length; animationIndex += 1) {
+      setAdd(animations, observed[animationIndex]);
     }
   }
   const result: Animation[] = [];
@@ -268,16 +290,6 @@ function captureComputedProperties(
     mapSet(captured, pseudo, values);
   });
   return captured;
-}
-
-function captureCurrentMotion(live: Element): CapturedMotion | undefined {
-  try {
-    const properties = motionProperties(elementAnimations(live));
-    const byPseudo = mapGet(properties, live);
-    return byPseudo ? captureComputedProperties(live, byPseudo) : undefined;
-  } catch {
-    return undefined;
-  }
 }
 
 function matchesKeyframeMetadata(name: string): boolean {

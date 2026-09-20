@@ -93,6 +93,12 @@ evidence after their internal deadline. `network-idle` requires zero finite
 requests for the quiet window. Load modes stop at their browser lifecycle
 milestones.
 
+Animation capture enumerates each composed document or shadow root once per
+observation pass through document-start native methods. It reads animated
+property values before applying overrides, then reuses those samples while
+materializing elements. A collection-time snapshot also captures animations
+introduced after the freeze step.
+
 All readiness work shares the capture deadline. Navigation has no automatic
 retry.
 
