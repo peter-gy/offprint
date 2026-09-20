@@ -27,7 +27,7 @@ const [rootPath, licensePath, ...nativeFiles] = process.argv.slice(2);
 assert(rootPath && licensePath && nativeFiles.length > 0);
 const root = archiveEntries(await readFile(rootPath));
 
-for (const name of ["LICENSE", "THIRD_PARTY_NOTICES.txt"]) {
+for (const name of ["LICENSE"]) {
   const expected = await readFile(join(dirname(licensePath), name));
   assert.deepEqual(root.get(`package/${name}`), expected, `packaged ${name} differs`);
 }

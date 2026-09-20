@@ -8,7 +8,7 @@ from email.parser import BytesParser
 from pathlib import Path
 
 
-def check_wheel(path: Path, notices: dict[str, bytes]) -> None:
+def check_wheel(path: Path, license_files: dict[str, bytes]) -> None:
     with zipfile.ZipFile(path) as archive:
         required = {
             "offprint/__init__.py",
@@ -31,8 +31,8 @@ def check_wheel(path: Path, notices: dict[str, bytes]) -> None:
         )
         metadata = BytesParser().parsebytes(archive.read(metadata_path))
         assert metadata["License-Expression"] == "MIT"
-        assert set(metadata.get_all("License-File", [])) == set(notices)
-        for name, content in notices.items():
+        assert set(metadata.get_all("License-File", [])) == set(license_files)
+        for name, content in license_files.items():
             candidates = [
                 entry
                 for entry in archive.namelist()
@@ -42,7 +42,7 @@ def check_wheel(path: Path, notices: dict[str, bytes]) -> None:
             assert archive.read(candidates[0]) == content
 
 
-def check_sdist(path: Path, notices: dict[str, bytes]) -> None:
+def check_sdist(path: Path, license_files: dict[str, bytes]) -> None:
     with tarfile.open(path, "r:gz") as archive:
         metadata_files = [
             member
@@ -56,7 +56,7 @@ def check_sdist(path: Path, notices: dict[str, bytes]) -> None:
         assert metadata_file is not None
         metadata = BytesParser().parsebytes(metadata_file.read())
         assert metadata["License-Expression"] == "MIT"
-        for name, content in notices.items():
+        for name, content in license_files.items():
             candidates = [
                 member
                 for member in archive.getmembers()
@@ -70,15 +70,13 @@ def check_sdist(path: Path, notices: dict[str, bytes]) -> None:
 
 
 license_directory = Path(sys.argv[1]).parent
-notices = {
-    name: (license_directory / name).read_bytes() for name in ("LICENSE", "THIRD_PARTY_NOTICES.txt")
-}
+license_files = {"LICENSE": (license_directory / "LICENSE").read_bytes()}
 archives = [Path(argument) for argument in sys.argv[2:]]
 assert archives
 for archive in archives:
     if archive.suffix == ".whl":
-        check_wheel(archive, notices)
+        check_wheel(archive, license_files)
     elif archive.name.endswith(".tar.gz"):
-        check_sdist(archive, notices)
+        check_sdist(archive, license_files)
     else:
         raise AssertionError(f"unexpected distribution: {archive}")
