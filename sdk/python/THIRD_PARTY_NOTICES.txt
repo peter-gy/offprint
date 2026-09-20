@@ -5375,8 +5375,8 @@ Repository: https://github.com/bytecodealliance/rustix
 rustls-native-certs 0.8.4
 Source: https://crates.io/api/v1/crates/rustls-native-certs/0.8.4/download
 Repository: https://github.com/rustls/rustls-native-certs
-rustls 0.23.43
-Source: https://crates.io/api/v1/crates/rustls/0.23.43/download
+rustls 0.23.45
+Source: https://crates.io/api/v1/crates/rustls/0.23.45/download
 Repository: https://github.com/rustls/rustls
 scopeguard 1.2.0
 Source: https://crates.io/api/v1/crates/scopeguard/1.2.0/download
