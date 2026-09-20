@@ -22,6 +22,17 @@ permits an exploratory cross-environment comparison and records the mismatch.
 Release evidence needs a matching controlled environment or a reviewed
 baseline regeneration.
 
+Measure expansion of 2,000 CSS references into embedded resource URLs:
+
+```console
+cargo run --manifest-path offprint-rs/Cargo.toml --release --locked \
+  -p offprint-bench --example css_expansion
+```
+
+This case checks exact rewritten text before measuring the rewrite alone. Its
+roughly 8 MiB output exercises resource expansion beyond the small URLs in the
+parse-and-rewrite microbenchmark.
+
 ## Repeated capture
 
 The repeated-capture suite runs 32 captures through one service and managed
