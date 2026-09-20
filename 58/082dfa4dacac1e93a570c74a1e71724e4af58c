@@ -1,0 +1,26 @@
+offprint-rs/export/src/pdf.rs
+  s_e649d6ee88111e::t_c63288f598dbe1 69,76-78,80
+  s_e649d6ee88111e::t_a2f2dcf5b14c81 4-5,68,70-75
+offprint-rs/export/src/pdf/metadata.rs
+  s_e649d6ee88111e::t_a2f2dcf5b14c81 12,41,91
+  s_e649d6ee88111e::t_0515a229123691 68
+  s_e649d6ee88111e::t_c63288f598dbe1 42-45,78,92-95
+offprint-rs/export/src/pdf/metadata/tests.rs
+  s_e649d6ee88111e::t_09eca0d4bd37a3 316-339
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "58082dfa4dacac1e93a570c74a1e71724e4af58c",
+  "prompts": {},
+  "sessions": {
+    "s_e649d6ee88111e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0bb1c-90fc-74a2-bb7f-a4f16bea57b3",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
