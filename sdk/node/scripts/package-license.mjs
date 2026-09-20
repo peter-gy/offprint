@@ -2,7 +2,7 @@ import { readFile, rm, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
 const bindingDirectory = fileURLToPath(new URL("../", import.meta.url));
-const files = ["LICENSE", "THIRD_PARTY_NOTICES.txt"];
+const files = ["LICENSE"];
 
 export async function syncLicense() {
   for (const name of files) {

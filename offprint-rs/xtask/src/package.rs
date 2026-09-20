@@ -523,10 +523,6 @@ pub fn create(root: &Path, target: &str, binary: &Path, output: &Path) -> Result
     copy_regular(binary, &staged_root.join(binary_name))?;
     copy_regular(&root.join("README.md"), &staged_root.join("README.md"))?;
     copy_regular(&root.join("LICENSE"), &staged_root.join("LICENSE"))?;
-    copy_regular(
-        &root.join("THIRD_PARTY_NOTICES.txt"),
-        &staged_root.join("THIRD_PARTY_NOTICES.txt"),
-    )?;
     let metadata = build_metadata(root, target, &versions)?;
     let mut metadata_bytes =
         serde_json::to_vec_pretty(&metadata).map_err(|error| error.to_string())?;
