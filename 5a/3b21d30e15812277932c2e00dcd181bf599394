@@ -1,0 +1,26 @@
+development_docs/artifacts-and-formats.md
+  s_e649d6ee88111e::t_695bd164bba0ba 46-48,50-53
+  s_e649d6ee88111e::t_f2d2810daf872c 49
+docs/reference/formats.md
+  s_e649d6ee88111e::t_f2d2810daf872c 29-33
+offprint-rs/export/src/pdf/metadata/tests.rs
+  s_e649d6ee88111e::t_f2d2810daf872c 205-212,224-238
+offprint-rs/export/src/pdf/metadata/model.rs
+  s_e649d6ee88111e::t_f2d2810daf872c 197-207
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "5a3b21d30e15812277932c2e00dcd181bf599394",
+  "prompts": {},
+  "sessions": {
+    "s_e649d6ee88111e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0bb1c-90fc-74a2-bb7f-a4f16bea57b3",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Péter Ferenc Gyarmati <dev.petergy@gmail.com>"
+    }
+  }
+}
