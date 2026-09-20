@@ -313,6 +313,31 @@ fn offprint_pdf_verifier_requires_the_xmp_packet() -> TestResult {
 }
 
 #[test]
+fn metadata_preparation_rejects_active_pdf_input() -> TestResult {
+    let mut document = load_pdf(&tagged_pdf()?, ErrorStage::Verification)?;
+    document.catalog_mut()?.set(
+        "OpenAction",
+        dictionary! {
+            "S" => "JavaScript",
+            "JS" => text_string("app.alert('active')"),
+        },
+    );
+    let html = b"<!doctype html><title>Passive capture</title>";
+    let result = embed_pdf_metadata(
+        &save(document)?,
+        html,
+        &manifest()?,
+        ContentDigest::sha256(html),
+        4 * 1024 * 1024,
+    );
+    assert_eq!(
+        result.err().map(|error| error.code.to_string()),
+        Some("offprint.export.verify".into())
+    );
+    Ok(())
+}
+
+#[test]
 fn pdf_preserves_repeated_warning_provenance_beyond_source_metadata_list_limits() -> TestResult {
     let html = b"<!doctype html><html lang=\"en\"><title>Resource warnings</title></html>";
     let mut manifest = manifest()?;
