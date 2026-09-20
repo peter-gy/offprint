@@ -113,6 +113,7 @@ impl RuntimeState {
         });
         let maximum_contexts = usize::from(maximum_contexts);
         Ok(Self {
+            checkpoints: super::CheckpointRegistry::default(),
             lifecycle: RuntimeLifecycle::new(),
             discovery,
             cache_dir,

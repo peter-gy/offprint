@@ -1,76 +1,65 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::io::Write as _;
+use std::io::{BufWriter, Write as _};
+use std::sync::Arc;
 
 use offprint_artifact::FileArtifactWriter;
 use offprint_model::{
     BatchRequest, CaptureArtifact, CaptureOutput, ConflictPolicy, ContentDigest, CrawlFrontierItem,
     CrawlRequest, ErrorStage, PortablePath, Result, ResumeJobRecord, ResumeJobStatus,
-    ResumeManifest, ResumeOptions, ScheduleKind, ScheduledCaptureOutcome,
+    ResumeManifest, ScheduleKind, ScheduledCaptureOutcome,
 };
 use sha2::{Digest as _, Sha256};
 use tokio::io::AsyncReadExt as _;
+
+use crate::bounded_io::{BoundedFileReadError, BoundedWriter, FileAddressing, read_bounded_file};
+use crate::runtime::CheckpointLease;
 
 use super::{SCHEMA_VERSION, scheduler_error, sort_frontier};
 
 const MAXIMUM_MANIFEST_BYTES: u64 = 16 * 1024 * 1024;
 
 pub(super) async fn load_or_create_manifest(
-    options: Option<&ResumeOptions>,
+    checkpoint: Option<&CheckpointLease>,
     kind: ScheduleKind,
     plan_sha256: ContentDigest,
     pending: Vec<String>,
     frontier: Vec<CrawlFrontierItem>,
 ) -> Result<ResumeManifest> {
-    let Some(options) = options else {
+    let Some(checkpoint) = checkpoint else {
         return Ok(new_manifest(kind, plan_sha256, pending, frontier));
     };
-    let metadata = tokio::fs::symlink_metadata(&options.manifest).await;
-    let mut manifest = match metadata {
-        Ok(metadata) => {
-            if metadata.file_type().is_symlink() || !metadata.is_file() {
-                return Err(scheduler_error(
-                    "offprint.scheduler.manifest_read",
-                    ErrorStage::Validation,
-                    "resume manifest must be a directly addressed regular file",
-                ));
-            }
-            if metadata.len() > MAXIMUM_MANIFEST_BYTES {
-                return Err(scheduler_error(
-                    "offprint.scheduler.manifest_read",
-                    ErrorStage::Validation,
-                    "resume manifest exceeds the supported byte limit",
-                ));
-            }
-            let bytes = tokio::fs::read(&options.manifest).await.map_err(|error| {
-                scheduler_error(
-                    "offprint.scheduler.manifest_read",
-                    ErrorStage::Validation,
-                    format!("failed to read the resume manifest: {error}"),
-                )
-            })?;
-            if u64::try_from(bytes.len()).unwrap_or(u64::MAX) > MAXIMUM_MANIFEST_BYTES {
-                return Err(scheduler_error(
-                    "offprint.scheduler.manifest_read",
-                    ErrorStage::Validation,
-                    "resume manifest exceeds the supported byte limit",
-                ));
-            }
-            serde_json::from_slice::<ResumeManifest>(&bytes).map_err(|error| {
-                scheduler_error(
-                    "offprint.scheduler.manifest_read",
-                    ErrorStage::Validation,
-                    format!("resume manifest is invalid: {error}"),
-                )
-            })?
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+    let mut manifest = match read_bounded_file(
+        checkpoint.destination().as_std_path(),
+        MAXIMUM_MANIFEST_BYTES,
+        FileAddressing::Direct,
+    )
+    .await
+    {
+        Ok(bytes) => serde_json::from_slice::<ResumeManifest>(&bytes).map_err(|error| {
+            scheduler_error(
+                "offprint.scheduler.manifest_read",
+                ErrorStage::Validation,
+                format!("resume manifest is invalid: {error}"),
+            )
+        })?,
+        Err(BoundedFileReadError::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => {
             new_manifest(kind, plan_sha256, pending.clone(), frontier.clone())
         }
         Err(error) => {
             return Err(scheduler_error(
                 "offprint.scheduler.manifest_read",
                 ErrorStage::Validation,
-                format!("failed to inspect the resume manifest: {error}"),
+                match error {
+                    BoundedFileReadError::Io(error) => {
+                        format!("failed to read the resume manifest: {error}")
+                    }
+                    BoundedFileReadError::NotDirectFile => {
+                        "resume manifest must be a directly addressed regular file".to_owned()
+                    }
+                    BoundedFileReadError::TooLarge => {
+                        "resume manifest exceeds the supported byte limit".to_owned()
+                    }
+                },
             ));
         }
     };
@@ -108,22 +97,27 @@ fn new_manifest(
 }
 
 pub(super) async fn persist_manifest_if_configured(
-    options: Option<&ResumeOptions>,
-    manifest: &ResumeManifest,
-) -> Result<()> {
-    let Some(options) = options else {
-        return Ok(());
+    checkpoint: Option<&Arc<CheckpointLease>>,
+    manifest: ResumeManifest,
+) -> Result<ResumeManifest> {
+    let Some(checkpoint) = checkpoint else {
+        return Ok(manifest);
     };
-    let mut bytes = serde_json::to_vec_pretty(manifest).map_err(|error| {
-        scheduler_error(
-            "offprint.scheduler.manifest_write",
-            ErrorStage::Commit,
-            format!("resume manifest could not be serialized: {error}"),
-        )
-    })?;
-    bytes.push(b'\n');
-    let mut writer = FileArtifactWriter::create(
-        options.manifest.as_utf8_path().to_owned(),
+    checkpoint
+        .run_blocking(move |destination| {
+            persist_manifest(destination, &manifest, MAXIMUM_MANIFEST_BYTES)?;
+            Ok(manifest)
+        })
+        .await
+}
+
+fn persist_manifest(
+    destination: &PortablePath,
+    manifest: &ResumeManifest,
+    maximum_bytes: u64,
+) -> Result<()> {
+    let writer = FileArtifactWriter::create(
+        destination.as_utf8_path().to_owned(),
         ConflictPolicy::Replace,
     )
     .map_err(|error| {
@@ -134,13 +128,34 @@ pub(super) async fn persist_manifest_if_configured(
         )
         .with_source(error)
     })?;
-    writer.write_all(&bytes).map_err(|error| {
+    let mut writer = BufWriter::new(BoundedWriter::new(writer, maximum_bytes));
+    serde_json::to_writer_pretty(&mut writer, manifest).map_err(|error| {
         scheduler_error(
             "offprint.scheduler.manifest_write",
             ErrorStage::Commit,
-            format!("failed to stage the resume manifest: {error}"),
+            format!("resume manifest could not be serialized: {error}"),
         )
     })?;
+    writer
+        .write_all(b"\n")
+        .and_then(|()| writer.flush())
+        .map_err(|error| {
+            scheduler_error(
+                "offprint.scheduler.manifest_write",
+                ErrorStage::Commit,
+                format!("failed to stage the resume manifest: {error}"),
+            )
+        })?;
+    let writer = writer
+        .into_inner()
+        .map_err(|error| {
+            scheduler_error(
+                "offprint.scheduler.manifest_write",
+                ErrorStage::Commit,
+                format!("failed to finish resume manifest buffering: {error}"),
+            )
+        })?
+        .into_inner();
     writer
         .finish()
         .and_then(offprint_artifact::StagedFileArtifact::commit)
@@ -541,6 +556,69 @@ mod tests {
     };
 
     use super::*;
+
+    #[test]
+    fn checkpoint_encoding_enforces_the_read_limit_before_replacing_the_destination()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let directory = tempfile::tempdir()?;
+        let destination = PortablePath::from_path_buf(directory.path().join("resume.json"))?;
+        let manifest = new_manifest(
+            ScheduleKind::Batch,
+            ContentDigest::sha256("plan"),
+            Vec::new(),
+            Vec::new(),
+        );
+        let mut expected = serde_json::to_vec_pretty(&manifest)?;
+        expected.push(b'\n');
+        let limit = u64::try_from(expected.len())?;
+        persist_manifest(&destination, &manifest, limit)?;
+        assert_eq!(std::fs::read(&destination)?, expected);
+
+        // The newline counts toward the same bound. Failure preserves the last
+        // readable checkpoint and the temporary file owner removes staging.
+        assert!(persist_manifest(&destination, &manifest, limit - 1).is_err());
+        assert_eq!(std::fs::read(&destination)?, expected);
+        assert_eq!(std::fs::read_dir(directory.path())?.count(), 1);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn owned_checkpoint_round_trips_and_rejects_an_oversized_existing_file()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let registry = crate::runtime::CheckpointRegistry::default();
+        let directory = tempfile::tempdir()?;
+        let path = PortablePath::from_path_buf(directory.path().join("resume.json"))?;
+        let checkpoint = registry
+            .acquire(&path, &tokio_util::sync::CancellationToken::new())
+            .await?;
+        let digest = ContentDigest::sha256("plan");
+        let manifest = new_manifest(ScheduleKind::Batch, digest, Vec::new(), Vec::new());
+        let written = persist_manifest_if_configured(Some(&checkpoint), manifest).await?;
+        let restored = load_or_create_manifest(
+            Some(&checkpoint),
+            ScheduleKind::Batch,
+            digest,
+            Vec::new(),
+            Vec::new(),
+        )
+        .await?;
+        assert_eq!(written, restored);
+        let file = std::fs::OpenOptions::new().write(true).open(&path)?;
+        file.set_len(MAXIMUM_MANIFEST_BYTES + 1)?;
+        let error = load_or_create_manifest(
+            Some(&checkpoint),
+            ScheduleKind::Batch,
+            digest,
+            Vec::new(),
+            Vec::new(),
+        )
+        .await
+        .err()
+        .ok_or("oversized checkpoint was accepted")?;
+        assert_eq!(error.code.as_str(), "offprint.scheduler.manifest_read");
+        assert!(error.message.contains("byte limit"));
+        Ok(())
+    }
 
     fn record(status: ResumeJobStatus) -> ResumeJobRecord {
         ResumeJobRecord {

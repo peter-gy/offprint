@@ -5,7 +5,7 @@ use offprint_export::{MarkdownBundle, markdown_byte_limit_error, markdown_file_l
 use offprint_model::{ErrorStage, PortablePath, Result};
 
 use super::export::{MAXIMUM_EXPORT_BYTES, MAXIMUM_MARKDOWN_ASSETS, export_error};
-use super::{BoundedFileReadError, read_bounded_file};
+use crate::bounded_io::{BoundedFileReadError, FileAddressing, read_bounded_file};
 
 pub(super) async fn read_markdown_bundle(path: &PortablePath) -> Result<MarkdownBundle> {
     read_markdown_bundle_with_limits(path, MAXIMUM_MARKDOWN_ASSETS, MAXIMUM_EXPORT_BYTES).await
@@ -167,7 +167,7 @@ async fn require_direct_directory(
 }
 
 async fn read_markdown_entrypoint(path: &Path, maximum_bytes: u64) -> Result<Vec<u8>> {
-    match read_bounded_file(path, maximum_bytes, true).await {
+    match read_bounded_file(path, maximum_bytes, FileAddressing::Direct).await {
         Ok(markdown) => Ok(markdown),
         Err(BoundedFileReadError::TooLarge) => {
             Err(markdown_byte_limit_error(ErrorStage::Verification))
@@ -186,7 +186,7 @@ async fn read_markdown_entrypoint(path: &Path, maximum_bytes: u64) -> Result<Vec
 }
 
 async fn read_markdown_asset(path: &Path, maximum_bytes: u64) -> Result<Vec<u8>> {
-    match read_bounded_file(path, maximum_bytes, true).await {
+    match read_bounded_file(path, maximum_bytes, FileAddressing::Direct).await {
         Ok(content) => Ok(content),
         Err(BoundedFileReadError::TooLarge) => {
             Err(markdown_byte_limit_error(ErrorStage::Verification))

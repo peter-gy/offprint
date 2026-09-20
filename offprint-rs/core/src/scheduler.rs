@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::io::{self, Write as _};
 use std::sync::Arc;
 
 use futures_util::future::join_all;
@@ -11,6 +12,7 @@ use offprint_model::{
     ScheduledCaptureOutcome,
 };
 use serde::Serialize;
+use sha2::{Digest as _, Sha256};
 use url::Url;
 
 use crate::runtime::RuntimeState;
@@ -58,8 +60,18 @@ impl SchedulerService {
             .iter()
             .map(|job| digest_serializable(&job.request))
             .collect::<Result<Vec<_>>>()?;
+        let cancellation = self.state.operation_cancellation();
+        let checkpoint = match &request.resume {
+            Some(options) => Some(
+                self.state
+                    .checkpoints
+                    .acquire(&options.manifest, &cancellation)
+                    .await?,
+            ),
+            None => None,
+        };
         let mut manifest = load_or_create_manifest(
-            request.resume.as_ref(),
+            checkpoint.as_deref(),
             ScheduleKind::Batch,
             plan_sha256,
             request.jobs.iter().map(|job| job.id.clone()).collect(),
@@ -107,10 +119,9 @@ impl SchedulerService {
             }
         }
         refresh_batch_pending(&mut manifest, &request, &outcomes);
-        persist_manifest_if_configured(request.resume.as_ref(), &manifest).await?;
+        manifest = persist_manifest_if_configured(checkpoint.as_ref(), manifest).await?;
 
         let captures = crate::CaptureService::new(Arc::clone(&self.state));
-        let cancellation = self.state.operation_cancellation();
         let mut running = stream::iter(pending.into_iter().map(|index| {
             let service = captures.clone();
             let id = request.jobs[index].id.clone();
@@ -126,16 +137,22 @@ impl SchedulerService {
         .buffer_unordered(usize::from(request.concurrency));
 
         while let Some((index, outcome)) = running.next().await {
-            let id = outcome.id().to_owned();
-            manifest.jobs.insert(id, record_from_outcome(&outcome));
+            if request.resume.is_some() {
+                let id = outcome.id().to_owned();
+                manifest.jobs.insert(id, record_from_outcome(&outcome));
+            }
             outcomes[index] = Some(outcome);
-            refresh_batch_pending(&mut manifest, &request, &outcomes);
-            if let Err(error) =
-                persist_manifest_if_configured(request.resume.as_ref(), &manifest).await
-            {
-                cancellation.cancel();
-                while running.next().await.is_some() {}
-                return Err(error);
+            if request.resume.is_some() {
+                refresh_batch_pending(&mut manifest, &request, &outcomes);
+                manifest = match persist_manifest_if_configured(checkpoint.as_ref(), manifest).await
+                {
+                    Ok(manifest) => manifest,
+                    Err(error) => {
+                        cancellation.cancel();
+                        while running.next().await.is_some() {}
+                        return Err(error);
+                    }
+                };
             }
         }
 
@@ -188,8 +205,18 @@ impl SchedulerService {
             .iter()
             .map(|item| item.url.as_str().to_owned())
             .collect();
+        let cancellation = self.state.operation_cancellation();
+        let checkpoint = match &request.resume {
+            Some(options) => Some(
+                self.state
+                    .checkpoints
+                    .acquire(&options.manifest, &cancellation)
+                    .await?,
+            ),
+            None => None,
+        };
         let mut manifest = load_or_create_manifest(
-            request.resume.as_ref(),
+            checkpoint.as_deref(),
             ScheduleKind::Crawl,
             plan_sha256,
             initial_pending,
@@ -199,12 +226,11 @@ impl SchedulerService {
         validate_crawl_manifest(&manifest, &request)?;
         refresh_crawl_resume_state(&request, &mut manifest).await?;
         persist_crawl_pending(&mut manifest);
-        persist_manifest_if_configured(request.resume.as_ref(), &manifest).await?;
+        manifest = persist_manifest_if_configured(checkpoint.as_ref(), manifest).await?;
 
         let mut fresh_outcomes = BTreeMap::new();
         let mut seen = crawl_seen_urls(&manifest)?;
         let captures = crate::CaptureService::new(Arc::clone(&self.state));
-        let cancellation = self.state.operation_cancellation();
 
         while !manifest.frontier.is_empty() && manifest.jobs.len() < request.maximum_pages as usize
         {
@@ -285,7 +311,7 @@ impl SchedulerService {
                 fresh_outcomes.insert(item.url.as_str().to_owned(), outcome);
                 sort_frontier(&mut manifest.frontier);
                 persist_crawl_pending(&mut manifest);
-                persist_manifest_if_configured(request.resume.as_ref(), &manifest).await?;
+                manifest = persist_manifest_if_configured(checkpoint.as_ref(), manifest).await?;
             }
         }
 
@@ -440,15 +466,37 @@ fn validate_concurrency(concurrency: u16) -> Result<()> {
 }
 
 fn digest_serializable(value: &impl Serialize) -> Result<ContentDigest> {
-    serde_json::to_vec(value)
-        .map(ContentDigest::sha256)
-        .map_err(|error| {
-            scheduler_error(
-                "offprint.scheduler.plan",
-                ErrorStage::Validation,
-                format!("scheduler plan could not be serialized: {error}"),
-            )
-        })
+    let mut digest = Sha256::new();
+    let mut writer = io::BufWriter::new(DigestWriter(&mut digest));
+    serde_json::to_writer(&mut writer, value).map_err(|error| {
+        scheduler_error(
+            "offprint.scheduler.plan",
+            ErrorStage::Validation,
+            format!("scheduler plan could not be serialized: {error}"),
+        )
+    })?;
+    writer.flush().map_err(|error| {
+        scheduler_error(
+            "offprint.scheduler.plan",
+            ErrorStage::Validation,
+            format!("scheduler plan digest failed: {error}"),
+        )
+    })?;
+    drop(writer);
+    Ok(ContentDigest::from_bytes(digest.finalize().into()))
+}
+
+struct DigestWriter<'a>(&'a mut Sha256);
+
+impl io::Write for DigestWriter<'_> {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        self.0.update(bytes);
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
 }
 
 fn crawl_plan_digest(request: &CrawlRequest) -> Result<ContentDigest> {
@@ -691,6 +739,17 @@ mod tests {
     use url::Url;
 
     use super::{validate_batch_jobs, validate_crawl_request};
+
+    #[test]
+    fn streamed_plan_digest_preserves_canonical_json_identity()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let plan = serde_json::json!({"title":"Δonnées & charts", "content":"x".repeat(65537), "jobs":[1,2,3]});
+        assert_eq!(
+            super::digest_serializable(&plan)?,
+            offprint_model::ContentDigest::sha256(serde_json::to_vec(&plan)?)
+        );
+        Ok(())
+    }
 
     #[test]
     fn crawl_rejects_remote_browsers_at_the_service_boundary()
