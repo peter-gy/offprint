@@ -99,6 +99,36 @@ public language packages. `collector/` and `docs/` are private JavaScript
 workspace packages. Root pnpm configuration owns shared Oxfmt and Oxlint rules
 and exact shared tooling versions. Python QA belongs to `sdk/python/pyproject.toml`.
 
+## Contributor environment
+
+Use Pixi 0.81.0 and the committed `pixi.toml` / `pixi.lock` for feature work.
+From the repository root:
+
+```console
+pixi run --locked setup
+pixi run --locked dev-check
+pixi shell --locked
+```
+
+Run the `just` commands below inside that shell, or prefix them with
+`pixi run --locked`. Setup installs the frozen JS/Python dependencies and
+fetches locked Rust crates; repeat it after branch changes or `just clean`.
+Pixi supplies Rust, Clippy, Rustfmt, Node.js, pnpm, Python, uv, C/C++ compilers,
+and repository tools. Do not repair missing dependencies with global installs.
+
+The environment supports Linux x86-64 (glibc >=2.28), macOS >=13 on Intel and
+Apple Silicon, and x86-64 WSL2. macOS needs `xcode-select --install` for Apple's
+SDK. For browser work run `pixi run --locked browser-setup`, then
+`pixi run --locked just test-fixture static-article`. Linux browser libraries
+and fonts come from Pixi; sandbox user namespaces and a display for headed
+runs remain host requirements.
+
+Keep the Pixi Rust pin aligned with `rust-toolchain.toml` and `versions.toml`.
+Commit manifest and lock changes together; routine runs must use `--locked`.
+Nightly Miri/fuzz tools are opt-in and outside this lock. Installation, editor
+usage, browser sandbox setup, and updates are in
+[contributor setup](./development_docs/setup.md).
+
 ## Commands
 
 ```console

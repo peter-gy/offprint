@@ -462,6 +462,7 @@ fn check_version_alignment(root: &Path, violations: &mut Vec<String>) -> Result<
     }
     check_collector_protocol_source(root, &versions.collector_protocol, violations)?;
     check_managed_browser_versions(&versions, violations);
+    check_development_tool_pins(root, &versions.rust.toolchain, violations)?;
 
     let rust_toolchain = fs::read_to_string(root.join("rust-toolchain.toml"))
         .map_err(|error| format!("failed to read rust-toolchain.toml: {error}"))?;
@@ -541,6 +542,40 @@ fn check_version_alignment(root: &Path, violations: &mut Vec<String>) -> Result<
             "release tag {tag} differs from product version {}",
             versions.product
         ));
+    }
+    Ok(())
+}
+
+fn check_development_tool_pins(
+    root: &Path,
+    rust_version: &str,
+    violations: &mut Vec<String>,
+) -> Result<(), String> {
+    let pixi = fs::read_to_string(root.join("pixi.toml"))
+        .map_err(|error| format!("failed to read pixi.toml: {error}"))?;
+    let pixi: toml::Value =
+        toml::from_str(&pixi).map_err(|error| format!("invalid pixi.toml: {error}"))?;
+    let node = fs::read_to_string(root.join("package.json"))
+        .map_err(|error| format!("failed to read package.json: {error}"))?;
+    let node: serde_json::Value =
+        serde_json::from_str(&node).map_err(|error| format!("invalid package.json: {error}"))?;
+    let pnpm_version = node
+        .get("packageManager")
+        .and_then(serde_json::Value::as_str)
+        .and_then(|manager| manager.strip_prefix("pnpm@"))
+        .map(|version| version.split('+').next().unwrap_or(version))
+        .filter(|version| !version.is_empty())
+        .ok_or_else(|| "package.json must pin pnpm in packageManager".to_owned())?;
+    for (tool, version) in [("rust", rust_version), ("pnpm", pnpm_version)] {
+        let pin = pixi
+            .get("dependencies")
+            .and_then(|dependencies| dependencies.get(tool))
+            .and_then(toml::Value::as_str);
+        if pin != Some(format!("={version}").as_str()) {
+            violations.push(format!(
+                "pixi.toml {tool} pin {pin:?} differs from canonical version {version}"
+            ));
+        }
     }
     Ok(())
 }
@@ -667,7 +702,10 @@ mod tests {
 
     use tempfile::TempDir;
 
-    use super::{check_crate_package_metadata, check_workflow_action_pins, release_tag_version};
+    use super::{
+        check_crate_package_metadata, check_development_tool_pins, check_workflow_action_pins,
+        release_tag_version,
+    };
     use crate::package::{PUBLISHABLE_CRATES, crate_directory};
 
     #[test]
@@ -784,5 +822,31 @@ offprint-test-support = { path = "test-support" }
         assert_eq!(release_tag_version("v1.2.3"), Some("1.2.3"));
         assert_eq!(release_tag_version("main"), None);
         assert_eq!(release_tag_version("v"), None);
+    }
+
+    #[test]
+    fn development_tool_pins_reject_drift_and_ranges() -> Result<(), String> {
+        let temporary = TempDir::new().map_err(|error| error.to_string())?;
+        fs::write(
+            temporary.path().join("package.json"),
+            r#"{"packageManager":"pnpm@12.3.4+sha512.integrity"}"#,
+        )
+        .map_err(|error| error.to_string())?;
+        for (rust, pnpm, expected) in [
+            ("=1.97.0", "=12.3.4", 0),
+            ("=1.96.0", "=12.3.4", 1),
+            ("=1.97.0", ">=12.3.4", 1),
+            ("=1.96.0", "=12.3.3", 2),
+        ] {
+            fs::write(
+                temporary.path().join("pixi.toml"),
+                format!("[dependencies]\nrust = {rust:?}\npnpm = {pnpm:?}\n"),
+            )
+            .map_err(|error| error.to_string())?;
+            let mut violations = Vec::new();
+            check_development_tool_pins(temporary.path(), "1.97.0", &mut violations)?;
+            assert_eq!(violations.len(), expected, "{rust}, {pnpm}");
+        }
+        Ok(())
     }
 }

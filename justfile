@@ -4,8 +4,11 @@ default:
     @just --list
 
 setup:
-    rustup show active-toolchain
+    rustc --version
+    cargo --version
     cargo fetch --manifest-path offprint-rs/Cargo.toml --locked
+    pnpm install --frozen-lockfile
+    uv sync --directory sdk/python --frozen --no-install-project
 
 clean:
     #!/usr/bin/env bash
@@ -38,12 +41,12 @@ clean:
 
 fmt:
     cargo fmt --manifest-path offprint-rs/Cargo.toml --all
-    taplo format offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml versions.toml
+    taplo format offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml versions.toml pixi.toml
     pnpm run format
 
 fmt-check:
     cargo fmt --manifest-path offprint-rs/Cargo.toml --all -- --check
-    taplo format --check offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml versions.toml
+    taplo format --check offprint-rs/Cargo.toml rust-toolchain.toml offprint-rs/deny.toml versions.toml pixi.toml
     pnpm run format:check
 
 # Lint one Cargo package, or the workspace when omitted.
@@ -255,7 +258,8 @@ python-format:
 python-check:
     cd sdk/python && uv sync --frozen --no-install-project
     just python-qa
-    cd sdk/python && uv run --frozen --no-sync maturin develop \
+    # Maturin selects uv's virtualenv; Pixi still supplies its compiler and libraries.
+    cd sdk/python && uv run --frozen --no-sync env -u CONDA_PREFIX maturin develop \
       --features extension-module,binding-test-hooks
     cd sdk/python && uv run --frozen --no-sync pytest
 
