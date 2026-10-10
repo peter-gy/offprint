@@ -1,4 +1,5 @@
 /offprint-rs/target/
+/.pixi/
 /offprint-rs/fuzz/target/
 /offprint-rs/fuzz/corpus/
 /offprint-rs/fuzz/artifacts/

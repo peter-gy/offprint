@@ -29,6 +29,10 @@ Dependencies stay behind the crate that owns their behavior.
 - `cargo machete` checks unused Rust dependencies.
 - Package checks compile extracted source in a fresh Cargo target directory.
 - The pnpm workspace and Python lockfiles remain committed and install with frozen resolution.
+- Pixi locks contributor tools, native compilers, and Linux browser libraries
+  in `pixi.lock`. Install and run with `--locked`; review manifest and lock
+  changes together. `just repo-check` rejects Rust and pnpm pins that differ
+  from `versions.toml` and `package.json`.
 - Review package lifecycle scripts before enabling them in a development or
   release environment.
 

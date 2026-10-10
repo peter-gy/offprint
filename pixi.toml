@@ -1,0 +1,73 @@
+[workspace]
+name = "offprint-dev"
+description = "Locked native tools and browser runtime for Offprint contributors"
+channels = ["conda-forge"]
+platforms = [
+  { name = "offprint-linux", platform = "linux-64", glibc = "2.28" },
+  { name = "macos-intel", platform = "osx-64", macos = "13.0" },
+  { name = "macos-arm", platform = "osx-arm64", macos = "13.0" },
+]
+requires-pixi = ">=0.81.0,<0.82"
+
+
+[tasks]
+setup = { cmd = "just setup", description = "Fetch Rust crates and install frozen JS/Python dependencies" }
+browser-setup = { cmd = "cargo run --manifest-path offprint-rs/Cargo.toml --locked -p offprint-cli -- browser install", description = "Install the verified managed Chromium from versions.toml" }
+dev-check = { cmd = "just quick offprint-model && just js-check && just python-qa && just repo-check && just workflow-check", depends-on = [
+  "setup",
+], description = "Check the contributor environment and repository contracts" }
+
+[dependencies]
+# Match rust-toolchain.toml and versions.toml. The package includes rustfmt/clippy.
+rust = "=1.97.0"
+# pnpm's conda build needs Node 24.19; package.json supports Node >=24.14.1.
+nodejs = "=24.19.0"
+pnpm = "=12.3.4"
+python = "3.14.*"
+uv = "=0.12.24"
+just = "=1.58.0"
+taplo = "=0.10.0"
+actionlint = "=1.7.12"
+cargo-deny = "=0.20.2"
+cargo-machete = "=0.9.1"
+cargo-semver-checks = "=0.51.0"
+c-compiler = "=2.0.0"
+cxx-compiler = "=2.0.0"
+cmake = ">=3.31,<5"
+make = ">=4.4,<5"
+pkg-config = ">=0.29,<1"
+bash = ">=5.2,<6"
+coreutils = ">=9,<10"
+findutils = ">=4.10,<5"
+sed = ">=4.9,<5"
+git = ">=2.49,<3"
+curl = ">=8,<9"
+tar = ">=1.35,<2"
+gzip = ">=1.14,<2"
+perl = ">=5.32,<6"
+ripgrep = ">=14,<16"
+
+[activation.env]
+# uv owns sdk/python/.venv; use the locked interpreter instead of downloading one.
+UV_PYTHON = "$CONDA_PREFIX/bin/python"
+UV_PYTHON_DOWNLOADS = "never"
+# Pixi already selects pnpm; avoid its automatic package-manager install/lock edits.
+npm_config_manage_package_manager_versions = "false"
+
+[target.linux-64.dependencies]
+# Runtime dependencies of the pinned managed Chromium, including its fonts.
+alsa-lib = ">=1.2,<2"
+gtk3 = ">=3.24,<4"
+nss = ">=3.118,<4"
+libgbm = ">=1.0.6,<2"
+libxkbcommon = ">=1.8,<2"
+libudev = ">=257,<258"
+libcap = ">=2.76,<3"
+fonts-conda-ecosystem = "1.*"
+
+[target.linux-64.activation.env]
+# Managed Chromium lives outside the prefix and cannot find these via an RPATH.
+LD_LIBRARY_PATH = "$CONDA_PREFIX/lib"
+
+[target.linux-64.dependencies.sysroot_linux-64]
+version = "=2.28"

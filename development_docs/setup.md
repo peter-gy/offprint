@@ -1,17 +1,89 @@
 # Contributor setup
 
-Install the workspace dependencies, then check the area you are changing:
+Install [Pixi](https://pixi.prefix.dev/v0.81.0/installation/) 0.81.0, then run
+from the repository root:
 
 ```console
-pnpm install --frozen-lockfile
-uv sync --directory sdk/python --frozen --no-install-project
+curl -fsSL https://pixi.sh/install.sh | PIXI_VERSION=v0.81.0 sh
+pixi run --locked setup
+pixi run --locked dev-check
+pixi shell --locked
 just quick offprint-model
 ```
 
-[Rustup](https://rust-lang.github.io/rustup/) selects Rust 1.97 from the root
-`rust-toolchain.toml`. Use [Node.js](https://nodejs.org/) 24.14.1 or newer,
-[pnpm](https://pnpm.io/) 12.3.4, [uv](https://docs.astral.sh/uv/), and
-[just](https://just.systems/). Ensure `cargo` and `rustc` resolve through Rustup.
+The first command installs Pixi; reopen your terminal if `pixi` is not yet on
+`PATH`. The setup task fetches locked Cargo dependencies, installs the frozen
+pnpm workspace, and creates `sdk/python/.venv` from its uv lockfile without
+building the native adapter. Run setup again after changing branches or after
+`just clean`.
+
+`pixi.toml` and `pixi.lock` supply Rust 1.97.0 (including Clippy and Rustfmt),
+Node.js 24.19.0, pnpm 12.3.4, Python 3.14, uv, repository check tools, C/C++
+compilers, build tools, and Linux Chromium libraries and fonts. Normal feature
+work needs no global Rustup, Node.js, Python, or compiler installation on Linux.
+Cargo, pnpm, uv, and the managed-browser catalog retain their existing lock and
+verification contracts; Pixi owns the tools that execute them.
+
+The locked platforms are Linux x86-64 with glibc >=2.28 and macOS >=13 on Intel
+and Apple Silicon. macOS also needs Apple's SDK and system tools from
+`xcode-select --install`. Windows contributors can use x86-64 WSL2; the existing
+POSIX recipes and this development environment do not support native Windows.
+Release packaging retains its separate target-specific toolchains.
+
+Use the shell for the `just` commands below, or prefix a single command with
+`pixi run --locked`, such as `pixi run --locked just check offprint`.
+Exit the shell with `exit`. Editor terminals must use the same environment;
+`pixi run --locked rustc --version` and `pixi run --locked cargo --version`
+confirm tool selection. The conda Rust package supplies the compiler directly,
+so `rust-toolchain.toml` applies to Rustup users outside Pixi. Keep its version,
+`versions.toml`, and the Pixi Rust pin aligned.
+
+## Browser development
+
+```console
+pixi run --locked browser-setup
+pixi run --locked just test-fixture static-article
+```
+
+The browser setup task installs the revision and verified archive digest in
+`versions.toml`. Linux activation supplies `LD_LIBRARY_PATH` for the locked
+libraries because managed Chromium lives outside the Pixi prefix. Chromium
+still uses its sandbox. Linux must allow unprivileged user namespaces; Ubuntu's
+AppArmor policy may need a profile for the managed cache. If startup reports
+`No usable sandbox`, use the same profile as the CI Chromium action:
+
+```sh
+sudo tee /etc/apparmor.d/offprint-chromium >/dev/null <<PROFILE
+abi <abi/4.0>,
+include <tunables/global>
+profile offprint-chromium "${HOME}/**/chromium-*/chrome-linux64/chrome" flags=(unconfined) {
+  userns,
+}
+PROFILE
+sudo apparmor_parser --replace /etc/apparmor.d/offprint-chromium
+```
+
+This one-time host configuration permits sandbox namespaces for managed
+Chromium. See [Linux sandbox troubleshooting](../docs/operations/troubleshooting.md#chromium-reports-no-usable-sandbox-on-linux)
+for other installation paths or Linux policies.
+A headed run also needs a display server (or host Xvfb). Pixi does not configure
+kernel policies, install a display server, or request administrator access.
+
+## Updating the environment
+
+Commit `pixi.toml` and `pixi.lock` together. Use `pixi update PACKAGE` for a
+reviewed dependency update; use `pixi lock` after changing manifest constraints.
+Routine setup and CI use `--locked` so stale locks fail instead of resolving
+new dependencies. Do not copy `.pixi/` between checkouts: its prefixes contain
+absolute paths. `pixi clean` removes the environment; the next locked run
+recreates it. `just clean` preserves it and removes language build outputs and
+installations.
+
+Nightly fuzzing and Miri are opt-in checks outside the default Pixi toolchain.
+Install Rustup, a nightly toolchain with the Miri component, and cargo-fuzz,
+then run the existing `just fuzz-smoke` or `just miri`
+recipes from the Pixi shell to retain its C/C++ tools. Those nightly tools are
+not pinned by `pixi.lock`.
 
 ## Choose the check loop
 

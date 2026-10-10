@@ -15,10 +15,13 @@ SDK use Vitest on Node. Python static checks run through `just python-qa`,
 which combines Ruff, ty, and Pyrefly. `just python-check` builds the native
 adapter and runs pytest. `just site-check` builds the VitePress site.
 
-[CI](../.github/workflows/ci.yml) runs one Linux job for Rust formatting, linting,
-tests, repository contracts, JavaScript checks, collector tests, and generated
-file freshness. Run browser, binding, platform, and performance checks locally
-for the affected behavior. The publish workflow runs the complete release gate
+[CI](../.github/workflows/ci.yml) runs Linux core checks for Rust formatting,
+linting, tests, repository contracts, JavaScript checks, collector tests, and
+generated file freshness through the locked Pixi environment. Contributor jobs
+also exercise clean setup, native Node/Python adapters, and the `static-article`
+capture with offline reopen on Linux, Intel macOS, and Apple Silicon macOS.
+Run the owning browser groups, package, and performance checks locally for
+the affected behavior. The publish workflow runs the complete release gate
 and browser contracts. Pages deploys documentation on pushes to `main`.
 
 ## Focus a failing check

@@ -1,10 +1,14 @@
 name: Set up Chromium runtime
 description: Install Linux browser libraries and enable sandbox user namespaces for managed Chromium.
+inputs:
+  install-libraries:
+    description: Install host libraries; disable when Pixi supplies the browser runtime.
+    default: "true"
 runs:
   using: composite
   steps:
     - name: Install Linux libraries
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && inputs.install-libraries == 'true'
       shell: bash
       run: |
         sudo apt-get update
